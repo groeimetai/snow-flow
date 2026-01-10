@@ -18,6 +18,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js';
@@ -32,6 +34,7 @@ import { authManager } from './shared/auth.js';
 import { executeWithErrorHandling, SnowFlowError, classifyError } from './shared/error-handler.js';
 import { ServiceNowContext, JWTPayload } from './shared/types.js';
 import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsByRole } from './shared/permission-validator.js';
+import { MCPPromptManager } from '../shared/mcp-prompt-manager.js';
 
 /**
  * ServiceNow Unified MCP Server
@@ -39,6 +42,7 @@ import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsBy
 export class ServiceNowUnifiedServer {
   private server: Server;
   private context: ServiceNowContext;
+  private promptManager: MCPPromptManager;
 
   constructor() {
     // Initialize MCP server
@@ -49,10 +53,14 @@ export class ServiceNowUnifiedServer {
       },
       {
         capabilities: {
-          tools: {}
+          tools: {},
+          prompts: {}
         }
       }
     );
+
+    // Initialize prompt manager for MCP prompts support
+    this.promptManager = new MCPPromptManager('servicenow-unified');
 
     // Load ServiceNow context from environment
     this.context = this.loadContext();
@@ -485,6 +493,62 @@ export class ServiceNowUnifiedServer {
           ErrorCode.InternalError,
           snowFlowError.message,
           snowFlowError.toToolResult()
+        );
+      }
+    });
+
+    // ========== MCP PROMPTS SUPPORT ==========
+
+    // List available prompts
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      const prompts = this.promptManager.listPrompts();
+      console.error(`[Server] Listing ${prompts.length} prompts`);
+
+      return {
+        prompts: prompts.map(prompt => ({
+          name: prompt.name,
+          description: prompt.description,
+          arguments: prompt.arguments?.map(arg => ({
+            name: arg.name,
+            description: arg.description,
+            required: arg.required
+          }))
+        }))
+      };
+    });
+
+    // Get and execute a specific prompt
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+      console.error(`[Server] Getting prompt: ${name}`);
+
+      try {
+        const prompt = this.promptManager.getPrompt(name);
+        if (!prompt) {
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Prompt not found: ${name}`
+          );
+        }
+
+        // Execute the prompt to get the messages
+        const result = await this.promptManager.executePrompt(
+          name,
+          (args as Record<string, string>) || {}
+        );
+
+        return {
+          description: result.description || prompt.description,
+          messages: result.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        };
+      } catch (error: any) {
+        console.error(`[Server] Prompt execution failed: ${name}`, error.message);
+        throw new McpError(
+          ErrorCode.InternalError,
+          error.message
         );
       }
     });
