@@ -4,12 +4,17 @@
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import {
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema
+} from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../../utils/snow-oauth.js';
 import { Logger } from '../../utils/logger.js';
 import { AgentContextProvider } from './agent-context-provider.js';
 import { MCPMemoryManager, AgentContext } from './mcp-memory-manager.js';
 import { MCPResourceManager } from './mcp-resource-manager.js';
+import { MCPPromptManager } from './mcp-prompt-manager.js';
 
 export interface MCPToolResult {
   [key: string]: unknown;
@@ -35,6 +40,7 @@ export abstract class BaseMCPServer {
   protected contextProvider: AgentContextProvider;
   protected memory: MCPMemoryManager;
   protected resourceManager: MCPResourceManager;
+  protected promptManager: MCPPromptManager;
 
   constructor(name: string, version: string = '1.0.0') {
     this.server = new Server(
@@ -46,6 +52,7 @@ export abstract class BaseMCPServer {
         capabilities: {
           tools: {},
           resources: {},
+          prompts: {},
         },
       }
     );
@@ -56,6 +63,62 @@ export abstract class BaseMCPServer {
     this.contextProvider = new AgentContextProvider();
     this.memory = MCPMemoryManager.getInstance();
     this.resourceManager = new MCPResourceManager(name);
+    this.promptManager = new MCPPromptManager(name);
+
+    // Register prompt handlers
+    this.registerPromptHandlers();
+  }
+
+  /**
+   * Register MCP prompt handlers
+   */
+  private registerPromptHandlers(): void {
+    // Handle list prompts request
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      this.logger.debug('Handling ListPrompts request');
+
+      const prompts = this.promptManager.listPrompts();
+
+      return {
+        prompts: prompts.map(prompt => ({
+          name: prompt.name,
+          description: prompt.description,
+          arguments: prompt.arguments?.map(arg => ({
+            name: arg.name,
+            description: arg.description,
+            required: arg.required
+          }))
+        }))
+      };
+    });
+
+    // Handle get prompt request
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+
+      this.logger.debug(`Handling GetPrompt request for: ${name}`, { args });
+
+      const prompt = this.promptManager.getPrompt(name);
+      if (!prompt) {
+        throw new Error(`Prompt not found: ${name}`);
+      }
+
+      // Execute the prompt to get the messages
+      const result = await this.promptManager.executePrompt(
+        name,
+        (args as Record<string, string>) || {}
+      );
+
+      return {
+        description: result.description || prompt.description,
+        messages: result.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      };
+    });
+
+    this.logger.debug('Prompt handlers registered');
   }
 
   /**
@@ -2450,6 +2513,139 @@ ${errorText}
   protected clearMCPResourceCache(): void {
     this.resourceManager.clearCache();
     this.logger.debug('MCP resource cache cleared');
+  }
+
+  /**
+   * List available MCP prompts
+   */
+  protected listMCPPrompts(): any {
+    try {
+      const prompts = this.promptManager.listPrompts();
+      this.logger.debug(`Listed ${prompts.length} MCP prompts`);
+
+      return {
+        prompts: prompts.map(prompt => ({
+          name: prompt.name,
+          description: prompt.description,
+          arguments: prompt.arguments
+        }))
+      };
+    } catch (error) {
+      this.logger.error('Failed to list MCP prompts:', error);
+      return { prompts: [] };
+    }
+  }
+
+  /**
+   * Get a specific MCP prompt by name
+   */
+  protected getMCPPrompt(name: string): any {
+    try {
+      const prompt = this.promptManager.getPrompt(name);
+      if (!prompt) {
+        throw new Error(`Prompt not found: ${name}`);
+      }
+
+      this.logger.debug(`Got MCP prompt: ${name}`);
+
+      return {
+        name: prompt.name,
+        description: prompt.description,
+        arguments: prompt.arguments
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get MCP prompt ${name}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute an MCP prompt with arguments
+   */
+  protected async executeMCPPrompt(name: string, args: Record<string, string> = {}): Promise<any> {
+    try {
+      this.logger.debug(`Executing MCP prompt: ${name}`, { args });
+      const result = await this.promptManager.executePrompt(name, args);
+
+      return {
+        description: result.description,
+        messages: result.messages
+      };
+    } catch (error) {
+      this.logger.error(`Failed to execute MCP prompt ${name}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Register a custom prompt
+   */
+  protected registerCustomPrompt(
+    prompt: {
+      name: string;
+      description?: string;
+      arguments?: Array<{ name: string; description?: string; required?: boolean }>;
+    },
+    handler: (args: Record<string, string>) => Promise<{
+      description?: string;
+      messages: Array<{
+        role: 'user' | 'assistant';
+        content: { type: 'text'; text: string };
+      }>;
+    }>
+  ): void {
+    this.promptManager.registerPrompt(prompt, handler);
+    this.logger.debug(`Registered custom prompt: ${prompt.name}`);
+  }
+
+  /**
+   * Get prompt manager statistics
+   */
+  protected getMCPPromptStats(): any {
+    return this.promptManager.getPromptStats();
+  }
+
+  /**
+   * Search prompts by query
+   */
+  protected searchMCPPrompts(query: string): any {
+    try {
+      const prompts = this.promptManager.searchPrompts(query);
+      this.logger.debug(`Found ${prompts.length} prompts matching: ${query}`);
+
+      return {
+        prompts: prompts.map(prompt => ({
+          name: prompt.name,
+          description: prompt.description,
+          arguments: prompt.arguments
+        }))
+      };
+    } catch (error) {
+      this.logger.error(`Failed to search MCP prompts for ${query}:`, error);
+      return { prompts: [] };
+    }
+  }
+
+  /**
+   * Get prompts by category
+   */
+  protected getMCPPromptsByCategory(category: string): any {
+    try {
+      const prompts = this.promptManager.getPromptsByCategory(category);
+      this.logger.debug(`Found ${prompts.length} prompts in category: ${category}`);
+
+      return {
+        category,
+        prompts: prompts.map(prompt => ({
+          name: prompt.name,
+          description: prompt.description,
+          arguments: prompt.arguments
+        }))
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get MCP prompts by category ${category}:`, error);
+      return { category, prompts: [] };
+    }
   }
 
   /**

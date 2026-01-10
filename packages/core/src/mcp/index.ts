@@ -547,4 +547,104 @@ export namespace MCP {
     }
     return result
   }
+
+  /**
+   * Prompt definition from MCP server
+   */
+  export interface MCPPrompt {
+    name: string
+    description?: string
+    arguments?: Array<{
+      name: string
+      description?: string
+      required?: boolean
+    }>
+  }
+
+  /**
+   * Prompt with server info for aggregation
+   */
+  export interface AggregatedPrompt extends MCPPrompt {
+    serverName: string
+    qualifiedName: string
+  }
+
+  /**
+   * Get prompts from all connected MCP servers
+   * Similar to tools() but for MCP prompts
+   */
+  export async function prompts(): Promise<Record<string, AggregatedPrompt>> {
+    const result: Record<string, AggregatedPrompt> = {}
+    const s = await state()
+
+    for (const [clientName, managed] of Object.entries(s.clients)) {
+      const connectionState = managed.manager.getState()
+
+      // Skip disconnected clients but try to reconnect them first
+      if (connectionState.status !== "connected") {
+        log.debug("client not connected, attempting reconnect before fetching prompts", { clientName, status: connectionState.status })
+        const reconnected = await ensureConnected(clientName)
+        if (!reconnected) {
+          log.debug("skipping prompts from disconnected client", { clientName, status: connectionState.status })
+          continue
+        }
+      }
+
+      try {
+        // Try to get prompts from the client
+        // Note: Not all MCP clients/servers support prompts
+        const client = managed.client as any
+        if (typeof client.prompts === 'function') {
+          const clientPrompts = await withTimeout(client.prompts(), 5000)
+          if (clientPrompts && typeof clientPrompts === 'object') {
+            for (const [promptName, prompt] of Object.entries(clientPrompts)) {
+              const sanitizedClientName = clientName.replace(/\s+/g, "_")
+              const sanitizedPromptName = promptName.replace(/[-\s]+/g, "_")
+              const qualifiedName = sanitizedClientName + "_" + sanitizedPromptName
+
+              result[qualifiedName] = {
+                ...(prompt as MCPPrompt),
+                serverName: clientName,
+                qualifiedName
+              }
+            }
+          }
+        } else {
+          log.debug("client does not support prompts", { clientName })
+        }
+      } catch (error) {
+        log.warn("failed to get prompts from client", {
+          clientName,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+    return result
+  }
+
+  /**
+   * List all available prompts from connected MCP servers
+   */
+  export async function listPrompts(): Promise<AggregatedPrompt[]> {
+    const promptMap = await prompts()
+    return Object.values(promptMap)
+  }
+
+  /**
+   * Get a specific prompt by qualified name (serverName_promptName)
+   */
+  export async function getPrompt(qualifiedName: string): Promise<AggregatedPrompt | undefined> {
+    const promptMap = await prompts()
+    return promptMap[qualifiedName]
+  }
+
+  /**
+   * Get prompts from a specific server
+   */
+  export async function getServerPrompts(serverName: string): Promise<MCPPrompt[]> {
+    const promptMap = await prompts()
+    return Object.values(promptMap)
+      .filter(p => p.serverName === serverName)
+      .map(({ serverName: _, qualifiedName: __, ...prompt }) => prompt)
+  }
 }

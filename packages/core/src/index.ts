@@ -26,6 +26,21 @@ export * from './utils/artifact-sync/artifact-registry.js';
 export { ServiceNowMCPServer } from './mcp/servicenow-mcp-server.js';
 export { ServiceNowLocalDevelopmentMCP } from './mcp/servicenow-local-development-mcp.js';
 
+// Export MCP Prompt Manager for prompts support
+export { MCPPromptManager } from './mcp/shared/mcp-prompt-manager.js';
+export type {
+  MCPPrompt,
+  MCPPromptArgument,
+  MCPPromptMessage,
+  MCPPromptResult,
+  MCPPromptContent,
+  MCPPromptTextContent,
+  MCPPromptImageContent,
+  MCPPromptResourceContent,
+  PromptCategory,
+  PromptHandler
+} from './mcp/shared/mcp-prompt-manager.js';
+
 // Snow-Flow System Integration (New)
 export { SnowFlowSystem, snowFlowSystem } from './snow-flow-system.js';
 export { SnowFlowConfig, snowFlowConfig } from './config/snow-flow-config.js';
