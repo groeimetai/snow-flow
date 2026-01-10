@@ -807,6 +807,7 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.Provider != "" && msg.Model != "" {
 				a.app.State.Provider = msg.Provider
 				a.app.State.Model = msg.Model
+				a.app.Config.Model = msg.Provider + "/" + msg.Model // Update in-memory config for InitializeProvider priority
 				a.app.State.UpdateModelUsage(msg.Provider, msg.Model)
 				cmds = append(cmds, a.app.SaveState())
 			}
