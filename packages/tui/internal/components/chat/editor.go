@@ -432,8 +432,11 @@ func (m *editorComponent) Cursor() *tea.Cursor {
 		return nil
 	}
 
-	// Both start screen and chat view need -1 adjustment for correct cursor positioning
-	c.Position.Y -= 1
+	// Multi-line mode needs -1 adjustment for correct cursor positioning
+	// This applies to both start screen and chat view when text wraps
+	if m.Lines() > 1 {
+		c.Position.Y -= 1
+	}
 
 	return c
 }
