@@ -35,14 +35,12 @@ export const toolDefinition: MCPToolDefinition = {
       // GET parameters
       names: {
         type: 'array',
-        items: { type: 'string' },
         description: '[get] Array of property names to retrieve',
         items: { type: 'string' }
       },
       // SET parameters
       properties: {
         type: 'array',
-        items: { type: 'string' },
         description: '[set] Array of properties to set',
         items: {
           type: 'object',

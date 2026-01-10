@@ -278,8 +278,8 @@ export namespace DAG {
 
           // Extract sys_ids from tool outputs (heuristic)
           for (const toolPart of toolParts) {
-            if (toolPart.output) {
-              const sysIdMatches = toolPart.output.match(/[a-f0-9]{32}/g)
+            if (toolPart.state?.status === "completed" && toolPart.state.output) {
+              const sysIdMatches = toolPart.state.output.match(/[a-f0-9]{32}/g)
               if (sysIdMatches) {
                 artifacts.push(...sysIdMatches)
               }
@@ -436,3 +436,10 @@ export namespace DAG {
     }
   }
 }
+
+// Export type aliases for external use
+export type Task = DAG.Task
+export type Plan = DAG.Plan
+export type TaskResult = DAG.TaskResult
+export type PlanResult = DAG.PlanResult
+export type ProgressCallback = DAG.ProgressCallback

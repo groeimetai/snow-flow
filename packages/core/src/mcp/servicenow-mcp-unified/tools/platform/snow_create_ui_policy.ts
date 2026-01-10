@@ -73,7 +73,6 @@ export const toolDefinition: MCPToolDefinition = {
       },
       actions: {
         type: 'array',
-        items: { type: 'string' },
         description: 'UI Policy actions',
         items: {
           type: 'object',

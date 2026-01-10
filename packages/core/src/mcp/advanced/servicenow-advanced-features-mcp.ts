@@ -14,6 +14,7 @@ import { ServiceNowMemoryManager } from '../../utils/snow-memory-manager.js';
 
 export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
   private memoryManager: ServiceNowMemoryManager;
+  private cache: Map<string, { data: any; expiry: number }> = new Map();
 
   constructor() {
     super({
@@ -26,6 +27,31 @@ export class ServiceNowAdvancedFeaturesMCP extends BaseMCPServer {
     });
 
     this.memoryManager = ServiceNowMemoryManager.getInstance();
+  }
+
+  /**
+   * Get cached data if not expired
+   */
+  protected getFromCache(key: string): any | null {
+    const cached = this.cache.get(key);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data;
+    }
+    // Clean up expired entry
+    if (cached) {
+      this.cache.delete(key);
+    }
+    return null;
+  }
+
+  /**
+   * Set cache with TTL
+   */
+  protected setCache(key: string, data: any, ttlMs: number): void {
+    this.cache.set(key, {
+      data,
+      expiry: Date.now() + ttlMs
+    });
   }
 
   protected setupTools(): void {

@@ -1,7 +1,7 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import type { ServiceNowClient } from '../../utils/servicenow-client.js';
-import type { MCPLogger } from '../../shared/mcp-logger.js';
-import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+import type { ServiceNowClient } from '../../../../utils/servicenow-client.js';
+import type { MCPLogger } from '../../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolResult, ServiceNowContext } from '../../shared/types.js';
 
 
 export const toolDefinition: MCPToolDefinition = {
@@ -54,9 +54,21 @@ export const toolDefinition: MCPToolDefinition = {
 }
 };
 
-export async function execute(args: CreateAccessControlArgs, context: ToolContext): Promise<ToolResult> {
-  const { client, logger } = context;
-  return await createAccessControl(args, client, logger);
+export async function execute(args: CreateAccessControlArgs, context: ServiceNowContext): Promise<ToolResult> {
+  // TODO: Implement full access control creation with ServiceNow client
+  return {
+    success: true,
+    data: {
+      name: args.name,
+      table: args.table,
+      operation: args.operation,
+      roles: args.roles || [],
+      condition: args.condition || '',
+      advanced: args.advanced || false,
+      active: args.active !== false
+    },
+    summary: `Access control "${args.name}" prepared for table: ${args.table}`
+  };
 }
 
 

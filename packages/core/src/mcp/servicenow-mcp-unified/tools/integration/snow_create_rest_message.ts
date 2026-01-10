@@ -55,7 +55,6 @@ export const toolDefinition: MCPToolDefinition = {
       },
       methods: {
         type: 'array',
-        items: { type: 'string' },
         description: 'HTTP methods to create',
         items: {
           type: 'object',

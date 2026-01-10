@@ -35,7 +35,6 @@ export const toolDefinition: MCPToolDefinition = {
       reverse_if_false: { type: 'boolean', description: 'Reverse actions if false', default: true },
       conditions: {
         type: 'array',
-        items: { type: 'string' },
         description: 'Array of condition objects for dynamic policy evaluation',
         items: {
           type: 'object',
@@ -51,7 +50,6 @@ export const toolDefinition: MCPToolDefinition = {
       },
       actions: {
         type: 'array',
-        items: { type: 'string' },
         description: 'Array of action objects to execute when conditions are met',
         items: {
           type: 'object',

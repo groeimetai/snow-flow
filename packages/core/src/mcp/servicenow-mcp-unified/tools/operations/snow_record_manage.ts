@@ -315,7 +315,7 @@ export const toolDefinition: MCPToolDefinition = {
   frequency: 'high',
 
   permission: 'write',
-  allowedRoles: ['developer', 'admin', 'itil'],
+  allowedRoles: ['developer', 'admin'],
   inputSchema: {
     type: 'object',
     properties: {
@@ -777,9 +777,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   } catch (error: any) {
     return createErrorResult(
       error instanceof SnowFlowError ? error : new SnowFlowError(
-        ErrorType.OPERATION_FAILED,
+        ErrorType.SERVICENOW_API_ERROR,
         'Record ' + action + ' failed: ' + error.message,
-        { table: resolvedTable.table, originalError: error }
+        { originalError: error, details: { table: resolvedTable.table } }
       )
     );
   }

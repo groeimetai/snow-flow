@@ -534,7 +534,7 @@ export namespace MCP {
         for (const [toolName, tool] of Object.entries(clientTools)) {
           const sanitizedClientName = clientName.replace(/\s+/g, "_")
           const sanitizedToolName = toolName.replace(/[-\s]+/g, "_")
-          result[sanitizedClientName + "_" + sanitizedToolName] = tool
+          result[sanitizedClientName + "_" + sanitizedToolName] = tool as Tool
         }
       } catch (error) {
         log.warn("failed to get tools from client", {

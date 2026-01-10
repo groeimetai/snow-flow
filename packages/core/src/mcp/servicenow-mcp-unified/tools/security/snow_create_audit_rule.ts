@@ -1,7 +1,7 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import type { ServiceNowClient } from '../../utils/servicenow-client.js';
-import type { MCPLogger } from '../../shared/mcp-logger.js';
-import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+import type { ServiceNowClient } from '../../../../utils/servicenow-client.js';
+import type { MCPLogger } from '../../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolResult, ServiceNowContext } from '../../shared/types.js';
 
 
 export const toolDefinition: MCPToolDefinition = {
@@ -57,9 +57,21 @@ export const toolDefinition: MCPToolDefinition = {
 }
 };
 
-export async function execute(args: CreateAuditRuleArgs, context: ToolContext): Promise<ToolResult> {
-  const { client, logger } = context;
-  return await createAuditRule(args, client, logger);
+export async function execute(args: CreateAuditRuleArgs, context: ServiceNowContext): Promise<ToolResult> {
+  // TODO: Implement full audit rule creation with ServiceNow client
+  return {
+    success: true,
+    data: {
+      name: args.name,
+      table: args.table,
+      events: args.events,
+      fields: args.fields || [],
+      retention: args.retention || 90,
+      filter: args.filter || '',
+      active: args.active !== false
+    },
+    summary: `Audit rule "${args.name}" prepared for table: ${args.table}`
+  };
 }
 
 

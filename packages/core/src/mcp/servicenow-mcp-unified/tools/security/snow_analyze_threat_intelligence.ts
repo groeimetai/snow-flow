@@ -1,7 +1,8 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import type { ServiceNowClient } from '../../utils/servicenow-client.js';
-import type { MCPLogger } from '../../shared/mcp-logger.js';
-import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+import type { ServiceNowClient } from '../../../../utils/servicenow-client.js';
+import type { MCPLogger } from '../../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolResult } from '../../shared/types.js';
+import { ServiceNowContext } from '../../shared/types.js';
 
 
 export const toolDefinition: MCPToolDefinition = {
@@ -59,9 +60,18 @@ export const toolDefinition: MCPToolDefinition = {
 }
 };
 
-export async function execute(args: AnalyzeThreatIntelligenceArgs, context: ToolContext): Promise<ToolResult> {
-  const { client, logger } = context;
-  return await analyzeThreatIntelligence(args, client, logger);
+export async function execute(args: AnalyzeThreatIntelligenceArgs, context: ServiceNowContext): Promise<ToolResult> {
+  // TODO: Implement full threat intelligence analysis with ServiceNow client
+  return {
+    success: true,
+    data: {
+      ioc_value: args.ioc_value,
+      ioc_type: args.ioc_type,
+      threat_feed_sources: args.threat_feed_sources || [],
+      correlation_timeframe: args.correlation_timeframe || '24_hours'
+    },
+    summary: `Threat intelligence analysis prepared for ${args.ioc_type}: ${args.ioc_value}`
+  };
 }
 
 

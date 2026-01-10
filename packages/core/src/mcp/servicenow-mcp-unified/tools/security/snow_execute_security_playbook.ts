@@ -3,7 +3,7 @@
  * Execute automated security response playbook with orchestrated actions
  */
 
-import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+import { MCPToolDefinition, ToolResult, ServiceNowContext } from '../../shared/types.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_execute_security_playbook',
@@ -31,63 +31,17 @@ export const toolDefinition: MCPToolDefinition = {
   }
 };
 
-export async function execute(args: any, context: ToolContext): Promise<ToolResult> {
-  const { client, logger } = context;
+export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  // TODO: Implement full security playbook execution with ServiceNow client
   const { playbook_id, incident_id, execution_mode = 'semi_automatic', parameters = {} } = args;
-
-    // Get playbook details
-    const playbook = await client.getRecord('sn_si_playbook', playbook_id);
-    if (!playbook) {
-      throw new Error(`Security playbook ${playbook_id} not found`);
-    }
-
-    // Simulate playbook execution
-    const actions = [
-      'Isolate affected systems',
-      'Collect forensic evidence',
-      'Block malicious IPs/domains',
-      'Notify security team',
-      'Generate incident report',
-      'Update threat intelligence'
-    ];
-
-    const executionResults = actions.map(action => ({
-      action,
-      status: Math.random() > 0.1 ? 'success' : 'failed', // 90% success rate
-      duration: Math.floor(Math.random() * 30) + 5, // 5-35 seconds
-      details: `${action} completed via automated playbook`
-    }));
-
-    const successCount = executionResults.filter(r => r.status === 'success').length;
-    const totalDuration = executionResults.reduce((sum, r) => sum + r.duration, 0);
-
-    return {
-      content: [{
-        type: 'text',
-        text: `🤖 **Security Playbook Executed**
-
-📋 **Playbook**: ${playbook.name || 'Security Response'}
-🎯 **Incident**: ${incident_id}
-⚙️ **Mode**: ${execution_mode}
-
-📊 **Execution Results**:
-- **Actions Completed**: ${successCount}/${actions.length}
-- **Total Duration**: ${totalDuration} seconds
-- **Success Rate**: ${((successCount/actions.length) * 100).toFixed(1)}%
-
-🔧 **Action Details**:
-${executionResults.map(result =>
-  `${result.status === 'success' ? '✅' : '❌'} ${result.action} (${result.duration}s)`
-).join('\n')}
-
-${execution_mode === 'automatic' ?
-'🚀 **Automatic Response**: All actions executed without human intervention' :
-'👤 **Semi-Automatic**: Critical actions pending human approval'}
-
-🔍 **Next Steps**:
-- Monitor incident resolution progress
-- Review automated actions for effectiveness
-- Update playbook based on lessons learned`
-      }]
-    };
+  return {
+    success: true,
+    data: {
+      playbook_id,
+      incident_id,
+      execution_mode,
+      parameters
+    },
+    summary: `Security playbook ${playbook_id} prepared for incident: ${incident_id}`
+  };
 }

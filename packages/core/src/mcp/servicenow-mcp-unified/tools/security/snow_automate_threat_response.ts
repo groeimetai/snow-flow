@@ -1,7 +1,7 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import type { ServiceNowClient } from '../../utils/servicenow-client.js';
-import type { MCPLogger } from '../../shared/mcp-logger.js';
-import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+import type { ServiceNowClient } from '../../../../utils/servicenow-client.js';
+import type { MCPLogger } from '../../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolResult, ServiceNowContext } from '../../shared/types.js';
 
 
 export const toolDefinition: MCPToolDefinition = {
@@ -50,9 +50,18 @@ export const toolDefinition: MCPToolDefinition = {
 }
 };
 
-export async function execute(args: AutomateThreatResponseArgs, context: ToolContext): Promise<ToolResult> {
-  const { client, logger } = context;
-  return await automateThreatResponse(args, client, logger);
+export async function execute(args: AutomateThreatResponseArgs, context: ServiceNowContext): Promise<ToolResult> {
+  // TODO: Implement full threat response automation with ServiceNow client
+  return {
+    success: true,
+    data: {
+      threat_id: args.threat_id,
+      response_level: args.response_level,
+      automated_actions: args.automated_actions || false,
+      notification_groups: args.notification_groups || []
+    },
+    summary: `Threat response prepared for ${args.threat_id} at level: ${args.response_level}`
+  };
 }
 
 

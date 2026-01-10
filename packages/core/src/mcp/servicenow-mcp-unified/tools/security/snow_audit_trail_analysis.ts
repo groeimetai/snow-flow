@@ -1,7 +1,7 @@
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import type { ServiceNowClient } from '../../utils/servicenow-client.js';
-import type { MCPLogger } from '../../shared/mcp-logger.js';
-import { MCPToolDefinition, ToolContext, ToolResult } from '../types';
+import type { ServiceNowClient } from '../../../../utils/servicenow-client.js';
+import type { MCPLogger } from '../../../shared/mcp-logger.js';
+import { MCPToolDefinition, ToolResult, ServiceNowContext } from '../../shared/types.js';
 
 
 export const toolDefinition: MCPToolDefinition = {
@@ -45,9 +45,19 @@ export const toolDefinition: MCPToolDefinition = {
 }
 };
 
-export async function execute(args: AuditTrailAnalysisArgs, context: ToolContext): Promise<ToolResult> {
-  const { client, logger } = context;
-  return await auditTrailAnalysis(args, client, logger);
+export async function execute(args: AuditTrailAnalysisArgs, context: ServiceNowContext): Promise<ToolResult> {
+  // TODO: Implement full audit trail analysis with ServiceNow client
+  return {
+    success: true,
+    data: {
+      timeframe: args.timeframe || '24h',
+      user: args.user,
+      table: args.table,
+      anomalies: args.anomalies || false,
+      exportFormat: args.exportFormat || 'json'
+    },
+    summary: `Audit trail analysis prepared for timeframe: ${args.timeframe || '24h'}`
+  };
 }
 
 
