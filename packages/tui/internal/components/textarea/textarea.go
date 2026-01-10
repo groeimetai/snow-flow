@@ -1417,17 +1417,18 @@ func (m Model) LineInfo() LineInfo {
 			// This is the wrapped line the cursor is on.
 
 			// Special case: if the cursor is at the end of a wrapped line,
-			// and there's another wrapped line after it, keep cursor on current
-			// visual line (not the next line) for correct cursor positioning.
+			// and there's another wrapped line after it, the cursor should
+			// be considered at the beginning of the next line.
 			if m.col == end && i < len(grid)-1 {
+				nextLine := grid[i+1]
 				return LineInfo{
-					CharOffset:   uniseg.StringWidth(interfacesToString(line)),
-					ColumnOffset: len(line),
+					CharOffset:   0,
+					ColumnOffset: 0,
 					Height:       len(grid),
-					RowOffset:    i, // Stay on current line, not i+1
-					StartColumn:  start,
-					Width:        len(line),
-					CharWidth:    uniseg.StringWidth(interfacesToString(line)),
+					RowOffset:    i + 1,
+					StartColumn:  end,
+					Width:        len(nextLine),
+					CharWidth:    uniseg.StringWidth(interfacesToString(nextLine)),
 				}
 			}
 

@@ -1134,7 +1134,7 @@ func (a Model) home() (string, int, int) {
 	editorYDelta := 2
 
 	if editorLines > 1 {
-		editorYDelta = 3 // Was 1, increased by 2 to fix cursor being 2 lines too high
+		editorYDelta = 3 // Offset for multiline editor (with -1 from editor.go Cursor())
 		content := a.editor.Content()
 		editorHeight := lipgloss.Height(content)
 
@@ -1192,7 +1192,7 @@ func (a Model) chat() (string, int, int) {
 	editorYDelta := 3
 
 	if lines > 1 {
-		editorYDelta = 3 // Was 2, increased by 1 to fix cursor being 1 line too high (with -1 from editor.go)
+		editorYDelta = 3 // Offset for multiline editor (with -1 from editor.go Cursor())
 		content := a.editor.Content()
 		editorHeight := lipgloss.Height(content)
 		if editorY+editorHeight > a.height {

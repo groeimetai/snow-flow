@@ -432,10 +432,8 @@ func (m *editorComponent) Cursor() *tea.Cursor {
 		return nil
 	}
 
-	// Chat view always needs -1 adjustment
-	if m.app.Session.ID != "" {
-		c.Position.Y -= 1
-	}
+	// Both start screen and chat view need -1 adjustment for correct cursor positioning
+	c.Position.Y -= 1
 
 	return c
 }
