@@ -38,7 +38,7 @@ export namespace Plugin {
     const plugins = [...(config.plugin ?? [])]
     if (!Flag.SNOWCODE_DISABLE_DEFAULT_PLUGINS) {
       plugins.push("opencode-copilot-auth@0.0.3")
-      plugins.push("opencode-anthropic-auth@0.0.2")
+      plugins.push("opencode-anthropic-auth@0.0.8")
     }
     for (let plugin of plugins) {
       log.info("loading plugin", { path: plugin })
