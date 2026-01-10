@@ -358,6 +358,15 @@ your-project/
 2. Check Client ID and Client Secret
 3. Run `/auth` again
 
+### PDI (Personal Developer Instance) OAuth fails
+
+For PDI instances, you need to enable the OAuth client credentials grant type:
+
+1. Navigate to **System Properties → All**
+2. Create a new property: `glide.oauth.inbound.client.credential.grant_type.enabled`
+3. Set value to: `true`
+4. Run `/auth` again
+
 ### "ES5 validation errors"
 
 ServiceNow uses Rhino (ES5). Use:
