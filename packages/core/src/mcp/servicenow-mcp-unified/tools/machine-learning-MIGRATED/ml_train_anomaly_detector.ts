@@ -192,7 +192,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       callbacks: {
         onEpochEnd: (epoch: number, logs?: any) => {
           const loss = logs?.loss ? logs.loss.toFixed(4) : 'N/A';
-          console.log(`Epoch ${epoch + 1}/${epochs} - Loss: ${loss}`);
+          console.error(`Epoch ${epoch + 1}/${epochs} - Loss: ${loss}`);
         }
       }
     });

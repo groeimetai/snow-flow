@@ -40,7 +40,7 @@ function loadRoleFromAuthJson(): UserRole | null {
       if (authData.enterprise?.role) {
         const role = authData.enterprise.role;
         if (['developer', 'stakeholder', 'admin'].includes(role)) {
-          console.log(`[Permission] 🔑 Loaded role '${role}' from ${authPath}`);
+          console.error(`[Permission] 🔑 Loaded role '${role}' from ${authPath}`);
           cachedAuthRole = role as UserRole;
           cacheTimestamp = Date.now();
           return cachedAuthRole;
@@ -63,7 +63,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
   const devRole = process.env.SNOW_FLOW_USER_ROLE as UserRole | undefined;
 
   if (devRole && ['developer', 'stakeholder', 'admin'].includes(devRole)) {
-    console.log(`[Permission] Using role from env: ${devRole}`);
+    console.error(`[Permission] Using role from env: ${devRole}`);
     return {
       customerId: 0,
       tier: 'community',
@@ -79,7 +79,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
   if (headers && headers['x-snow-flow-auth']) {
     try {
       const payload = JSON.parse(Buffer.from(headers['x-snow-flow-auth'], 'base64').toString());
-      console.log(`[Permission] Using role from header: ${payload.role}`);
+      console.error(`[Permission] Using role from header: ${payload.role}`);
       return payload as JWTPayload;
     } catch (error) {
       console.error('[Permission] Failed to parse JWT from headers:', error);
@@ -101,7 +101,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
   }
 
   // Priority 4: Default to developer for backward compatibility
-  console.log('[Permission] No role found, defaulting to developer');
+  console.error('[Permission] No role found, defaulting to developer');
   return {
     customerId: 0,
     tier: 'community',
@@ -171,7 +171,7 @@ export function validatePermission(
   }
 
   // Permission granted!
-  console.log(
+  console.error(
     `[Permission] ✅ User '${userRole}' authorized to execute '${tool.name}' (${permission})`
   );
 }

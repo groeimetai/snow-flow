@@ -110,7 +110,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     } catch (tableApiError: any) {
       // If 403 Forbidden, fallback to background script
       if (tableApiError.response?.status === 403) {
-        console.log('Table API failed with 403, falling back to background script...');
+        console.error('Table API failed with 403, falling back to background script...');
         usedBackgroundScript = true;
 
         // Create via background script

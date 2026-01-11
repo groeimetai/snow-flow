@@ -53,13 +53,13 @@ async function main() {
 
     // Graceful shutdown handlers
     process.on('SIGINT', async () => {
-      console.log('\n[Main] Received SIGINT, shutting down gracefully...');
+      console.error('\n[Main] Received SIGINT, shutting down gracefully...');
       await server.stop();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.log('\n[Main] Received SIGTERM, shutting down gracefully...');
+      console.error('\n[Main] Received SIGTERM, shutting down gracefully...');
       await server.stop();
       process.exit(0);
     });

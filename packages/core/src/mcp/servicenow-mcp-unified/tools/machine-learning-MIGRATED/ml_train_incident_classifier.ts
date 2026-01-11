@@ -135,7 +135,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             Math.min(sample_size, totalAvailable) :
             optimalSize;
 
-          console.log(`Using ${actualSampleSize} incidents for training (optimal for this dataset)`);
+          console.error(`Using ${actualSampleSize} incidents for training (optimal for this dataset)`);
         }
       } catch (error) {
         actualSampleSize = sample_size || 1000;
@@ -179,7 +179,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       fetchTime,
       incidents.length
     );
-    console.log(summary);
+    console.error(summary);
 
     // Check data availability
     const requiredRecords = 100;
@@ -265,7 +265,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         onEpochEnd: (epoch: number, logs?: any) => {
           const loss = logs?.loss ? logs.loss.toFixed(4) : 'N/A';
           const accuracy = logs?.acc ? (logs.acc * 100).toFixed(2) : 'N/A';
-          console.log(`Epoch ${epoch + 1}/${epochs} - Loss: ${loss}, Accuracy: ${accuracy}%`);
+          console.error(`Epoch ${epoch + 1}/${epochs} - Loss: ${loss}, Accuracy: ${accuracy}%`);
         }
       }
     });

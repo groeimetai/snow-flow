@@ -724,11 +724,11 @@ export class ServiceNowUnifiedServer {
       const discoveryResult = await toolRegistry.initialize();
 
       console.error('[Server] Tool discovery complete:');
-      console.log(`  - Domains: ${discoveryResult.domains.length}`);
-      console.log(`  - Tools found: ${discoveryResult.toolsFound}`);
-      console.log(`  - Tools registered: ${discoveryResult.toolsRegistered}`);
-      console.log(`  - Tools failed: ${discoveryResult.toolsFailed}`);
-      console.log(`  - Duration: ${discoveryResult.duration}ms`);
+      console.error(`  - Domains: ${discoveryResult.domains.length}`);
+      console.error(`  - Tools found: ${discoveryResult.toolsFound}`);
+      console.error(`  - Tools registered: ${discoveryResult.toolsRegistered}`);
+      console.error(`  - Tools failed: ${discoveryResult.toolsFailed}`);
+      console.error(`  - Duration: ${discoveryResult.duration}ms`);
 
       if (discoveryResult.toolsFailed > 0) {
         console.error('[Server] Some tools failed to load:');
@@ -758,11 +758,11 @@ export class ServiceNowUnifiedServer {
       // Get server statistics
       const stats = toolRegistry.getStatistics();
       console.error('[Server] Server statistics:');
-      console.log(`  - Total tools: ${stats.totalTools}`);
-      console.log(`  - Total domains: ${stats.totalDomains}`);
-      console.log('  - Tools by domain:');
+      console.error(`  - Total tools: ${stats.totalTools}`);
+      console.error(`  - Total domains: ${stats.totalDomains}`);
+      console.error('  - Tools by domain:');
       Object.entries(stats.toolsByDomain).forEach(([domain, count]) => {
-        console.log(`    - ${domain}: ${count} tools`);
+        console.error(`    - ${domain}: ${count} tools`);
       });
 
       console.error('[Server] Initialization complete ✅');

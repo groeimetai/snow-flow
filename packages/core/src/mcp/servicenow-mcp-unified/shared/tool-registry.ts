@@ -210,12 +210,12 @@ export class ToolRegistry {
     result.duration = Date.now() - startTime;
 
     console.error('[ToolRegistry] Initialization complete:');
-    console.log(`  - Mode: ${this.useStaticMode ? 'static (bundled)' : 'dynamic (file-based)'}`);
-    console.log(`  - Domains: ${result.domains.length}`);
-    console.log(`  - Tools found: ${result.toolsFound}`);
-    console.log(`  - Tools registered: ${result.toolsRegistered}`);
-    console.log(`  - Tools failed: ${result.toolsFailed}`);
-    console.log(`  - Duration: ${result.duration}ms`);
+    console.error(`  - Mode: ${this.useStaticMode ? 'static (bundled)' : 'dynamic (file-based)'}`);
+    console.error(`  - Domains: ${result.domains.length}`);
+    console.error(`  - Tools found: ${result.toolsFound}`);
+    console.error(`  - Tools registered: ${result.toolsRegistered}`);
+    console.error(`  - Tools failed: ${result.toolsFailed}`);
+    console.error(`  - Duration: ${result.duration}ms`);
 
     return result;
   }
