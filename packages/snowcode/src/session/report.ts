@@ -121,9 +121,24 @@ export namespace SessionReport {
 
         log.info("report generated", { result: result.text })
 
-        // Parse the JSON response
+        // Parse the JSON response - handle markdown code blocks and extra text
         try {
-          const aiAnalysis = JSON.parse(result.text)
+          let jsonText = result.text.trim()
+
+          // Try to extract JSON from markdown code block
+          const jsonBlockMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/)
+          if (jsonBlockMatch) {
+            jsonText = jsonBlockMatch[1].trim()
+          }
+
+          // Try to find JSON object in the response
+          const jsonStart = jsonText.indexOf("{")
+          const jsonEnd = jsonText.lastIndexOf("}")
+          if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            jsonText = jsonText.slice(jsonStart, jsonEnd + 1)
+          }
+
+          const aiAnalysis = JSON.parse(jsonText)
           return {
             systemInfo,
             aiAnalysis,

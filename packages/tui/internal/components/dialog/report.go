@@ -13,7 +13,6 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea/v2"
-	"github.com/charmbracelet/lipgloss/v2"
 	"github.com/sst/opencode/internal/app"
 	"github.com/sst/opencode/internal/components/modal"
 	"github.com/sst/opencode/internal/components/toast"
@@ -211,22 +210,29 @@ func sanitizeInstanceURL(url string) string {
 	return url
 }
 
-// getConfigStatus returns which config files exist
+// configPath represents a config file to check
+type configPath struct {
+	name string
+	path string
+}
+
+// getConfigStatus returns which config files exist (in stable order)
 func (r *reportDialog) getConfigStatus() []string {
 	var configs []string
 	home := os.Getenv("HOME")
 
-	paths := map[string]string{
-		"~/.local/share/snow-code/auth.json":       filepath.Join(home, ".local", "share", "snow-code", "auth.json"),
-		"~/Library/Application Support/snow-code/": filepath.Join(home, "Library", "Application Support", "snow-code"),
-		"~/.snow-code/enterprise.json":             filepath.Join(home, ".snow-code", "enterprise.json"),
-		"~/.snow-flow/":                            filepath.Join(home, ".snow-flow"),
-		".mcp.json":                                filepath.Join(r.app.Project.Worktree, ".mcp.json"),
+	// Use a slice to maintain stable order
+	paths := []configPath{
+		{"~/.local/share/snow-code/auth.json", filepath.Join(home, ".local", "share", "snow-code", "auth.json")},
+		{"~/Library/Application Support/snow-code/", filepath.Join(home, "Library", "Application Support", "snow-code")},
+		{"~/.snow-code/enterprise.json", filepath.Join(home, ".snow-code", "enterprise.json")},
+		{"~/.snow-flow/", filepath.Join(home, ".snow-flow")},
+		{".mcp.json", filepath.Join(r.app.Project.Worktree, ".mcp.json")},
 	}
 
-	for name, path := range paths {
-		if _, err := os.Stat(path); err == nil {
-			configs = append(configs, name)
+	for _, cp := range paths {
+		if _, err := os.Stat(cp.path); err == nil {
+			configs = append(configs, cp.name)
 		}
 	}
 
@@ -361,74 +367,77 @@ func (r *reportDialog) createGitHubIssue() tea.Cmd {
 func (r *reportDialog) renderContent() string {
 	t := theme.CurrentTheme()
 
+	// Calculate content width (viewport width minus some padding)
+	contentWidth := 72
+	if r.width > 0 {
+		contentWidth = min(72, r.width-12)
+	}
+	valueWidth := contentWidth - 16
+
 	labelStyle := styles.NewStyle().
 		Foreground(t.TextMuted()).
-		Background(t.BackgroundPanel()).
-		Width(18)
+		Width(16)
 
 	valueStyle := styles.NewStyle().
 		Foreground(t.Text()).
-		Background(t.BackgroundPanel()).
 		Bold(true)
+
+	// For long text that needs wrapping
+	wrapStyle := styles.NewStyle().
+		Foreground(t.Text()).
+		Width(valueWidth)
 
 	sectionStyle := styles.NewStyle().
 		Foreground(t.Primary()).
-		Background(t.BackgroundPanel()).
-		Bold(true).
-		MarginTop(1).
-		MarginBottom(1)
+		Bold(true)
 
 	hintStyle := styles.NewStyle().
 		Foreground(t.TextMuted()).
-		Background(t.BackgroundPanel()).
 		Faint(true)
 
 	warningStyle := styles.NewStyle().
 		Foreground(t.Warning()).
-		Background(t.BackgroundPanel()).
 		Bold(true)
 
 	successStyle := styles.NewStyle().
 		Foreground(t.Success()).
-		Background(t.BackgroundPanel()).
 		Bold(true)
 
 	errorStyle := styles.NewStyle().
-		Foreground(t.Error()).
-		Background(t.BackgroundPanel())
+		Foreground(t.Error())
 
 	var content string
 
 	// Header
-	content += sectionStyle.Render("Bug Report Generator") + "\n\n"
+	content += sectionStyle.Render("Bug Report Generator") + "\n"
 	content += warningStyle.Render("No credentials or secrets will be included!") + "\n"
 
 	// System Info
-	content += "\n" + sectionStyle.Render("System Info") + "\n\n"
+	content += "\n" + sectionStyle.Render("System Info") + "\n"
 	content += labelStyle.Render("OS:") + valueStyle.Render(fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)) + "\n"
 	content += labelStyle.Render("Go Version:") + valueStyle.Render(runtime.Version()) + "\n"
 	content += labelStyle.Render("Snow-Flow:") + valueStyle.Render(r.app.Version) + "\n"
 
 	// Auth Status
 	authType, instance, tokenStatus := r.getAuthStatus()
-	content += "\n" + sectionStyle.Render("Auth Status") + "\n\n"
+	content += "\n" + sectionStyle.Render("Auth Status") + "\n"
 	content += labelStyle.Render("Auth Type:") + valueStyle.Render(authType) + "\n"
 	content += labelStyle.Render("Instance:") + valueStyle.Render(instance) + "\n"
 	content += labelStyle.Render("Token Status:") + valueStyle.Render(tokenStatus) + "\n"
 
 	// Config Files
 	configs := r.getConfigStatus()
-	content += "\n" + sectionStyle.Render("Configuration") + "\n\n"
+	content += "\n" + sectionStyle.Render("Configuration") + "\n"
 	if len(configs) > 0 {
 		for _, cfg := range configs {
 			content += labelStyle.Render("") + valueStyle.Render(cfg) + "\n"
 		}
 	} else {
-		content += labelStyle.Render("") + valueStyle.Render("No config files found") + "\n"
+		content += hintStyle.Render("No config files found") + "\n"
 	}
 
 	// Current Model/Agent
-	content += "\n" + sectionStyle.Render("Current Setup") + "\n\n"
+	content += "\n" + sectionStyle.Render("Current Setup") + "\n"
 	if r.app.Provider != nil {
 		content += labelStyle.Render("Provider:") + valueStyle.Render(r.app.Provider.Name) + "\n"
 	}
@@ -439,7 +448,7 @@ func (r *reportDialog) renderContent() string {
 	content += labelStyle.Render("Agent:") + valueStyle.Render(fmt.Sprintf("%s (%s)", agent.Name, agent.Mode)) + "\n"
 
 	// AI Analysis Section
-	content += "\n" + sectionStyle.Render("AI Problem Analysis") + "\n\n"
+	content += "\n" + sectionStyle.Render("AI Problem Analysis") + "\n"
 
 	if r.loading {
 		content += hintStyle.Render("Analyzing conversation...") + "\n"
@@ -448,18 +457,18 @@ func (r *reportDialog) renderContent() string {
 		content += hintStyle.Render("Press 'r' to retry") + "\n"
 	} else if r.aiAnalysis != nil {
 		if r.aiAnalysis.HasProblem {
-			content += successStyle.Render("Problem detected!") + "\n\n"
+			content += successStyle.Render("Problem detected!") + "\n"
 			content += labelStyle.Render("Summary:") + "\n"
-			content += valueStyle.Render(r.aiAnalysis.Summary) + "\n\n"
+			content += wrapStyle.Render(r.aiAnalysis.Summary) + "\n"
 
 			if r.aiAnalysis.ProblemDescription != "" {
-				content += labelStyle.Render("Description:") + "\n"
+				content += "\n" + labelStyle.Render("Description:") + "\n"
 				// Truncate long descriptions for display
 				desc := r.aiAnalysis.ProblemDescription
 				if len(desc) > 200 {
 					desc = desc[:197] + "..."
 				}
-				content += hintStyle.Render(desc) + "\n"
+				content += wrapStyle.Foreground(t.TextMuted()).Render(desc) + "\n"
 			}
 		} else {
 			content += hintStyle.Render("No specific problem detected in conversation.") + "\n"
@@ -471,16 +480,13 @@ func (r *reportDialog) renderContent() string {
 	}
 
 	// Actions
-	content += "\n" + hintStyle.Render("Press 'c' to copy • 'g' to create GitHub issue • 'r' to refresh • 'esc' to close")
+	content += "\n" + hintStyle.Render("'c' copy • 'g' GitHub issue • 'r' refresh • esc close")
 
 	return content
 }
 
 func (r *reportDialog) View() string {
-	t := theme.CurrentTheme()
-	return lipgloss.NewStyle().
-		Background(t.BackgroundPanel()).
-		Render(r.viewport.View())
+	return r.viewport.View()
 }
 
 func (r *reportDialog) Render(background string) string {
