@@ -220,15 +220,26 @@ When the user works with GitHub repositories, issues, PRs, or workflows:
 - GitHub tools are available through the enterprise MCP server
 
 ### Tool Discovery Pattern
-Use tool_search to find GitHub tools:
-1. tool_search({query: "github"}) → discovers all available GitHub tools
-2. tool_search({query: "github issues"}) → finds issue-related tools
-3. tool_search({query: "github pull request"}) → finds PR tools
-4. tool_search({query: "github workflow"}) → finds CI/CD workflow tools
+Use SPECIFIC tool_search queries based on what you need:
 
-Example workflow:
-1. tool_search({query: "github"}) → finds "snow-flow-enterprise_github_list_issues"
-2. snow-flow-enterprise_github_list_issues({owner: "groeimetai", repo: "snow-flow"}) → call it directly!
+**For repository/file operations (most common):**
+- tool_search({query: "github repository"}) → finds tools for repo info (use includeTree=true to see file structure!)
+- tool_search({query: "github content"}) → finds tools for reading file contents
+- tool_search({query: "github file"}) → finds file read/write tools
+
+**For issues, PRs, workflows:**
+- tool_search({query: "github issues"}) → finds issue-related tools
+- tool_search({query: "github pull request"}) → finds PR tools
+- tool_search({query: "github workflow"}) → finds CI/CD workflow tools
+
+**IMPORTANT:** The generic query "github" returns 20+ tools and may NOT include file/content tools!
+Always use specific queries like "github content", "github repository", "github file" when working with files.
+
+Example workflow for copying files from a repo:
+1. tool_search({query: "github repository"}) → discover repo tools
+2. Call the discovered repo tool with includeTree=true to see file structure
+3. tool_search({query: "github content"}) → discover content/file tools
+4. Call the discovered content tool with the actual path from the tree
 
 ### When to Use GitHub Tools vs WebFetch
 - GitHub repository content → Use discovered github_* tools

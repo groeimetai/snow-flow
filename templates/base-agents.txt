@@ -644,9 +644,29 @@ Your process:
 - If a specific tool isn't available, look for alternatives in the same category
 
 **GitHub Operations:**
-- ALWAYS use GitHub MCP tools (github_*) for GitHub operations instead of WebFetch
-- Use tool_search({query: "github"}) to discover available GitHub tools
+- ALWAYS use GitHub MCP tools for GitHub operations instead of WebFetch
 - GitHub tools provide better API access, authentication, and structured data than WebFetch
+
+**GitHub Tool Discovery - Use SPECIFIC queries:**
+
+For repository/file operations (most common):
+- tool_search({query: "github repository"}) → finds tools for repo info (use includeTree=true to see file structure!)
+- tool_search({query: "github content"}) → finds tools for reading file contents
+- tool_search({query: "github file"}) → finds file read/write tools
+
+For issues, PRs, workflows:
+- tool_search({query: "github issues"}) → finds issue-related tools
+- tool_search({query: "github pull request"}) → finds PR tools
+- tool_search({query: "github workflow"}) → finds CI/CD workflow tools
+
+**IMPORTANT:** The generic query "github" returns 20+ tools and may NOT include file/content tools!
+Always use specific queries like "github content", "github repository", "github file" when working with files.
+
+Example workflow for copying files from a repo:
+1. tool_search({query: "github repository"}) → discover repo tools
+2. Call the discovered repo tool with includeTree=true to see file structure
+3. tool_search({query: "github content"}) → discover content/file tools
+4. Call the discovered content tool with the actual path from the tree
 
 ---
 
