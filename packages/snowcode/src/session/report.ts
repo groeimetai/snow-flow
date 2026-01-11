@@ -145,10 +145,18 @@ export namespace SessionReport {
           }
         } catch (parseError) {
           log.error("Failed to parse AI response", { error: parseError, text: result.text })
+          // Return a fallback "no problem" response instead of error
           return {
             systemInfo,
-            aiAnalysis: null,
-            error: "Failed to parse AI analysis response",
+            aiAnalysis: {
+              hasProblem: false,
+              summary: "",
+              problemDescription: "",
+              stepsToReproduce: [],
+              expectedBehavior: "",
+              actualBehavior: "",
+              additionalContext: "AI analysis could not parse the response",
+            },
           }
         }
       } catch (error) {
