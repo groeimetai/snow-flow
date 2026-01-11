@@ -1286,6 +1286,47 @@ async function executeQuery(args: any, context: ServiceNowContext, tableInfo: an
   var countResponse = await client.get('/api/now/table/' + table, { params: countParams });
   var totalCount = parseInt(countResponse.headers['x-total-count'] || '0', 10);
 
+  // Build human-readable summary for display
+  var summaryLines: string[] = [];
+  summaryLines.push('✓ Query completed');
+  summaryLines.push('  table: ' + table);
+  summaryLines.push('  Records: ' + records.length + (totalCount > records.length ? ' of ' + totalCount : ''));
+
+  // Format each record for display
+  var maxDisplay = Math.min(records.length, 10);
+  for (var i = 0; i < maxDisplay; i++) {
+    var r = records[i];
+    // Get the primary identifier for display
+    var identifier = getFieldValue(r[tableInfo.numberField]) ||
+                     getFieldValue(r.number) ||
+                     getFieldValue(r.name) ||
+                     getFieldValue(r.sys_id);
+
+    // Get a secondary field for context (short_description, description, etc.)
+    var description = getFieldValue(r.short_description) ||
+                      getFieldValue(r.description) ||
+                      getFieldValue(r.title) ||
+                      getFieldValue(r.label) ||
+                      '';
+
+    // Build display line
+    var displayLine = '  • ' + identifier;
+    if (description) {
+      // Truncate long descriptions
+      var truncatedDesc = description.length > 50 ? description.substring(0, 47) + '...' : description;
+      displayLine += ' - ' + truncatedDesc;
+    }
+    summaryLines.push(displayLine);
+  }
+
+  if (records.length > maxDisplay) {
+    summaryLines.push('  ... and ' + (records.length - maxDisplay) + ' more');
+  }
+
+  if (totalCount > records.length) {
+    summaryLines.push('  (Use offset=' + (offset + records.length) + ' to get next page)');
+  }
+
   return createSuccessResult({
     action: 'query',
     table: table,
@@ -1305,7 +1346,7 @@ async function executeQuery(args: any, context: ServiceNowContext, tableInfo: an
       rec[tableInfo.numberField] = getFieldValue(r[tableInfo.numberField] || r.number || r.name);
       return rec;
     })
-  });
+  }, {}, summaryLines.join('\n'));
 }
 
 // ==================== HELPER FUNCTIONS ====================
