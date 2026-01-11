@@ -5,7 +5,8 @@
 - Use this tool when you need to retrieve and analyze web content
 
 Usage notes:
-  - IMPORTANT: if another tool is present that offers better web fetching capabilities, is more targeted to the task, or has fewer restrictions, prefer using that tool instead of this one.
+  - IMPORTANT: If another tool is present that offers better web fetching capabilities, is more targeted to the task, or has fewer restrictions, prefer using that tool instead of this one.
+  - CRITICAL: Do NOT use WebFetch for github.com URLs! Use GitHub MCP tools (github_*) instead. Run tool_search({query: "github"}) to discover available GitHub tools. GitHub tools provide authenticated API access and structured data.
   - The URL must be a fully-formed valid URL
   - HTTP URLs will be automatically upgraded to HTTPS
   - The prompt should describe what information you want to extract from the page

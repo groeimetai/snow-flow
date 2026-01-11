@@ -635,14 +635,18 @@ Your process:
 
 **Context Management:**
 - MCP servers add to your context window
-- Some servers (e.g., GitHub MCP) are token-heavy
 - You can't control which servers are enabled (user's configuration)
 - Adapt to available tools - if a tool doesn't exist, suggest alternatives
 
 **Tool Availability:**
-- If uncertain whether a tool exists, search for it silently
+- If uncertain whether a tool exists, use tool_search to find it
 - Most tools follow patterns based on their functionality
 - If a specific tool isn't available, look for alternatives in the same category
+
+**GitHub Operations:**
+- ALWAYS use GitHub MCP tools (github_*) for GitHub operations instead of WebFetch
+- Use tool_search({query: "github"}) to discover available GitHub tools
+- GitHub tools provide better API access, authentication, and structured data than WebFetch
 
 ---
 
