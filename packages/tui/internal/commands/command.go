@@ -164,6 +164,7 @@ const (
 	BudgetCommand                   CommandName = "budget"
 	AppVersionCommand               CommandName = "app_version"
 	SettingsCommand                 CommandName = "settings"
+	ReportCommand                   CommandName = "report"
 )
 
 func (k Command) Matches(msg tea.KeyPressMsg, leader bool) bool {
@@ -424,6 +425,12 @@ func LoadFromConfig(config *opencode.Config, customCommands []opencode.Command) 
 			Description: "toggle features",
 			Keybindings: parseBindings("<leader>f"),
 			Trigger:     []string{"settings", "features", "prefs"},
+		},
+		{
+			Name:        ReportCommand,
+			Description: "generate bug report",
+			Keybindings: parseBindings("<leader>r"),
+			Trigger:     []string{"report", "bug", "issue"},
 		},
 	}
 	registry := make(CommandRegistry)

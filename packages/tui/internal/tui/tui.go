@@ -1645,6 +1645,11 @@ func (a Model) executeCommand(command commands.Command) (tea.Model, tea.Cmd) {
 		settingsDialog := dialog.NewSettingsDialog()
 		a.modal = settingsDialog
 		cmds = append(cmds, settingsDialog.Init())
+	case commands.ReportCommand:
+		// Show bug report dialog
+		reportDialog := dialog.NewReportDialog(a.app)
+		a.modal = reportDialog
+		cmds = append(cmds, reportDialog.Init())
 	case commands.AppExitCommand:
 		return a, tea.Quit
 	}
