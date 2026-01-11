@@ -15,6 +15,7 @@ import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
 import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import PROMPT_CODEX from "./prompt/codex.txt"
+import PROMPT_CODEX_HEADER from "./prompt/codex_header.txt"
 
 export namespace SystemPrompt {
   export function header(providerID: string) {

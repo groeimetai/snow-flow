@@ -32,6 +32,8 @@ import { SessionRetry } from "./retry"
 
 import PROMPT_PLAN from "../session/prompt/plan.txt"
 import BUILD_SWITCH from "../session/prompt/build-switch.txt"
+import MAX_STEPS from "../session/prompt/max-steps.txt"
+import PROMPT_PLAN_REMINDER_ANTHROPIC from "../session/prompt/plan-reminder-anthropic.txt"
 import { ModelsDev } from "../provider/models"
 import { defer } from "../util/defer"
 import { mergeDeep, pipe } from "remeda"
@@ -62,6 +64,11 @@ export namespace SessionPrompt {
   export const OUTPUT_TOKEN_MAX = 32_000
   const MAX_RETRIES = 10
   const DOOM_LOOP_THRESHOLD = 3
+  /**
+   * Maximum number of agentic steps (API calls with tool execution) allowed per prompt.
+   * When reached, MAX_STEPS prompt is injected to force the model to summarize and stop.
+   */
+  const MAX_STEPS_LIMIT = 50
 
   /**
    * Maximum characters for tool output to prevent token overflow
@@ -260,7 +267,7 @@ export namespace SessionPrompt {
           providerID: model.providerID,
           signal: abort.signal,
         }),
-        (messages) => insertReminders({ messages, agent }),
+        (messages) => insertReminders({ messages, agent, providerID: model.providerID }),
       )
 
       // Check if we would exceed the context limit before sending to API
@@ -295,6 +302,30 @@ export namespace SessionPrompt {
       }
 
       step++
+
+      // Check if maximum steps limit has been reached
+      // When reached, inject MAX_STEPS prompt to force summary and stop
+      const isLastStep = step >= MAX_STEPS_LIMIT
+      if (isLastStep) {
+        log.info("max steps limit reached, injecting MAX_STEPS prompt", { step, limit: MAX_STEPS_LIMIT })
+        msgs.push({
+          info: {
+            id: Identifier.ascending("message"),
+            role: "user",
+            sessionID: input.sessionID,
+            time: { created: Date.now() },
+          },
+          parts: [{
+            id: Identifier.ascending("part"),
+            messageID: Identifier.ascending("message"),
+            sessionID: input.sessionID,
+            type: "text",
+            text: MAX_STEPS,
+            synthetic: true,
+          }],
+        })
+      }
+
       await processor.next(msgs.findLast((m) => m.info.role === "user")?.info.id!)
       if (step === 1) {
         ensureTitle({
@@ -1225,16 +1256,20 @@ export namespace SessionPrompt {
     }
   }
 
-  function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info }) {
+  function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info; providerID: string }) {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
     if (input.agent.name === "plan") {
+      // Use extended 5-phase plan workflow for Anthropic models, basic constraint for others
+      const planPrompt = input.providerID.includes("anthropic")
+        ? PROMPT_PLAN_REMINDER_ANTHROPIC
+        : PROMPT_PLAN
       userMessage.parts.push({
         id: Identifier.ascending("part"),
         messageID: userMessage.info.id,
         sessionID: userMessage.info.sessionID,
         type: "text",
-        text: PROMPT_PLAN,
+        text: planPrompt,
         synthetic: true,
       })
     }
