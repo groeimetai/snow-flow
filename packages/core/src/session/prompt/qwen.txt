@@ -165,12 +165,11 @@ Example workflow for copying files from a repo:
 1. tool_search({query: "github repository"}) → discover repo tools
 2. Call the discovered repo tool with includeTree=true to see file structure
 3. tool_search({query: "github content"}) → discover content/file tools
-4. Call the discovered content tool with saveToLocal=true to save to local file (prevents context overflow)
-5. Use native file tools (Read) to view content if needed
+4. Call the discovered content tool → file is automatically saved to local filesystem
+5. Use native Read tool with the returned localFilePath to view content
 
-**CRITICAL: Use saveToLocal=true to prevent context overflow!**
-When fetching file contents from GitHub, ALWAYS use `saveToLocal: true` parameter.
-This saves the file locally and returns only the path, preventing large files from filling your context.
+**NOTE:** The content tool automatically saves files locally and returns the path.
+This prevents context overflow - use the native Read tool to view file contents.
 
 ### When to Use GitHub Tools vs WebFetch
 - GitHub repository content → Use discovered github_* tools
