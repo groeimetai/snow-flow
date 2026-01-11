@@ -93,6 +93,10 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'number',
         description: 'Max results for list',
         default: 50
+      },
+      template: {
+        type: 'string',
+        description: 'Email template sys_id or name (from sysevent_email_template) - when set, uses template instead of inline message'
       }
     },
     required: ['action']
@@ -116,7 +120,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     weight = 0,
     active = true,
     active_only = false,
-    limit = 50
+    limit = 50,
+    template
   } = args;
 
   try {
@@ -138,6 +143,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       return lookup.data.result[0].sys_id;
     }
 
+    // Helper to resolve email template name to sys_id
+    async function resolveTemplateId(templateId: string): Promise<string> {
+      if (templateId.length === 32 && !/\s/.test(templateId)) return templateId;
+      var lookup = await client.get('/api/now/table/sysevent_email_template', {
+        params: {
+          sysparm_query: 'name=' + templateId,
+          sysparm_fields: 'sys_id',
+          sysparm_limit: 1
+        }
+      });
+      if (!lookup.data.result?.[0]) {
+        throw new SnowFlowError(ErrorType.NOT_FOUND, 'Email template not found: ' + templateId);
+      }
+      return lookup.data.result[0].sys_id;
+    }
+
     switch (action) {
       case 'list': {
         var query = '';
@@ -151,22 +172,25 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         const response = await client.get('/api/now/table/sysevent_email_action', {
           params: {
             sysparm_query: query || undefined,
-            sysparm_fields: 'sys_id,name,collection,event_name,active,subject,condition,sys_created_on,sys_updated_on',
+            sysparm_fields: 'sys_id,name,collection,event_name,active,subject,condition,template,sys_created_on,sys_updated_on',
+            sysparm_display_value: 'all',
             sysparm_limit: limit
           }
         });
 
         var notifications = (response.data.result || []).map(function(n: any) {
           return {
-            sys_id: n.sys_id,
-            name: n.name,
-            table: n.collection,
-            event: n.event_name,
-            active: n.active === 'true',
-            subject: n.subject,
-            has_condition: Boolean(n.condition),
-            created: n.sys_created_on,
-            updated: n.sys_updated_on
+            sys_id: n.sys_id?.value || n.sys_id,
+            name: n.name?.value || n.name,
+            table: n.collection?.value || n.collection,
+            event: n.event_name?.value || n.event_name,
+            active: (n.active?.value || n.active) === 'true',
+            subject: n.subject?.value || n.subject,
+            has_condition: Boolean(n.condition?.value || n.condition),
+            template: n.template?.value || n.template || null,
+            template_display: n.template?.display_value || null,
+            created: n.sys_created_on?.value || n.sys_created_on,
+            updated: n.sys_updated_on?.value || n.sys_updated_on
           };
         });
 
@@ -184,27 +208,33 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         var sysId = await resolveNotificationId(notification_id);
 
-        const response = await client.get('/api/now/table/sysevent_email_action/' + sysId);
+        const response = await client.get('/api/now/table/sysevent_email_action/' + sysId, {
+          params: {
+            sysparm_display_value: 'all'
+          }
+        });
         var notif = response.data.result;
 
         return createSuccessResult({
           action: 'get',
           notification: {
-            sys_id: notif.sys_id,
-            name: notif.name,
-            table: notif.collection,
-            event: notif.event_name,
-            active: notif.active === 'true',
-            subject: notif.subject,
-            message_html: notif.message_html,
-            condition: notif.condition,
-            send_self: notif.send_self === 'true',
-            recipient_fields: notif.recipient_fields,
-            recipient_groups: notif.recipient_groups,
-            recipient_users: notif.recipient_users,
-            weight: notif.weight,
-            created: notif.sys_created_on,
-            updated: notif.sys_updated_on
+            sys_id: notif.sys_id?.value || notif.sys_id,
+            name: notif.name?.value || notif.name,
+            table: notif.collection?.value || notif.collection,
+            event: notif.event_name?.value || notif.event_name,
+            active: (notif.active?.value || notif.active) === 'true',
+            subject: notif.subject?.value || notif.subject,
+            message_html: notif.message_html?.value || notif.message_html,
+            condition: notif.condition?.value || notif.condition,
+            send_self: (notif.send_self?.value || notif.send_self) === 'true',
+            recipient_fields: notif.recipient_fields?.value || notif.recipient_fields,
+            recipient_groups: notif.recipient_groups?.value || notif.recipient_groups,
+            recipient_users: notif.recipient_users?.value || notif.recipient_users,
+            template: notif.template?.value || notif.template || null,
+            template_display: notif.template?.display_value || null,
+            weight: notif.weight?.value || notif.weight,
+            created: notif.sys_created_on?.value || notif.sys_created_on,
+            updated: notif.sys_updated_on?.value || notif.sys_updated_on
           }
         });
       }
@@ -232,6 +262,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (recipient_groups) createData.recipient_groups = recipient_groups.join(',');
         if (recipient_users) createData.recipient_users = recipient_users.join(',');
         if (weight !== undefined) createData.weight = weight;
+        if (template) {
+          var resolvedTemplateId = await resolveTemplateId(template);
+          createData.template = resolvedTemplateId;
+        }
 
         const createResponse = await client.post('/api/now/table/sysevent_email_action', createData);
 
@@ -266,6 +300,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (recipient_users !== undefined) updateData.recipient_users = recipient_users.join(',');
         if (weight !== undefined) updateData.weight = weight;
         if (active !== undefined) updateData.active = active;
+        if (template !== undefined) {
+          if (template === '' || template === null) {
+            updateData.template = '';  // Clear template
+          } else {
+            var resolvedUpdateTemplateId = await resolveTemplateId(template);
+            updateData.template = resolvedUpdateTemplateId;
+          }
+        }
 
         if (Object.keys(updateData).length === 0) {
           throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'No fields to update');

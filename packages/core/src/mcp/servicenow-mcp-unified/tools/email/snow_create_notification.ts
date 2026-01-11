@@ -4,7 +4,7 @@
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_notification',
@@ -29,6 +29,7 @@ export const toolDefinition: MCPToolDefinition = {
       recipients: { type: 'string', description: 'Who receives notification' },
       subject: { type: 'string', description: 'Email subject' },
       message: { type: 'string', description: 'Email message' },
+      template: { type: 'string', description: 'Email template sys_id or name (from sysevent_email_template) - uses template instead of inline message' },
       active: { type: 'boolean', default: true }
     },
     required: ['name', 'table', 'condition']
@@ -36,9 +37,26 @@ export const toolDefinition: MCPToolDefinition = {
 };
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { name, table, condition, recipients, subject, message, active = true } = args;
+  const { name, table, condition, recipients, subject, message, template, active = true } = args;
   try {
     const client = await getAuthenticatedClient(context);
+
+    // Helper to resolve template name to sys_id
+    async function resolveTemplateId(templateId: string): Promise<string> {
+      if (templateId.length === 32 && !/\s/.test(templateId)) return templateId;
+      var lookup = await client.get('/api/now/table/sysevent_email_template', {
+        params: {
+          sysparm_query: 'name=' + templateId,
+          sysparm_fields: 'sys_id',
+          sysparm_limit: 1
+        }
+      });
+      if (!lookup.data.result?.[0]) {
+        throw new SnowFlowError(ErrorType.NOT_FOUND, 'Email template not found: ' + templateId);
+      }
+      return lookup.data.result[0].sys_id;
+    }
+
     // Note: sysevent_email_action table uses 'collection' field, not 'table'
     const notificationData: any = {
       name,
@@ -49,9 +67,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     if (recipients) notificationData.recipients = recipients;
     if (subject) notificationData.subject = subject;
     if (message) notificationData.message = message;
+    if (template) {
+      var resolvedTemplateId = await resolveTemplateId(template);
+      notificationData.template = resolvedTemplateId;
+    }
     const response = await client.post('/api/now/table/sysevent_email_action', notificationData);
     return createSuccessResult({ created: true, notification: response.data.result });
   } catch (error: any) {
+    if (error instanceof SnowFlowError) {
+      return createErrorResult(error);
+    }
     return createErrorResult(error.message);
   }
 }
