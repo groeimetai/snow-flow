@@ -76,12 +76,24 @@ export class ServiceNowUnifiedServer {
    */
   private loadFromAuthJson(): ServiceNowContext | undefined {
     // Possible auth.json locations in priority order
+    // NOTE: snow-code uses xdg-basedir which returns different paths per platform:
+    // - macOS: ~/Library/Application Support/
+    // - Linux: ~/.local/share/
+    // - Windows: %APPDATA%
     const authPaths = [
-      // 1. Snow-Code (with dash) - OFFICIAL location (must always be with dash!)
+      // 1. macOS: ~/Library/Application Support/snow-code/auth.json (XDG data dir on macOS)
+      ...(process.platform === 'darwin'
+        ? [path.join(os.homedir(), 'Library', 'Application Support', 'snow-code', 'auth.json')]
+        : []),
+      // 2. Windows: %APPDATA%/snow-code/auth.json
+      ...(process.platform === 'win32' && process.env.APPDATA
+        ? [path.join(process.env.APPDATA, 'snow-code', 'auth.json')]
+        : []),
+      // 3. Linux/fallback: ~/.local/share/snow-code/auth.json (XDG data dir on Linux)
       path.join(os.homedir(), '.local', 'share', 'snow-code', 'auth.json'),
-      // 2. Snow-Flow specific auth
+      // 4. Snow-Flow specific auth
       path.join(os.homedir(), '.snow-flow', 'auth.json'),
-      // 3. OpenCode (fallback for compatibility)
+      // 5. OpenCode (fallback for compatibility)
       path.join(os.homedir(), '.local', 'share', 'opencode', 'auth.json'),
     ];
 
@@ -97,7 +109,7 @@ export class ServiceNowUnifiedServer {
         let servicenowCreds = authData['servicenow'];
 
         // If not found, check if the root IS the servicenow config (for ~/.snow-flow/auth.json)
-        if (!servicenowCreds && authData.instance && authData.clientId) {
+        if (!servicenowCreds && authData.instance && (authData.clientId || authData.username)) {
           servicenowCreds = authData;
         }
 
@@ -109,27 +121,52 @@ export class ServiceNowUnifiedServer {
         const isPlaceholder = (val?: string) => !val || val.includes('your-') || val.includes('placeholder');
 
         const instance = servicenowCreds.instance;
+        const authType = servicenowCreds.type; // 'servicenow-oauth' or 'servicenow-basic'
+
+        // Support both OAuth and Basic auth
         const clientId = servicenowCreds.clientId;
         const clientSecret = servicenowCreds.clientSecret;
+        const username = servicenowCreds.username;
+        const password = servicenowCreds.password;
 
-        if (isPlaceholder(instance) || isPlaceholder(clientId) || isPlaceholder(clientSecret)) {
+        // Validate instance
+        if (isPlaceholder(instance)) {
           continue;
         }
 
+        // Check for valid OAuth credentials
+        const hasValidOAuth = clientId && clientSecret &&
+                             !isPlaceholder(clientId) && !isPlaceholder(clientSecret);
+
+        // Check for valid Basic auth credentials
+        const hasValidBasic = username && password &&
+                             !isPlaceholder(username) && !isPlaceholder(password);
+
+        // Need either valid OAuth OR valid Basic auth
+        if (!hasValidOAuth && !hasValidBasic) {
+          continue;
+        }
+
+        const effectiveAuthType = hasValidOAuth ? 'OAuth' : 'Basic';
         console.error('[Auth] ✅ Loaded credentials from:', authPath);
         console.error('[Auth]    Instance:', instance);
-        console.error('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
-        console.error('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
+        console.error('[Auth]    Auth Type:', effectiveAuthType);
+        if (hasValidOAuth) {
+          console.error('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
+          console.error('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
+        } else {
+          console.error('[Auth]    Username:', username);
+        }
 
         return {
           instanceUrl: instance.startsWith('http')
             ? instance
             : `https://${instance}`,
-          clientId: clientId,
-          clientSecret: clientSecret,
+          clientId: hasValidOAuth ? clientId : '',
+          clientSecret: hasValidOAuth ? clientSecret : '',
           refreshToken: servicenowCreds.refreshToken || servicenowCreds.refresh_token,
-          username: undefined,
-          password: undefined
+          username: hasValidBasic ? username : undefined,
+          password: hasValidBasic ? password : undefined
         };
       } catch (error: any) {
         console.error('[Auth] Failed to load from', authPath, ':', error.message);
@@ -333,7 +370,7 @@ export class ServiceNowUnifiedServer {
    *
    * Priority (for synchronous loading):
    * 1. Environment variables (SERVICENOW_* or SNOW_*)
-   * 2. snow-code auth.json (~/.local/share/snow-code/auth.json)
+   * 2. snow-code auth.json (platform-specific XDG path + fallbacks)
    * 3. Unauthenticated mode (empty credentials)
    *
    * Note: Enterprise portal fetch (highest priority) happens in initialize() because it's async
@@ -383,7 +420,7 @@ export class ServiceNowUnifiedServer {
     console.error('[Auth] No local ServiceNow credentials found');
     console.error('[Auth] Checked:');
     console.error('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
-    console.error('[Auth]   2. snow-code auth.json (~/.local/share/snow-code/auth.json)');
+    console.error('[Auth]   2. snow-code auth.json (see logged paths above)');
     console.error('[Auth] Will attempt enterprise portal fetch in initialize()...');
 
     // Return empty context - may be updated in initialize() if enterprise auth exists
@@ -398,10 +435,21 @@ export class ServiceNowUnifiedServer {
   }
 
   /**
-   * Check if current context has valid credentials
+   * Check if current context has valid credentials (OAuth or Basic auth)
    */
   private hasValidCredentials(): boolean {
-    return !!(this.context.instanceUrl && this.context.clientId && this.context.clientSecret);
+    // Must have instance URL
+    if (!this.context.instanceUrl) {
+      return false;
+    }
+
+    // Check for valid OAuth credentials
+    const hasOAuth = !!(this.context.clientId && this.context.clientSecret);
+
+    // Check for valid Basic auth credentials
+    const hasBasic = !!(this.context.username && this.context.password);
+
+    return hasOAuth || hasBasic;
   }
 
   /**

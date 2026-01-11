@@ -213,12 +213,30 @@ export class ServiceNowAuthManager {
     const cacheKey = this.getCacheKey(context.instanceUrl);
     console.error('[Auth] Refreshing access token for:', context.instanceUrl);
 
-    // Check if credentials are placeholders or empty
-    if (!context.instanceUrl || !context.clientId || !context.clientSecret ||
-        context.instanceUrl.includes('your-instance') ||
-        context.clientId.includes('your-') ||
-        context.instanceUrl === '' || context.clientId === '' || context.clientSecret === '') {
+    // Check if instance URL is valid
+    if (!context.instanceUrl || context.instanceUrl === '' ||
+        context.instanceUrl.includes('your-instance')) {
       throw new Error('ServiceNow credentials not configured. Please run: snow-flow auth login');
+    }
+
+    // Check for valid OAuth credentials
+    const hasValidOAuth = context.clientId && context.clientSecret &&
+                         context.clientId !== '' && context.clientSecret !== '' &&
+                         !context.clientId.includes('your-') && !context.clientSecret.includes('your-');
+
+    // Check for valid Basic auth credentials
+    const hasValidBasic = context.username && context.password &&
+                         context.username.trim() !== '' && context.password.trim() !== '';
+
+    // Must have at least one valid auth method
+    if (!hasValidOAuth && !hasValidBasic) {
+      throw new Error('ServiceNow credentials not configured. Please run: snow-flow auth login');
+    }
+
+    // If only Basic auth is available, skip OAuth flows and go directly to Basic auth
+    if (!hasValidOAuth && hasValidBasic) {
+      console.error('[Auth] Using Basic auth (no OAuth credentials configured)');
+      return this.authenticateWithBasicAuth(context);
     }
 
     // STEP 1: Try OAuth Refresh Token flow if refresh token is available
@@ -329,15 +347,77 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Authenticate using username and password (fallback method)
+   * Authenticate using username and password from context (primary Basic auth method)
+   * Used when auth.json has servicenow-basic type credentials
+   */
+  private async authenticateWithBasicAuth(context: ServiceNowContext): Promise<string> {
+    const cacheKey = this.getCacheKey(context.instanceUrl);
+
+    try {
+      // Use credentials from context (loaded from auth.json)
+      const username = context.username;
+      const password = context.password;
+
+      // Check for missing OR empty strings
+      if (!username || !password || username.trim() === '' || password.trim() === '') {
+        throw new Error('No username/password available in context for basic authentication');
+      }
+
+      console.error('[Auth] Using Basic auth from auth.json credentials');
+
+      // Create Basic Auth token
+      const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
+      const accessToken = `Basic ${basicAuth}`;
+
+      // Cache with long expiry (basic auth doesn't expire)
+      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+      this.tokenCache.set(cacheKey, {
+        accessToken,
+        refreshToken: '', // No refresh token for basic auth
+        expiresAt,
+        instanceUrl: context.instanceUrl
+      });
+
+      // Test the credentials with a simple API call
+      try {
+        await axios.get(`${context.instanceUrl}/api/now/table/sys_user?sysparm_limit=1`, {
+          headers: {
+            'Authorization': accessToken,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
+
+        console.error('[Auth] Basic auth successful');
+        return accessToken;
+
+      } catch (testError: any) {
+        throw new Error(`Basic auth failed: Invalid credentials`);
+      }
+
+    } catch (error: any) {
+      console.error('[Auth] Basic auth failed:', error.message);
+      throw new Error(`Authentication failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Authenticate using username and password from environment (fallback method)
+   * Used when OAuth fails and SERVICENOW_USERNAME/PASSWORD env vars are set
    */
   private async authenticateWithPassword(context: ServiceNowContext): Promise<string> {
     const cacheKey = this.getCacheKey(context.instanceUrl);
 
     try {
-      // Check if username/password available from environment
-      const username = process.env.SERVICENOW_USERNAME;
-      const password = process.env.SERVICENOW_PASSWORD;
+      // First try context credentials (from auth.json), then environment variables
+      let username = context.username;
+      let password = context.password;
+
+      // Fall back to environment variables if context credentials not available
+      if (!username || !password || username.trim() === '' || password.trim() === '') {
+        username = process.env.SERVICENOW_USERNAME;
+        password = process.env.SERVICENOW_PASSWORD;
+      }
 
       // Check for missing OR empty strings (reject empty credentials)
       if (!username || !password || username.trim() === '' || password.trim() === '') {
