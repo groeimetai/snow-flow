@@ -239,6 +239,25 @@ export class ServiceNowAuthManager {
       return this.authenticateWithBasicAuth(context);
     }
 
+    // STEP 0: Use pre-loaded access token from context (from TUI OAuth flow)
+    if (context.accessToken) {
+      console.error('[Auth] Using pre-loaded access token from context');
+
+      // Cache it for future requests
+      const expiresAt = context.tokenExpiry || (Date.now() + 3600000); // 1 hour default
+      this.tokenCache.set(cacheKey, {
+        accessToken: context.accessToken,
+        refreshToken: context.refreshToken || '',
+        expiresAt,
+        instanceUrl: context.instanceUrl
+      });
+
+      // Persist to disk
+      await this.saveTokenCache();
+
+      return context.accessToken;
+    }
+
     // STEP 1: Try OAuth Refresh Token flow if refresh token is available
     let refreshToken = context.refreshToken;
     const cached = this.tokenCache.get(cacheKey);

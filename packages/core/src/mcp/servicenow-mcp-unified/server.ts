@@ -164,6 +164,7 @@ export class ServiceNowUnifiedServer {
             : `https://${instance}`,
           clientId: hasValidOAuth ? clientId : '',
           clientSecret: hasValidOAuth ? clientSecret : '',
+          accessToken: servicenowCreds.accessToken,
           refreshToken: servicenowCreds.refreshToken || servicenowCreds.refresh_token,
           username: hasValidBasic ? username : undefined,
           password: hasValidBasic ? password : undefined
