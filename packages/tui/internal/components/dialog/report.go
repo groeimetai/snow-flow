@@ -218,22 +218,29 @@ func (r *reportDialog) createGitHubIssue() tea.Cmd {
 		if err != nil {
 			return toast.NewErrorToast("Failed to create temp file")
 		}
-		defer os.Remove(tmpFile.Name())
+		tmpFilePath := tmpFile.Name()
 
 		if _, err := tmpFile.WriteString(report); err != nil {
+			os.Remove(tmpFilePath)
 			return toast.NewErrorToast("Failed to write report")
 		}
 		tmpFile.Close()
 
 		// Open gh issue create in browser with pre-filled body
+		// Use Run() (blocking) instead of Start() to ensure file exists during execution
 		cmd := exec.Command("gh", "issue", "create",
 			"--repo", "groeimetai/snow-flow",
 			"--title", "[Bug Report] ",
-			"--body-file", tmpFile.Name(),
+			"--body-file", tmpFilePath,
 			"--web")
 
-		if err := cmd.Start(); err != nil {
-			return toast.NewErrorToast("Failed to open GitHub. Report copied to clipboard instead.")
+		err = cmd.Run()
+
+		// Clean up temp file after gh command completes
+		os.Remove(tmpFilePath)
+
+		if err != nil {
+			return toast.NewErrorToast("Failed to open GitHub. Use 'c' to copy report instead.")
 		}
 
 		return toast.NewSuccessToast("Opening GitHub issue creator in browser...")
