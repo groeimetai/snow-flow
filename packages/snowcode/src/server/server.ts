@@ -39,6 +39,7 @@ import { Storage } from "../storage/storage"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { Snapshot } from "@/snapshot"
 import { SessionSummary } from "@/session/summary"
+import { SessionReport } from "@/session/report"
 import { TokenDebug } from "../util/token-debug"
 
 const ERRORS = {
@@ -818,6 +819,35 @@ export namespace Server {
           const body = c.req.valid("json")
           await SessionCompaction.run({ ...body, sessionID: id })
           return c.json(true)
+        },
+      )
+      .get(
+        "/session/:id/report",
+        describeRoute({
+          description: "Generate a bug report for the session with AI analysis",
+          operationId: "session.report",
+          responses: {
+            200: {
+              description: "Bug report with system info and AI analysis",
+              content: {
+                "application/json": {
+                  schema: resolver(SessionReport.ReportResult),
+                },
+              },
+            },
+            ...errors(400, 404),
+          },
+        }),
+        validator(
+          "param",
+          z.object({
+            id: z.string().meta({ description: "Session ID" }),
+          }),
+        ),
+        async (c) => {
+          const id = c.req.valid("param").id
+          const result = await SessionReport.generate({ sessionID: id })
+          return c.json(result)
         },
       )
       .get(

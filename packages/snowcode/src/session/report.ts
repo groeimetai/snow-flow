@@ -1,0 +1,149 @@
+import { Provider } from "@/provider/provider"
+import { fn } from "@/util/fn"
+import z from "zod"
+import { Session } from "."
+import { generateText, type ModelMessage } from "ai"
+import { MessageV2 } from "./message-v2"
+import { ProviderTransform } from "@/provider/transform"
+import { SystemPrompt } from "./system"
+import { Log } from "@/util/log"
+import os from "os"
+import { Instance } from "@/project/instance"
+import { Global } from "@/global"
+
+export namespace SessionReport {
+  const log = Log.create({ service: "session.report" })
+
+  export const ReportResult = z.object({
+    systemInfo: z.object({
+      os: z.string(),
+      arch: z.string(),
+      nodeVersion: z.string(),
+      snowFlowVersion: z.string(),
+      workingDirectory: z.string(),
+    }),
+    aiAnalysis: z.object({
+      hasProblem: z.boolean(),
+      summary: z.string(),
+      problemDescription: z.string(),
+      stepsToReproduce: z.array(z.string()),
+      expectedBehavior: z.string(),
+      actualBehavior: z.string(),
+      additionalContext: z.string(),
+    }).nullable(),
+    error: z.string().optional(),
+  })
+  export type ReportResult = z.infer<typeof ReportResult>
+
+  export const generate = fn(
+    z.object({
+      sessionID: z.string(),
+      providerID: z.string().optional(),
+    }),
+    async (input): Promise<ReportResult> => {
+      // Collect system info
+      const systemInfo = {
+        os: process.platform,
+        arch: process.arch,
+        nodeVersion: process.version,
+        snowFlowVersion: Global.version || "unknown",
+        workingDirectory: Instance.directory,
+      }
+
+      // Get session messages for AI analysis
+      const messages = await Session.messages(input.sessionID)
+      if (!messages || messages.length === 0) {
+        return {
+          systemInfo,
+          aiAnalysis: null,
+          error: "No messages in session to analyze",
+        }
+      }
+
+      // Find a provider to use for AI analysis
+      let providerID = input.providerID
+      if (!providerID) {
+        // Try to find the provider from the last assistant message
+        const assistantMsg = messages.findLast((m) => m.info.role === "assistant")
+        if (assistantMsg) {
+          providerID = (assistantMsg.info as MessageV2.Assistant).providerID
+        }
+      }
+
+      if (!providerID) {
+        return {
+          systemInfo,
+          aiAnalysis: null,
+          error: "No provider available for AI analysis",
+        }
+      }
+
+      const small = await Provider.getSmallModel(providerID)
+      if (!small) {
+        return {
+          systemInfo,
+          aiAnalysis: null,
+          error: "No small model available for AI analysis",
+        }
+      }
+
+      try {
+        // Format conversation for analysis
+        const conversationText = messages
+          .map((m) => {
+            const role = m.info.role === "user" ? "User" : "Assistant"
+            const textParts = m.parts
+              .filter((p) => p.type === "text")
+              .map((p) => (p as MessageV2.TextPart).text)
+              .join("\n")
+            return `${role}: ${textParts}`
+          })
+          .join("\n\n")
+
+        // Call AI with report prompt
+        const result = await generateText({
+          maxOutputTokens: small.info.reasoning ? 2000 : 500,
+          providerOptions: ProviderTransform.providerOptions(small.npm, small.providerID, {}),
+          messages: [
+            ...SystemPrompt.report(small.providerID).map(
+              (x): ModelMessage => ({
+                role: "system",
+                content: x,
+              }),
+            ),
+            {
+              role: "user" as const,
+              content: `<conversation>\n${conversationText}\n</conversation>`,
+            },
+          ],
+          model: small.language,
+        })
+
+        log.info("report generated", { result: result.text })
+
+        // Parse the JSON response
+        try {
+          const aiAnalysis = JSON.parse(result.text)
+          return {
+            systemInfo,
+            aiAnalysis,
+          }
+        } catch (parseError) {
+          log.error("Failed to parse AI response", { error: parseError, text: result.text })
+          return {
+            systemInfo,
+            aiAnalysis: null,
+            error: "Failed to parse AI analysis response",
+          }
+        }
+      } catch (error) {
+        log.error("Failed to generate report", { error })
+        return {
+          systemInfo,
+          aiAnalysis: null,
+          error: `AI analysis failed: ${error instanceof Error ? error.message : String(error)}`,
+        }
+      }
+    },
+  )
+}

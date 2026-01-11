@@ -14,6 +14,7 @@ import PROMPT_GEMINI from "./prompt/gemini.txt"
 import PROMPT_ANTHROPIC_SPOOF from "./prompt/anthropic_spoof.txt"
 import PROMPT_SUMMARIZE from "./prompt/summarize.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
+import PROMPT_REPORT from "./prompt/report.txt"
 import PROMPT_CODEX from "./prompt/codex.txt"
 import PROMPT_CODEX_HEADER from "./prompt/codex_header.txt"
 
@@ -129,6 +130,15 @@ export namespace SystemPrompt {
         return [PROMPT_ANTHROPIC_SPOOF.trim(), PROMPT_TITLE]
       default:
         return [PROMPT_TITLE]
+    }
+  }
+
+  export function report(providerID: string) {
+    switch (providerID) {
+      case "anthropic":
+        return [PROMPT_ANTHROPIC_SPOOF.trim(), PROMPT_REPORT]
+      default:
+        return [PROMPT_REPORT]
     }
   }
 }

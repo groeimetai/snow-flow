@@ -1,7 +1,10 @@
 package dialog
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,16 +24,88 @@ import (
 	"github.com/sst/opencode/internal/viewport"
 )
 
+// AIAnalysis represents the AI-generated bug report analysis
+type AIAnalysis struct {
+	HasProblem         bool     `json:"hasProblem"`
+	Summary            string   `json:"summary"`
+	ProblemDescription string   `json:"problemDescription"`
+	StepsToReproduce   []string `json:"stepsToReproduce"`
+	ExpectedBehavior   string   `json:"expectedBehavior"`
+	ActualBehavior     string   `json:"actualBehavior"`
+	AdditionalContext  string   `json:"additionalContext"`
+}
+
+// ReportResult represents the server response for bug report generation
+type ReportResult struct {
+	SystemInfo struct {
+		OS               string `json:"os"`
+		Arch             string `json:"arch"`
+		NodeVersion      string `json:"nodeVersion"`
+		SnowFlowVersion  string `json:"snowFlowVersion"`
+		WorkingDirectory string `json:"workingDirectory"`
+	} `json:"systemInfo"`
+	AIAnalysis *AIAnalysis `json:"aiAnalysis"`
+	Error      string      `json:"error,omitempty"`
+}
+
+// Messages for async operations
+type ReportFetchedMsg struct {
+	Result *ReportResult
+	Error  error
+}
+
 type reportDialog struct {
-	width    int
-	height   int
-	modal    *modal.Modal
-	app      *app.App
-	viewport viewport.Model
+	width        int
+	height       int
+	modal        *modal.Modal
+	app          *app.App
+	viewport     viewport.Model
+	loading      bool
+	aiAnalysis   *AIAnalysis
+	serverError  string
 }
 
 func (r *reportDialog) Init() tea.Cmd {
-	return r.viewport.Init()
+	return tea.Batch(
+		r.viewport.Init(),
+		r.fetchReport(),
+	)
+}
+
+func (r *reportDialog) fetchReport() tea.Cmd {
+	return func() tea.Msg {
+		// Only fetch if we have an active session
+		if r.app.Session == nil || r.app.Session.ID == "" {
+			return ReportFetchedMsg{
+				Result: nil,
+				Error:  fmt.Errorf("no active session"),
+			}
+		}
+
+		serverURL := os.Getenv("SNOWCODE_SERVER")
+		if serverURL == "" {
+			serverURL = "http://127.0.0.1:3006"
+		}
+
+		url := fmt.Sprintf("%s/session/%s/report", serverURL, r.app.Session.ID)
+		resp, err := http.Get(url)
+		if err != nil {
+			return ReportFetchedMsg{Error: err}
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return ReportFetchedMsg{Error: err}
+		}
+
+		var result ReportResult
+		if err := json.Unmarshal(body, &result); err != nil {
+			return ReportFetchedMsg{Error: err}
+		}
+
+		return ReportFetchedMsg{Result: &result}
+	}
 }
 
 func (r *reportDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -42,6 +117,16 @@ func (r *reportDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.height = msg.Height
 		maxWidth := min(80, msg.Width-8)
 		r.viewport = viewport.New(viewport.WithWidth(maxWidth-4), viewport.WithHeight(msg.Height-6))
+	case ReportFetchedMsg:
+		r.loading = false
+		if msg.Error != nil {
+			r.serverError = msg.Error.Error()
+		} else if msg.Result != nil {
+			r.aiAnalysis = msg.Result.AIAnalysis
+			if msg.Result.Error != "" {
+				r.serverError = msg.Result.Error
+			}
+		}
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "c", "y":
@@ -53,6 +138,12 @@ func (r *reportDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "g":
 			// Create GitHub issue
 			return r, r.createGitHubIssue()
+		case "r":
+			// Refresh AI analysis
+			r.loading = true
+			r.aiAnalysis = nil
+			r.serverError = ""
+			return r, r.fetchReport()
 		case "esc":
 			return r, util.CmdHandler(modal.CloseModalMsg{})
 		}
@@ -126,11 +217,11 @@ func (r *reportDialog) getConfigStatus() []string {
 	home := os.Getenv("HOME")
 
 	paths := map[string]string{
-		"~/.local/share/snow-code/auth.json":           filepath.Join(home, ".local", "share", "snow-code", "auth.json"),
-		"~/Library/Application Support/snow-code/":     filepath.Join(home, "Library", "Application Support", "snow-code"),
-		"~/.snow-code/enterprise.json":                 filepath.Join(home, ".snow-code", "enterprise.json"),
-		"~/.snow-flow/":                                filepath.Join(home, ".snow-flow"),
-		".mcp.json":                                    filepath.Join(r.app.Project.Worktree, ".mcp.json"),
+		"~/.local/share/snow-code/auth.json":       filepath.Join(home, ".local", "share", "snow-code", "auth.json"),
+		"~/Library/Application Support/snow-code/": filepath.Join(home, "Library", "Application Support", "snow-code"),
+		"~/.snow-code/enterprise.json":             filepath.Join(home, ".snow-code", "enterprise.json"),
+		"~/.snow-flow/":                            filepath.Join(home, ".snow-flow"),
+		".mcp.json":                                filepath.Join(r.app.Project.Worktree, ".mcp.json"),
 	}
 
 	for name, path := range paths {
@@ -187,18 +278,38 @@ func (r *reportDialog) getReportMarkdown() string {
 	agent := r.app.Agent()
 	report.WriteString(fmt.Sprintf("- **Agent:** %s (%s)\n", agent.Name, agent.Mode))
 
-	// Problem Description (placeholder for user)
-	report.WriteString("\n### Problem Description\n\n")
-	report.WriteString("<!-- Please describe the problem you encountered -->\n\n")
+	// AI-Generated Analysis
+	if r.aiAnalysis != nil && r.aiAnalysis.HasProblem {
+		report.WriteString("\n### Problem Description (AI-Generated)\n\n")
+		report.WriteString(r.aiAnalysis.ProblemDescription + "\n")
 
-	// Steps to Reproduce
-	report.WriteString("\n### Steps to Reproduce\n\n")
-	report.WriteString("1. \n2. \n3. \n\n")
+		report.WriteString("\n### Steps to Reproduce (AI-Generated)\n\n")
+		for i, step := range r.aiAnalysis.StepsToReproduce {
+			report.WriteString(fmt.Sprintf("%d. %s\n", i+1, step))
+		}
 
-	// Expected vs Actual
-	report.WriteString("\n### Expected vs Actual Behavior\n\n")
-	report.WriteString("**Expected:** \n\n")
-	report.WriteString("**Actual:** \n\n")
+		report.WriteString("\n### Expected Behavior (AI-Generated)\n\n")
+		report.WriteString(r.aiAnalysis.ExpectedBehavior + "\n")
+
+		report.WriteString("\n### Actual Behavior (AI-Generated)\n\n")
+		report.WriteString(r.aiAnalysis.ActualBehavior + "\n")
+
+		if r.aiAnalysis.AdditionalContext != "" {
+			report.WriteString("\n### Additional Context (AI-Generated)\n\n")
+			report.WriteString(r.aiAnalysis.AdditionalContext + "\n")
+		}
+	} else {
+		// Placeholder for user to fill in
+		report.WriteString("\n### Problem Description\n\n")
+		report.WriteString("<!-- Please describe the problem you encountered -->\n\n")
+
+		report.WriteString("\n### Steps to Reproduce\n\n")
+		report.WriteString("1. \n2. \n3. \n\n")
+
+		report.WriteString("\n### Expected vs Actual Behavior\n\n")
+		report.WriteString("**Expected:** \n\n")
+		report.WriteString("**Actual:** \n\n")
+	}
 
 	return report.String()
 }
@@ -277,6 +388,15 @@ func (r *reportDialog) renderContent() string {
 		Background(t.BackgroundPanel()).
 		Bold(true)
 
+	successStyle := styles.NewStyle().
+		Foreground(t.Success()).
+		Background(t.BackgroundPanel()).
+		Bold(true)
+
+	errorStyle := styles.NewStyle().
+		Foreground(t.Error()).
+		Background(t.BackgroundPanel())
+
 	var content string
 
 	// Header
@@ -318,8 +438,40 @@ func (r *reportDialog) renderContent() string {
 	agent := r.app.Agent()
 	content += labelStyle.Render("Agent:") + valueStyle.Render(fmt.Sprintf("%s (%s)", agent.Name, agent.Mode)) + "\n"
 
+	// AI Analysis Section
+	content += "\n" + sectionStyle.Render("AI Problem Analysis") + "\n\n"
+
+	if r.loading {
+		content += hintStyle.Render("Analyzing conversation...") + "\n"
+	} else if r.serverError != "" {
+		content += errorStyle.Render("Error: "+r.serverError) + "\n"
+		content += hintStyle.Render("Press 'r' to retry") + "\n"
+	} else if r.aiAnalysis != nil {
+		if r.aiAnalysis.HasProblem {
+			content += successStyle.Render("Problem detected!") + "\n\n"
+			content += labelStyle.Render("Summary:") + "\n"
+			content += valueStyle.Render(r.aiAnalysis.Summary) + "\n\n"
+
+			if r.aiAnalysis.ProblemDescription != "" {
+				content += labelStyle.Render("Description:") + "\n"
+				// Truncate long descriptions for display
+				desc := r.aiAnalysis.ProblemDescription
+				if len(desc) > 200 {
+					desc = desc[:197] + "..."
+				}
+				content += hintStyle.Render(desc) + "\n"
+			}
+		} else {
+			content += hintStyle.Render("No specific problem detected in conversation.") + "\n"
+			content += hintStyle.Render("The report will include placeholders for you to fill in.") + "\n"
+		}
+	} else if r.app.Session == nil || r.app.Session.ID == "" {
+		content += hintStyle.Render("No active session - AI analysis not available.") + "\n"
+		content += hintStyle.Render("The report will include placeholders for you to fill in.") + "\n"
+	}
+
 	// Actions
-	content += "\n" + hintStyle.Render("Press 'c' to copy • 'g' to create GitHub issue • 'esc' to close")
+	content += "\n" + hintStyle.Render("Press 'c' to copy • 'g' to create GitHub issue • 'r' to refresh • 'esc' to close")
 
 	return content
 }
@@ -349,5 +501,6 @@ func NewReportDialog(app *app.App) ReportDialog {
 		app:      app,
 		modal:    modal.New(modal.WithTitle("Bug Report"), modal.WithMaxWidth(80)),
 		viewport: vp,
+		loading:  true, // Start in loading state
 	}
 }
