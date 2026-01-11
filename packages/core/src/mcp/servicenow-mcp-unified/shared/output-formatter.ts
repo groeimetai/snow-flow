@@ -472,8 +472,30 @@ export function getFieldValue(field: any): string {
   if (typeof field === 'string') return field;
   if (typeof field === 'number') return String(field);
   if (typeof field === 'boolean') return String(field);
-  if (typeof field === 'object' && 'value' in field) return String(field.value ?? '');
-  if (typeof field === 'object' && 'display_value' in field) return String(field.display_value ?? '');
+  if (typeof field === 'object') {
+    // ServiceNow display_value format: prefer display_value for human-readable output
+    if ('display_value' in field && field.display_value !== null && field.display_value !== undefined) {
+      return String(field.display_value);
+    }
+    if ('value' in field && field.value !== null && field.value !== undefined) {
+      return String(field.value);
+    }
+    // Handle arrays (take first element)
+    if (Array.isArray(field) && field.length > 0) {
+      return getFieldValue(field[0]);
+    }
+    // Try common property names
+    if ('name' in field) return String(field.name);
+    if ('label' in field) return String(field.label);
+    if ('sys_id' in field) return String(field.sys_id);
+    // Last resort: JSON stringify (but truncate to avoid huge output)
+    try {
+      var json = JSON.stringify(field);
+      return json.length > 100 ? json.substring(0, 97) + '...' : json;
+    } catch (e) {
+      return '[complex object]';
+    }
+  }
   return String(field);
 }
 
@@ -482,13 +504,8 @@ export function getFieldValue(field: any): string {
  * Falls back to value if display_value not available
  */
 export function getDisplayValue(field: any): string {
-  if (field === null || field === undefined) return '';
-  if (typeof field === 'string') return field;
-  if (typeof field === 'number') return String(field);
-  if (typeof field === 'boolean') return String(field);
-  if (typeof field === 'object' && 'display_value' in field) return String(field.display_value ?? '');
-  if (typeof field === 'object' && 'value' in field) return String(field.value ?? '');
-  return String(field);
+  // Use the same robust logic as getFieldValue
+  return getFieldValue(field);
 }
 
 export { SYMBOLS };
