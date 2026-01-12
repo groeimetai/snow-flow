@@ -1,7 +1,7 @@
 # Privacy Policy - Snow-Flow
 
-**Effective Date:** December 18, 2024
-**Last Updated:** December 18, 2024
+**Effective Date:** December 18, 2025
+**Last Updated:** December 18, 2025
 **Version:** 1.0
 
 ## 1. Introduction
