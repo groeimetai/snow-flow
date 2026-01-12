@@ -1157,6 +1157,11 @@
                     <li><a href="#permissions">Permissions</a></li>
                     <li><a href="#project-rules">Project Rules</a></li>
                     <li><a href="#plugins">Plugins</a></li>
+                    <li><a href="#themes">Themes</a></li>
+                    <li><a href="#sharing">Sharing</a></li>
+                    <li><a href="#github-integration">GitHub</a></li>
+                    <li><a href="#server-api">Server API</a></li>
+                    <li><a href="#troubleshooting">Troubleshooting</a></li>
                 </ul>
             </div>
 
@@ -2091,6 +2096,142 @@ export const MyPlugin = async ({ project, client, $, directory }) => {
 }</pre>
                     </div>
                 </div>
+            </section>
+
+            <!-- Themes -->
+            <section id="themes">
+                <h3>Themes</h3>
+                <p>Select from built-in themes or create custom ones. Use <code>/themes</code> or set in config.</p>
+
+                <h4>Built-in Themes</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Theme</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td><code>snow-flow</code></td><td>Default theme</td></tr>
+                            <tr><td><code>system</code></td><td>Adapts to terminal colors</td></tr>
+                            <tr><td><code>tokyonight</code></td><td>Popular dark theme</td></tr>
+                            <tr><td><code>catppuccin</code></td><td>Pastel color theme</td></tr>
+                            <tr><td><code>gruvbox</code></td><td>Retro warm theme</td></tr>
+                            <tr><td><code>nord</code></td><td>Arctic blue theme</td></tr>
+                            <tr><td><code>matrix</code></td><td>Green on black</td></tr>
+                            <tr><td><code>one-dark</code></td><td>Atom One Dark</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Custom Themes</h4>
+                <p>Create JSON files in <code>~/.config/snow-flow/themes/</code> or <code>.snow-flow/themes/</code>.</p>
+            </section>
+
+            <!-- Sharing -->
+            <section id="sharing">
+                <h3>Sharing Conversations</h3>
+                <p>Create public links to share conversations. URL format: <code>snow-flow.dev/s/&lt;share-id&gt;</code></p>
+
+                <h4>Share Modes</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Mode</th><th>Config Value</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td>Manual</td><td><code>"manual"</code></td><td>Use <code>/share</code> command (default)</td></tr>
+                            <tr><td>Auto</td><td><code>"auto"</code></td><td>Automatically share new sessions</td></tr>
+                            <tr><td>Disabled</td><td><code>"disabled"</code></td><td>Disable sharing entirely</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>Use <code>/unshare</code> to remove a shared conversation.</p>
+            </section>
+
+            <!-- GitHub Integration -->
+            <section id="github-integration">
+                <h3>GitHub Integration</h3>
+                <p>Use Snow-Flow in GitHub issues and PRs. Mention <code>/snow-flow</code> or <code>/oc</code> in comments.</p>
+
+                <h4>Features</h4>
+                <ul>
+                    <li>Triage issues and explain them</li>
+                    <li>Fix issues and implement features in a new branch</li>
+                    <li>Submit PRs with changes</li>
+                    <li>Runs securely in your GitHub Actions runner</li>
+                </ul>
+
+                <h4>Installation</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>snow-flow github install</pre>
+                    </div>
+                </div>
+                <p>This sets up the GitHub App, workflow file, and secrets.</p>
+            </section>
+
+            <!-- HTTP Server API -->
+            <section id="server-api">
+                <h3>HTTP Server API</h3>
+                <p>Run a headless HTTP server for programmatic access to Snow-Flow.</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>snow-flow serve --port 4096 --hostname 127.0.0.1</pre>
+                    </div>
+                </div>
+
+                <h4>API Endpoints</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+                        <tbody>
+                            <tr><td>GET</td><td><code>/doc</code></td><td>OpenAPI 3.1 spec</td></tr>
+                            <tr><td>GET</td><td><code>/app</code></td><td>Get app info</td></tr>
+                            <tr><td>GET</td><td><code>/session</code></td><td>List sessions</td></tr>
+                            <tr><td>POST</td><td><code>/session</code></td><td>Create session</td></tr>
+                            <tr><td>POST</td><td><code>/session/:id/chat</code></td><td>Send message</td></tr>
+                            <tr><td>GET</td><td><code>/config/providers</code></td><td>List providers</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section id="troubleshooting">
+                <h3>Troubleshooting</h3>
+
+                <h4>Log Files</h4>
+                <ul>
+                    <li>macOS/Linux: <code>~/.local/share/snow-flow/log/</code></li>
+                    <li>Windows: <code>%USERPROFILE%\.local\share\snow-flow\log\</code></li>
+                </ul>
+                <p>Run with <code>--log-level DEBUG</code> for detailed logs.</p>
+
+                <h4>Common Issues</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Issue</th><th>Solution</th></tr></thead>
+                        <tbody>
+                            <tr><td>Won't start</td><td>Check logs, run with <code>--print-logs</code>, upgrade with <code>snow-flow upgrade</code></td></tr>
+                            <tr><td>Auth issues</td><td>Re-run <code>snow-flow auth login &lt;provider&gt;</code></td></tr>
+                            <tr><td>Model not found</td><td>Check model name format: <code>provider/model</code></td></tr>
+                            <tr><td>ProviderInitError</td><td>Delete <code>~/.local/share/snow-flow</code> and re-auth</td></tr>
+                            <tr><td>API errors</td><td>Clear cache: <code>rm -rf ~/.cache/snow-flow</code></td></tr>
+                            <tr><td>Copy/paste on Linux</td><td>Install <code>xclip</code>, <code>xsel</code>, or <code>wl-clipboard</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Getting Help</h4>
+                <ul>
+                    <li>GitHub Issues: <a href="https://github.com/groeimetai/snow-flow/issues" target="_blank">github.com/groeimetai/snow-flow/issues</a></li>
+                    <li>Discord: <a href="https://snow-flow.dev/discord" target="_blank">snow-flow.dev/discord</a></li>
+                </ul>
             </section>
 
             <!-- TUI Usage -->
