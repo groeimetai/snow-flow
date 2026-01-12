@@ -1140,6 +1140,16 @@
             </div>
 
             <div class="sidebar-section">
+                <div class="sidebar-title">TUI & Config</div>
+                <ul class="sidebar-links">
+                    <li><a href="#tui-commands">TUI Commands</a></li>
+                    <li><a href="#keybinds">Keyboard Shortcuts</a></li>
+                    <li><a href="#config-reference">Configuration</a></li>
+                    <li><a href="#agents">Agents</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
                 <div class="sidebar-title">MCP Tools</div>
                 <ul class="sidebar-links">
                     <li><a href="#mcp-overview">Overview</a></li>
@@ -1498,38 +1508,377 @@ ollama pull llama3.3
                     </table>
                 </div>
 
-                <h3>TUI Commands (inside Snow-Flow)</h3>
+                <h3 id="tui-commands">TUI Commands (inside Snow-Flow)</h3>
+                <p>Type <code>/</code> followed by a command name. Most commands have keyboard shortcuts using <code>ctrl+x</code> as the leader key.</p>
                 <div class="table-wrapper">
                     <table>
                         <thead>
                             <tr>
                                 <th>Command</th>
+                                <th>Keybind</th>
                                 <th>Description</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td><code>/auth</code></td>
-                                <td>Authenticate with LLM, ServiceNow, and Enterprise</td>
+                                <td><code>/agents</code></td>
+                                <td><code>ctrl+x a</code></td>
+                                <td>List and switch between agents</td>
+                            </tr>
+                            <tr>
+                                <td><code>/auth</code>, <code>/login</code></td>
+                                <td></td>
+                                <td>Authenticate with LLM providers and ServiceNow</td>
+                            </tr>
+                            <tr>
+                                <td><code>/compact</code>, <code>/summarize</code></td>
+                                <td><code>ctrl+x c</code></td>
+                                <td>Compact/summarize current session</td>
+                            </tr>
+                            <tr>
+                                <td><code>/debug</code></td>
+                                <td></td>
+                                <td>Toggle debug mode for troubleshooting</td>
+                            </tr>
+                            <tr>
+                                <td><code>/details</code></td>
+                                <td><code>ctrl+x d</code></td>
+                                <td>Toggle tool execution details</td>
+                            </tr>
+                            <tr>
+                                <td><code>/editor</code></td>
+                                <td><code>ctrl+x e</code></td>
+                                <td>Open external editor for composing messages</td>
+                            </tr>
+                            <tr>
+                                <td><code>/exit</code>, <code>/quit</code>, <code>/q</code></td>
+                                <td><code>ctrl+x q</code></td>
+                                <td>Exit Snow-Flow</td>
+                            </tr>
+                            <tr>
+                                <td><code>/export</code></td>
+                                <td><code>ctrl+x x</code></td>
+                                <td>Export conversation to Markdown</td>
                             </tr>
                             <tr>
                                 <td><code>/help</code></td>
-                                <td>Show available commands</td>
+                                <td><code>ctrl+x h</code></td>
+                                <td>Show help dialog</td>
                             </tr>
                             <tr>
-                                <td><code>/clear</code></td>
-                                <td>Clear conversation</td>
+                                <td><code>/init</code></td>
+                                <td><code>ctrl+x i</code></td>
+                                <td>Create or update AGENTS.md file</td>
                             </tr>
                             <tr>
-                                <td><code>/compact</code></td>
-                                <td>Toggle compact mode</td>
+                                <td><code>/models</code></td>
+                                <td><code>ctrl+x m</code></td>
+                                <td>List and select AI models</td>
                             </tr>
                             <tr>
-                                <td><code>/exit</code></td>
-                                <td>Exit Snow-Flow</td>
+                                <td><code>/new</code>, <code>/clear</code></td>
+                                <td><code>ctrl+x n</code></td>
+                                <td>Start a new session</td>
+                            </tr>
+                            <tr>
+                                <td><code>/redo</code></td>
+                                <td><code>ctrl+x r</code></td>
+                                <td>Redo previously undone message (requires Git)</td>
+                            </tr>
+                            <tr>
+                                <td><code>/report</code></td>
+                                <td></td>
+                                <td>Generate session report with token usage and costs</td>
+                            </tr>
+                            <tr>
+                                <td><code>/sessions</code>, <code>/resume</code></td>
+                                <td><code>ctrl+x l</code></td>
+                                <td>List and switch between sessions</td>
+                            </tr>
+                            <tr>
+                                <td><code>/share</code></td>
+                                <td><code>ctrl+x s</code></td>
+                                <td>Share current session</td>
+                            </tr>
+                            <tr>
+                                <td><code>/themes</code></td>
+                                <td><code>ctrl+x t</code></td>
+                                <td>List and select themes</td>
+                            </tr>
+                            <tr>
+                                <td><code>/thinking</code></td>
+                                <td></td>
+                                <td>Toggle thinking blocks display</td>
+                            </tr>
+                            <tr>
+                                <td><code>/timeline</code>, <code>/history</code></td>
+                                <td></td>
+                                <td>Show session timeline</td>
+                            </tr>
+                            <tr>
+                                <td><code>/undo</code></td>
+                                <td><code>ctrl+x u</code></td>
+                                <td>Undo last message and file changes (requires Git)</td>
+                            </tr>
+                            <tr>
+                                <td><code>/unshare</code></td>
+                                <td></td>
+                                <td>Stop sharing current session</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <h4>File References & Bash Commands</h4>
+                <p>Use <code>@</code> to reference files in your messages (fuzzy search). Use <code>!</code> to run shell commands.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Examples</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Reference a file</span>
+How is auth handled in @src/auth/handler.ts?
+
+<span class="comment"># Run a shell command</span>
+!git status
+
+<span class="comment"># Both outputs are added to the conversation</span></pre>
+                    </div>
+                </div>
+
+                <h4>Editor Setup</h4>
+                <p>The <code>/editor</code> and <code>/export</code> commands use your <code>EDITOR</code> environment variable.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre><span class="comment"># Add to ~/.bashrc or ~/.zshrc</span>
+<span class="variable">export</span> EDITOR=<span class="string">"code --wait"</span>   <span class="comment"># VS Code</span>
+<span class="variable">export</span> EDITOR=<span class="string">"cursor --wait"</span> <span class="comment"># Cursor</span>
+<span class="variable">export</span> EDITOR=<span class="string">"vim"</span>           <span class="comment"># Vim</span>
+<span class="variable">export</span> EDITOR=<span class="string">"nano"</span>          <span class="comment"># Nano</span></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Keyboard Shortcuts -->
+            <section id="keybinds">
+                <h3>Keyboard Shortcuts</h3>
+                <p>Snow-Flow uses a <strong>leader key</strong> pattern (default: <code>ctrl+x</code>) to avoid conflicts with your terminal. Press the leader key first, then the shortcut.</p>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Default Keybind</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Help</td><td><code>ctrl+x h</code></td></tr>
+                            <tr><td>Exit</td><td><code>ctrl+c</code> or <code>ctrl+x q</code></td></tr>
+                            <tr><td>New session</td><td><code>ctrl+x n</code></td></tr>
+                            <tr><td>Session list</td><td><code>ctrl+x l</code></td></tr>
+                            <tr><td>Compact session</td><td><code>ctrl+x c</code></td></tr>
+                            <tr><td>Export session</td><td><code>ctrl+x x</code></td></tr>
+                            <tr><td>Share session</td><td><code>ctrl+x s</code></td></tr>
+                            <tr><td>Interrupt</td><td><code>esc</code></td></tr>
+                            <tr><td>Open editor</td><td><code>ctrl+x e</code></td></tr>
+                            <tr><td>Model list</td><td><code>ctrl+x m</code></td></tr>
+                            <tr><td>Cycle recent models</td><td><code>F2</code></td></tr>
+                            <tr><td>Agent list</td><td><code>ctrl+x a</code></td></tr>
+                            <tr><td>Cycle agents</td><td><code>Tab</code> / <code>Shift+Tab</code></td></tr>
+                            <tr><td>Theme list</td><td><code>ctrl+x t</code></td></tr>
+                            <tr><td>Tool details</td><td><code>ctrl+x d</code></td></tr>
+                            <tr><td>Thinking blocks</td><td><code>ctrl+x b</code></td></tr>
+                            <tr><td>Init AGENTS.md</td><td><code>ctrl+x i</code></td></tr>
+                            <tr><td>Undo</td><td><code>ctrl+x u</code></td></tr>
+                            <tr><td>Redo</td><td><code>ctrl+x r</code></td></tr>
+                            <tr><td>Copy message</td><td><code>ctrl+x y</code></td></tr>
+                            <tr><td>Page up/down</td><td><code>PgUp</code> / <code>PgDown</code></td></tr>
+                            <tr><td>Submit input</td><td><code>Enter</code></td></tr>
+                            <tr><td>New line in input</td><td><code>Shift+Enter</code> or <code>ctrl+j</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Customize Keybinds</h4>
+                <p>Override keybinds in your <code>.mcp.json</code> config. Use <code>&lt;leader&gt;</code> to reference the leader key, or <code>"none"</code> to disable.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "$schema": "https://snow-flow.dev/config.json",
+  "keybinds": {
+    "leader": "ctrl+x",
+    "app_help": "&lt;leader&gt;h",
+    "session_compact": "none",
+    "input_submit": "ctrl+enter"
+  }
+}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration Reference -->
+            <section id="config-reference">
+                <h3>Configuration Reference</h3>
+                <p>Configure Snow-Flow using <code>.mcp.json</code> (or <code>.mcp.jsonc</code> for comments). Supports JSON Schema for autocomplete.</p>
+
+                <h4>Config Locations (by precedence)</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Location</th><th>Purpose</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>SNOW_FLOW_CONFIG</code> env var</td><td>Custom config path (highest priority)</td></tr>
+                            <tr><td><code>.mcp.json</code> in project</td><td>Project-specific settings</td></tr>
+                            <tr><td><code>~/.config/snow-flow/.mcp.json</code></td><td>Global settings (themes, providers)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Main Config Options</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">jsonc</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "$schema": "https://snow-flow.dev/config.json",
+
+  <span class="comment">// Model configuration</span>
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "small_model": "anthropic/claude-3-5-haiku-20241022",
+
+  <span class="comment">// UI settings</span>
+  "theme": "snow-flow",
+  "autoupdate": true,
+
+  <span class="comment">// Tool restrictions</span>
+  "tools": {
+    "write": false,    <span class="comment">// Disable write tool</span>
+    "bash": false      <span class="comment">// Disable bash tool</span>
+  },
+
+  <span class="comment">// Permission modes: "allow", "ask", "deny"</span>
+  "permission": {
+    "edit": "ask",
+    "bash": "ask"
+  },
+
+  <span class="comment">// Sharing: "manual", "auto", "disabled"</span>
+  "share": "manual",
+
+  <span class="comment">// Instructions from files</span>
+  "instructions": ["CONTRIBUTING.md", "docs/*.md"],
+
+  <span class="comment">// Disable specific providers</span>
+  "disabled_providers": ["openai", "gemini"],
+
+  <span class="comment">// Provider configuration</span>
+  "provider": {},
+
+  <span class="comment">// Custom agents, commands, keybinds</span>
+  "agent": {},
+  "command": {},
+  "keybinds": {},
+
+  <span class="comment">// MCP servers</span>
+  "mcp": {}
+}</pre>
+                    </div>
+                </div>
+
+                <h4>Variable Substitution</h4>
+                <p>Use <code>{env:VAR_NAME}</code> for environment variables, <code>{file:path}</code> for file contents.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "model": "{env:SNOW_FLOW_MODEL}",
+  "provider": {
+    "openai": {
+      "options": {
+        "apiKey": "{file:~/.secrets/openai-key}"
+      }
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agents -->
+            <section id="agents">
+                <h3>Agents</h3>
+                <p>Snow-Flow uses specialized agents for different tasks. Switch agents with <code>/agents</code> or <code>Tab</code>.</p>
+
+                <h4>Built-in Agents</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr><th>Agent</th><th>Description</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Build</strong></td><td>General purpose agent for building and implementing. Can read, write, and execute code.</td></tr>
+                            <tr><td><strong>Plan</strong></td><td>Creates detailed implementation plans before coding. Focuses on architecture and design.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Custom Agents</h4>
+                <p>Define custom agents in <code>.mcp.json</code> or as markdown files in <code>.snow-flow/agent/</code>.</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">jsonc</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "agent": {
+    "code-reviewer": {
+      "description": "Reviews code for best practices",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "prompt": "You are a code reviewer. Focus on security, performance, and maintainability.",
+      "tools": {
+        "write": false,  <span class="comment">// Read-only agent</span>
+        "edit": false
+      }
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <p>Or create <code>.snow-flow/agent/code-reviewer.md</code>:</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">markdown</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>---
+description: Reviews code for best practices
+model: anthropic/claude-sonnet-4-20250514
+tools:
+  write: false
+  edit: false
+---
+
+You are a code reviewer. Focus on security, performance, and maintainability.</pre>
+                    </div>
                 </div>
             </section>
 
