@@ -1146,6 +1146,17 @@
                     <li><a href="#keybinds">Keyboard Shortcuts</a></li>
                     <li><a href="#config-reference">Configuration</a></li>
                     <li><a href="#agents">Agents</a></li>
+                    <li><a href="#custom-commands">Custom Commands</a></li>
+                </ul>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Advanced</div>
+                <ul class="sidebar-links">
+                    <li><a href="#ide-integration">IDE Integration</a></li>
+                    <li><a href="#permissions">Permissions</a></li>
+                    <li><a href="#project-rules">Project Rules</a></li>
+                    <li><a href="#plugins">Plugins</a></li>
                 </ul>
             </div>
 
@@ -1878,6 +1889,206 @@ tools:
 ---
 
 You are a code reviewer. Focus on security, performance, and maintainability.</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Custom Commands -->
+            <section id="custom-commands">
+                <h3>Custom Commands</h3>
+                <p>Create custom slash commands for repetitive tasks. Define in <code>.mcp.json</code> or as markdown files.</p>
+
+                <h4>Quick Example</h4>
+                <p>Create <code>.snow-flow/command/test.md</code>:</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">markdown</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>---
+description: Run tests with coverage
+agent: build
+---
+
+Run the full test suite with coverage report.
+Focus on failing tests and suggest fixes.</pre>
+                    </div>
+                </div>
+                <p>Now run <code>/test</code> in the TUI.</p>
+
+                <h4>Command Features</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Feature</th><th>Syntax</th><th>Example</th></tr></thead>
+                        <tbody>
+                            <tr><td>Arguments</td><td><code>$ARGUMENTS</code>, <code>$1</code>, <code>$2</code></td><td><code>/component Button</code></td></tr>
+                            <tr><td>Shell output</td><td><code>!`command`</code></td><td><code>!`git log -5`</code></td></tr>
+                            <tr><td>File reference</td><td><code>@path/to/file</code></td><td><code>@src/api.ts</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Command Locations</h4>
+                <ul>
+                    <li>Global: <code>~/.config/snow-flow/command/</code></li>
+                    <li>Per-project: <code>.snow-flow/command/</code></li>
+                </ul>
+            </section>
+
+            <!-- IDE Integration -->
+            <section id="ide-integration">
+                <h3>IDE Integration</h3>
+                <p>Snow-Flow integrates with VS Code, Cursor, Windsurf, and any IDE with a terminal.</p>
+
+                <h4>Keyboard Shortcuts</h4>
+                <div class="table-wrapper">
+                    <table>
+                        <thead><tr><th>Action</th><th>Mac</th><th>Windows/Linux</th></tr></thead>
+                        <tbody>
+                            <tr><td>Quick Launch</td><td><code>Cmd+Esc</code></td><td><code>Ctrl+Esc</code></td></tr>
+                            <tr><td>New Session</td><td><code>Cmd+Shift+Esc</code></td><td><code>Ctrl+Shift+Esc</code></td></tr>
+                            <tr><td>File Reference</td><td><code>Cmd+Option+K</code></td><td><code>Ctrl+Alt+K</code></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h4>Installation</h4>
+                <p>The extension installs automatically when you run <code>snow-flow</code> in VS Code's integrated terminal.</p>
+                <p>Manual install: Search for <strong>Snow-Flow</strong> in the Extension Marketplace.</p>
+            </section>
+
+            <!-- Permissions -->
+            <section id="permissions">
+                <h3>Tool Permissions</h3>
+                <p>By default, Snow-Flow allows all operations. Configure granular controls in <code>.mcp.json</code>.</p>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "$schema": "https://snow-flow.dev/config.json",
+  "permission": {
+    "edit": "ask",       <span class="comment">// Prompt before editing</span>
+    "bash": "ask",       <span class="comment">// Prompt before bash commands</span>
+    "webfetch": "deny"   <span class="comment">// Disable web fetching</span>
+  }
+}</pre>
+                    </div>
+                </div>
+
+                <h4>Permission Values</h4>
+                <ul>
+                    <li><code>"allow"</code> — Allow without approval</li>
+                    <li><code>"ask"</code> — Prompt for approval</li>
+                    <li><code>"deny"</code> — Disable the tool</li>
+                </ul>
+
+                <h4>Granular Bash Permissions</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "permission": {
+    "bash": {
+      "git push": "ask",
+      "git status": "allow",
+      "terraform *": "deny",
+      "*": "ask"
+    }
+  }
+}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Project Rules -->
+            <section id="project-rules">
+                <h3>Project Rules (AGENTS.md)</h3>
+                <p>Create an <code>AGENTS.md</code> file with custom instructions for Snow-Flow. Similar to Cursor rules.</p>
+
+                <h4>Initialize</h4>
+                <p>Run <code>/init</code> in the TUI to generate an AGENTS.md based on your project structure.</p>
+
+                <h4>Example AGENTS.md</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">markdown</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre># My Project Rules
+
+## Project Structure
+- `packages/` - Workspace packages
+- `infra/` - Infrastructure definitions
+
+## Code Standards
+- Use TypeScript with strict mode
+- Shared code goes in `packages/core/`
+- Follow ESLint and Prettier configs</pre>
+                    </div>
+                </div>
+
+                <h4>Rule Locations</h4>
+                <ul>
+                    <li>Project: <code>AGENTS.md</code> in project root</li>
+                    <li>Global: <code>~/.config/snow-flow/AGENTS.md</code></li>
+                </ul>
+
+                <h4>Custom Instruction Files</h4>
+                <p>Include additional files via <code>.mcp.json</code>:</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">json</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>{
+  "instructions": ["CONTRIBUTING.md", "docs/*.md", ".cursor/rules/*.md"]
+}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Plugins -->
+            <section id="plugins">
+                <h3>Plugins</h3>
+                <p>Extend Snow-Flow with JavaScript/TypeScript plugins. Place in <code>.snow-flow/plugin/</code> or <code>~/.config/snow-flow/plugin/</code>.</p>
+
+                <h4>Basic Plugin Structure</h4>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">javascript</span>
+                        <button class="code-copy" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <div class="code-content">
+<pre>// .snow-flow/plugin/example.js
+export const MyPlugin = async ({ project, client, $, directory }) => {
+  console.log("Plugin initialized!")
+
+  return {
+    // Hook into events
+    event: async ({ event }) => {
+      if (event.type === "session.idle") {
+        // Session completed
+      }
+    },
+
+    // Intercept tool execution
+    "tool.execute.before": async (input, output) => {
+      if (input.tool === "read" && output.args.filePath.includes(".env")) {
+        throw new Error("Do not read .env files")
+      }
+    }
+  }
+}</pre>
                     </div>
                 </div>
             </section>
