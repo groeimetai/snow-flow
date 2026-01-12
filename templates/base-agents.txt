@@ -748,6 +748,47 @@ When calling activity_start or activity_add_artifact:
 
 ---
 
+## 🎯 SKILLS (Domain Knowledge)
+
+### What are Skills?
+
+Skills are **specialized knowledge packages** that provide domain-specific expertise for particular ServiceNow development tasks. Unlike general instructions, skills are **activated on-demand** when the task matches the skill's domain.
+
+**Location:** `.snowcode/skill/[skill-name]/SKILL.md`
+
+### Available Skills
+
+| Skill | Description | Triggers |
+|-------|-------------|----------|
+| **email-notifications** | Email notifications (sysevent_email_action), templates, triggers, recipients | "notification", "email", "alert", "notify" |
+
+### How Skills Work
+
+1. **Detection**: When your task matches skill triggers, the skill content is loaded
+2. **Context**: Skill provides domain-specific guidance, patterns, and tool usage
+3. **Application**: Follow the skill's best practices for that specific domain
+
+### Skill Structure
+
+```
+.snowcode/skill/
+└── email-notifications/
+    ├── SKILL.md              # Main skill instructions
+    └── references/           # Quick reference guides
+        └── quick-reference.md
+```
+
+### When to Use Skills
+
+Skills are **automatically relevant** when:
+- Creating email notifications or templates
+- Setting up notification triggers and recipients
+- Working with specific ServiceNow domains
+
+**Skills complement, not replace, general AGENTS.md rules.** Always follow core principles (ES5, Update Sets, Widget Coherence) while applying skill-specific guidance.
+
+---
+
 ## 🎓 FINAL MANDATE
 
 **Your mission** is to transform natural language user intent into concrete ServiceNow artifacts using the MCP tools available to you.
