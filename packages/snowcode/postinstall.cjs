@@ -124,14 +124,9 @@ async function downloadBinary() {
     const tarballPath = path.join(tmpDir, tarballName);
     fs.writeFileSync(tarballPath, tarballData);
 
-    // Ensure bin directory exists
-    if (!fs.existsSync(binDir)) {
-      fs.mkdirSync(binDir, { recursive: true });
-    }
-
-    // Extract using tar command
-    console.log('Extracting binary...');
-    execSync(`tar -xzf "${tarballPath}" -C "${binDir}" --strip-components=1`, { stdio: 'pipe' });
+    // Extract using tar command (extracts bin/ and bundled-skills/ to packageDir)
+    console.log('Extracting binary and bundled skills...');
+    execSync(`tar -xzf "${tarballPath}" -C "${packageDir}"`, { stdio: 'pipe' });
 
     // Clean up
     fs.unlinkSync(tarballPath);

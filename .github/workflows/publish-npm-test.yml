@@ -251,7 +251,8 @@ jobs:
             if [ -d "$dir" ]; then
               platform_name=$(basename "$dir")
               echo "Creating tarball for $platform_name..."
-              tar -czf "${platform_name}.tar.gz" -C "$dir" bin
+              # Include both bin and bundled-skills directories
+              tar -czf "${platform_name}.tar.gz" -C "$dir" bin bundled-skills
               echo "Created ${platform_name}.tar.gz"
             fi
           done

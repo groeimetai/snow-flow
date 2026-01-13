@@ -89,6 +89,14 @@ for (const [os, arch] of targets) {
 
   await $`rm -rf ./dist/${name}/bin/tui`
 
+  // Copy bundled skills to dist
+  const bundledSkillsSrc = path.join(dir, "src", "bundled-skills")
+  const bundledSkillsDest = path.join(dir, "dist", name, "bundled-skills")
+  if (fs.existsSync(bundledSkillsSrc)) {
+    await $`cp -r ${bundledSkillsSrc} ${bundledSkillsDest}`
+    console.log(`✅ Copied bundled-skills to ${name}`)
+  }
+
   // Create postinstall script for non-Windows platforms to set binary permissions
   if (os !== "windows") {
     const postinstallScript = `#!/usr/bin/env node
