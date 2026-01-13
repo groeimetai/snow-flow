@@ -16,6 +16,7 @@ import { Log } from "../util/log"
 import { SessionLock } from "./lock"
 import { ProviderTransform } from "@/provider/transform"
 import { SessionRetry } from "./retry"
+import { MCP } from "../mcp"
 
 export namespace SessionCompaction {
   const log = Log.create({ service: "session.compaction" })
@@ -475,6 +476,28 @@ export namespace SessionCompaction {
       msg.summary = true
       Bus.publish(Event.Compacted, {
         sessionID: input.sessionID,
+      })
+
+      // Reconnect MCP servers after compaction to ensure tools remain available
+      log.info("reconnecting MCP servers after compaction")
+      try {
+        await MCP.ensureAllConnected()
+        log.info("MCP servers reconnected after compaction")
+      } catch (e) {
+        log.warn("failed to reconnect MCP servers after compaction", { error: e })
+      }
+
+      // Add system reminder about compaction
+      await Session.updatePart({
+        type: "text",
+        sessionID: input.sessionID,
+        messageID: msg.id,
+        id: Identifier.ascending("part"),
+        text: "\n\n<system-reminder>Conversation was compacted to reduce context size. MCP tools have been reconnected and are available.</system-reminder>",
+        time: {
+          start: Date.now(),
+          end: Date.now(),
+        },
       })
     }
     await Session.updateMessage(msg)
