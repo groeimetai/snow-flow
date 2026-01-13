@@ -136,6 +136,38 @@ export class ServiceNowAuthManager {
       timeout: 60000 // 60 second timeout (increased from 30s to handle slow operations)
     }) as ExtendedAxiosInstance;
 
+    // Add response interceptor to validate ServiceNow responses
+    // ServiceNow returns error responses with a different structure that doesn't have 'result'
+    client.interceptors.response.use(
+      response => {
+        // Check if this is an error response disguised as a 200
+        // ServiceNow sometimes returns 200 with error body
+        if (response.data?.error) {
+          const errorMsg = response.data.error.message || response.data.error.detail || 'ServiceNow API error';
+          console.error('[Auth] ServiceNow returned error in response body:', errorMsg);
+          const err = new Error(errorMsg);
+          (err as any).response = response;
+          (err as any).isServiceNowError = true;
+          throw err;
+        }
+        return response;
+      },
+      async error => {
+        // Check if the error response has ServiceNow error structure
+        if (error.response?.data?.error) {
+          const snowError = error.response.data.error;
+          const errorMsg = snowError.message || snowError.detail || 'ServiceNow API error';
+          console.error('[Auth] ServiceNow API error:', errorMsg);
+          // Re-throw with clearer message
+          const err = new Error(`ServiceNow: ${errorMsg}`);
+          (err as any).response = error.response;
+          (err as any).originalError = error;
+          throw err;
+        }
+        throw error;
+      }
+    );
+
     // Add response interceptor for automatic token refresh on 401
     client.interceptors.response.use(
       response => response,
