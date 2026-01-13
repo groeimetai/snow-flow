@@ -119,11 +119,17 @@ export class ServiceNowAuthManager {
     // Get fresh access token
     const accessToken = await this.getAccessToken(context);
 
+    // Determine correct Authorization header format
+    // Basic auth tokens already include "Basic " prefix, Bearer tokens don't
+    const authHeader = accessToken.startsWith('Basic ')
+      ? accessToken
+      : `Bearer ${accessToken}`;
+
     // Create new authenticated client
     const client = axios.create({
       baseURL: context.instanceUrl,
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
@@ -153,7 +159,12 @@ export class ServiceNowAuthManager {
             const newAccessToken = await this.getAccessToken(context);
 
             // Update request with new token
-            originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+            // Check if it's already a full auth header (Basic auth) or just a Bearer token
+            if (newAccessToken.startsWith('Basic ')) {
+              originalRequest.headers['Authorization'] = newAccessToken;
+            } else {
+              originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+            }
 
             // Retry original request
             return client(originalRequest);
