@@ -353,12 +353,21 @@ export namespace Config {
   async function loadSkill(dir: string) {
     const result: Record<string, Skill> = {}
 
-    // Scan user's skill directory
+    // Scan user's skill directory (if it exists)
+    const skillDir = path.join(dir, "skill")
+    try {
+      const stat = await fs.stat(skillDir)
+      if (!stat.isDirectory()) return result
+    } catch {
+      // Directory doesn't exist, return empty result
+      return result
+    }
+
     for await (const item of SKILL_GLOB.scan({
       absolute: true,
       followSymlinks: true,
       dot: true,
-      cwd: path.join(dir, "skill"),
+      cwd: skillDir,
     })) {
       const skill = await parseSkillFile(item)
       if (skill) {
@@ -373,6 +382,15 @@ export namespace Config {
 
     // Load bundled skills from package
     const bundledSkillsDir = path.join(import.meta.dir, "..", "bundled-skills")
+
+    // Check if bundled skills directory exists
+    try {
+      const stat = await fs.stat(bundledSkillsDir)
+      if (!stat.isDirectory()) return result
+    } catch {
+      // Directory doesn't exist in this build, return empty result
+      return result
+    }
 
     for await (const item of SKILL_GLOB.scan({
       absolute: true,
