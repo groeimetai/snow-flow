@@ -150,6 +150,19 @@ export class ServiceNowAuthManager {
           (err as any).isServiceNowError = true;
           throw err;
         }
+
+        // Normalize response structure for consistent API handling
+        // ServiceNow sometimes returns data directly without 'result' wrapper
+        if (response.data && response.data.result === undefined) {
+          // If response has sys_id directly or is an array, wrap it in result
+          if (response.data.sys_id || Array.isArray(response.data)) {
+            response.data = { result: response.data };
+          } else {
+            // Ensure result exists as empty object/array for safe access
+            response.data.result = [];
+          }
+        }
+
         return response;
       },
       async error => {
