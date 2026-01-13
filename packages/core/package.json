@@ -61,7 +61,7 @@
     "fuzzysort": "3.1.0",
     "gradient-string": "^3.0.0",
     "gray-matter": "4.0.3",
-    "hono": "4.10.2",
+    "hono": "4.10.3",
     "hono-openapi": "1.0.7",
     "ignore": "7.0.5",
     "inquirer": "^8.2.7",
