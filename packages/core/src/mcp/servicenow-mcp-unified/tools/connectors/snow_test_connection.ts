@@ -32,13 +32,25 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const response = await client.get('/api/now/table/sys_user', {
       params: { sysparm_limit: 1 }
     });
+
+    // Validate response structure
+    const result = response?.data?.result;
+    if (!result) {
+      return createSuccessResult({
+        connected: true,
+        instance: context.instanceUrl,
+        message: 'Connection successful but no user data returned',
+        user_count: 0
+      });
+    }
+
     return createSuccessResult({
       connected: true,
       instance: context.instanceUrl,
-      user_count: response.data.result.length
+      user_count: Array.isArray(result) ? result.length : 1
     });
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message || 'Connection failed');
   }
 }
 
