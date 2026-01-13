@@ -143,6 +143,13 @@ export class ServiceNowAuthManager {
           try {
             // Force token refresh
             this.invalidateToken(cacheKey);
+
+            // CRITICAL FIX: Clear the accessToken from context to force using refreshToken
+            // Otherwise STEP 0 in refreshAccessToken will return the same invalid token!
+            const invalidAccessToken = context.accessToken;
+            context.accessToken = undefined;
+
+            console.error('[Auth] 401 received, clearing invalid accessToken and forcing refresh...');
             const newAccessToken = await this.getAccessToken(context);
 
             // Update request with new token
@@ -241,21 +248,31 @@ export class ServiceNowAuthManager {
 
     // STEP 0: Use pre-loaded access token from context (from TUI OAuth flow)
     if (context.accessToken) {
-      console.error('[Auth] Using pre-loaded access token from context');
+      // Check if token has already expired based on tokenExpiry
+      const tokenExpiry = context.tokenExpiry || 0;
+      const isExpired = tokenExpiry > 0 && tokenExpiry < Date.now();
 
-      // Cache it for future requests
-      const expiresAt = context.tokenExpiry || (Date.now() + 3600000); // 1 hour default
-      this.tokenCache.set(cacheKey, {
-        accessToken: context.accessToken,
-        refreshToken: context.refreshToken || '',
-        expiresAt,
-        instanceUrl: context.instanceUrl
-      });
+      if (isExpired) {
+        console.error('[Auth] Pre-loaded access token from context has EXPIRED, skipping to refresh flow...');
+        // Clear the expired token to prevent reuse
+        context.accessToken = undefined;
+      } else {
+        console.error('[Auth] Using pre-loaded access token from context');
 
-      // Persist to disk
-      await this.saveTokenCache();
+        // Cache it for future requests
+        const expiresAt = tokenExpiry || (Date.now() + 3600000); // 1 hour default
+        this.tokenCache.set(cacheKey, {
+          accessToken: context.accessToken,
+          refreshToken: context.refreshToken || '',
+          expiresAt,
+          instanceUrl: context.instanceUrl
+        });
 
-      return context.accessToken;
+        // Persist to disk
+        await this.saveTokenCache();
+
+        return context.accessToken;
+      }
     }
 
     // STEP 1: Try OAuth Refresh Token flow if refresh token is available

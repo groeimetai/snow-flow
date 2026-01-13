@@ -148,12 +148,25 @@ export class ServiceNowUnifiedServer {
         }
 
         const effectiveAuthType = hasValidOAuth ? 'OAuth' : 'Basic';
+        // Parse token expiry (from auth.json expiresAt field)
+        let tokenExpiry: number | undefined;
+        if (servicenowCreds.expiresAt) {
+          tokenExpiry = typeof servicenowCreds.expiresAt === 'number'
+            ? servicenowCreds.expiresAt
+            : parseInt(servicenowCreds.expiresAt, 10);
+        }
+
         console.error('[Auth] ✅ Loaded credentials from:', authPath);
         console.error('[Auth]    Instance:', instance);
         console.error('[Auth]    Auth Type:', effectiveAuthType);
         if (hasValidOAuth) {
           console.error('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
           console.error('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
+          console.error('[Auth]    Has Access Token:', !!servicenowCreds.accessToken);
+          if (tokenExpiry) {
+            const expiresIn = Math.round((tokenExpiry - Date.now()) / 1000 / 60);
+            console.error('[Auth]    Token Expires In:', expiresIn > 0 ? `${expiresIn} minutes` : 'EXPIRED');
+          }
         } else {
           console.error('[Auth]    Username:', username);
         }
@@ -166,6 +179,7 @@ export class ServiceNowUnifiedServer {
           clientSecret: hasValidOAuth ? clientSecret : '',
           accessToken: servicenowCreds.accessToken,
           refreshToken: servicenowCreds.refreshToken || servicenowCreds.refresh_token,
+          tokenExpiry: tokenExpiry, // Pass token expiry so auth manager knows when to refresh
           username: hasValidBasic ? username : undefined,
           password: hasValidBasic ? password : undefined
         };
