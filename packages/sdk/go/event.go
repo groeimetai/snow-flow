@@ -209,6 +209,10 @@ func init() {
 			TypeFilter: gjson.JSON,
 			Type:       reflect.TypeOf(EventListResponseEventIdeInstalled{}),
 		},
+		apijson.UnionVariant{
+			TypeFilter: gjson.JSON,
+			Type:       reflect.TypeOf(EventListResponseEventSkillMatched{}),
+		},
 	)
 }
 
@@ -1445,6 +1449,93 @@ func (r EventListResponseEventIdeInstalledType) IsKnown() bool {
 	return false
 }
 
+type EventListResponseEventSkillMatched struct {
+	Properties EventListResponseEventSkillMatchedProperties `json:"properties,required"`
+	Type       EventListResponseEventSkillMatchedType       `json:"type,required"`
+	JSON       eventListResponseEventSkillMatchedJSON       `json:"-"`
+}
+
+// eventListResponseEventSkillMatchedJSON contains the JSON metadata for the struct
+// [EventListResponseEventSkillMatched]
+type eventListResponseEventSkillMatchedJSON struct {
+	Properties  apijson.Field
+	Type        apijson.Field
+	raw         string
+	ExtraFields map[string]apijson.Field
+}
+
+func (r *EventListResponseEventSkillMatched) UnmarshalJSON(data []byte) (err error) {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func (r eventListResponseEventSkillMatchedJSON) RawJSON() string {
+	return r.raw
+}
+
+func (r EventListResponseEventSkillMatched) implementsEventListResponse() {}
+
+type EventListResponseEventSkillMatchedProperties struct {
+	SessionID    string                                                `json:"sessionID,required"`
+	Skills       []EventListResponseEventSkillMatchedPropertiesSkill   `json:"skills,required"`
+	ToolsEnabled []string                                              `json:"toolsEnabled,required"`
+	JSON         eventListResponseEventSkillMatchedPropertiesJSON      `json:"-"`
+}
+
+// eventListResponseEventSkillMatchedPropertiesJSON contains the JSON metadata for
+// the struct [EventListResponseEventSkillMatchedProperties]
+type eventListResponseEventSkillMatchedPropertiesJSON struct {
+	SessionID    apijson.Field
+	Skills       apijson.Field
+	ToolsEnabled apijson.Field
+	raw          string
+	ExtraFields  map[string]apijson.Field
+}
+
+func (r *EventListResponseEventSkillMatchedProperties) UnmarshalJSON(data []byte) (err error) {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func (r eventListResponseEventSkillMatchedPropertiesJSON) RawJSON() string {
+	return r.raw
+}
+
+type EventListResponseEventSkillMatchedPropertiesSkill struct {
+	Name  string   `json:"name,required"`
+	Tools []string `json:"tools"`
+	JSON  eventListResponseEventSkillMatchedPropertiesSkillJSON `json:"-"`
+}
+
+// eventListResponseEventSkillMatchedPropertiesSkillJSON contains the JSON metadata for
+// the struct [EventListResponseEventSkillMatchedPropertiesSkill]
+type eventListResponseEventSkillMatchedPropertiesSkillJSON struct {
+	Name        apijson.Field
+	Tools       apijson.Field
+	raw         string
+	ExtraFields map[string]apijson.Field
+}
+
+func (r *EventListResponseEventSkillMatchedPropertiesSkill) UnmarshalJSON(data []byte) (err error) {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func (r eventListResponseEventSkillMatchedPropertiesSkillJSON) RawJSON() string {
+	return r.raw
+}
+
+type EventListResponseEventSkillMatchedType string
+
+const (
+	EventListResponseEventSkillMatchedTypeSkillMatched EventListResponseEventSkillMatchedType = "skill.matched"
+)
+
+func (r EventListResponseEventSkillMatchedType) IsKnown() bool {
+	switch r {
+	case EventListResponseEventSkillMatchedTypeSkillMatched:
+		return true
+	}
+	return false
+}
+
 type EventListResponseType string
 
 const (
@@ -1466,11 +1557,12 @@ const (
 	EventListResponseTypeSessionError         EventListResponseType = "session.error"
 	EventListResponseTypeServerConnected      EventListResponseType = "server.connected"
 	EventListResponseTypeIdeInstalled         EventListResponseType = "ide.installed"
+	EventListResponseTypeSkillMatched         EventListResponseType = "skill.matched"
 )
 
 func (r EventListResponseType) IsKnown() bool {
 	switch r {
-	case EventListResponseTypeInstallationUpdated, EventListResponseTypeLspClientDiagnostics, EventListResponseTypeMessageUpdated, EventListResponseTypeMessageRemoved, EventListResponseTypeMessagePartUpdated, EventListResponseTypeMessagePartRemoved, EventListResponseTypeSessionCompacted, EventListResponseTypePermissionUpdated, EventListResponseTypePermissionReplied, EventListResponseTypeFileEdited, EventListResponseTypeFileWatcherUpdated, EventListResponseTypeTodoUpdated, EventListResponseTypeSessionIdle, EventListResponseTypeSessionUpdated, EventListResponseTypeSessionDeleted, EventListResponseTypeSessionError, EventListResponseTypeServerConnected, EventListResponseTypeIdeInstalled:
+	case EventListResponseTypeInstallationUpdated, EventListResponseTypeLspClientDiagnostics, EventListResponseTypeMessageUpdated, EventListResponseTypeMessageRemoved, EventListResponseTypeMessagePartUpdated, EventListResponseTypeMessagePartRemoved, EventListResponseTypeSessionCompacted, EventListResponseTypePermissionUpdated, EventListResponseTypePermissionReplied, EventListResponseTypeFileEdited, EventListResponseTypeFileWatcherUpdated, EventListResponseTypeTodoUpdated, EventListResponseTypeSessionIdle, EventListResponseTypeSessionUpdated, EventListResponseTypeSessionDeleted, EventListResponseTypeSessionError, EventListResponseTypeServerConnected, EventListResponseTypeIdeInstalled, EventListResponseTypeSkillMatched:
 		return true
 	}
 	return false

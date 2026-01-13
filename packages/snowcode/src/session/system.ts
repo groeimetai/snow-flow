@@ -115,6 +115,28 @@ export namespace SystemPrompt {
     return Promise.all(found).then((result) => result.filter(Boolean))
   }
 
+  export async function skills() {
+    const config = await Config.get()
+    const skills = config.skill ?? {}
+
+    if (Object.keys(skills).length === 0) return []
+
+    const skillList = Object.entries(skills)
+      .map(([name, skill]) => `- **${name}**: ${skill.description}`)
+      .join("\n")
+
+    return [
+      [
+        `<available-skills>`,
+        `The following skills are available. When a task matches a skill's description,`,
+        `the skill content will be loaded to provide specialized guidance.`,
+        ``,
+        skillList,
+        `</available-skills>`,
+      ].join("\n"),
+    ]
+  }
+
   export function summarize(providerID: string) {
     switch (providerID) {
       case "anthropic":

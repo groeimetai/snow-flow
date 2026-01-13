@@ -507,6 +507,17 @@ func (a Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.app.Messages = []app.Message{}
 		}
 		return a, toast.NewSuccessToast("Session deleted successfully")
+	case opencode.EventListResponseEventSkillMatched:
+		// Show toast when skills are activated
+		if len(msg.Properties.Skills) > 0 {
+			skillNames := make([]string, len(msg.Properties.Skills))
+			for i, skill := range msg.Properties.Skills {
+				skillNames[i] = skill.Name
+			}
+			toolCount := len(msg.Properties.ToolsEnabled)
+			toastMsg := fmt.Sprintf("%d skill(s) activated, %d tool(s) enabled", len(skillNames), toolCount)
+			return a, toast.NewInfoToast(toastMsg, toast.WithTitle("Skills: "+strings.Join(skillNames, ", ")))
+		}
 	case opencode.EventListResponseEventSessionUpdated:
 		if msg.Properties.Info.ID == a.app.Session.ID {
 			a.app.Session = &msg.Properties.Info

@@ -253,66 +253,11 @@ While you answer, I'll create the Update Set to track these changes."
 
 ServiceNow server-side JavaScript runs on Mozilla Rhino engine which only supports ES5. ES6+ syntax causes SyntaxError at runtime.
 
-**Quick ES5 Conversion Table:**
+**⚠️ CRITICAL:** Always use `var`, `function(){}`, string concatenation. Never use `const`, `let`, arrow functions, template literals.
 
-| ES6+ (CRASHES ServiceNow) | ES5 (WORKS) |
-|---------------------------|-------------|
-| `const x = 5;` | `var x = 5;` |
-| `let items = [];` | `var items = [];` |
-| `() => {}` | `function() {}` |
-| `` `Hello ${name}` `` | `'Hello ' + name` |
-| `{a, b} = obj` | `var a = obj.a; var b = obj.b;` |
-| `for (x of arr)` | `for (var i = 0; i < arr.length; i++)` |
-| `fn(x = 'default')` | `if (typeof x === 'undefined') x = 'default';` |
-| `arr.map(x => x.id)` | `arr.map(function(x) { return x.id; })` |
-
-**Your Responsibility:**
-- **ALWAYS validate** ServiceNow scripts for ES5 compliance before suggesting/deploying
-- **Convert ES6+ to ES5** when users provide modern JavaScript
-- **Explain** why ES5 is required (Rhino engine) when users question it
+> 📚 **Skill Reference:** The `es5-compliance` skill provides complete conversion patterns and examples. It is automatically activated when writing server-side ServiceNow code.
 
 ### Update Sets Track ALL Changes
-
-**What are Update Sets?**
-- ServiceNow's version control mechanism
-- Automatically captures ALL artifact changes when active
-- Required for moving changes between instances (Dev → Test → Prod)
-
-**⚠️ CRITICAL: OAuth Context & Update Set Tracking**
-
-**snow-flow uses OAuth service account authentication:**
-- All API calls run as an OAuth **service account**, not your UI user
-- Update Sets MUST be "current" for the user making changes
-- For API changes: Update Set must be current for the **SERVICE ACCOUNT**
-- **auto_switch=true (DEFAULT)** → Update Set is set as current for service account
-- **This enables automatic change tracking** ✅
-
-**IMPORTANT:** If auto_switch=false, changes will NOT be tracked!
-
-**Understanding the Two Contexts:**
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ YOUR UI SESSION (when you log in to ServiceNow UI)         │
-│ User: john.doe                                              │
-│ Current Update Set: [Whatever you selected in UI]          │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ SNOW-FLOW OAUTH SESSION (API calls)                        │
-│ User: oauth.service.account                                 │
-│ Current Update Set: [Set via Update Set tools]             │
-│ ← All snow-flow changes are tracked here                   │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Key Points:**
-- ✅ **Update Sets ARE created** - they exist in ServiceNow
-- ✅ **auto_switch=true (DEFAULT)** - Update Set is set as current for service account
-- ✅ **Changes ARE tracked** - all snow-flow artifacts go into the Update Set automatically
-- ❌ **NOT visible in YOUR UI** - unless you provide servicenow_username parameter
-- ✅ **Deployment still works** - Update Set can be exported/imported normally
-- ⚠️ **auto_switch=false** - Changes will NOT be tracked (use only for non-development tasks)
 
 **The Golden Rule: UPDATE SET FIRST, ALWAYS**
 
@@ -321,38 +266,17 @@ Every development task MUST follow this workflow:
 2. **Develop** - all changes are auto-tracked in the Update Set
 3. **Complete Update Set** when done
 
-**Update Set Best Practices:**
-- **ONE feature = ONE Update Set** (clear boundaries)
-- **Descriptive names**: "Feature: Incident Auto-Assignment" NOT "Changes" or "Updates"
-- **Complete descriptions**: What, why, which components affected
-- **Complete when done**: Mark as 'complete' when feature is finished
-- **Keep auto_switch=true** (default) for development - REQUIRED for tracking
-- **Use servicenow_username** (optional) if user wants to see Update Set in their UI
-- **Only use auto_switch=false** for queries/analysis - NOT for development
+**⚠️ OAuth Context:** snow-flow uses OAuth service account. Always use `auto_switch=true` (default) to ensure changes are tracked.
+
+> 📚 **Skill Reference:** The `update-set-workflow` skill provides complete Update Set management patterns, OAuth context details, and best practices.
 
 ### Application Scopes (When to Create New Applications)
 
-**ServiceNow applications (scoped apps)** provide isolation, clear ownership, and easy deployment across instances.
+**ServiceNow scoped apps** provide isolation, clear ownership, and easy deployment.
 
-**Application Scope Decision Matrix:**
+**Quick Decision:** Use scoped app for complete features, integrations, or multi-instance deployment. Use global for utilities, quick fixes, or cross-application functionality.
 
-| Scenario                           | Recommended Scope | Rationale                                    |
-|------------------------------------|-------------------|----------------------------------------------|
-| Complete feature set (HR Portal)   | ✅ Scoped App     | Isolated, versioned, deployable as unit     |
-| Customer-specific integration      | ✅ Scoped App     | Easy to deploy/remove per customer          |
-| Third-party connector              | ✅ Scoped App     | Clear ownership and dependency tracking     |
-| Multi-instance deployment          | ✅ Scoped App     | Export/import as single package             |
-| Shared utility script              | 🌐 Global         | Needs to be used across all applications    |
-| Quick bug fix or patch             | 🌐 Global         | Not worth creating dedicated application    |
-| System-wide business rule          | 🌐 Global         | Affects multiple tables/applications        |
-| Cross-application functionality    | 🌐 Global         | Shared between multiple scoped apps         |
-| Prototype or POC                   | 🌐 Global         | Temporary, may be discarded                 |
-
-**Application Scope Best Practices:**
-- **Scope naming**: Always use `x_<vendor>_<app>` format (e.g., `x_myco_hr_portal`)
-- **One app per feature set**: Don't mix unrelated functionality
-- **Update Sets match scope**: Always create Update Sets in the same scope as your development
-- **Version properly**: Use semantic versioning (1.0.0, 1.1.0, 2.0.0)
+> 📚 **Skill Reference:** The `scoped-apps` skill provides complete guidance on scope naming, cross-scope access, and application development patterns.
 
 ### Widget Coherence (HTML ↔ Client ↔ Server)
 
@@ -362,58 +286,9 @@ Every development task MUST follow this workflow:
 - **Client Controller**: Implements all methods HTML calls via ng-click/ng-change
 - **HTML Template**: Only references `data` properties and methods that exist
 
-**Critical Communication Points:**
+**Quick Check:** Every `data.property` must flow correctly: Server → HTML → Client → Server
 
-```javascript
-// SERVER SCRIPT: Initialize data (ES5 only!)
-(function() {
-  data.message = "Hello World";           // HTML will reference this
-  data.items = [];                        // HTML will loop over this
-  data.loading = false;                   // HTML will show spinner if true
-
-  // Handle client requests
-  if (input.action === 'loadItems') {
-    var gr = new GlideRecord('incident');
-    gr.query();
-    while (gr.next()) {
-      data.items.push({
-        number: gr.number.toString(),
-        description: gr.short_description.toString()
-      });
-    }
-    data.loading = false;
-  }
-})();
-
-// CLIENT CONTROLLER: Implement methods
-function($scope) {
-  var c = this;
-
-  c.loadItems = function() {
-    c.data.loading = true;
-    c.server.get({
-      action: 'loadItems'   // Server script handles this
-    }).then(function() {
-      console.log('Items loaded:', c.data.items);
-    });
-  };
-}
-
-// HTML TEMPLATE: Reference data and methods
-<div ng-if="data.loading">Loading...</div>
-<button ng-click="loadItems()">Load Items</button>
-<ul>
-  <li ng-repeat="item in data.items">
-    {{item.number}}: {{item.description}}
-  </li>
-</ul>
-```
-
-**Coherence Validation Checklist:**
-- [ ] Every `data.property` in server script is used in HTML/client
-- [ ] Every `ng-click="method()"` in HTML has matching `c.method = function()` in client
-- [ ] Every `c.server.get({action})` in client has matching `if(input.action)` in server
-- [ ] No orphaned properties or methods
+> 📚 **Skill Reference:** The `widget-coherence` skill provides complete patterns, validation checklists, and debugging techniques for Service Portal widgets.
 
 ---
 
@@ -755,39 +630,71 @@ When calling activity_start or activity_add_artifact:
 
 Skills are **specialized knowledge packages** that provide domain-specific expertise for particular ServiceNow development tasks. Unlike general instructions, skills are **activated on-demand** when the task matches the skill's domain.
 
-**Location:** `.snowcode/skill/[skill-name]/SKILL.md`
+Skills follow the [Agent Skills Open Standard](https://agentskills.io) for portability and interoperability.
 
 ### Available Skills
 
-| Skill | Description | Triggers |
-|-------|-------------|----------|
-| **email-notifications** | Email notifications (sysevent_email_action), templates, triggers, recipients | "notification", "email", "alert", "notify" |
+| Skill | Description |
+|-------|-------------|
+| **es5-compliance** | ES5 JavaScript patterns for ServiceNow server-side code (Rhino engine) |
+| **widget-coherence** | Service Portal widget development with HTML/Client/Server synchronization |
+| **update-set-workflow** | Update Set management, OAuth context, and change tracking |
+| **gliderecord-patterns** | GlideRecord querying, CRUD operations, and performance optimization |
+| **business-rule-patterns** | Business rule development, triggers, conditions, and best practices |
+| **rest-integration** | REST API integration, Scripted REST APIs, and external system connections |
+| **client-scripts** | Client-side scripting with g_form, GlideAjax, and form manipulation |
+| **flow-designer** | Flow Designer automation, subflows, actions, and triggers |
+| **scoped-apps** | Scoped application development, cross-scope access, and packaging |
+| **catalog-items** | Service Catalog items, variables, workflows, and order guides |
+| **acl-security** | ACL security rules, row-level security, and access control patterns |
+| **code-review** | Code review best practices, patterns to check, and quality standards |
+| **email-notifications** | Email notifications, templates, events, and recipient configuration |
+| **cmdb-patterns** | CMDB CI management, relationships, impact analysis, and data quality |
+| **ui-builder-patterns** | UI Builder components, pages, data brokers, and Next Experience |
+| **atf-testing** | Automated Test Framework tests, steps, suites, and assertions |
+| **performance-analytics** | PA indicators, breakdowns, thresholds, and scorecards |
+| **virtual-agent** | Virtual Agent topics, NLU, conversation blocks, and intents |
+| **change-management** | Change requests, CAB approval, tasks, and conflict detection |
+| **reporting-dashboards** | Reports, dashboards, visualizations, and scheduled delivery |
+| **transform-maps** | Import sets, transform maps, field mapping, and data sources |
+| **script-include-patterns** | Script Include development, AbstractAjaxProcessor, GlideAjax, and reusable code |
+| **ui-actions-policies** | UI Actions, UI Policies, form buttons, field behavior, and dynamic forms |
+| **scheduled-jobs** | Scheduled jobs, batch processing, recurring tasks, and automation |
+| **sla-management** | SLA definitions, task SLAs, breach handling, and service commitments |
+| **knowledge-management** | Knowledge articles, KB workflow, templates, and search |
+| **incident-management** | Incident lifecycle, assignment, escalation, and major incidents |
+| **problem-management** | Problem records, root cause analysis, KEDB, and known errors |
+| **hr-service-delivery** | HR cases, lifecycle events, onboarding, offboarding, and Employee Center |
+| **event-management** | Events, alerts, correlation, metrics, and monitoring integration |
+| **agent-workspace** | Agent Workspace configuration, lists, forms, and contextual side panel |
+| **request-management** | Service requests, RITM, catalog fulfillment, variables, and approvals |
+| **asset-management** | Hardware/software assets, lifecycle, licenses, and inventory |
+| **approval-workflows** | Approval rules, groups, delegation, and multi-level approvals |
+| **discovery-patterns** | Discovery schedules, probes, sensors, and CI identification |
+| **integration-hub** | IntegrationHub, spokes, flow actions, and connection aliases |
+| **csm-patterns** | Customer Service Management, cases, accounts, and entitlements |
+| **security-operations** | SecOps, security incidents, vulnerabilities, and threat intelligence |
+| **notification-events** | System events, event queue, script actions, and notifications |
+| **data-policies** | Data policies, dictionary, field validation, and schema management |
+| **mid-server** | MID Server scripts, ECC queue, probes, and remote execution |
+| **domain-separation** | Domain separation, multi-tenancy, domain paths, and visibility rules |
+| **predictive-intelligence** | Predictive Intelligence, ML classification, similarity matching, and training |
+| **grc-compliance** | GRC policies, risks, controls, audits, and compliance frameworks |
+| **field-service** | Field Service Management, work orders, dispatch, and mobile field technicians |
+| **vendor-management** | Vendor management, contracts, SLAs, and vendor performance |
+| **workspace-builder** | App Engine Studio, workspace configuration, UI Builder pages, and low-code |
+| **mobile-development** | Mobile app development, push notifications, offline sync, and card builders |
+| **document-management** | Document management, attachments, templates, and PDF generation |
+| **instance-security** | Instance security, authentication, hardening, XSS/injection prevention |
+| **import-export** | Data import/export, CSV/XML processing, transform maps, and bulk operations |
 
 ### How Skills Work
 
-1. **Detection**: When your task matches skill triggers, the skill content is loaded
+1. **Detection**: When your task matches skill triggers (quoted phrases in description), the skill content is loaded
 2. **Context**: Skill provides domain-specific guidance, patterns, and tool usage
 3. **Application**: Follow the skill's best practices for that specific domain
 
-### Skill Structure
-
-```
-.snowcode/skill/
-└── email-notifications/
-    ├── SKILL.md              # Main skill instructions
-    └── references/           # Quick reference guides
-        └── quick-reference.md
-```
-
-### When to Use Skills
-
-Skills are **automatically relevant** when:
-- Creating email notifications or templates
-- Setting up notification triggers and recipients
-- Reviewing code for reuse opportunities
-- Working with specific ServiceNow domains
-
-**Skills complement, not replace, general AGENTS.md rules.** Always follow core principles (ES5, Update Sets, Widget Coherence) while applying skill-specific guidance.
+**Skills complement, not replace, general AGENTS.md rules.** Always follow core principles while applying skill-specific guidance.
 
 ---
 
