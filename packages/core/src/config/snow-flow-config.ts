@@ -716,6 +716,13 @@ export class SnowFlowConfig {
   setValue(path: string, value: any): void {
     const keys = path.split('.');
     const lastKey = keys.pop()!;
+
+    // SECURITY: Prevent prototype pollution by blocking dangerous keys
+    const BLOCKED_KEYS = ['__proto__', 'constructor', 'prototype'];
+    if (keys.some(k => BLOCKED_KEYS.includes(k)) || BLOCKED_KEYS.includes(lastKey)) {
+      throw new Error('Attempted prototype pollution detected');
+    }
+
     let obj: any = this.config;
 
     for (const key of keys) {
@@ -1296,7 +1303,19 @@ export class SnowFlowConfig {
    * Deep merge objects
    */
   private deepMerge(target: any, source: any): void {
+    // SECURITY: Prevent prototype pollution by blocking dangerous keys
+    const BLOCKED_KEYS = ['__proto__', 'constructor', 'prototype'];
+
     for (const key in source) {
+      // Skip blocked keys to prevent prototype pollution
+      if (BLOCKED_KEYS.includes(key)) {
+        continue;
+      }
+      // Only process own properties, not inherited ones
+      if (!Object.prototype.hasOwnProperty.call(source, key)) {
+        continue;
+      }
+
       if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
         if (!target[key] || typeof target[key] !== 'object') {
           target[key] = {};

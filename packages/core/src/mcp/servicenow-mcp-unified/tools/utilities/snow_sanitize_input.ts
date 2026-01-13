@@ -56,18 +56,24 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           .replace(/\x1a/g, '\\Z');
         break;
       case 'script':
-        // SECURITY: Iterative removal to handle nested/obfuscated script tags
-        let prev = '';
-        while (prev !== sanitized) {
-          prev = sanitized;
-          // Remove script tags
-          sanitized = sanitized.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-          // Remove event handlers
-          sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
-          sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
-        }
-        // Also remove javascript: protocol
-        sanitized = sanitized.replace(/javascript\s*:/gi, '');
+        // SECURITY: Use character-level encoding to prevent all script injection
+        // This is more secure than trying to detect and remove script patterns
+        // which can be bypassed through encoding tricks and obfuscation
+        sanitized = sanitized
+          // First normalize any HTML entities that could hide script content
+          .replace(/&#x?[0-9a-f]+;?/gi, '')
+          // Encode angle brackets to prevent ANY HTML tag injection
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          // Remove javascript: protocol (case insensitive, with whitespace variations)
+          .replace(/j[\s]*a[\s]*v[\s]*a[\s]*s[\s]*c[\s]*r[\s]*i[\s]*p[\s]*t[\s]*:/gi, '')
+          // Remove vbscript: protocol
+          .replace(/v[\s]*b[\s]*s[\s]*c[\s]*r[\s]*i[\s]*p[\s]*t[\s]*:/gi, '')
+          // Remove data: protocol with potential script content
+          .replace(/data[\s]*:/gi, 'data_blocked:')
+          // Encode quotes to prevent attribute injection
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#x27;');
         break;
     }
 

@@ -560,10 +560,23 @@ export const GithubRunCommand = cmd({
           const filename = path.basename(url)
 
           // SECURITY: Validate URL hostname to prevent SSRF attacks
+          // Only allow GitHub and GitHub user content domains
+          const ALLOWED_GITHUB_HOSTS = [
+            "github.com",
+            "githubusercontent.com",
+            "user-images.githubusercontent.com",
+            "raw.githubusercontent.com",
+            "avatars.githubusercontent.com",
+            "camo.githubusercontent.com"
+          ]
           try {
             const parsedUrl = new URL(url)
-            if (parsedUrl.hostname !== "github.com") {
-              console.error(`Blocked fetch to untrusted host: ${parsedUrl.hostname}`)
+            const hostname = parsedUrl.hostname.toLowerCase()
+            const isAllowed = ALLOWED_GITHUB_HOSTS.some(
+              allowed => hostname === allowed || hostname.endsWith("." + allowed)
+            )
+            if (!isAllowed) {
+              console.error(`Blocked fetch to untrusted host: ${hostname}`)
               continue
             }
           } catch {

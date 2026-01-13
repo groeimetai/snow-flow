@@ -1253,8 +1253,16 @@ async function testRestMessage(client: any, args: any): Promise<ToolResult> {
     const parameters = paramsResponse.data?.result || [];
 
     // Build parameter setting code
+    // SECURITY: Properly escape all special characters to prevent injection
+    const escapeForScript = (str: string): string => {
+      return str
+        .replace(/\\/g, '\\\\')  // Escape backslashes first
+        .replace(/'/g, "\\'")    // Escape single quotes
+        .replace(/\n/g, '\\n')   // Escape newlines
+        .replace(/\r/g, '\\r');  // Escape carriage returns
+    };
     const paramLines = Object.entries(test_params).map(([k, v]) =>
-      `rm.setStringParameterNoEscape('${k}', '${String(v).replace(/'/g, "\\'")}');`
+      `rm.setStringParameterNoEscape('${escapeForScript(k)}', '${escapeForScript(String(v))}');`
     );
 
     // Generate the test script (ES5 compatible!)

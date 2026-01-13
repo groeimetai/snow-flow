@@ -658,16 +658,27 @@ export namespace LSPServer {
         log.info(`installed clangd`, { bin })
       }
 
-      // SECURITY: Validate binary path to prevent command injection
+      // SECURITY: Use hardcoded allowlist of known-safe LSP binary names
+      const ALLOWED_LSP_BINARIES = ["clangd", "clangd.exe"]
+      const binBasename = path.basename(bin)
+
+      if (!ALLOWED_LSP_BINARIES.includes(binBasename)) {
+        log.error(`Invalid binary name: ${binBasename}. Allowed: ${ALLOWED_LSP_BINARIES.join(", ")}`)
+        return
+      }
+
+      // Resolve and verify the binary path
       const resolvedBin = path.resolve(bin)
       const expectedBaseDir = path.resolve(Global.Path.bin)
-      if (!resolvedBin.startsWith(expectedBaseDir + path.sep) && resolvedBin !== expectedBaseDir) {
-        // Also allow system-installed binaries from Bun.which()
-        const systemBin = Bun.which("clangd")
-        if (resolvedBin !== systemBin) {
-          log.error(`Invalid binary path: ${bin}`)
-          return
-        }
+      const systemBin = Bun.which("clangd")
+
+      // Only allow binaries from our bin directory or system PATH
+      const isInBinDir = resolvedBin.startsWith(expectedBaseDir + path.sep)
+      const isSystemBin = systemBin && resolvedBin === path.resolve(systemBin)
+
+      if (!isInBinDir && !isSystemBin) {
+        log.error(`Binary not in allowed locations: ${resolvedBin}`)
+        return
       }
 
       return {

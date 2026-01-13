@@ -4327,7 +4327,7 @@ try {
         template: '<div class="panel panel-default"><div class="panel-body">{{data.message || "Widget deployed successfully"}}<br><small>Created for: ' + objective + '</small></div></div>',
         css: '.panel { margin: 10px; }',
         client_script: 'function() { console.log("Widget loaded"); }',
-        server_script: '(function() { data.message = "Successfully deployed for: ' + objective.replace(/"/g, '\\"') + '"; })()',
+        server_script: '(function() { data.message = "Successfully deployed for: ' + objective.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r') + '"; })()',
         priority: 'medium'
       });
     }

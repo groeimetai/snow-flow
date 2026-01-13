@@ -129,7 +129,11 @@ export class ServiceNowOAuth {
    */
   private normalizeInstanceUrl(instance: string): string {
     // Remove any trailing slashes that cause 400 errors
-    let normalized = instance.replace(/\/+$/, '');
+    // SECURITY: Use trimEnd + while loop instead of regex to avoid ReDoS
+    let normalized = instance;
+    while (normalized.endsWith('/')) {
+      normalized = normalized.slice(0, -1);
+    }
 
     // Add https:// if missing
     if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {

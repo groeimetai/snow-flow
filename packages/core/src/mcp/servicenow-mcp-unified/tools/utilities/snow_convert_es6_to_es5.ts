@@ -267,10 +267,13 @@ function convertToES5(code: string): ConversionResult {
   while ((templateMatch = templateLiteralRegex.exec(code)) !== null) {
     const templateContent = templateMatch[1];
     // Convert ${expr} to ' + expr + '
+    // SECURITY: Escape all special characters properly to prevent injection
     const convertedTemplate = "'" + templateContent
-      .replace(/\$\{([^}]+)\}/g, "' + $1 + '")
-      .replace(/\n/g, "\\n")
-      .replace(/'/g, "\\'") + "'";
+      .replace(/\\/g, '\\\\')  // Escape backslashes FIRST
+      .replace(/'/g, "\\'")    // Then escape single quotes
+      .replace(/\n/g, '\\n')   // Escape newlines
+      .replace(/\r/g, '\\r')   // Escape carriage returns
+      .replace(/\$\{([^}]+)\}/g, "' + $1 + '") + "'";
     // Clean up empty concatenations
     const cleanedTemplate = convertedTemplate
       .replace(/'' \+ /g, '')

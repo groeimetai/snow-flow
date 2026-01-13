@@ -234,6 +234,13 @@ async function setConfigValue(key: string, value: string, useGlobal: boolean) {
   const keys = key.split(".")
   let target: Record<string, unknown> = existingConfig
 
+  // SECURITY: Prevent prototype pollution by blocking dangerous keys
+  const BLOCKED_KEYS = ["__proto__", "constructor", "prototype"]
+  if (keys.some(k => BLOCKED_KEYS.includes(k))) {
+    UXHelpers.error("Invalid key: prototype pollution attempt blocked")
+    return
+  }
+
   for (let i = 0; i < keys.length - 1; i++) {
     const k = keys[i]
     if (!(k in target) || typeof target[k] !== "object") {

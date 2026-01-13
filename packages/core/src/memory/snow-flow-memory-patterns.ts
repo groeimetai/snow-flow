@@ -45,7 +45,12 @@ export function parseMemoryKey(key: string): { namespace: string; type: string; 
 }
 
 export function matchesPattern(key: string, pattern: string): boolean {
-  const regex = new RegExp(pattern.replace('*', '.*'));
+  // SECURITY: Escape all regex special characters except *, then replace * with .*
+  // This prevents regex injection through the pattern parameter
+  const escapedPattern = pattern
+    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')  // Escape all regex special chars
+    .replace(/\*/g, '.*');  // Then convert * to .*
+  const regex = new RegExp(`^${escapedPattern}$`);
   return regex.test(key);
 }
 
