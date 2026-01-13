@@ -226,7 +226,7 @@ jobs:
           sed -i 's/"snow-code":/"snow-code-test":/' package.json
           sed -i 's/"snowcode":/"snowcode-test":/' package.json
 
-          # Remove devDependencies with workspace:* protocol and add files field to include binaries
+          # Remove devDependencies with workspace:* protocol (NO files field - binaries come from GitHub release)
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -238,22 +238,57 @@ jobs:
               });
             }
             delete pkg.optionalDependencies;
-            // Include all platform binaries in the package for test versions
-            pkg.files = [
-              'bin/',
-              'dist/',
-              'postinstall.cjs',
-              'package.json'
-            ];
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
 
-          # Show dist folder contents
-          echo "Dist folder contents:"
-          ls -la dist/
-          echo ""
           echo "Package.json for publishing:"
-          cat package.json | head -60
+          cat package.json | head -50
+
+      - name: Create platform tarballs for GitHub release
+        run: |
+          cd packages/snowcode/dist
+          for dir in snow-flow-*/; do
+            if [ -d "$dir" ]; then
+              platform_name=$(basename "$dir")
+              echo "Creating tarball for $platform_name..."
+              tar -czf "${platform_name}.tar.gz" -C "$dir" bin
+              echo "Created ${platform_name}.tar.gz"
+            fi
+          done
+
+          # Create MCP servers tarball
+          if [ -d "mcp" ]; then
+            echo "Creating MCP servers tarball..."
+            tar -czf "snow-flow-mcp.tar.gz" mcp
+            echo "Created snow-flow-mcp.tar.gz"
+          fi
+
+          ls -la *.tar.gz
+
+      - name: Create GitHub Release with binaries
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Test Release v${{ steps.version.outputs.version }}
+          prerelease: true
+          generate_release_notes: false
+          files: |
+            packages/snowcode/dist/snow-flow-darwin-arm64.tar.gz
+            packages/snowcode/dist/snow-flow-darwin-x64.tar.gz
+            packages/snowcode/dist/snow-flow-linux-arm64.tar.gz
+            packages/snowcode/dist/snow-flow-linux-x64.tar.gz
+            packages/snowcode/dist/snow-flow-windows-x64.tar.gz
+            packages/snowcode/dist/snow-flow-mcp.tar.gz
+          body: |
+            ## Test Release
+
+            This is a test release for snow-flow-test package.
+
+            ```bash
+            npm install -g snow-flow-test@${{ steps.version.outputs.version }}
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish snow-flow-test package (OIDC)
         run: |
