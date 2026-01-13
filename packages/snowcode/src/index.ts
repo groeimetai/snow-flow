@@ -29,12 +29,22 @@ import { EOL } from "os"
 const cancel = new AbortController()
 
 process.on("unhandledRejection", (e) => {
+  // Silently ignore AbortError - user intentionally cancelled the operation
+  if (e instanceof DOMException && e.name === "AbortError") {
+    Log.Default.debug("operation aborted by user")
+    return
+  }
   Log.Default.error("rejection", {
     e: e instanceof Error ? e.message : e,
   })
 })
 
 process.on("uncaughtException", (e) => {
+  // Silently ignore AbortError - user intentionally cancelled the operation
+  if (e instanceof DOMException && e.name === "AbortError") {
+    Log.Default.debug("operation aborted by user")
+    return
+  }
   Log.Default.error("exception", {
     e: e instanceof Error ? e.message : e,
   })
