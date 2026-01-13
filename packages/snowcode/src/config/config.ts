@@ -208,10 +208,15 @@ export namespace Config {
         ["node_modules", "package.json", "bun.lock", ".gitignore"].join("\n"),
       )
 
+    // For test versions (e.g., 9.0.167-test.8), use latest plugin version
+    // since test plugin versions aren't published to npm
+    const isTestVersion = Installation.VERSION.includes("-test.")
+    const pluginVersion = Installation.isLocal() || isTestVersion ? "latest" : Installation.VERSION
+
     await BunProc.run(
       [
         "add",
-        "@groeimetai/snow-flow-plugin@" + (Installation.isLocal() ? "latest" : Installation.VERSION),
+        "@groeimetai/snow-flow-plugin@" + pluginVersion,
         "--exact",
       ],
       {
