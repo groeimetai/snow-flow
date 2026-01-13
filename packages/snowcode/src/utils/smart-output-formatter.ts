@@ -21,6 +21,32 @@ const SYMBOLS = {
   indent: '  '
 };
 
+// SECURITY: URL validation helpers to prevent URL substring attacks
+function isValidGitHubUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'github.com' ||
+           parsed.hostname.endsWith('.github.com') ||
+           parsed.hostname === 'githubusercontent.com' ||
+           parsed.hostname.endsWith('.githubusercontent.com');
+  } catch {
+    return false;
+  }
+}
+
+function isValidGitLabUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'gitlab.com' ||
+           parsed.hostname.endsWith('.gitlab.com') ||
+           parsed.hostname.includes('gitlab'); // Self-hosted GitLab instances
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Check if a string looks like a Jira issue key (e.g., "PROJECT-123")
  */
@@ -194,7 +220,7 @@ function isGitHubIssue(obj: any): boolean {
   return issue.number !== undefined &&
          issue.title !== undefined &&
          issue.state !== undefined &&
-         issue.html_url && issue.html_url.includes('github.com') &&
+         issue.html_url && isValidGitHubUrl(issue.html_url) &&
          !issue.head && !issue.base; // Not a PR
 }
 
@@ -217,7 +243,7 @@ function isGitHubRepo(obj: any): boolean {
   if (!obj) return false;
   const repo = obj.repository || obj.repo || obj;
   return repo.full_name !== undefined &&
-         repo.html_url && repo.html_url.includes('github.com') &&
+         repo.html_url && isValidGitHubUrl(repo.html_url) &&
          (repo.stargazers_count !== undefined || repo.owner !== undefined);
 }
 
@@ -231,7 +257,7 @@ function isGitHubIssueList(obj: any): boolean {
   const first = items[0];
   return first.number !== undefined &&
          first.title !== undefined &&
-         first.html_url && first.html_url.includes('github.com');
+         first.html_url && isValidGitHubUrl(first.html_url);
 }
 
 // ============================================================================
@@ -248,7 +274,7 @@ function isGitLabIssue(obj: any): boolean {
   return issue.iid !== undefined &&
          issue.title !== undefined &&
          issue.state !== undefined &&
-         issue.web_url && (issue.web_url.includes('gitlab.com') || issue.web_url.includes('gitlab')) &&
+         issue.web_url && isValidGitLabUrl(issue.web_url) &&
          !issue.source_branch; // Not an MR
 }
 
@@ -271,7 +297,7 @@ function isGitLabProject(obj: any): boolean {
   if (!obj) return false;
   const project = obj.project || obj;
   return project.path_with_namespace !== undefined &&
-         project.web_url && (project.web_url.includes('gitlab.com') || project.web_url.includes('gitlab'));
+         project.web_url && isValidGitLabUrl(project.web_url);
 }
 
 /**
@@ -284,7 +310,7 @@ function isGitLabIssueList(obj: any): boolean {
   const first = items[0];
   return first.iid !== undefined &&
          first.title !== undefined &&
-         first.web_url && (first.web_url.includes('gitlab.com') || first.web_url.includes('gitlab'));
+         first.web_url && isValidGitLabUrl(first.web_url);
 }
 
 // ============================================================================

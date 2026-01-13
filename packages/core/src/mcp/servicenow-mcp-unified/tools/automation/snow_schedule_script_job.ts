@@ -174,6 +174,9 @@ async function executeScript(
 
   const client = await getAuthenticatedClient(context);
 
+  // SECURITY: Proper string escaping - escape backslashes first, then quotes
+  const escapeForJS = (str: string) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+
   // Create unique execution ID for tracking
   const executionId = `exec_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const outputMarker = `SNOW_FLOW_EXEC_${executionId}`;
@@ -181,7 +184,7 @@ async function executeScript(
   // Wrap script with comprehensive output capture
   const wrappedScript = `
 // Snow-Flow Script Execution - ID: ${executionId}
-// Description: ${description.replace(/'/g, "\\'")}
+// Description: ${escapeForJS(description)}
 var __sfOutput = [];
 var __sfStartTime = new GlideDateTime();
 var __sfResult = null;
@@ -221,7 +224,7 @@ gs.error = function(msg) {
 // Execute the user script
 try {
   gs.info('=== Snow-Flow Script Execution Started ===');
-  gs.info('Description: ${description.replace(/'/g, "\\'")}');
+  gs.info('Description: ${escapeForJS(description)}');
 
   __sfResult = (function() {
     ${script}

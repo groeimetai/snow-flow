@@ -42,9 +42,21 @@ export namespace Identifier {
   function randomBase62(length: number): string {
     const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     let result = ""
-    const bytes = randomBytes(length)
-    for (let i = 0; i < length; i++) {
-      result += chars[bytes[i] % 62]
+    // SECURITY: Use rejection sampling to avoid modulo bias
+    // 248 is the largest multiple of 62 that fits in a byte (62 * 4 = 248)
+    const maxValidByte = 248
+    let bytes = randomBytes(length * 2) // Request extra bytes for rejection sampling
+    let byteIndex = 0
+    while (result.length < length) {
+      if (byteIndex >= bytes.length) {
+        // Request more bytes if we've exhausted our buffer
+        bytes = randomBytes(length * 2)
+        byteIndex = 0
+      }
+      const byte = bytes[byteIndex++]
+      if (byte < maxValidByte) {
+        result += chars[byte % 62]
+      }
     }
     return result
   }

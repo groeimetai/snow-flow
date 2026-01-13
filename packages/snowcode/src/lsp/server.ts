@@ -653,8 +653,20 @@ export namespace LSPServer {
         log.info(`installed clangd`, { bin })
       }
 
+      // SECURITY: Validate binary path to prevent command injection
+      const resolvedBin = path.resolve(bin)
+      const expectedBaseDir = path.resolve(Global.Path.bin)
+      if (!resolvedBin.startsWith(expectedBaseDir + path.sep) && resolvedBin !== expectedBaseDir) {
+        // Also allow system-installed binaries from Bun.which()
+        const systemBin = Bun.which("clangd")
+        if (resolvedBin !== systemBin) {
+          log.error(`Invalid binary path: ${bin}`)
+          return
+        }
+      }
+
       return {
-        process: spawn(bin, ["--background-index", "--clang-tidy"], {
+        process: spawn(resolvedBin, ["--background-index", "--clang-tidy"], {
           cwd: root,
         }),
       }

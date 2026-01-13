@@ -96,24 +96,29 @@ export class ServiceNowWidgetTemplateGenerator {
    * Extract widget title from instruction
    */
   private extractTitleFromInstruction(instruction: string): string {
+    // SECURITY: Limit input length to prevent ReDoS attacks
+    const MAX_INSTRUCTION_LENGTH = 500;
+    const safeInstruction = instruction.slice(0, MAX_INSTRUCTION_LENGTH);
+
     // Simple extraction - look for patterns like "create X widget" or "X dashboard"
+    // SECURITY: Use word-based patterns instead of .+? to prevent polynomial regex
     const patterns = [
-      /create\s+(.+?)\s+widget/i,
-      /(.+?)\s+dashboard/i,
-      /(.+?)\s+chart/i,
-      /(.+?)\s+table/i,
-      /(.+?)\s+form/i
+      /create\s+([\w\s-]{1,50}?)\s+widget/i,
+      /([\w\s-]{1,50}?)\s+dashboard/i,
+      /([\w\s-]{1,50}?)\s+chart/i,
+      /([\w\s-]{1,50}?)\s+table/i,
+      /([\w\s-]{1,50}?)\s+form/i
     ];
-    
+
     for (const pattern of patterns) {
-      const match = instruction.match(pattern);
+      const match = safeInstruction.match(pattern);
       if (match) {
-        return match[1].replace(/\b\w/g, l => l.toUpperCase());
+        return match[1].trim().replace(/\b\w/g, l => l.toUpperCase());
       }
     }
-    
+
     // Fallback: use first few words
-    const words = instruction.split(' ').slice(0, 3);
+    const words = safeInstruction.split(' ').slice(0, 3);
     return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
@@ -1211,14 +1216,20 @@ export class ServiceNowWidgetTemplateGenerator {
    * Generate server script based on widget type
    */
   private generateServerScript(type: string, instruction: string): string {
+    // SECURITY: Proper string escaping - escape backslashes first, then quotes
+    const escapeForJS = (str: string) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    const safeType = escapeForJS(type);
+    const safeInstruction = escapeForJS(instruction);
+    const safeTitle = escapeForJS(this.extractTitleFromInstruction(instruction));
+
     const baseScript = `
 (function() {
   // Widget server script - runs server-side to fetch data
-  var widgetType = '${type}';
-  var instruction = '${instruction.replace(/'/g, "\\'")}';
-  
+  var widgetType = '${safeType}';
+  var instruction = '${safeInstruction}';
+
   // Set widget title
-  data.title = options.title || '${this.extractTitleFromInstruction(instruction)}';
+  data.title = options.title || '${safeTitle}';
   data.loading = false;
   data.error = null;
   

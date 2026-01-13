@@ -72,10 +72,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const client = await getAuthenticatedClient(context);
     const outputMarker = `SNOW_FLOW_CONFIRM_${executionId}`;
 
+    // SECURITY: Proper string escaping - escape backslashes first, then quotes
+    const escapeForJS = (str: string) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+
     // Wrap script with output capture
     const wrappedScript = `
 // Snow-Flow Confirmed Execution - ID: ${executionId}
-// Description: ${description.replace(/'/g, "\\'")}
+// Description: ${escapeForJS(description)}
 var __sfOutput = [];
 var __sfStartTime = new GlideDateTime();
 var __sfResult = null;

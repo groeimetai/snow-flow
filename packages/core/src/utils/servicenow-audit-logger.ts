@@ -9,6 +9,7 @@
 
 import { MCPLogger } from '../mcp/shared/mcp-logger.js';
 import { ServiceNowClient } from './servicenow-client.js';
+import { randomBytes } from 'crypto';
 
 export interface AuditLogEntry {
   source: 'snow-flow';
@@ -70,7 +71,7 @@ export class ServiceNowAuditLogger {
    * Generate unique session ID for tracking related operations
    */
   private generateSessionId(): string {
-    return `snow-flow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `snow-flow-${Date.now()}-${randomBytes(6).toString('hex')}`;
   }
   
   /**

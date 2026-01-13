@@ -75,9 +75,9 @@ export class ServiceNowClient {
   constructor() {
     this.logger = new Logger('ServiceNowClient');
     this.oauth = new ServiceNowOAuth();
-    // 🔒 SSL/TLS Certificate Validation Fix: Allow self-signed certificates for ServiceNow dev instances
+    // 🔒 SSL/TLS Certificate Validation: Enforce proper certificate validation
     const httpsAgent = new https.Agent({
-      rejectUnauthorized: false,  // Allow self-signed certificates for dev instances (fixes "certificate has expired" errors)
+      // SECURITY: Certificate validation is now enforced (removed rejectUnauthorized: false)
       checkServerIdentity: (hostname, cert) => {
         // Custom certificate validation for ServiceNow instances
         // Allow *.service-now.com and user-configured instances
@@ -91,7 +91,9 @@ export class ServiceNowClient {
         if (instanceUrl) {
           try {
             const instanceHostname = new URL(instanceUrl.startsWith('http') ? instanceUrl : `https://${instanceUrl}`).hostname;
-            validHosts.push(new RegExp(`^${instanceHostname.replace(/\./g, '\\.')}$`));
+            // SECURITY: Escape all regex metacharacters, not just dots
+            const escapedHostname = instanceHostname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            validHosts.push(new RegExp(`^${escapedHostname}$`));
           } catch (error) {
             // Invalid URL format, rely on default validation
           }

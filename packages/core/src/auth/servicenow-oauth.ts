@@ -425,12 +425,22 @@ export class ServiceNowOAuth {
       normalized = `https://${normalized}`
     }
 
-    if (
-      !normalized.includes(".service-now.com") &&
-      !normalized.includes("localhost") &&
-      !normalized.includes("127.0.0.1")
-    ) {
-      const instanceName = normalized.replace("https://", "").replace("http://", "")
+    // SECURITY: Use URL parsing to validate hostname instead of string includes
+    try {
+      const parsed = new URL(normalized)
+      const hostname = parsed.hostname.toLowerCase()
+
+      // Check if it's already a valid ServiceNow or local URL
+      const isServiceNow = hostname.endsWith(".service-now.com") || hostname.endsWith(".servicenow.com")
+      const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.")
+
+      if (!isServiceNow && !isLocal) {
+        // Assume it's just the instance name, append .service-now.com
+        normalized = `https://${hostname}.service-now.com`
+      }
+    } catch {
+      // If URL parsing fails, treat input as instance name
+      const instanceName = normalized.replace(/^https?:\/\//, "")
       normalized = `https://${instanceName}.service-now.com`
     }
 

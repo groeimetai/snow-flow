@@ -5,6 +5,7 @@
 
 import { Logger } from './logger.js';
 import { ServiceNowClient } from './servicenow-client.js';
+import { randomBytes } from 'crypto';
 
 export interface ArtifactSession {
   sessionId: string;
@@ -371,7 +372,7 @@ export class ArtifactTracker {
   }
 
   private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${Date.now()}_${randomBytes(6).toString('hex')}`;
   }
 }
 

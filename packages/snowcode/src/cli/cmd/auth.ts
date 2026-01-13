@@ -32,6 +32,34 @@ import {
 } from "./auth-portal.js"
 
 /**
+ * SECURITY: Validate ServiceNow URL using proper URL parsing
+ * Prevents URL substring attacks
+ */
+function isValidServiceNowUrl(value: string): boolean {
+  if (!value || value.trim() === "") return false
+
+  // Prepare URL for parsing
+  let urlString = value.trim()
+  if (!urlString.startsWith("http://") && !urlString.startsWith("https://")) {
+    urlString = `https://${urlString}`
+  }
+
+  try {
+    const parsed = new URL(urlString)
+    const hostname = parsed.hostname.toLowerCase()
+
+    // Check if hostname is a valid ServiceNow domain or local
+    return hostname.endsWith(".service-now.com") ||
+           hostname.endsWith(".servicenow.com") ||
+           hostname === "localhost" ||
+           hostname === "127.0.0.1" ||
+           hostname.startsWith("192.168.")
+  } catch {
+    return false
+  }
+}
+
+/**
  * Generate a unique machine ID for device binding
  * Uses hostname + platform + homedir for consistent ID across sessions
  */
@@ -2092,12 +2120,7 @@ export const AuthLoginCommand = cmd({
               placeholder: "dev12345.service-now.com",
               validate: (value) => {
                 if (!value || value.trim() === "") return "Instance URL is required"
-                const cleaned = value.replace(/^https?:\/\//, "").replace(/\/$/, "")
-                if (
-                  !cleaned.includes(".service-now.com") &&
-                  !cleaned.includes("localhost") &&
-                  !cleaned.includes("127.0.0.1")
-                ) {
+                if (!isValidServiceNowUrl(value)) {
                   return "Must be a ServiceNow domain (e.g., dev12345.service-now.com)"
                 }
               },
@@ -2271,12 +2294,7 @@ export const AuthLoginCommand = cmd({
             placeholder: "dev12345.service-now.com",
             validate: (value) => {
               if (!value || value.trim() === "") return "Instance URL is required"
-              const cleaned = value.replace(/^https?:\/\//, "").replace(/\/$/, "")
-              if (
-                !cleaned.includes(".service-now.com") &&
-                !cleaned.includes("localhost") &&
-                !cleaned.includes("127.0.0.1")
-              ) {
+              if (!isValidServiceNowUrl(value)) {
                 return "Must be a ServiceNow domain (e.g., dev12345.service-now.com)"
               }
             },
@@ -3316,8 +3334,7 @@ export const AuthLoginCommand = cmd({
               placeholder: "dev12345.service-now.com",
               validate: (value) => {
                 if (!value || value.trim() === "") return "Instance URL is required"
-                const cleaned = value.replace(/^https?:\/\//, "").replace(/\/$/, "")
-                if (!cleaned.includes(".service-now.com") && !cleaned.includes("localhost")) {
+                if (!isValidServiceNowUrl(value)) {
                   return "Must be a ServiceNow domain"
                 }
               },

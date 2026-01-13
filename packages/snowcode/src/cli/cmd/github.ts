@@ -559,6 +559,18 @@ export const GithubRunCommand = cmd({
           const start = m.index
           const filename = path.basename(url)
 
+          // SECURITY: Validate URL hostname to prevent SSRF attacks
+          try {
+            const parsedUrl = new URL(url)
+            if (parsedUrl.hostname !== "github.com") {
+              console.error(`Blocked fetch to untrusted host: ${parsedUrl.hostname}`)
+              continue
+            }
+          } catch {
+            console.error(`Invalid URL: ${url}`)
+            continue
+          }
+
           // Download image
           const res = await fetch(url, {
             headers: {

@@ -44,10 +44,30 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           .replace(/'/g, '&#x27;');
         break;
       case 'sql':
-        sanitized = input.replace(/['";]/g, '');
+        // SECURITY: Proper SQL escaping - escape quotes and backslashes
+        // Note: Parameterized queries are always preferred over sanitization
+        sanitized = input
+          .replace(/\\/g, '\\\\')
+          .replace(/'/g, "\\'")
+          .replace(/"/g, '\\"')
+          .replace(/\x00/g, '\\0')
+          .replace(/\n/g, '\\n')
+          .replace(/\r/g, '\\r')
+          .replace(/\x1a/g, '\\Z');
         break;
       case 'script':
-        sanitized = input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        // SECURITY: Iterative removal to handle nested/obfuscated script tags
+        let prev = '';
+        while (prev !== sanitized) {
+          prev = sanitized;
+          // Remove script tags
+          sanitized = sanitized.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+          // Remove event handlers
+          sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
+          sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
+        }
+        // Also remove javascript: protocol
+        sanitized = sanitized.replace(/javascript\s*:/gi, '');
         break;
     }
 

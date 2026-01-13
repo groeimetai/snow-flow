@@ -226,10 +226,15 @@ app.get('/api/v1/status', async (req: Request, res: Response) => {
     }
 
     // Build affected services map from active incidents
+    // SECURITY: Add maximum limits to prevent loop bound injection attacks
     var affectedServicesMap = {};
-    for (var i = 0; i < activeIncidents.length; i++) {
+    var MAX_INCIDENTS = 1000;
+    var MAX_SERVICES_PER_INCIDENT = 100;
+    var incidentLimit = Math.min(activeIncidents.length, MAX_INCIDENTS);
+    for (var i = 0; i < incidentLimit; i++) {
       var incident = activeIncidents[i];
-      for (var j = 0; j < incident.affectedServices.length; j++) {
+      var servicesLimit = Math.min(incident.affectedServices?.length || 0, MAX_SERVICES_PER_INCIDENT);
+      for (var j = 0; j < servicesLimit; j++) {
         var service = incident.affectedServices[j];
         // Track highest severity affecting each service
         if (!affectedServicesMap[service] || incident.severity === 'critical') {

@@ -123,8 +123,11 @@ async function clearCache() {
         const pattern = path.basename(location);
         if (fs.existsSync(dir)) {
           const files = fs.readdirSync(dir);
+          // SECURITY: Escape regex metacharacters before converting glob to regex
+          const escapeRegex = (str) => str.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+          const regexPattern = new RegExp('^' + escapeRegex(pattern).replace(/\*/g, '.*') + '$');
           files.forEach(file => {
-            if (file.match(pattern.replace('*', '.*'))) {
+            if (regexPattern.test(file)) {
               fs.unlinkSync(path.join(dir, file));
               cleared++;
             }

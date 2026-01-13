@@ -15,6 +15,7 @@ import { timerRegistry } from './utils/timer-registry.js';
 import Database from 'better-sqlite3';
 import path from 'path';
 import os from 'os';
+import { randomBytes } from 'crypto';
 
 export interface SwarmSession {
   id: string;
@@ -460,7 +461,7 @@ export class SnowFlowSystem extends EventEmitter {
    * Private helper methods
    */
   private generateSessionId(): string {
-    return `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `agent_${Date.now()}_${randomBytes(6).toString('hex')}`;
   }
 
   private updateAgentInfo(session: SwarmSession, update: any): void {

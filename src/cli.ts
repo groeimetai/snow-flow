@@ -10,6 +10,7 @@ import { join, dirname, resolve } from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import * as os from 'os';
 import { existsSync } from 'fs';
+import { randomBytes } from 'crypto';
 import { ServiceNowOAuth } from './utils/snow-oauth.js';
 import { ServiceNowClient } from './utils/servicenow-client.js';
 import { AgentDetector, TaskAnalysis } from './utils/agent-detector.js';
@@ -386,7 +387,7 @@ program
     
     // Initialize Queen Agent memory system (with graceful fallback)
     let memorySystem: any = null;
-    let sessionId = `swarm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    let sessionId = `swarm_${Date.now()}_${randomBytes(6).toString('hex')}`;
 
     try {
       if (options.verbose) {
