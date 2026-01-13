@@ -296,7 +296,10 @@ function formatError(output: any): FormattedOutput {
   const lines = [`${SYMBOLS.error} Error: ${msg}`];
 
   if (output.details) {
-    lines.push(`${SYMBOLS.indent}Details: ${output.details}`);
+    const detailsStr = typeof output.details === 'object'
+      ? JSON.stringify(output.details, null, 2)
+      : output.details;
+    lines.push(`${SYMBOLS.indent}Details: ${detailsStr}`);
   }
   if (output.errorType) {
     lines.push(`${SYMBOLS.indent}Type: ${output.errorType}`);
