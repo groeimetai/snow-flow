@@ -4,6 +4,7 @@ import { Tool } from "./tool"
 import { Log } from "../util/log"
 import { Instance } from "../project/instance"
 import { MCP } from "../mcp"
+import { Storage } from "../storage/storage"
 
 const log = Log.create({ service: "tool-search" })
 
@@ -40,6 +41,34 @@ const state = Instance.state(
     current.enabledTools.clear()
   },
 )
+
+// Persist enabled tools to storage
+async function persistEnabledTools(sessionID: string, tools: Set<string>): Promise<void> {
+  try {
+    await Storage.write(["enabled-tools", sessionID], [...tools])
+    log.debug("persisted enabled tools", { sessionID, count: tools.size })
+  } catch (e) {
+    log.warn("failed to persist enabled tools", { sessionID, error: e })
+  }
+}
+
+// Restore enabled tools from storage
+async function restoreEnabledTools(sessionID: string): Promise<Set<string>> {
+  try {
+    const data = await Storage.read<string[]>(["enabled-tools", sessionID])
+    if (data) {
+      const tools = new Set<string>(data)
+      log.debug("restored enabled tools from storage", { sessionID, count: tools.size })
+      return tools
+    }
+  } catch (e) {
+    // NotFoundError is expected when no tools have been enabled yet
+    if (!Storage.NotFoundError.isInstance(e)) {
+      log.debug("failed to restore enabled tools", { sessionID, error: e })
+    }
+  }
+  return new Set()
+}
 
 export namespace ToolSearch {
   /**
@@ -141,9 +170,13 @@ export namespace ToolSearch {
   export async function enableTool(sessionID: string, toolID: string): Promise<void> {
     const s = await state()
     if (!s.enabledTools.has(sessionID)) {
-      s.enabledTools.set(sessionID, new Set())
+      // Restore from disk if available
+      const restored = await restoreEnabledTools(sessionID)
+      s.enabledTools.set(sessionID, restored)
     }
     s.enabledTools.get(sessionID)!.add(toolID)
+    // Persist to disk
+    await persistEnabledTools(sessionID, s.enabledTools.get(sessionID)!)
     log.info("Enabled deferred tool", { sessionID, toolID })
   }
 
@@ -169,6 +202,11 @@ export namespace ToolSearch {
    */
   export async function getEnabledTools(sessionID: string): Promise<Set<string>> {
     const s = await state()
+    if (!s.enabledTools.has(sessionID)) {
+      // Restore from disk if available
+      const restored = await restoreEnabledTools(sessionID)
+      s.enabledTools.set(sessionID, restored)
+    }
     return s.enabledTools.get(sessionID) ?? new Set()
   }
 
