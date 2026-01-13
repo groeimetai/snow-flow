@@ -8,6 +8,8 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import {
   MCPToolDefinition,
   RegisteredTool,
@@ -79,6 +81,10 @@ import * as integrationTools from '../tools/integration/index.js';
 import * as platformTools from '../tools/platform/index.js';
 import * as devopsTools from '../tools/devops/index.js';
 import * as virtualAgentTools from '../tools/virtual-agent/index.js';
+
+// ES Module compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Map of domain name to imported tools module
 const STATIC_TOOL_MODULES: Record<string, any> = {
