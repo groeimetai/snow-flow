@@ -42,7 +42,7 @@
     "@types/eventsource": "^3.0.0",
     "@types/node-fetch": "^2.6.13",
     "@zip.js/zip.js": "^2.8.11",
-    "ai": "5.0.8",
+    "ai": "5.0.52",
     "axios": "1.12.2",
     "better-sqlite3": "12.4.1",
     "boxen": "^8.0.1",
