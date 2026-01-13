@@ -260,3 +260,4 @@ jobs:
           cd packages/snowcode
           echo "Publishing snow-flow-test package..."
           npm publish --access public --provenance --tag test
+
