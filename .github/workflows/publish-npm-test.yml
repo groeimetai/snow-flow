@@ -226,7 +226,7 @@ jobs:
           sed -i 's/"snow-code":/"snow-code-test":/' package.json
           sed -i 's/"snowcode":/"snowcode-test":/' package.json
 
-          # Remove devDependencies with workspace:* protocol
+          # Remove devDependencies with workspace:* protocol and add files field to include binaries
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -238,11 +238,22 @@ jobs:
               });
             }
             delete pkg.optionalDependencies;
+            // Include all platform binaries in the package for test versions
+            pkg.files = [
+              'bin/',
+              'dist/',
+              'postinstall.cjs',
+              'package.json'
+            ];
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
 
+          # Show dist folder contents
+          echo "Dist folder contents:"
+          ls -la dist/
+          echo ""
           echo "Package.json for publishing:"
-          cat package.json | head -50
+          cat package.json | head -60
 
       - name: Publish snow-flow-test package (OIDC)
         run: |
