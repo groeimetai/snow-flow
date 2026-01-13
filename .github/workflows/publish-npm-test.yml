@@ -294,5 +294,5 @@ jobs:
         run: |
           cd packages/snowcode
           echo "Publishing snow-flow-test package..."
-          npm publish --access public --provenance
+          npm publish --access public --provenance --tag latest
 
