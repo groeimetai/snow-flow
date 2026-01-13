@@ -93,6 +93,7 @@ export namespace Config {
     result.agent = result.agent || {}
     result.mode = result.mode || {}
     result.plugin = result.plugin || []
+    result.skill = result.skill || {}
 
     const directories = [
       Global.Path.config,
@@ -117,7 +118,11 @@ export namespace Config {
       result.agent = mergeDeep(result.agent, await loadAgent(dir))
       result.agent = mergeDeep(result.agent, await loadMode(dir))
       result.plugin.push(...(await loadPlugin(dir)))
+      result.skill = mergeDeep(result.skill ?? {}, await loadSkill(dir))
     }
+
+    // Load bundled skills (ServiceNow-specific skills)
+    result.skill = mergeDeep(await loadBundledSkills(), result.skill ?? {})
 
     // Migrate deprecated mode field to agent field
     for (const [name, mode] of Object.entries(result.mode)) {
@@ -203,10 +208,15 @@ export namespace Config {
         ["node_modules", "package.json", "bun.lock", ".gitignore"].join("\n"),
       )
 
+    // For test versions (e.g., 9.0.167-test.8), use latest plugin version
+    // since test plugin versions aren't published to npm
+    const isTestVersion = Installation.VERSION.includes("-test.")
+    const pluginVersion = Installation.isLocal() || isTestVersion ? "latest" : Installation.VERSION
+
     await BunProc.run(
       [
         "add",
-        "@groeimetai/snow-flow-plugin@" + (Installation.isLocal() ? "latest" : Installation.VERSION),
+        "@groeimetai/snow-flow-plugin@" + pluginVersion,
         "--exact",
       ],
       {
@@ -344,6 +354,94 @@ export namespace Config {
     return plugins
   }
 
+  const SKILL_GLOB = new Bun.Glob("**/SKILL.md")
+  async function loadSkill(dir: string) {
+    const result: Record<string, Skill> = {}
+
+    // Scan user's skill directory (if it exists)
+    const skillDir = path.join(dir, "skill")
+    try {
+      const stat = await fs.stat(skillDir)
+      if (!stat.isDirectory()) return result
+    } catch {
+      // Directory doesn't exist, return empty result
+      return result
+    }
+
+    for await (const item of SKILL_GLOB.scan({
+      absolute: true,
+      followSymlinks: true,
+      dot: true,
+      cwd: skillDir,
+    })) {
+      const skill = await parseSkillFile(item)
+      if (skill) {
+        result[skill.name] = skill
+      }
+    }
+    return result
+  }
+
+  async function loadBundledSkills() {
+    const result: Record<string, Skill> = {}
+
+    // Load bundled skills from package
+    const bundledSkillsDir = path.join(import.meta.dir, "..", "bundled-skills")
+
+    // Check if bundled skills directory exists
+    try {
+      const stat = await fs.stat(bundledSkillsDir)
+      if (!stat.isDirectory()) return result
+    } catch {
+      // Directory doesn't exist in this build, return empty result
+      return result
+    }
+
+    for await (const item of SKILL_GLOB.scan({
+      absolute: true,
+      followSymlinks: true,
+      dot: true,
+      cwd: bundledSkillsDir,
+    })) {
+      const skill = await parseSkillFile(item)
+      if (skill) {
+        result[skill.name] = skill
+        log.debug("loaded bundled skill", { name: skill.name })
+      }
+    }
+    return result
+  }
+
+  async function parseSkillFile(filePath: string): Promise<Skill | null> {
+    const md = await ConfigMarkdown.parse(filePath)
+    if (!md.data?.name || !md.data?.description) return null
+
+    const skillDir = path.dirname(filePath)
+    const config = {
+      // Required fields
+      name: md.data.name,
+      description: md.data.description,
+      // Optional fields per agentskills.io spec
+      license: md.data.license,
+      compatibility: md.data.compatibility,
+      metadata: md.data.metadata,
+      allowedTools: md.data["allowed-tools"], // Spec uses kebab-case
+      tools: md.data.tools, // Array of MCP tool names/patterns to auto-enable
+      // Internal fields
+      content: md.content.trim(),
+      path: skillDir,
+    }
+
+    const parsed = Skill.safeParse(config)
+    if (parsed.success) {
+      log.debug("loaded skill", { name: config.name, path: skillDir })
+      return parsed.data
+    } else {
+      log.warn("invalid skill", { path: filePath, errors: parsed.error.issues })
+    }
+    return null
+  }
+
   export const McpRetryOptions = z
     .object({
       maxRetries: z
@@ -452,6 +550,47 @@ export namespace Config {
     subtask: z.boolean().optional(),
   })
   export type Command = z.infer<typeof Command>
+
+  // Skill schema following Agent Skills Open Standard (agentskills.io)
+  export const Skill = z.object({
+    // Required fields per spec
+    name: z
+      .string()
+      .min(1)
+      .max(64)
+      .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Name must be lowercase letters, numbers, and hyphens only")
+      .describe("Skill identifier (lowercase, hyphens allowed, max 64 chars)"),
+    description: z
+      .string()
+      .min(1)
+      .max(1024)
+      .describe("Description of what this skill does and when to use it"),
+
+    // Optional fields per spec
+    license: z.string().optional().describe("License name or reference to bundled license file"),
+    compatibility: z
+      .string()
+      .max(500)
+      .optional()
+      .describe("Environment requirements (product, system packages, network access, etc.)"),
+    metadata: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe("Arbitrary key-value mapping for additional properties"),
+    allowedTools: z
+      .string()
+      .optional()
+      .describe("Space-delimited list of pre-approved tools (experimental)"),
+    tools: z
+      .array(z.string())
+      .optional()
+      .describe("List of MCP tool names/patterns to auto-enable when skill is activated"),
+
+    // Internal fields (not part of spec, for runtime use)
+    content: z.string().describe("SKILL.md body content"),
+    path: z.string().describe("Path to skill directory for loading resources"),
+  })
+  export type Skill = z.infer<typeof Skill>
 
   export const Agent = z
     .object({
@@ -646,6 +785,10 @@ export namespace Config {
         .record(z.string(), Command)
         .optional()
         .describe("Command configuration, see https://opencode.ai/docs/commands"),
+      skill: z
+        .record(z.string(), Skill)
+        .optional()
+        .describe("Skill configuration for model-invoked domain knowledge"),
       watcher: z
         .object({
           ignore: z.array(z.string()).optional(),

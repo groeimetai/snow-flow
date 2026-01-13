@@ -29,6 +29,7 @@ import { ProviderTransform } from "../provider/transform"
 import { SystemPrompt } from "./system"
 import { Plugin } from "../plugin"
 import { SessionRetry } from "./retry"
+import { Skill } from "../skill"
 
 import PROMPT_PLAN from "../session/prompt/plan.txt"
 import BUILD_SWITCH from "../session/prompt/build-switch.txt"
@@ -260,15 +261,13 @@ export namespace SessionPrompt {
         processor,
       })
 
-      const msgs: MessageV2.WithParts[] = pipe(
-        await getMessages({
-          sessionID: input.sessionID,
-          model: model.info,
-          providerID: model.providerID,
-          signal: abort.signal,
-        }),
-        (messages) => insertReminders({ messages, agent, providerID: model.providerID }),
-      )
+      const rawMsgs = await getMessages({
+        sessionID: input.sessionID,
+        model: model.info,
+        providerID: model.providerID,
+        signal: abort.signal,
+      })
+      const msgs: MessageV2.WithParts[] = await insertReminders({ messages: rawMsgs, agent, providerID: model.providerID })
 
       // Check if we would exceed the context limit before sending to API
       // This prevents "prompt too long" errors by auto-compacting proactively
@@ -718,6 +717,7 @@ export namespace SessionPrompt {
     )
     system.push(...(await SystemPrompt.environment()))
     system.push(...(await SystemPrompt.custom()))
+    system.push(...(await SystemPrompt.skills()))
     // max 2 system prompt messages for caching purposes
     const [first, ...rest] = system
     system = [first, rest.join("\n")]
@@ -1256,7 +1256,7 @@ export namespace SessionPrompt {
     }
   }
 
-  function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info; providerID: string }) {
+  async function insertReminders(input: { messages: MessageV2.WithParts[]; agent: Agent.Info; providerID: string }) {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
     if (input.agent.name === "plan") {
@@ -1284,6 +1284,50 @@ export namespace SessionPrompt {
         synthetic: true,
       })
     }
+
+    // Skill injection: Match user message against available skills and inject relevant ones
+    const userText = userMessage.parts
+      .filter((p): p is MessageV2.TextPart => p.type === "text")
+      .map((p) => p.text)
+      .join(" ")
+
+    if (userText) {
+      const matchedSkills = await Skill.matchAll(userText)
+      if (matchedSkills.length > 0) {
+        const skillContent = Skill.injectAll(matchedSkills)
+        userMessage.parts.push({
+          id: Identifier.ascending("part"),
+          messageID: userMessage.info.id,
+          sessionID: userMessage.info.sessionID,
+          type: "text",
+          text: skillContent,
+          synthetic: true,
+        })
+
+        // Auto-enable tools associated with matched skills
+        const sessionID = userMessage.info.sessionID
+        const toolsToEnable: string[] = []
+        for (const skill of matchedSkills) {
+          if (skill.tools && skill.tools.length > 0) {
+            toolsToEnable.push(...skill.tools)
+          }
+        }
+        if (toolsToEnable.length > 0) {
+          await ToolSearch.enableTools(sessionID, toolsToEnable)
+          log.info("auto-enabled tools from skills", { tools: toolsToEnable })
+        }
+
+        // Publish event for TUI visualization
+        Bus.publish(Skill.Event.Matched, {
+          sessionID,
+          skills: matchedSkills.map((s) => ({ name: s.name, tools: s.tools })),
+          toolsEnabled: toolsToEnable,
+        })
+
+        log.info("injected skills", { count: matchedSkills.length, skills: matchedSkills.map((s) => s.name) })
+      }
+    }
+
     return input.messages
   }
 

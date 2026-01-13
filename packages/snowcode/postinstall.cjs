@@ -17,6 +17,10 @@ const distDir = path.join(packageDir, 'dist');
 const mcpDir = path.join(distDir, 'mcp');
 const mcpIndexPath = path.join(mcpDir, 'enterprise-proxy', 'index.js');
 
+// Path to bundled binary (for test packages that include binaries directly)
+const bundledBinaryDir = path.join(distDir, `snow-flow-${platform}-${arch}`, 'bin');
+const bundledBinaryPath = path.join(bundledBinaryDir, binaryName);
+
 // Get version from package.json
 function getVersion() {
   try {
@@ -70,6 +74,31 @@ function download(url) {
     });
     request.on('error', reject);
   });
+}
+
+// Try to copy bundled binary from dist folder (for test packages)
+function copyBundledBinary() {
+  if (fs.existsSync(bundledBinaryPath)) {
+    console.log(`Found bundled binary for ${platform}-${arch}, installing...`);
+    try {
+      // Ensure bin directory exists
+      if (!fs.existsSync(binDir)) {
+        fs.mkdirSync(binDir, { recursive: true });
+      }
+      // Copy binary
+      fs.copyFileSync(bundledBinaryPath, binaryPath);
+      // Make executable
+      if (platform !== 'windows') {
+        fs.chmodSync(binaryPath, 0o755);
+      }
+      console.log('✅ Binary installed from bundled package!');
+      return true;
+    } catch (err) {
+      console.log(`Could not copy bundled binary: ${err.message}`);
+      return false;
+    }
+  }
+  return false;
 }
 
 async function downloadBinary() {
@@ -170,23 +199,33 @@ async function main() {
 
   // Download binary if missing, incompatible, or version mismatch
   if (!fs.existsSync(binaryPath)) {
-    console.log('Binary not found, downloading...');
-    await downloadBinary();
+    console.log('Binary not found, checking for bundled binary...');
+    // Try bundled binary first (for test packages), then download
+    if (!copyBundledBinary()) {
+      console.log('No bundled binary found, downloading from GitHub releases...');
+      await downloadBinary();
+    }
   } else if (!binaryWorks) {
     // Binary exists but can't execute (wrong architecture, corrupted, etc.)
-    console.log('Binary incompatible with this platform, downloading correct version...');
+    console.log('Binary incompatible with this platform, getting correct version...');
     try {
       fs.unlinkSync(binaryPath);
     } catch {}
-    await downloadBinary();
+    // Try bundled binary first, then download
+    if (!copyBundledBinary()) {
+      await downloadBinary();
+    }
   } else if (packageVersion && binaryVersion && packageVersion !== binaryVersion) {
     console.log(`Version mismatch: binary is ${binaryVersion}, package is ${packageVersion}`);
-    console.log('Downloading correct version...');
+    console.log('Getting correct version...');
     // Remove old binary first
     try {
       fs.unlinkSync(binaryPath);
     } catch {}
-    await downloadBinary();
+    // Try bundled binary first, then download
+    if (!copyBundledBinary()) {
+      await downloadBinary();
+    }
   } else {
     // Make sure it's executable
     if (platform !== 'windows') {

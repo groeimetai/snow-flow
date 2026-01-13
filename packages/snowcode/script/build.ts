@@ -58,9 +58,13 @@ for (const [os, arch] of targets) {
     .quiet()
 
   const watcher = `@parcel/watcher-${os === "windows" ? "win32" : os}-${arch.replace("-baseline", "")}${os === "linux" ? "-glibc" : ""}`
-  await $`mkdir -p ../../node_modules/${watcher}`
-  await $`npm pack npm pack ${watcher}`.cwd(path.join(dir, "../../node_modules")).quiet()
-  await $`tar -xf ../../node_modules/${watcher.replace("@parcel/", "parcel-")}-*.tgz -C ../../node_modules/${watcher} --strip-components=1`
+  // Skip downloading parcel-watcher if already installed (avoids npm pack issues)
+  const watcherPath = path.join(dir, `../../node_modules/${watcher}`)
+  if (!fs.existsSync(watcherPath) || !fs.existsSync(path.join(watcherPath, "package.json"))) {
+    await $`mkdir -p ../../node_modules/${watcher}`
+    await $`npm pack ${watcher}`.cwd(path.join(dir, "../../node_modules")).quiet()
+    await $`tar -xf ../../node_modules/${watcher.replace("@parcel/", "parcel-")}-*.tgz -C ../../node_modules/${watcher} --strip-components=1`
+  }
 
   await Bun.build({
     sourcemap: "external",
