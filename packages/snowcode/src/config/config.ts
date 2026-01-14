@@ -386,14 +386,30 @@ export namespace Config {
     const result: Record<string, Skill> = {}
 
     // Load bundled skills from package
-    const bundledSkillsDir = path.join(import.meta.dir, "..", "bundled-skills")
+    // Try multiple paths: development (import.meta.dir) and production (process.execPath)
+    const possiblePaths = [
+      // Development: config.ts is in src/config/, bundled-skills in src/bundled-skills/
+      path.join(import.meta.dir, "..", "bundled-skills"),
+      // Production: binary is in bin/, bundled-skills in bundled-skills/
+      path.join(path.dirname(process.execPath), "..", "bundled-skills"),
+    ]
 
-    // Check if bundled skills directory exists
-    try {
-      const stat = await fs.stat(bundledSkillsDir)
-      if (!stat.isDirectory()) return result
-    } catch {
-      // Directory doesn't exist in this build, return empty result
+    let bundledSkillsDir: string | null = null
+    for (const p of possiblePaths) {
+      try {
+        const stat = await fs.stat(p)
+        if (stat.isDirectory()) {
+          bundledSkillsDir = p
+          log.debug("found bundled-skills at", { path: p })
+          break
+        }
+      } catch {
+        // Try next path
+      }
+    }
+
+    if (!bundledSkillsDir) {
+      log.debug("bundled-skills directory not found", { tried: possiblePaths })
       return result
     }
 
