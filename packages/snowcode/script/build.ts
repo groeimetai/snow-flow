@@ -89,11 +89,11 @@ for (const [os, arch] of targets) {
 
   await $`rm -rf ./dist/${name}/bin/tui`
 
-  // Copy bundled skills to dist
+  // Copy bundled skills to dist (cross-platform)
   const bundledSkillsSrc = path.join(dir, "src", "bundled-skills")
   const bundledSkillsDest = path.join(dir, "dist", name, "bundled-skills")
   if (fs.existsSync(bundledSkillsSrc)) {
-    await $`cp -r ${bundledSkillsSrc} ${bundledSkillsDest}`
+    fs.cpSync(bundledSkillsSrc, bundledSkillsDest, { recursive: true })
     console.log(`✅ Copied bundled-skills to ${name}`)
   }
 
