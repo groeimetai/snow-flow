@@ -1,6 +1,6 @@
 ---
 name: update-set-workflow
-description: This skill should be used when the user asks to "create something", "deploy", "make changes", "develop", "build a feature", or any ServiceNow development that requires change tracking.
+description: This skill should be used when the user asks to "update set", "create update set", "change tracking", "create something", "deploy", "make changes", "develop", "build a feature", or any ServiceNow development that requires change tracking.
 version: 1.0.0
 tools:
   - snow_update_set_create
