@@ -887,10 +887,35 @@ func renderStatusIndicator(status opencode.ToolPartStateStatus, output string) s
 	}
 }
 
+// stripHiddenContent removes content marked with hidden-from-display tags
+// This is used for skills and other content that should be passed to the model
+// but not displayed in the TUI
+func stripHiddenContent(output string) string {
+	// Remove <skill-content hidden-from-display="true">...</skill-content> sections
+	startTag := "<skill-content hidden-from-display=\"true\">"
+	endTag := "</skill-content>"
+
+	startIdx := strings.Index(output, startTag)
+	if startIdx == -1 {
+		return output
+	}
+
+	endIdx := strings.Index(output, endTag)
+	if endIdx == -1 {
+		// Malformed, just return everything before start tag
+		return strings.TrimSpace(output[:startIdx])
+	}
+
+	// Remove the hidden section
+	result := output[:startIdx] + output[endIdx+len(endTag):]
+	return strings.TrimSpace(result)
+}
+
 // GetFullToolOutput extracts the full output from a tool call
+// Hidden content (like skill details) is stripped for display
 func GetFullToolOutput(toolCall opencode.ToolPart) string {
 	if toolCall.State.Output != "" {
-		return toolCall.State.Output
+		return stripHiddenContent(toolCall.State.Output)
 	}
 	return ""
 }

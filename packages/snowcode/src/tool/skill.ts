@@ -74,19 +74,41 @@ export const SkillTool = Tool.define("Skill", {
       { broadcast: true },
     )
 
-    // Build the skill content with tools info
+    // Build the skill content for the model
     const content = Skill.inject(skill)
     const toolsInfo =
       skill.tools && skill.tools.length > 0
         ? `\n\n**Recommended tools for this skill:**\n${skill.tools.map((t) => `- ${t}`).join("\n")}`
         : ""
 
+    // Create a clean summary for TUI display
+    const toolsList = skill.tools && skill.tools.length > 0
+      ? skill.tools.slice(0, 4).join(", ") + (skill.tools.length > 4 ? ` (+${skill.tools.length - 4} more)` : "")
+      : "none"
+
+    const displaySummary = [
+      `✨ Skill loaded: ${skill.name}`,
+      `   Tools: ${toolsList}`,
+      `   Content: ${skill.content.split("\n").length} lines of specialized guidance`,
+    ].join("\n")
+
+    // Use special marker that TUI can detect for truncation
+    // The full content goes after the marker for model context
+    const fullOutput = [
+      displaySummary,
+      ``,
+      `<skill-content hidden-from-display="true">`,
+      content + toolsInfo,
+      `</skill-content>`,
+    ].join("\n")
+
     return {
-      title: `Loaded skill: ${skill.name}`,
-      output: content + toolsInfo,
+      title: `✨ ${skill.name}`,
+      output: fullOutput,
       metadata: {
         skill: skill.name,
         tools: skill.tools ?? [],
+        contentLines: skill.content.split("\n").length,
       },
     }
   },
