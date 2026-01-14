@@ -243,13 +243,31 @@ async function setConfigValue(key: string, value: string, useGlobal: boolean) {
 
   for (let i = 0; i < keys.length - 1; i++) {
     const k = keys[i]
-    if (!(k in target) || typeof target[k] !== "object") {
-      target[k] = {}
+    // SECURITY: Additional check at assignment point
+    if (BLOCKED_KEYS.includes(k)) {
+      UXHelpers.error("Invalid key: prototype pollution attempt blocked")
+      return
+    }
+    if (!Object.prototype.hasOwnProperty.call(target, k) || typeof target[k] !== "object") {
+      // Use Object.defineProperty to avoid prototype pollution
+      Object.defineProperty(target, k, {
+        value: {},
+        writable: true,
+        enumerable: true,
+        configurable: true
+      })
     }
     target = target[k] as Record<string, unknown>
   }
 
-  target[keys[keys.length - 1]] = parsedValue
+  // SECURITY: Use Object.defineProperty for the final assignment
+  const finalKey = keys[keys.length - 1]
+  Object.defineProperty(target, finalKey, {
+    value: parsedValue,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  })
 
   // Write config
   await Bun.write(configPath, JSON.stringify(existingConfig, null, 2))

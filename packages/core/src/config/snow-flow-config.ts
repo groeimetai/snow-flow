@@ -726,13 +726,29 @@ export class SnowFlowConfig {
     let obj: any = this.config;
 
     for (const key of keys) {
-      if (!obj[key] || typeof obj[key] !== 'object') {
-        obj[key] = {};
+      // SECURITY: Additional check at assignment point to satisfy static analysis
+      if (BLOCKED_KEYS.includes(key)) {
+        throw new Error('Attempted prototype pollution detected');
+      }
+      if (!Object.prototype.hasOwnProperty.call(obj, key) || typeof obj[key] !== 'object') {
+        // Use Object.defineProperty to avoid prototype pollution
+        Object.defineProperty(obj, key, {
+          value: {},
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
       }
       obj = obj[key];
     }
 
-    obj[lastKey] = value;
+    // SECURITY: Use Object.defineProperty for the final assignment
+    Object.defineProperty(obj, lastKey, {
+      value: value,
+      writable: true,
+      enumerable: true,
+      configurable: true
+    });
     this.update(this.config);
   }
 

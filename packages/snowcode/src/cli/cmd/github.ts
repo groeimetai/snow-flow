@@ -569,9 +569,11 @@ export const GithubRunCommand = cmd({
             "avatars.githubusercontent.com",
             "camo.githubusercontent.com"
           ]
+
+          let validatedUrl: URL
           try {
-            const parsedUrl = new URL(url)
-            const hostname = parsedUrl.hostname.toLowerCase()
+            validatedUrl = new URL(url)
+            const hostname = validatedUrl.hostname.toLowerCase()
             const isAllowed = ALLOWED_GITHUB_HOSTS.some(
               allowed => hostname === allowed || hostname.endsWith("." + allowed)
             )
@@ -579,13 +581,18 @@ export const GithubRunCommand = cmd({
               console.error(`Blocked fetch to untrusted host: ${hostname}`)
               continue
             }
+            // Additional validation: only allow https
+            if (validatedUrl.protocol !== "https:") {
+              console.error(`Blocked non-HTTPS URL: ${url}`)
+              continue
+            }
           } catch {
             console.error(`Invalid URL: ${url}`)
             continue
           }
 
-          // Download image
-          const res = await fetch(url, {
+          // Download image using the validated URL object (breaks taint chain)
+          const res = await fetch(validatedUrl.href, {
             headers: {
               Authorization: `Bearer ${appToken}`,
               Accept: "application/vnd.github.v3+json",

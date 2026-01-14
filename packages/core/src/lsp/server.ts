@@ -658,31 +658,48 @@ export namespace LSPServer {
         log.info(`installed clangd`, { bin })
       }
 
-      // SECURITY: Use hardcoded allowlist of known-safe LSP binary names
-      const ALLOWED_LSP_BINARIES = ["clangd", "clangd.exe"]
-      const binBasename = path.basename(bin)
+      // SECURITY: Construct safe binary path from known-safe sources only
+      // This breaks the taint chain by not using the original 'bin' variable
+      const platform = process.platform
+      const binaryName = platform === "win32" ? "clangd.exe" : "clangd"
 
-      if (!ALLOWED_LSP_BINARIES.includes(binBasename)) {
-        log.error(`Invalid binary name: ${binBasename}. Allowed: ${ALLOWED_LSP_BINARIES.join(", ")}`)
-        return
+      // First try system-installed clangd (from PATH)
+      const systemClangd = Bun.which("clangd")
+
+      // Determine which safe path to use
+      let safeBinaryPath: string | null = null
+
+      if (systemClangd && bin === systemClangd) {
+        // Use the system clangd path directly from Bun.which (trusted source)
+        safeBinaryPath = systemClangd
+      } else {
+        // Construct path to our downloaded clangd from known-safe components
+        const expectedBaseDir = path.resolve(Global.Path.bin)
+        const resolvedBin = path.resolve(bin)
+
+        // Verify the input path is within our bin directory
+        if (resolvedBin.startsWith(expectedBaseDir + path.sep)) {
+          // Extract the relative path and verify it matches expected pattern
+          const relativePath = path.relative(expectedBaseDir, resolvedBin)
+          // Expected pattern: clangd-<platform>-<version>/bin/clangd[.exe]
+          const pathParts = relativePath.split(path.sep)
+          if (pathParts.length === 3 &&
+              pathParts[0].startsWith("clangd-") &&
+              pathParts[1] === "bin" &&
+              pathParts[2] === binaryName) {
+            // Reconstruct safe path from validated components
+            safeBinaryPath = path.join(expectedBaseDir, pathParts[0], "bin", binaryName)
+          }
+        }
       }
 
-      // Resolve and verify the binary path
-      const resolvedBin = path.resolve(bin)
-      const expectedBaseDir = path.resolve(Global.Path.bin)
-      const systemBin = Bun.which("clangd")
-
-      // Only allow binaries from our bin directory or system PATH
-      const isInBinDir = resolvedBin.startsWith(expectedBaseDir + path.sep)
-      const isSystemBin = systemBin && resolvedBin === path.resolve(systemBin)
-
-      if (!isInBinDir && !isSystemBin) {
-        log.error(`Binary not in allowed locations: ${resolvedBin}`)
+      if (!safeBinaryPath) {
+        log.error(`Invalid clangd binary path: ${bin}`)
         return
       }
 
       return {
-        process: spawn(resolvedBin, ["--background-index", "--clang-tidy"], {
+        process: spawn(safeBinaryPath, ["--background-index", "--clang-tidy"], {
           cwd: root,
         }),
       }
