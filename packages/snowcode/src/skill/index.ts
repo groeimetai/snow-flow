@@ -35,7 +35,7 @@ export namespace Skill {
     for (const [_name, skill] of Object.entries(skills)) {
       const triggers = extractTriggers(skill.description)
 
-      if (triggers.some((t) => msgLower.includes(t.toLowerCase()))) {
+      if (triggers.some((t) => matchTrigger(msgLower, t.toLowerCase()))) {
         return skill
       }
     }
@@ -56,7 +56,7 @@ export namespace Skill {
     for (const [_name, skill] of Object.entries(skills)) {
       const triggers = extractTriggers(skill.description)
 
-      if (triggers.some((t) => msgLower.includes(t.toLowerCase()))) {
+      if (triggers.some((t) => matchTrigger(msgLower, t.toLowerCase()))) {
         matched.push(skill)
       }
     }
@@ -84,6 +84,23 @@ export namespace Skill {
   function extractTriggers(description: string): string[] {
     const matches = description.match(/"([^"]+)"/g) || []
     return matches.map((m) => m.replace(/"/g, ""))
+  }
+
+  /**
+   * Match a trigger against a message with word boundary support.
+   * Short triggers (<=3 chars) require word boundaries to prevent false positives
+   * like "PA" matching in "oppakken".
+   */
+  function matchTrigger(message: string, trigger: string): boolean {
+    // For short triggers, use word boundary regex to avoid false positives
+    if (trigger.length <= 3) {
+      // Escape special regex characters in trigger
+      const escaped = trigger.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      const regex = new RegExp(`\\b${escaped}\\b`, "i")
+      return regex.test(message)
+    }
+    // For longer triggers, simple includes is fine
+    return message.includes(trigger)
   }
 
   /**
