@@ -127,12 +127,21 @@ export namespace SystemPrompt {
 
     return [
       [
-        `<available-skills>`,
-        `The following skills are available. When a task matches a skill's description,`,
-        `the skill content will be loaded to provide specialized guidance.`,
+        `# Available Skills`,
         ``,
+        `You have access to specialized skills that provide domain-specific knowledge.`,
+        `Use the \`Skill\` tool to load a skill when the user's request matches its domain.`,
+        ``,
+        `**How to use skills:**`,
+        `1. Read the user's request and understand their intent`,
+        `2. If it matches a skill's domain, invoke the Skill tool with the skill name`,
+        `3. The skill content will guide your response with specialized knowledge`,
+        ``,
+        `**Available skills:**`,
         skillList,
-        `</available-skills>`,
+        ``,
+        `**Important:** Use your semantic understanding to decide when a skill is relevant.`,
+        `Don't match on keywords - understand the user's actual intent.`,
       ].join("\n"),
     ]
   }

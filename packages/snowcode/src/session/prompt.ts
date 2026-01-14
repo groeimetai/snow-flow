@@ -29,7 +29,7 @@ import { ProviderTransform } from "../provider/transform"
 import { SystemPrompt } from "./system"
 import { Plugin } from "../plugin"
 import { SessionRetry } from "./retry"
-import { Skill } from "../skill"
+// Skill injection now handled by Skill tool - see src/tool/skill.ts
 
 import PROMPT_PLAN from "../session/prompt/plan.txt"
 import BUILD_SWITCH from "../session/prompt/build-switch.txt"
@@ -1285,48 +1285,9 @@ export namespace SessionPrompt {
       })
     }
 
-    // Skill injection: Match user message against available skills and inject relevant ones
-    const userText = userMessage.parts
-      .filter((p): p is MessageV2.TextPart => p.type === "text")
-      .map((p) => p.text)
-      .join(" ")
-
-    if (userText) {
-      const matchedSkills = await Skill.matchAll(userText)
-      if (matchedSkills.length > 0) {
-        const skillContent = Skill.injectAll(matchedSkills)
-        userMessage.parts.push({
-          id: Identifier.ascending("part"),
-          messageID: userMessage.info.id,
-          sessionID: userMessage.info.sessionID,
-          type: "text",
-          text: skillContent,
-          synthetic: true,
-        })
-
-        // Auto-enable tools associated with matched skills
-        const sessionID = userMessage.info.sessionID
-        const toolsToEnable: string[] = []
-        for (const skill of matchedSkills) {
-          if (skill.tools && skill.tools.length > 0) {
-            toolsToEnable.push(...skill.tools)
-          }
-        }
-        if (toolsToEnable.length > 0) {
-          await ToolSearch.enableTools(sessionID, toolsToEnable)
-          log.info("auto-enabled tools from skills", { tools: toolsToEnable })
-        }
-
-        // Publish event for TUI visualization
-        Bus.publish(Skill.Event.Matched, {
-          sessionID,
-          skills: matchedSkills.map((s) => ({ name: s.name, tools: s.tools })),
-          toolsEnabled: toolsToEnable,
-        })
-
-        log.info("injected skills", { count: matchedSkills.length, skills: matchedSkills.map((s) => s.name) })
-      }
-    }
+    // Skill injection is now handled by the Skill tool
+    // The model semantically decides when to invoke skills based on user intent
+    // See: src/tool/skill.ts
 
     return input.messages
   }

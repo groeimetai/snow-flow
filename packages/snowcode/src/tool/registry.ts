@@ -11,6 +11,7 @@ import { WebFetchTool } from "./webfetch"
 import { WriteTool } from "./write"
 import { InvalidTool } from "./invalid"
 import { ToolSearchTool, ToolSearch, type ToolIndexEntry } from "./tool-search"
+import { SkillTool } from "./skill"
 // DeferredToolExecutor is no longer needed - tools are now dynamically loaded after tool_search
 import type { Agent } from "../agent/agent"
 import { Tool } from "./tool"
@@ -96,6 +97,7 @@ export namespace ToolRegistry {
     TodoReadTool,
     TaskTool,
     ToolSearchTool, // Meta-tool for discovering and enabling tools dynamically
+    SkillTool, // Semantic skill activation - model decides when to use skills
   ]
 
   async function all(): Promise<Tool.Info[]> {
