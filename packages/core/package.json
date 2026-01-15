@@ -52,7 +52,7 @@
     "commander": "14.0.1",
     "conf": "15.0.2",
     "decimal.js": "^10.6.0",
-    "diff": "8.0.2",
+    "diff": "8.0.3",
     "dotenv": "^16.6.1",
     "eventemitter3": "^5.0.1",
     "eventsource": "^4.1.0",
