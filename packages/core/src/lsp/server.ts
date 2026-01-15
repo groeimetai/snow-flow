@@ -687,8 +687,15 @@ export namespace LSPServer {
               pathParts[0].startsWith("clangd-") &&
               pathParts[1] === "bin" &&
               pathParts[2] === binaryName) {
-            // Reconstruct safe path from validated components
-            safeBinaryPath = path.join(expectedBaseDir, pathParts[0], "bin", binaryName)
+            // SECURITY: Sanitize directory name to break taint chain
+            // Only allow alphanumeric, hyphens, underscores, and dots
+            const dirName = pathParts[0]
+            if (!/^[a-zA-Z0-9._-]+$/.test(dirName)) {
+              log.error(`Invalid clangd directory name: ${dirName}`)
+              return
+            }
+            // Reconstruct safe path from validated and sanitized components
+            safeBinaryPath = path.join(expectedBaseDir, dirName, "bin", binaryName)
           }
         }
       }

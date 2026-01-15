@@ -942,9 +942,10 @@ func (m *messagesComponent) renderHeader() string {
 					tokens = usage.Output
 					continue
 				}
+				// Note: Cache tokens are NOT additional - they describe how input was processed
+				// Cache.Read = tokens served from cache (reduces cost, not additional tokens)
+				// Cache.Write = tokens written to cache (subset of input, not additional tokens)
 				tokens = (usage.Input +
-					usage.Cache.Read +
-					usage.Cache.Write +
 					usage.Output +
 					usage.Reasoning)
 			}
