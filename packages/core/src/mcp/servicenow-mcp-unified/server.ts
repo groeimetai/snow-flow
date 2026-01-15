@@ -393,8 +393,14 @@ export class ServiceNowUnifiedServer {
    */
   private loadContext(): ServiceNowContext {
     // STEP 1: Try environment variables first
-    const instanceUrl = process.env.SERVICENOW_INSTANCE_URL ||
-                       (process.env.SNOW_INSTANCE ? `https://${process.env.SNOW_INSTANCE}` : undefined);
+    // Handle SNOW_INSTANCE with or without https:// prefix to avoid double-prefix issue
+    const snowInstance = process.env.SNOW_INSTANCE;
+    const normalizedSnowInstance = snowInstance
+      ? (snowInstance.startsWith('http://') || snowInstance.startsWith('https://')
+          ? snowInstance
+          : `https://${snowInstance}`)
+      : undefined;
+    const instanceUrl = process.env.SERVICENOW_INSTANCE_URL || normalizedSnowInstance;
     const clientId = process.env.SERVICENOW_CLIENT_ID || process.env.SNOW_CLIENT_ID;
     const clientSecret = process.env.SERVICENOW_CLIENT_SECRET || process.env.SNOW_CLIENT_SECRET;
     const refreshToken = process.env.SERVICENOW_REFRESH_TOKEN || process.env.SNOW_REFRESH_TOKEN;

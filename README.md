@@ -49,7 +49,7 @@ That's it. Snow-Flow auto-initializes on first run and guides you through authen
 
 ## What is Snow-Flow?
 
-Snow-Flow is an **open-source** AI development platform for ServiceNow. It uses the **Model Context Protocol (MCP)** to give AI assistants direct access to your ServiceNow instance through **379+ specialized tools**.
+Snow-Flow is an **open-source** AI development platform for ServiceNow. It uses the **Model Context Protocol (MCP)** to give AI assistants direct access to your ServiceNow instance through **400+ specialized tools**.
 
 **Talk to your ServiceNow instance in plain English:**
 

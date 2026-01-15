@@ -24,8 +24,21 @@ import * as path from 'path';
  */
 async function main() {
   try {
+    // 🆕 Preserve MCP client env vars before loading .env
+    // MCP clients (like Claude Code) set env vars from mcp.json which should take priority
+    const mcpEnvVars = {
+      SNOW_LAZY_TOOLS: process.env.SNOW_LAZY_TOOLS,
+      SNOW_TOOL_DOMAINS: process.env.SNOW_TOOL_DOMAINS,
+      SNOW_INSTANCE: process.env.SNOW_INSTANCE,
+      SERVICENOW_INSTANCE_URL: process.env.SERVICENOW_INSTANCE_URL,
+      SNOW_CLIENT_ID: process.env.SNOW_CLIENT_ID,
+      SERVICENOW_CLIENT_ID: process.env.SERVICENOW_CLIENT_ID,
+      SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET,
+      SERVICENOW_CLIENT_SECRET: process.env.SERVICENOW_CLIENT_SECRET,
+    };
+
     // Load environment variables from .env file
-    // Search in current directory and parent directories
+    // Note: dotenv should NOT override existing vars, but we preserve them anyway for safety
     const result = dotenv.config();
 
     if (result.error) {
@@ -40,6 +53,25 @@ async function main() {
       }
     } else {
       console.error('[Main] Loaded environment from .env file');
+    }
+
+    // 🆕 Restore MCP client env vars (they take priority over .env)
+    // This ensures mcp.json "env" settings override .env file settings
+    for (const [key, value] of Object.entries(mcpEnvVars)) {
+      if (value !== undefined) {
+        if (process.env[key] !== value) {
+          console.error(`[Main] Restoring MCP config override: ${key}`);
+        }
+        process.env[key] = value;
+      }
+    }
+
+    // Log active configuration mode
+    if (process.env.SNOW_LAZY_TOOLS === 'true') {
+      console.error('[Main] SNOW_LAZY_TOOLS=true (lazy loading mode enabled)');
+    }
+    if (process.env.SNOW_TOOL_DOMAINS) {
+      console.error(`[Main] SNOW_TOOL_DOMAINS=${process.env.SNOW_TOOL_DOMAINS}`);
     }
 
     // Create server instance
