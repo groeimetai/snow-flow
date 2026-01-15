@@ -3,6 +3,7 @@ import { Tool } from "./tool"
 import { Config } from "../config/config"
 import { Skill } from "../skill"
 import { Bus } from "../bus"
+import { ToolSearch } from "./tool-search"
 
 const DESCRIPTION = `Execute a skill to get specialized domain knowledge for the current task.
 
@@ -73,6 +74,11 @@ export const SkillTool = Tool.define("Skill", {
       },
       { broadcast: true },
     )
+
+    // Enable skill tools for this session so they become available
+    if (skill.tools && skill.tools.length > 0) {
+      await ToolSearch.enableTools(ctx.sessionID, skill.tools)
+    }
 
     // Build the skill content for the model
     const content = Skill.inject(skill)
