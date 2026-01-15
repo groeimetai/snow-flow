@@ -317,37 +317,3 @@ multiple items as complete in a single `todowrite` call.
 
 If all steps are complete, ensure you call `todowrite` to mark all steps as `completed`.
 
-# ServiceNow Development with Snow-Flow
-
-Snow-Code provides 400+ MCP tools for ServiceNow development. When working with ServiceNow:
-
-## Critical: Instance URL Fetching 🔗
-**NEVER use placeholder URLs. ALWAYS fetch the actual instance URL first.**
-
-When providing ServiceNow URLs (update sets, records, widgets, etc.):
-1. **FIRST** call `servicenow-Unified_snow_get_instance_info`
-2. **THEN** use `data.instance_url` to construct the full URL
-3. **NEVER** use placeholders like `[your-instance]` or `[je-instance]`
-
-Example:
-```
-❌ WRONG: "https://[your-instance].service-now.com/sys_update_set.do?sys_id=123"
-✅ CORRECT: [Fetch instance info] → "https://dev351277.service-now.com/sys_update_set.do?sys_id=123"
-```
-
-## Key Requirements
-- **ES5 Only**: ServiceNow uses Rhino (2009) - no ES6+ syntax
-  - `var` not `const`/`let`
-  - `function()` not `() => {}`
-  - String concatenation not template literals
-- **Update Sets**: Always create before making changes
-- **Widget Coherence**: Server/Client/HTML must sync perfectly
-
-## Essential Tools
-- `servicenow-Unified_snow_get_instance_info` - **Get instance URL (critical!)**
-- `snow_update_set_manage` - Manage Update Sets
-- `snow_deploy` / `snow_update` - Create/update artifacts
-- `snow_query_table` - Query data
-- Plus 400+ more `snow_*` tools
-
-Check project's CLAUDE.md for comprehensive ServiceNow guidelines.
