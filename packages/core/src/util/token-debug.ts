@@ -291,12 +291,10 @@ export namespace TokenDebug {
         reasoning: input.tokens.reasoning,
         cacheRead: input.tokens.cache.read,
         cacheWrite: input.tokens.cache.write,
-        total:
-          input.tokens.input +
-          input.tokens.output +
-          input.tokens.reasoning +
-          input.tokens.cache.read +
-          input.tokens.cache.write,
+        // Note: cache tokens are NOT additional - they describe how input was processed
+        // cacheRead = tokens served from cache (reduces cost, not additional tokens)
+        // cacheWrite = tokens written to cache (subset of input, not additional tokens)
+        total: input.tokens.input + input.tokens.output + input.tokens.reasoning,
       },
       cost: input.cost,
       finishReason: input.finishReason,

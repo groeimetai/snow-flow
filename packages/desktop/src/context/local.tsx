@@ -476,7 +476,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       const tokens = createMemo(() => {
         if (!last()) return
         const tokens = last().tokens
-        const total = tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write
+        // Cache tokens are NOT additional - they describe how input was processed
+        const total = tokens.input + tokens.output + tokens.reasoning
         return new Intl.NumberFormat("en-US", {
           notation: "compact",
           compactDisplay: "short",
@@ -487,7 +488,8 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
         if (!last()) return
         if (!model()?.limit.context) return 0
         const tokens = last().tokens
-        const total = tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write
+        // Cache tokens are NOT additional - they describe how input was processed
+        const total = tokens.input + tokens.output + tokens.reasoning
         return Math.round((total / model()!.limit.context) * 100)
       })
 
