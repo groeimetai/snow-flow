@@ -286,13 +286,40 @@ Snow-Flow works with any MCP-compatible tool:
 
 ### Reducing Token Usage with External Clients
 
-When using Snow-Flow MCP with external clients like Claude Code, all 379+ tools are loaded at once (~70k tokens). Use `SNOW_TOOL_DOMAINS` to load only the domains you need:
+When using Snow-Flow MCP with external clients like Claude Code, all 235+ tools are loaded at once (~71k tokens). Use **lazy loading** to reduce this dramatically:
 
-```bash
-# Load only core domains (~15k tokens)
-SNOW_TOOL_DOMAINS=operations,deployment,cmdb claude
+#### Option 1: Lazy Tools (Recommended) - ~2k tokens
 
-# Add your mcp.json config for Claude Code
+```json
+{
+  "mcpServers": {
+    "snow-flow": {
+      "command": "npx",
+      "args": ["snow-flow", "mcp"],
+      "env": {
+        "SNOW_LAZY_TOOLS": "true"
+      }
+    }
+  }
+}
+```
+
+With lazy tools, only 2 meta-tools are exposed:
+- `tool_search` - Find tools by keyword
+- `tool_execute` - Execute any tool by name
+
+**AI Workflow:**
+```
+1. tool_search({query: "incident query"})
+   → Returns: snow_query_incidents, snow_query_table, ...
+
+2. tool_execute({tool: "snow_query_incidents", args: {query: "priority=1"}})
+   → Executes and returns results
+```
+
+#### Option 2: Domain Filtering - ~15-30k tokens
+
+```json
 {
   "mcpServers": {
     "snow-flow": {
@@ -306,22 +333,15 @@ SNOW_TOOL_DOMAINS=operations,deployment,cmdb claude
 }
 ```
 
-**Available domains:**
+**Available domains:** `operations`, `deployment`, `automation`, `cmdb`, `change`, `knowledge`, `catalog`, `security`, `reporting`, `update-sets`, and 40+ more.
 
-| Domain | Tools | Description |
-|--------|-------|-------------|
-| `operations` | 30 | Core CRUD operations, queries |
-| `deployment` | 19 | Widget/artifact deployment |
-| `automation` | 57 | Script execution, jobs |
-| `cmdb` | 14 | CI management |
-| `change` | 45 | Change/incident management |
-| `knowledge` | 10 | KB articles |
-| `catalog` | 12 | Service catalog |
-| `security` | 18 | ACLs, policies |
-| `reporting` | 10 | Reports, dashboards |
-| `update-sets` | 8 | Update set management |
+#### Token Usage Comparison
 
-Run `snow-flow mcp` without `SNOW_TOOL_DOMAINS` to see all available domains in the startup log.
+| Mode | Tokens | Tools Exposed |
+|------|--------|---------------|
+| Default (all tools) | ~71k | 235+ |
+| SNOW_TOOL_DOMAINS | ~15-30k | Selected domains |
+| **SNOW_LAZY_TOOLS** | **~2k** | 2 (all accessible) |
 
 ---
 

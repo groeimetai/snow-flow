@@ -32,9 +32,10 @@ import http from 'http';
 import { toolRegistry } from './shared/tool-registry.js';
 import { authManager } from './shared/auth.js';
 import { executeWithErrorHandling, SnowFlowError, classifyError } from './shared/error-handler.js';
-import { ServiceNowContext, JWTPayload } from './shared/types.js';
+import { ServiceNowContext, JWTPayload, MCPToolDefinition } from './shared/types.js';
 import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsByRole } from './shared/permission-validator.js';
 import { MCPPromptManager } from '../shared/mcp-prompt-manager.js';
+import { META_TOOLS, tool_search_exec, tool_execute_exec } from './tools/meta/index.js';
 
 /**
  * ServiceNow Unified MCP Server
@@ -471,14 +472,34 @@ export class ServiceNowUnifiedServer {
    * Setup MCP request handlers
    */
   private setupHandlers(): void {
-    // List available tools (filtered by domains and/or user role)
+    // List available tools (filtered by lazy mode, domains, and/or user role)
     this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+      // 🆕 Lazy loading via SNOW_LAZY_TOOLS env var
+      // This dramatically reduces token usage from ~71k to ~2k by only exposing meta-tools
+      // AI uses tool_search + tool_execute to access all 235+ tools dynamically
+      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
+
+      if (lazyToolsEnabled) {
+        console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE');
+        console.error('[Server]   Only tool_search + tool_execute exposed (~2k tokens)');
+        console.error('[Server]   All 235+ tools accessible via tool_execute');
+
+        const metaToolDefs = META_TOOLS.map(t => t.definition);
+        return {
+          tools: metaToolDefs.map(tool => ({
+            name: tool.name,
+            description: tool.description,
+            inputSchema: tool.inputSchema
+          }))
+        };
+      }
+
       // 🆕 Domain filtering via SNOW_TOOL_DOMAINS env var
       // This reduces token usage when using MCP with external clients like Claude Code
       // Example: SNOW_TOOL_DOMAINS=operations,deployment,cmdb
       const toolDomainsEnv = process.env.SNOW_TOOL_DOMAINS;
 
-      let allTools;
+      let allTools: MCPToolDefinition[];
       if (toolDomainsEnv) {
         const requestedDomains = toolDomainsEnv.split(',').map(d => d.trim()).filter(Boolean);
         const availableDomains = toolRegistry.getAvailableDomains();
@@ -530,6 +551,23 @@ export class ServiceNowUnifiedServer {
       }
 
       try {
+        // 🆕 Handle meta-tools (tool_search, tool_execute) for lazy loading mode
+        if (name === 'tool_search') {
+          console.error('[Server] Executing meta-tool: tool_search');
+          const result = await tool_search_exec(args as any, this.context);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        if (name === 'tool_execute') {
+          console.error('[Server] Executing meta-tool: tool_execute');
+          const result = await tool_execute_exec(args as any, this.context);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
         // Get tool from registry
         const tool = toolRegistry.getTool(name);
         if (!tool) {
@@ -804,15 +842,21 @@ export class ServiceNowUnifiedServer {
         console.error(`    - ${domain}: ${count} tools`);
       });
 
-      // 🆕 Show domain filtering hint when all tools are loaded
+      // 🆕 Show optimization hints when all tools are loaded
       // This helps users reduce token usage when using external MCP clients
-      if (!process.env.SNOW_TOOL_DOMAINS) {
-        console.error('[Server] 💡 TIP: To reduce token usage with external MCP clients (e.g., Claude Code),');
-        console.error('[Server]    set SNOW_TOOL_DOMAINS to load only specific tool domains.');
-        console.error('[Server]    Example: SNOW_TOOL_DOMAINS=operations,deployment,cmdb');
-        console.error('[Server]    Available domains: ' + toolRegistry.getAvailableDomains().slice(0, 10).join(', ') + '...');
-      } else {
+      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
+      const domainFilterEnabled = !!process.env.SNOW_TOOL_DOMAINS;
+
+      if (lazyToolsEnabled) {
+        console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE (SNOW_LAZY_TOOLS=true)');
+        console.error('[Server]    Token usage: ~2k (down from ~71k)');
+        console.error('[Server]    AI uses tool_search + tool_execute to access all tools');
+      } else if (domainFilterEnabled) {
         console.error('[Server] 🔧 Domain filtering ACTIVE via SNOW_TOOL_DOMAINS');
+      } else {
+        console.error('[Server] 💡 TIP: To reduce token usage with external MCP clients:');
+        console.error('[Server]    Option 1 (recommended): SNOW_LAZY_TOOLS=true (~2k tokens)');
+        console.error('[Server]    Option 2: SNOW_TOOL_DOMAINS=operations,deployment,cmdb (~15k tokens)');
       }
 
       console.error('[Server] Initialization complete ✅');
