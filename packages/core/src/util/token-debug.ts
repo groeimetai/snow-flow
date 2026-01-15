@@ -44,6 +44,7 @@ export namespace TokenDebug {
   export interface SystemPromptEntry {
     index: number
     content: string
+    fullLength: number
     tokens: TokenBreakdown
   }
 
@@ -56,12 +57,15 @@ export namespace TokenDebug {
       type: string
       tokens: TokenBreakdown
       preview: string
+      fullLength: number
     }[]
   }
 
   export interface ToolEntry {
     id: string
     description: string
+    fullDescriptionLength: number
+    fullSchemaLength: number
     schemaTokens: TokenBreakdown
   }
 
@@ -364,6 +368,7 @@ View full details: ${state.logPath}
     const entries: SystemPromptEntry[] = prompts.map((content, index) => ({
       index,
       content: content.length > 500 ? content.substring(0, 500) + "...[truncated]" : content,
+      fullLength: content.length,
       tokens: {
         estimated: Token.estimate(content),
         characters: content.length,
@@ -418,6 +423,7 @@ View full details: ${state.logPath}
             characters: content.length,
           },
           preview,
+          fullLength: content.length,
         }
       })
 
@@ -460,6 +466,8 @@ View full details: ${state.logPath}
       return {
         id,
         description: descStr.substring(0, 100) + (descStr.length > 100 ? "..." : ""),
+        fullDescriptionLength: descStr.length,
+        fullSchemaLength: schemaStr.length,
         schemaTokens: {
           estimated: Token.estimate(totalContent),
           characters: totalContent.length,
