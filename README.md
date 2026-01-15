@@ -284,6 +284,45 @@ Snow-Flow works with any MCP-compatible tool:
 | **Windsurf** | Copy to `mcp_config.json` |
 | **Continue.dev** | Add to `~/.continue/config.json` |
 
+### Reducing Token Usage with External Clients
+
+When using Snow-Flow MCP with external clients like Claude Code, all 379+ tools are loaded at once (~70k tokens). Use `SNOW_TOOL_DOMAINS` to load only the domains you need:
+
+```bash
+# Load only core domains (~15k tokens)
+SNOW_TOOL_DOMAINS=operations,deployment,cmdb claude
+
+# Add your mcp.json config for Claude Code
+{
+  "mcpServers": {
+    "snow-flow": {
+      "command": "npx",
+      "args": ["snow-flow", "mcp"],
+      "env": {
+        "SNOW_TOOL_DOMAINS": "operations,deployment,automation,change"
+      }
+    }
+  }
+}
+```
+
+**Available domains:**
+
+| Domain | Tools | Description |
+|--------|-------|-------------|
+| `operations` | 30 | Core CRUD operations, queries |
+| `deployment` | 19 | Widget/artifact deployment |
+| `automation` | 57 | Script execution, jobs |
+| `cmdb` | 14 | CI management |
+| `change` | 45 | Change/incident management |
+| `knowledge` | 10 | KB articles |
+| `catalog` | 12 | Service catalog |
+| `security` | 18 | ACLs, policies |
+| `reporting` | 10 | Reports, dashboards |
+| `update-sets` | 8 | Update set management |
+
+Run `snow-flow mcp` without `SNOW_TOOL_DOMAINS` to see all available domains in the startup log.
+
 ---
 
 ## Local Development Workflow

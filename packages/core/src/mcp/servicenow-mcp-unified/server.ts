@@ -471,17 +471,42 @@ export class ServiceNowUnifiedServer {
    * Setup MCP request handlers
    */
   private setupHandlers(): void {
-    // List available tools (filtered by user role)
+    // List available tools (filtered by domains and/or user role)
     this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+      // 🆕 Domain filtering via SNOW_TOOL_DOMAINS env var
+      // This reduces token usage when using MCP with external clients like Claude Code
+      // Example: SNOW_TOOL_DOMAINS=operations,deployment,cmdb
+      const toolDomainsEnv = process.env.SNOW_TOOL_DOMAINS;
+
+      let allTools;
+      if (toolDomainsEnv) {
+        const requestedDomains = toolDomainsEnv.split(',').map(d => d.trim()).filter(Boolean);
+        const availableDomains = toolRegistry.getAvailableDomains();
+
+        // Validate requested domains
+        const invalidDomains = requestedDomains.filter(d => !availableDomains.includes(d.toLowerCase()));
+        if (invalidDomains.length > 0) {
+          console.error(`[Server] ⚠️  Unknown domains in SNOW_TOOL_DOMAINS: ${invalidDomains.join(', ')}`);
+          console.error(`[Server]    Available domains: ${availableDomains.join(', ')}`);
+        }
+
+        allTools = toolRegistry.getToolDefinitionsByDomains(requestedDomains);
+        console.error(`[Server] Domain filtering enabled: ${requestedDomains.join(', ')}`);
+        console.error(`[Server]   Tools loaded: ${allTools.length} (from ${requestedDomains.length} domains)`);
+      } else {
+        allTools = toolRegistry.getToolDefinitions();
+      }
+
       // 🆕 Phase 2: Role-based tool filtering
       const jwtPayload = extractJWTPayload((request as any).headers);
       const userRole = jwtPayload?.role || 'developer';
-
-      const allTools = toolRegistry.getToolDefinitions();
       const filteredTools = filterToolsByRole(allTools, jwtPayload);
 
+      const totalAvailable = toolRegistry.getToolDefinitions().length;
       console.error(
-        `[Server] Listing ${filteredTools.length}/${allTools.length} tools for role: ${userRole}`
+        `[Server] Listing ${filteredTools.length}/${totalAvailable} tools` +
+        (toolDomainsEnv ? ` (domains: ${toolDomainsEnv})` : '') +
+        ` for role: ${userRole}`
       );
 
       return {
@@ -778,6 +803,17 @@ export class ServiceNowUnifiedServer {
       Object.entries(stats.toolsByDomain).forEach(([domain, count]) => {
         console.error(`    - ${domain}: ${count} tools`);
       });
+
+      // 🆕 Show domain filtering hint when all tools are loaded
+      // This helps users reduce token usage when using external MCP clients
+      if (!process.env.SNOW_TOOL_DOMAINS) {
+        console.error('[Server] 💡 TIP: To reduce token usage with external MCP clients (e.g., Claude Code),');
+        console.error('[Server]    set SNOW_TOOL_DOMAINS to load only specific tool domains.');
+        console.error('[Server]    Example: SNOW_TOOL_DOMAINS=operations,deployment,cmdb');
+        console.error('[Server]    Available domains: ' + toolRegistry.getAvailableDomains().slice(0, 10).join(', ') + '...');
+      } else {
+        console.error('[Server] 🔧 Domain filtering ACTIVE via SNOW_TOOL_DOMAINS');
+      }
 
       console.error('[Server] Initialization complete ✅');
 

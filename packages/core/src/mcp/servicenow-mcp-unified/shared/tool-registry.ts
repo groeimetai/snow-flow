@@ -457,6 +457,27 @@ export class ToolRegistry {
   }
 
   /**
+   * Get tool definitions filtered by domains
+   * Used by SNOW_TOOL_DOMAINS env var to reduce token usage for external MCP clients
+   *
+   * @param domains - Array of domain names to include (e.g., ['operations', 'deployment', 'cmdb'])
+   * @returns Tool definitions only from the specified domains
+   */
+  getToolDefinitionsByDomains(domains: string[]): MCPToolDefinition[] {
+    const domainSet = new Set(domains.map(d => d.toLowerCase().trim()));
+    return Array.from(this.tools.values())
+      .filter(tool => domainSet.has(tool.domain.toLowerCase()))
+      .map(tool => tool.definition);
+  }
+
+  /**
+   * Get available domain names for documentation/help
+   */
+  getAvailableDomains(): string[] {
+    return Object.keys(STATIC_TOOL_MODULES).sort();
+  }
+
+  /**
    * Get registered tool by name
    */
   getTool(name: string): RegisteredTool | undefined {
