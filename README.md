@@ -1,9 +1,3 @@
-<p align="center">
-  <picture>
-    <img src="apps/website/public/logo.svg" alt="Snow-Flow logo" width="300">
-  </picture>
-</p>
-
 <pre align="center">
     ▲  ▲        █▀▀▀ █▀▀▄ █▀▀█ █   █   █▀▀▀ █▀▀█ █▀▀▄ █▀▀▀
    ▲ ▼▲ ▼▲      ▀▀▀█ █  █ █  █ █ █ █   █    █  █ █  █ █▀▀
@@ -22,7 +16,7 @@
 
 <p align="center">
   <strong>The Open-Source ServiceNow Build Agent Alternative</strong><br>
-  379+ MCP tools | 75+ LLM providers | Any IDE | 100% open source
+  400+ MCP tools | 75+ LLM providers | Any IDE | 100% open source
 </p>
 
 <p align="center">
@@ -80,7 +74,7 @@ Snow-Flow handles everything: Update Set creation, ES5 validation, widget cohere
 | Feature | Snow-Flow | ServiceNow Build Agent |
 |---------|-----------|------------------------|
 | **Cost** | **Free** (open source) | $150K-$4.5M implementation |
-| **AI Model** | **75+ providers** - Claude, GPT-4, Gemini, DeepSeek, Ollama | NowLLM only |
+| **AI Model** | **75+ providers** - Claude, GPT, Gemini, DeepSeek, Ollama | NowLLM only |
 | **Development** | **Any IDE** - VS Code, Cursor, terminal, JetBrains | Browser-based Studio |
 | **Integrations** | Jira, Azure DevOps, Confluence, GitHub | ServiceNow only |
 | **Source Code** | 100% open source | Proprietary |
@@ -90,7 +84,7 @@ Snow-Flow handles everything: Update Set creation, ES5 validation, widget cohere
 ### Key Features
 
 - **379+ MCP Tools** - Complete ServiceNow coverage across 15 categories
-- **Any LLM Provider** - Claude, GPT-4, Gemini, DeepSeek, Llama, or free with Ollama
+- **Any LLM Provider** - Claude, GPT, Gemini, DeepSeek, Llama, or free with Ollama
 - **Built-in TUI** - Interactive terminal interface with keyboard shortcuts
 - **ES5 Validation** - Catches Rhino engine errors before deployment
 - **Update Set Management** - Automatic change tracking
@@ -109,17 +103,17 @@ Snow-Flow handles everything: Update Set creation, ES5 validation, widget cohere
 │                                                                 │
 │  You: Create an incident dashboard widget with priority charts  │
 │                                                                 │
-│  ┌─ Snow-Flow ─────────────────────────────────────────────┐   │
-│  │ 1. Creating Update Set: "Feature: Incident Dashboard"   │   │
-│  │ 2. Building widget template (HTML)...                   │   │
-│  │ 3. Writing server script (ES5 validated)...             │   │
-│  │ 4. Writing client controller...                         │   │
-│  │ 5. Validating widget coherence...                       │   │
-│  │ 6. Deploying to dev12345.service-now.com...            │   │
-│  │ ✓ Widget deployed: incident_dashboard                   │   │
-│  │                                                         │   │
-│  │ Preview: https://dev12345.service-now.com/sp?id=...    │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─ Snow-Flow ─────────────────────────────────────────────┐    │
+│  │ 1. Creating Update Set: "Feature: Incident Dashboard"   │    │
+│  │ 2. Building widget template (HTML)...                   │    │
+│  │ 3. Writing server script (ES5 validated)...             │    │
+│  │ 4. Writing client controller...                         │    │
+│  │ 5. Validating widget coherence...                       │    │
+│  │ 6. Deploying to dev12345.service-now.com...             │    │
+│  │ ✓ Widget deployed: incident_dashboard                   │    │
+│  │                                                         │    │
+│  │ Preview: https://dev12345.service-now.com/sp?id=...     │    │
+│  └─────────────────────────────────────────────────────────┘    │
 │                                                                 │
 │  You: _                                                         │
 └─────────────────────────────────────────────────────────────────┘
@@ -175,7 +169,7 @@ On first run, Snow-Flow automatically creates:
 
 In the TUI, type `/auth` to authenticate:
 
-1. **LLM Provider** - Claude, GPT-4, Gemini, Ollama, etc.
+1. **LLM Provider** - Claude, GPT, Gemini, Ollama, etc.
 2. **ServiceNow** - OAuth 2.0 (requires OAuth app in ServiceNow)
 
 **Detailed OAuth setup:** [snow-flow.dev/en/oauth-setup](https://snow-flow.dev/en/oauth-setup)
