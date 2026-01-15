@@ -721,42 +721,84 @@ When calling activity_start or activity_add_artifact:
 
 ## 🎯 SKILLS (Domain Knowledge)
 
-### What are Skills?
+Skills are **specialized knowledge packages** activated on-demand when your task matches the skill's domain. Use the `Skill` tool to load them: `Skill({ skill: "skill-name" })`.
 
-Skills are **specialized knowledge packages** that provide domain-specific expertise for particular ServiceNow development tasks. Unlike general instructions, skills are **activated on-demand** when the task matches the skill's domain.
+### Available Skills (53 total)
 
-**Location:** `.snowcode/skill/[skill-name]/SKILL.md`
+**Development & Patterns:**
+| Skill | Purpose |
+|-------|---------|
+| `es5-compliance` | ES5 JavaScript patterns for ServiceNow |
+| `business-rule-patterns` | Business rule best practices |
+| `client-scripts` | Client-side scripting patterns |
+| `script-include-patterns` | Reusable script libraries |
+| `gliderecord-patterns` | GlideRecord query patterns |
+| `widget-coherence` | Widget client/server communication |
+| `ui-actions-policies` | UI actions and UI policies |
 
-### Available Skills
+**ITSM Modules:**
+| Skill | Purpose |
+|-------|---------|
+| `incident-management` | Incident workflows and automation |
+| `change-management` | Change request processes |
+| `problem-management` | Problem and known error management |
+| `request-management` | Service requests and fulfillment |
+| `sla-management` | SLA definitions and breaches |
 
-| Skill | Description | Triggers |
-|-------|-------------|----------|
-| **email-notifications** | Email notifications (sysevent_email_action), templates, triggers, recipients | "notification", "email", "alert", "notify" |
+**Platform Features:**
+| Skill | Purpose |
+|-------|---------|
+| `flow-designer` | Flow Designer and subflows |
+| `catalog-items` | Service catalog configuration |
+| `knowledge-management` | Knowledge base articles |
+| `email-notifications` | Email notifications and templates |
+| `scheduled-jobs` | Scheduled scripts and jobs |
+| `reporting-dashboards` | Reports and Performance Analytics |
 
-### How Skills Work
+**Integration & Data:**
+| Skill | Purpose |
+|-------|---------|
+| `rest-integration` | REST API integrations |
+| `integration-hub` | IntegrationHub and spokes |
+| `import-export` | Import sets and data loading |
+| `transform-maps` | Data transformation |
+| `mid-server` | MID Server patterns |
 
-1. **Detection**: When your task matches skill triggers, the skill content is loaded
-2. **Context**: Skill provides domain-specific guidance, patterns, and tool usage
-3. **Application**: Follow the skill's best practices for that specific domain
+**Security & Administration:**
+| Skill | Purpose |
+|-------|---------|
+| `acl-security` | Access control lists |
+| `scoped-apps` | Scoped application development |
+| `domain-separation` | Multi-tenant configurations |
+| `update-set-workflow` | Update set best practices |
 
-### Skill Structure
+**Advanced Modules:**
+| Skill | Purpose |
+|-------|---------|
+| `virtual-agent` | Virtual Agent NLU topics |
+| `workspace-builder` | Configurable workspaces |
+| `performance-analytics` | PA indicators and dashboards |
+| `atf-testing` | Automated Test Framework |
+| `cmdb-patterns` | CMDB and CI relationships |
 
+**Snow-Flow Specific:**
+| Skill | Purpose |
+|-------|---------|
+| `mcp-tool-discovery` | Find and use MCP tools |
+| `snow-flow-commands` | CLI commands and modes |
+
+**Additional skills:** `agent-workspace`, `approval-workflows`, `asset-management`, `code-review`, `csm-patterns`, `data-policies`, `discovery-patterns`, `document-management`, `event-management`, `field-service`, `grc-compliance`, `hr-service-delivery`, `instance-security`, `mobile-development`, `notification-events`, `predictive-intelligence`, `security-operations`, `ui-builder-patterns`, `vendor-management`
+
+### How to Use Skills
+
+```javascript
+// Load a skill for specialized guidance
+Skill({ skill: "flow-designer" })
+Skill({ skill: "widget-coherence" })
+Skill({ skill: "es5-compliance" })
 ```
-.snowcode/skill/
-└── email-notifications/
-    ├── SKILL.md              # Main skill instructions
-    └── references/           # Quick reference guides
-        └── quick-reference.md
-```
 
-### When to Use Skills
-
-Skills are **automatically relevant** when:
-- Creating email notifications or templates
-- Setting up notification triggers and recipients
-- Working with specific ServiceNow domains
-
-**Skills complement, not replace, general AGENTS.md rules.** Always follow core principles (ES5, Update Sets, Widget Coherence) while applying skill-specific guidance.
+Skills complement core AGENTS.md rules. Always follow ES5, Update Sets, and Widget Coherence principles.
 
 ---
 
