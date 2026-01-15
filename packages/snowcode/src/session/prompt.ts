@@ -122,10 +122,12 @@ export namespace SessionPrompt {
 
       return {
         queued,
+        mcpToolsRegistered: false,  // Track if MCP tools have been registered in search index
       }
     },
     async (current) => {
       current.queued.clear()
+      current.mcpToolsRegistered = false
     },
   )
 
@@ -743,11 +745,15 @@ export namespace SessionPrompt {
     // Get session-enabled deferred tools (tools discovered via tool_search)
     const sessionEnabledTools = await ToolSearch.getEnabledTools(input.sessionID)
 
+    // Fetch MCP tools ONCE and reuse throughout this function
+    // This avoids redundant API calls to MCP servers
+    const mcpTools = await MCP.tools()
+    const mcpToolEntries = Object.entries(mcpTools)
+
     // Auto-enable activity tracking tools - these must ALWAYS be available
     // Without these, the agent cannot track activities before using tool_search
-    const mcpToolsForAutoEnable = await MCP.tools()
     const activityToolPatterns = ["activity_start", "activity_complete", "activity_update", "activity_add_artifact"]
-    for (const [toolName] of Object.entries(mcpToolsForAutoEnable)) {
+    for (const [toolName] of mcpToolEntries) {
       if (activityToolPatterns.some(pattern => toolName.includes(pattern))) {
         sessionEnabledTools.add(toolName)
         log.debug(`Auto-enabled activity tool: ${toolName}`)
@@ -922,25 +928,29 @@ export namespace SessionPrompt {
 
     // MCP tools are treated as deferred by default (they cause major token bloat)
     // Only load MCP tools that have been explicitly enabled via tool_search
-    const mcpTools = await MCP.tools()
-    const mcpToolEntries = Object.entries(mcpTools)
+    // Note: mcpTools and mcpToolEntries are already fetched above (single fetch optimization)
     const enabledMcpTools = mcpToolEntries.filter(([key]) => sessionEnabledTools.has(key))
 
     log.info(`✨ Loading ${enabledMcpTools.length} MCP tools (${mcpToolEntries.length} total available, deferred by default)`)
 
-    // Register all MCP tools in the search index if not already done
+    // Register all MCP tools in the search index ONCE (not on every resolveTools call)
     // This allows tool_search to discover them
     // Activity tools are marked as NOT deferred since they're always available
-    const alwaysAvailablePatterns = ["activity_start", "activity_complete", "activity_update", "activity_add_artifact"]
-    for (const [key, item] of mcpToolEntries) {
-      const isAlwaysAvailable = alwaysAvailablePatterns.some(pattern => key.includes(pattern))
-      await ToolSearch.registerTool({
-        id: key,
-        description: ((item as any).description || "MCP tool").substring(0, 200),
-        category: key.includes("_") ? key.split("_")[0] : "mcp",
-        keywords: key.split(/[-_]/).filter((w) => w.length > 2),
-        deferred: !isAlwaysAvailable,  // Activity tools are NOT deferred
-      })
+    const s = await state()
+    if (!s.mcpToolsRegistered) {
+      const alwaysAvailablePatterns = ["activity_start", "activity_complete", "activity_update", "activity_add_artifact"]
+      for (const [key, item] of mcpToolEntries) {
+        const isAlwaysAvailable = alwaysAvailablePatterns.some(pattern => key.includes(pattern))
+        await ToolSearch.registerTool({
+          id: key,
+          description: ((item as any).description || "MCP tool").substring(0, 200),
+          category: key.includes("_") ? key.split("_")[0] : "mcp",
+          keywords: key.split(/[-_]/).filter((w) => w.length > 2),
+          deferred: !isAlwaysAvailable,  // Activity tools are NOT deferred
+        })
+      }
+      s.mcpToolsRegistered = true
+      log.info(`✨ Registered ${mcpToolEntries.length} MCP tools in search index (one-time)`)
     }
 
     for (const [key, item] of enabledMcpTools) {
