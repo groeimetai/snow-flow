@@ -210,13 +210,19 @@ You MUST use these tools instead of WebFetch when working with these services.
 
 ## When to Use MCP Tools (ALWAYS)
 
-| Service | ✅ USE MCP TOOLS | ❌ NEVER USE WEBFETCH |
+| Service | ✅ USE MCP TOOLS | ❌ NEVER USE WEBFETCH/FETCH |
 |---------|-----------------|----------------------|
-| **GitHub** | \`tool_search({query: "github"})\` → use found tools | WebFetch to github.com |
-| **Jira** | \`tool_search({query: "jira"})\` → use found tools | WebFetch to jira.atlassian.net |
-| **Azure DevOps** | \`tool_search({query: "azure devops"})\` → use found tools | WebFetch to dev.azure.com |
-| **Confluence** | \`tool_search({query: "confluence"})\` → use found tools | WebFetch to confluence URLs |
-| **GitLab** | \`tool_search({query: "gitlab"})\` → use found tools | WebFetch to gitlab.com |
+| **GitHub** | \`github_get_content\`, \`github_list_issues\`, etc. | WebFetch to github.com OR raw.githubusercontent.com |
+| **GitHub Files** | \`github_get_content({owner, repo, path})\` | Fetch to raw.githubusercontent.com URLs! |
+| **Jira** | \`jira_get_issue\`, \`jira_search_issues\`, etc. | WebFetch to jira.atlassian.net |
+| **Azure DevOps** | \`azdo_get_work_item\`, etc. | WebFetch to dev.azure.com |
+| **Confluence** | \`confluence_get_page\`, etc. | WebFetch to confluence URLs |
+| **GitLab** | \`gitlab_get_project\`, etc. | WebFetch to gitlab.com |
+
+## ⚠️ IMPORTANT: raw.githubusercontent.com URLs
+
+When you need file content from GitHub, **NEVER** use WebFetch/Fetch to \`raw.githubusercontent.com\`!
+Instead, use: \`github_get_content({owner: "...", repo: "...", path: "..."})\`
 
 ## Why MCP Tools Are Better
 
