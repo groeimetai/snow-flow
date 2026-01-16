@@ -58,6 +58,35 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow ITSM**: Incident, change, problem management
 - **Enterprise Integrations**: Jira, Azure DevOps, Confluence (if activated)
 
+---
+
+## 🚨 CRITICAL: USE MCP TOOLS, NOT WEBFETCH!
+
+**This is a MANDATORY rule. Violating it is considered a failure.**
+
+When you have MCP tools available for a service (GitHub, Jira, Azure DevOps, ServiceNow, etc.), you **MUST** use those tools instead of WebFetch.
+
+| Service | ✅ CORRECT | ❌ WRONG |
+|---------|-----------|----------|
+| GitHub | Use `tool_search({query: "github"})` → then use found tools | WebFetch to github.com URLs |
+| Jira | Use `tool_search({query: "jira"})` → then use found tools | WebFetch to jira.atlassian.net |
+| Azure DevOps | Use `tool_search({query: "azure devops"})` → then use found tools | WebFetch to dev.azure.com |
+| ServiceNow | Use `tool_search({query: "servicenow"})` → then use found tools | WebFetch to instance.service-now.com |
+| GitLab | Use `tool_search({query: "gitlab"})` → then use found tools | WebFetch to gitlab.com |
+
+**Why MCP tools are better:**
+1. **Authentication built-in**: MCP tools use pre-configured auth, WebFetch doesn't
+2. **Structured data**: MCP tools return clean JSON, WebFetch returns messy HTML
+3. **Full API access**: MCP tools can create/update/delete, WebFetch is read-only
+4. **Token efficiency**: MCP tools return only what you need, WebFetch returns entire pages
+
+**When WebFetch IS appropriate:**
+- Reading documentation sites (docs.github.com, developer.servicenow.com)
+- Fetching public web content not covered by MCP tools
+- User explicitly provides a URL to fetch
+
+---
+
 ### Exception: Always-Available Tools
 
 The following activity tracking tools are **ALWAYS AVAILABLE** without discovery:
