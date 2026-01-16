@@ -453,6 +453,8 @@ export const AuthEnterpriseLoginCommand = cmd({
         if (creds.jira?.enabled) availableIntegrations.push('jira')
         if (creds['azure-devops']?.enabled) availableIntegrations.push('azure-devops')
         if (creds.confluence?.enabled) availableIntegrations.push('confluence')
+        if (creds.github?.enabled) availableIntegrations.push('github')
+        if (creds.gitlab?.enabled) availableIntegrations.push('gitlab')
       }
 
       // Step 6: Save configuration (SECURITY: No credentials stored locally)
@@ -502,6 +504,12 @@ export const AuthEnterpriseLoginCommand = cmd({
       }
       if (availableIntegrations.includes('confluence')) {
         prompts.log.info(`   ✓ Confluence`)
+      }
+      if (availableIntegrations.includes('github')) {
+        prompts.log.info(`   ✓ GitHub`)
+      }
+      if (availableIntegrations.includes('gitlab')) {
+        prompts.log.info(`   ✓ GitLab`)
       }
 
       // Show ServiceNow instances (read-only info)
@@ -652,6 +660,18 @@ export const AuthEnterpriseSyncCommand = cmd({
         prompts.log.info(`   ✓ Confluence`)
       } else {
         prompts.log.info(`   ✗ Confluence (not configured)`)
+      }
+
+      if (credentials.github?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'github'))) {
+        prompts.log.info(`   ✓ GitHub`)
+      } else {
+        prompts.log.info(`   ✗ GitHub (not configured)`)
+      }
+
+      if (credentials.gitlab?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'gitlab'))) {
+        prompts.log.info(`   ✓ GitLab`)
+      } else {
+        prompts.log.info(`   ✗ GitLab (not configured)`)
       }
 
       // Show ServiceNow instances (read-only info)
