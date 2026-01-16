@@ -25,6 +25,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
   Tool
 } from '@modelcontextprotocol/sdk/types.js';
 import axios, { AxiosInstance } from 'axios';
@@ -59,7 +61,8 @@ class EnterpriseProxyServer {
       },
       {
         capabilities: {
-          tools: {}
+          tools: {},
+          prompts: {}
         }
       }
     );
@@ -169,6 +172,198 @@ class EnterpriseProxyServer {
           isError: true
         };
       }
+    });
+
+    // ========== MCP PROMPTS SUPPORT ==========
+    // These prompts provide guidance to the AI on how to use enterprise tools
+
+    const ENTERPRISE_PROMPTS = [
+      {
+        name: 'tool-usage-guidelines',
+        description: 'CRITICAL: Guidelines for using Enterprise MCP tools (GitHub, Jira, Azure DevOps, Confluence, GitLab). Load this prompt to understand when to use MCP tools vs WebFetch.',
+        arguments: []
+      },
+      {
+        name: 'github-workflow',
+        description: 'Complete workflow guide for GitHub operations: issues, PRs, workflows, and releases using MCP tools.',
+        arguments: []
+      },
+      {
+        name: 'jira-workflow',
+        description: 'Complete workflow guide for Jira operations: issues, sprints, boards, and transitions using MCP tools.',
+        arguments: []
+      },
+      {
+        name: 'azure-devops-workflow',
+        description: 'Complete workflow guide for Azure DevOps operations: work items, pipelines, and repos using MCP tools.',
+        arguments: []
+      }
+    ];
+
+    const PROMPT_CONTENT: Record<string, string> = {
+      'tool-usage-guidelines': `# 🚨 CRITICAL: USE MCP TOOLS, NOT WEBFETCH!
+
+**This is a MANDATORY rule. Violating it is considered a failure.**
+
+You have access to Enterprise MCP tools for GitHub, Jira, Azure DevOps, Confluence, and GitLab.
+You MUST use these tools instead of WebFetch when working with these services.
+
+## When to Use MCP Tools (ALWAYS)
+
+| Service | ✅ USE MCP TOOLS | ❌ NEVER USE WEBFETCH |
+|---------|-----------------|----------------------|
+| **GitHub** | \`tool_search({query: "github"})\` → use found tools | WebFetch to github.com |
+| **Jira** | \`tool_search({query: "jira"})\` → use found tools | WebFetch to jira.atlassian.net |
+| **Azure DevOps** | \`tool_search({query: "azure devops"})\` → use found tools | WebFetch to dev.azure.com |
+| **Confluence** | \`tool_search({query: "confluence"})\` → use found tools | WebFetch to confluence URLs |
+| **GitLab** | \`tool_search({query: "gitlab"})\` → use found tools | WebFetch to gitlab.com |
+
+## Why MCP Tools Are Better
+
+1. **Authentication**: MCP tools have pre-configured auth from your enterprise license
+2. **Structured Data**: Clean JSON responses vs messy HTML from WebFetch
+3. **Full API Access**: Create, update, delete - not just read-only
+4. **Token Efficiency**: Only returns what you need, not entire web pages
+
+## When WebFetch IS Appropriate
+
+- Reading documentation (docs.github.com, developer.atlassian.com)
+- Fetching public web content not covered by MCP tools
+- User explicitly provides a URL to fetch
+
+## Tool Discovery Pattern
+
+\`\`\`
+1. tool_search({query: "github issues"})
+   → Returns: github_create_issue, github_list_issues, github_update_issue...
+
+2. Use the found tool directly:
+   github_create_issue({repo: "owner/repo", title: "Bug fix", body: "..."})
+\`\`\`
+
+**Remember: If MCP tools exist for a service, ALWAYS use them!**`,
+
+      'github-workflow': `# GitHub Workflow with MCP Tools
+
+## Available Operations
+
+### Issues
+- \`github_list_issues\` - List repository issues
+- \`github_create_issue\` - Create new issue
+- \`github_update_issue\` - Update existing issue
+- \`github_add_comment\` - Add comment to issue
+
+### Pull Requests
+- \`github_list_prs\` - List pull requests
+- \`github_create_pr\` - Create pull request
+- \`github_merge_pr\` - Merge pull request
+- \`github_review_pr\` - Add review to PR
+
+### Workflows
+- \`github_list_workflows\` - List GitHub Actions workflows
+- \`github_trigger_workflow\` - Manually trigger workflow
+- \`github_get_workflow_runs\` - Get workflow run status
+
+### Releases
+- \`github_list_releases\` - List releases
+- \`github_create_release\` - Create new release
+
+## Example Workflow
+
+\`\`\`
+1. List open issues: github_list_issues({repo: "owner/repo", state: "open"})
+2. Create fix branch and PR: github_create_pr({...})
+3. After review: github_merge_pr({...})
+4. Create release: github_create_release({...})
+\`\`\``,
+
+      'jira-workflow': `# Jira Workflow with MCP Tools
+
+## Available Operations
+
+### Issues
+- \`jira_search_issues\` - Search with JQL
+- \`jira_get_issue\` - Get issue details
+- \`jira_create_issue\` - Create new issue
+- \`jira_update_issue\` - Update issue fields
+- \`jira_transition_issue\` - Move issue to new status
+- \`jira_add_comment\` - Add comment
+
+### Boards & Sprints
+- \`jira_list_boards\` - List agile boards
+- \`jira_get_board\` - Get board details
+- \`jira_list_sprints\` - List sprints for board
+- \`jira_get_sprint\` - Get sprint details
+
+## Example Workflow
+
+\`\`\`
+1. Find issues: jira_search_issues({jql: "project = PROJ AND status = 'To Do'"})
+2. Start work: jira_transition_issue({issue: "PROJ-123", transition: "In Progress"})
+3. Add update: jira_add_comment({issue: "PROJ-123", body: "Started implementation"})
+4. Complete: jira_transition_issue({issue: "PROJ-123", transition: "Done"})
+\`\`\``,
+
+      'azure-devops-workflow': `# Azure DevOps Workflow with MCP Tools
+
+## Available Operations
+
+### Work Items
+- \`azdo_list_work_items\` - List work items
+- \`azdo_get_work_item\` - Get work item details
+- \`azdo_create_work_item\` - Create new work item
+- \`azdo_update_work_item\` - Update work item
+
+### Pipelines
+- \`azdo_list_pipelines\` - List pipelines
+- \`azdo_get_pipeline\` - Get pipeline details
+- \`azdo_trigger_pipeline\` - Run a pipeline
+- \`azdo_get_pipeline_runs\` - Get run history
+
+### Repos
+- \`azdo_list_repos\` - List repositories
+- \`azdo_list_prs\` - List pull requests
+- \`azdo_create_pr\` - Create pull request
+
+## Example Workflow
+
+\`\`\`
+1. Get backlog: azdo_list_work_items({query: "SELECT * FROM WorkItems WHERE [State] = 'New'"})
+2. Update item: azdo_update_work_item({id: 123, fields: {state: "Active"}})
+3. Check pipeline: azdo_get_pipeline_runs({pipeline: "build"})
+\`\`\``
+    };
+
+    // List prompts handler
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      console.error(`[Proxy] Listing ${ENTERPRISE_PROMPTS.length} prompts`);
+      return {
+        prompts: ENTERPRISE_PROMPTS
+      };
+    });
+
+    // Get prompt handler
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      var promptName = request.params.name;
+      console.error(`[Proxy] Getting prompt: ${promptName}`);
+
+      var content = PROMPT_CONTENT[promptName];
+      if (!content) {
+        throw new Error(`Prompt not found: ${promptName}`);
+      }
+
+      return {
+        description: ENTERPRISE_PROMPTS.find(p => p.name === promptName)?.description || '',
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: content
+            }
+          }
+        ]
+      };
     });
   }
 
