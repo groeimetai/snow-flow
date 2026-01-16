@@ -823,6 +823,16 @@ func (a *App) SendPrompt(ctx context.Context, prompt Prompt) (*App, tea.Cmd) {
 			Parts:     opencode.F(message.ToSessionChatParams()),
 		})
 		if err != nil {
+			// Don't show error toast for cancelled/aborted requests (user pressed ESC)
+			errStr := err.Error()
+			if strings.Contains(errStr, "context canceled") ||
+				strings.Contains(errStr, "cancelled") ||
+				strings.Contains(errStr, "aborted") ||
+				strings.Contains(errStr, "interrupted") ||
+				strings.Contains(errStr, "EOF") {
+				slog.Debug("request cancelled by user", "error", err)
+				return nil
+			}
 			errormsg := fmt.Sprintf("failed to send message: %v", err)
 			slog.Error(errormsg)
 			return toast.NewErrorToast(errormsg)()

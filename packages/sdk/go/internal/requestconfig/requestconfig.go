@@ -523,7 +523,16 @@ func (cfg *RequestConfig) Execute() (err error) {
 	contents, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
+		// Check if this was due to context cancellation (user abort)
+		if cfg.Context != nil && cfg.Context.Err() != nil {
+			return cfg.Context.Err()
+		}
 		return fmt.Errorf("error reading response body: %w", err)
+	}
+
+	// Check context again after reading - abort may have happened during read
+	if cfg.Context != nil && cfg.Context.Err() != nil {
+		return cfg.Context.Err()
 	}
 
 	// If we are not json, return plaintext
@@ -552,6 +561,14 @@ func (cfg *RequestConfig) Execute() (err error) {
 	default:
 		err = json.NewDecoder(bytes.NewReader(contents)).Decode(cfg.ResponseBodyInto)
 		if err != nil {
+			// Check if context was cancelled - EOF errors during JSON parsing often mean abort
+			if cfg.Context != nil && cfg.Context.Err() != nil {
+				return cfg.Context.Err()
+			}
+			// If contents are empty or truncated, this might be due to an abort
+			if len(contents) == 0 || err.Error() == "EOF" || err.Error() == "unexpected end of JSON input" {
+				return fmt.Errorf("response interrupted (possibly cancelled): %w", err)
+			}
 			return fmt.Errorf("error parsing response json: %w", err)
 		}
 	}
