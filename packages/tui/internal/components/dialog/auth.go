@@ -418,24 +418,27 @@ func (a *authDialog) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.completeSetupRole = msg.Role
 			a.completeSetupPlan = "Enterprise"
 
-			// Save slug to enterprise.json for future auth redirects
+			// Save enterprise config (token + subdomain) to enterprise.json
+			// The token is required for ServiceNow MCP server to fetch credentials at runtime
+			configPath := os.ExpandEnv("$HOME/.snow-code/enterprise.json")
+			// Ensure .snow-code directory exists
+			configDir := os.ExpandEnv("$HOME/.snow-code")
+			os.MkdirAll(configDir, 0755)
+			// Read existing config or create new one
+			config := map[string]interface{}{}
+			if data, err := os.ReadFile(configPath); err == nil {
+				json.Unmarshal(data, &config)
+			}
+			// CRITICAL: Save token for ServiceNow MCP server to fetch credentials from portal
+			config["token"] = msg.Token
+			// Save subdomain for future auth redirects
 			if msg.Slug != "" {
-				configPath := os.ExpandEnv("$HOME/.snow-code/enterprise.json")
-				// Ensure .snow-code directory exists
-				configDir := os.ExpandEnv("$HOME/.snow-code")
-				os.MkdirAll(configDir, 0755)
-				// Read existing config or create new one
-				config := map[string]interface{}{}
-				if data, err := os.ReadFile(configPath); err == nil {
-					json.Unmarshal(data, &config)
-				}
-				// Update subdomain
 				config["subdomain"] = msg.Slug
-				// Write back
-				if configData, err := json.MarshalIndent(config, "", "  "); err == nil {
-					os.WriteFile(configPath, configData, 0644)
-					slog.Info("Saved subdomain for future auth", "slug", msg.Slug)
-				}
+			}
+			// Write back
+			if configData, err := json.MarshalIndent(config, "", "  "); err == nil {
+				os.WriteFile(configPath, configData, 0644)
+				slog.Info("Saved enterprise config for runtime credential fetch", "hasToken", msg.Token != "", "slug", msg.Slug)
 			}
 
 			a.loading = true
