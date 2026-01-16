@@ -4,6 +4,11 @@ import { MCP } from "../mcp"
 import { UI } from "./ui"
 
 export function FormatError(input: unknown) {
+  // AbortError means user cancelled (ESC key) - return empty string to suppress output
+  if (input instanceof DOMException && input.name === "AbortError") {
+    return ""
+  }
+
   if (MCP.Failed.isInstance(input))
     return `MCP server "${input.data.name}" failed. Note, snow-code does not support MCP authentication yet.`
   if (Config.JsonError.isInstance(input)) {

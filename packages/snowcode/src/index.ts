@@ -119,6 +119,14 @@ const cli = yargs(hideBin(process.argv))
 try {
   await cli.parse()
 } catch (e) {
+  // Silently ignore AbortError - user intentionally cancelled the operation (ESC key)
+  if (e instanceof DOMException && e.name === "AbortError") {
+    Log.Default.debug("operation aborted by user")
+    process.exitCode = 0
+    cancel.abort()
+    process.exit(0)
+  }
+
   let data: Record<string, any> = {}
   if (e instanceof NamedError) {
     const obj = e.toObject()
