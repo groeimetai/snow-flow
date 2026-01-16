@@ -3,9 +3,36 @@ import { Config } from "../config/config"
 import { MCP } from "../mcp"
 import { UI } from "./ui"
 
+/**
+ * Helper to detect AbortError even after serialization (e.g., via SSE/JSON)
+ * The instanceof check fails for serialized errors, so we also use duck typing
+ */
+function isAbortError(input: unknown): boolean {
+  // Direct instanceof check for proper DOMException
+  if (input instanceof DOMException && input.name === "AbortError") {
+    return true
+  }
+
+  // Duck typing for serialized/reconstructed errors
+  if (input && typeof input === "object") {
+    const obj = input as Record<string, unknown>
+    // Check for AbortError name
+    if (obj.name === "AbortError") return true
+    // Check for common abort-related messages
+    if (typeof obj.message === "string") {
+      const msg = obj.message.toLowerCase()
+      if (msg.includes("aborted") || msg.includes("the operation was aborted")) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
 export function FormatError(input: unknown) {
   // AbortError means user cancelled (ESC key) - return empty string to suppress output
-  if (input instanceof DOMException && input.name === "AbortError") {
+  if (isAbortError(input)) {
     return ""
   }
 
