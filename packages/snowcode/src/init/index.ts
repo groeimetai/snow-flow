@@ -10,4 +10,5 @@ export {
   forceRegenerateDocumentation,
   hasCurrentBaseVersion,
   getBaseDocumentationContent,
+  restoreEnterpriseDocumentation,
 } from "./documentation"

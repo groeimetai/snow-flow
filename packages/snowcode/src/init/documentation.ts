@@ -134,3 +134,88 @@ export async function forceRegenerateDocumentation(projectRoot?: string): Promis
 export function getBaseDocumentationContent(): string {
   return BASE_DOCUMENTATION
 }
+
+/**
+ * Restore enterprise documentation if enterprise auth is active.
+ *
+ * This is called during bootstrap to ensure enterprise documentation
+ * persists across restarts. It checks if enterprise config exists with
+ * enabledServices and applies enterprise docs to AGENTS.md if needed.
+ *
+ * @param projectRoot - The working directory (defaults to process.cwd())
+ */
+export async function restoreEnterpriseDocumentation(projectRoot?: string): Promise<void> {
+  const cwd = projectRoot || process.cwd()
+  const agentsMdPath = path.join(cwd, "AGENTS.md")
+  const os = await import("os")
+
+  try {
+    // Check enterprise config
+    const enterpriseConfigPath = path.join(os.homedir(), ".snow-code", "enterprise.json")
+    const configFile = Bun.file(enterpriseConfigPath)
+
+    if (!(await configFile.exists())) {
+      // No enterprise config - nothing to restore
+      return
+    }
+
+    const config = await configFile.json()
+
+    // Need token and enabledServices to restore docs
+    if (!config.token || !config.enabledServices?.length) {
+      return
+    }
+
+    // Check if AGENTS.md exists
+    const agentsFile = Bun.file(agentsMdPath)
+    if (!(await agentsFile.exists())) {
+      // No AGENTS.md - will be created by initializeBaseDocumentation
+      // Enterprise docs will need to be added on next auth/sync
+      return
+    }
+
+    const content = await agentsFile.text()
+
+    // Check if enterprise docs already present
+    if (content.includes("ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW")) {
+      // Already has enterprise docs - no restore needed
+      return
+    }
+
+    // Generate and apply enterprise docs
+    const { generateEnterpriseInstructions, generateStakeholderDocumentation } =
+      await import("../cli/cmd/enterprise-docs-generator.js")
+
+    // For stakeholders, replace with read-only documentation
+    if (config.role === 'stakeholder') {
+      await Bun.write(agentsMdPath, generateStakeholderDocumentation())
+      Log.Default.info("documentation", { message: "Restored stakeholder documentation" })
+      return
+    }
+
+    // Generate comprehensive enterprise documentation
+    const enterpriseDocSection = generateEnterpriseInstructions(config.enabledServices)
+
+    // Find insertion point (before "## Conclusion" or at end)
+    let insertionPoint = content.lastIndexOf("## Conclusion")
+    if (insertionPoint === -1) {
+      insertionPoint = content.lastIndexOf("---")
+    }
+    if (insertionPoint === -1) {
+      insertionPoint = content.length
+    }
+
+    const updatedContent =
+      content.slice(0, insertionPoint) + enterpriseDocSection + "\n\n" + content.slice(insertionPoint)
+
+    await Bun.write(agentsMdPath, updatedContent)
+    Log.Default.info("documentation", { message: "Restored enterprise documentation" })
+
+  } catch (error: any) {
+    // Don't fail startup if enterprise docs restore fails - just log it
+    Log.Default.warn("documentation", {
+      message: "Failed to restore enterprise documentation",
+      error: error.message,
+    })
+  }
+}

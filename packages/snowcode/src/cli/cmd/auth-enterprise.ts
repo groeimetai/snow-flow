@@ -102,6 +102,8 @@ interface EnterpriseConfig {
   mcpServerUrl: string
   // Theme configuration from portal (for UI customization only, no secrets)
   theme?: EnterpriseTheme
+  // Enabled services for restoring documentation on restart
+  enabledServices?: string[]
   lastSynced: number
 }
 
@@ -474,6 +476,7 @@ export const AuthEnterpriseLoginCommand = cmd({
         }),
         mcpServerUrl,
         theme,
+        enabledServices: availableIntegrations, // Save for documentation restore on restart
         lastSynced: Date.now()
       }
 
@@ -626,11 +629,31 @@ export const AuthEnterpriseSyncCommand = cmd({
       const mcpServerUrl = configData.mcpServerUrl || existingConfig.mcpServerUrl || ""
       const theme: EnterpriseTheme | undefined = configData.theme || undefined
 
+      // Parse credentials to determine available integrations (for config storage)
+      const credentials = configData.credentials || {}
+      const syncedIntegrations: string[] = []
+      if (credentials.jira?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'jira'))) {
+        syncedIntegrations.push('jira')
+      }
+      if (credentials["azure-devops"]?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'azure-devops'))) {
+        syncedIntegrations.push('azure-devops')
+      }
+      if (credentials.confluence?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'confluence'))) {
+        syncedIntegrations.push('confluence')
+      }
+      if (credentials.github?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'github'))) {
+        syncedIntegrations.push('github')
+      }
+      if (credentials.gitlab?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'gitlab'))) {
+        syncedIntegrations.push('gitlab')
+      }
+
       // SECURITY: Only update non-sensitive configuration - NO credentials stored locally
       const updatedConfig: EnterpriseConfig = {
         ...existingConfig,
         mcpServerUrl,
         theme,
+        enabledServices: syncedIntegrations, // Save for documentation restore on restart
         lastSynced: Date.now()
       }
 
@@ -642,33 +665,32 @@ export const AuthEnterpriseSyncCommand = cmd({
       // Show available integrations (read-only info, no credentials stored)
       prompts.log.info("   Available Integrations (credentials fetched server-side):")
 
-      // Parse credentials to show what's available (without storing them)
-      const credentials = configData.credentials || {}
-      if (credentials.jira?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'jira'))) {
+      // Display using the already-computed syncedIntegrations
+      if (syncedIntegrations.includes('jira')) {
         prompts.log.info(`   ✓ Jira`)
       } else {
         prompts.log.info(`   ✗ Jira (not configured)`)
       }
 
-      if (credentials["azure-devops"]?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'azure-devops'))) {
+      if (syncedIntegrations.includes('azure-devops')) {
         prompts.log.info(`   ✓ Azure DevOps`)
       } else {
         prompts.log.info(`   ✗ Azure DevOps (not configured)`)
       }
 
-      if (credentials.confluence?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'confluence'))) {
+      if (syncedIntegrations.includes('confluence')) {
         prompts.log.info(`   ✓ Confluence`)
       } else {
         prompts.log.info(`   ✗ Confluence (not configured)`)
       }
 
-      if (credentials.github?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'github'))) {
+      if (syncedIntegrations.includes('github')) {
         prompts.log.info(`   ✓ GitHub`)
       } else {
         prompts.log.info(`   ✗ GitHub (not configured)`)
       }
 
-      if (credentials.gitlab?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'gitlab'))) {
+      if (syncedIntegrations.includes('gitlab')) {
         prompts.log.info(`   ✓ GitLab`)
       } else {
         prompts.log.info(`   ✗ GitLab (not configured)`)
@@ -705,27 +727,10 @@ export const AuthEnterpriseSyncCommand = cmd({
       prompts.log.info("   ℹ️  No sensitive data is stored locally.")
       prompts.log.info("")
 
-      // Update AGENTS.md with enterprise documentation
-      const availableIntegrations: string[] = []
-      if (credentials.jira?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'jira'))) {
-        availableIntegrations.push('jira')
-      }
-      if (credentials["azure-devops"]?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'azure-devops'))) {
-        availableIntegrations.push('azure-devops')
-      }
-      if (credentials.confluence?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'confluence'))) {
-        availableIntegrations.push('confluence')
-      }
-      if (credentials.github?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'github'))) {
-        availableIntegrations.push('github')
-      }
-      if (credentials.gitlab?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'gitlab'))) {
-        availableIntegrations.push('gitlab')
-      }
-
-      if (availableIntegrations.length > 0) {
+      // Update AGENTS.md with enterprise documentation (using already-computed syncedIntegrations)
+      if (syncedIntegrations.length > 0) {
         try {
-          await updateDocumentationWithEnterprise(availableIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
+          await updateDocumentationWithEnterprise(syncedIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
           prompts.log.success("   📖 AGENTS.md updated with enterprise development guidelines")
         } catch (docError: any) {
           prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
