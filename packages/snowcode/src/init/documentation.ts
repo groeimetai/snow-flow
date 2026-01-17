@@ -161,10 +161,13 @@ export async function restoreEnterpriseDocumentation(projectRoot?: string): Prom
 
     const config = await configFile.json()
 
-    // Need token and enabledServices to restore docs
-    if (!config.token || !config.enabledServices?.length) {
+    // Need token to restore docs (enabledServices can be empty for base enterprise features)
+    if (!config.token) {
       return
     }
+
+    // Get enabledServices or default to empty array
+    const enabledServices = config.enabledServices || []
 
     // Check if AGENTS.md exists
     const agentsFile = Bun.file(agentsMdPath)
@@ -194,7 +197,7 @@ export async function restoreEnterpriseDocumentation(projectRoot?: string): Prom
     }
 
     // Generate comprehensive enterprise documentation
-    const enterpriseDocSection = generateEnterpriseInstructions(config.enabledServices)
+    const enterpriseDocSection = generateEnterpriseInstructions(enabledServices)
 
     // Find insertion point (before "## Conclusion" or at end)
     let insertionPoint = content.lastIndexOf("## Conclusion")

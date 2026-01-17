@@ -547,13 +547,12 @@ export const AuthEnterpriseLoginCommand = cmd({
       prompts.log.info("")
 
       // Step 8: Update AGENTS.md with enterprise documentation
-      if (availableIntegrations.length > 0) {
-        try {
-          await updateDocumentationWithEnterprise(availableIntegrations, isEnterpriseUser && user?.role === 'stakeholder' ? 'stakeholder' : undefined)
-          prompts.log.success("   📖 AGENTS.md configured with enterprise development guidelines")
-        } catch (docError: any) {
-          prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
-        }
+      // Always update for enterprise users - docs include Activity Tracking and base features
+      try {
+        await updateDocumentationWithEnterprise(availableIntegrations, isEnterpriseUser && user?.role === 'stakeholder' ? 'stakeholder' : undefined)
+        prompts.log.success("   📖 AGENTS.md configured with enterprise development guidelines")
+      } catch (docError: any) {
+        prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
       }
 
       prompts.log.info("")
@@ -728,13 +727,12 @@ export const AuthEnterpriseSyncCommand = cmd({
       prompts.log.info("")
 
       // Update AGENTS.md with enterprise documentation (using already-computed syncedIntegrations)
-      if (syncedIntegrations.length > 0) {
-        try {
-          await updateDocumentationWithEnterprise(syncedIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
-          prompts.log.success("   📖 AGENTS.md updated with enterprise development guidelines")
-        } catch (docError: any) {
-          prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
-        }
+      // Always update for enterprise users - docs include Activity Tracking and base features
+      try {
+        await updateDocumentationWithEnterprise(syncedIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
+        prompts.log.success("   📖 AGENTS.md updated with enterprise development guidelines")
+      } catch (docError: any) {
+        prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
       }
 
     } catch (error: any) {
