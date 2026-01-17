@@ -1700,6 +1700,26 @@ export namespace SessionPrompt {
           })
           const error = MessageV2.fromError(e, { providerID: input.providerID })
 
+          // Check if this is an abort error (user pressed ESC)
+          // Handle gracefully without publishing to TUI to prevent visual corruption
+          const isAbortError =
+            (e instanceof DOMException && e.name === "AbortError") ||
+            NoOutputGeneratedError.isInstance(e)
+
+          if (isAbortError) {
+            log.debug("stream processing aborted by user", { error: e })
+            assistantMsg.error = error
+            assistantMsg.time.completed = Date.now()
+            await Session.updateMessage(assistantMsg)
+            // Return without publishing Session.Event.Error - abort is not a real error
+            return {
+              info: assistantMsg,
+              parts: await Session.getParts(assistantMsg.id),
+              blocked,
+              shouldRetry: false,
+            }
+          }
+
           // Check if this is a token overflow error that can be recovered via compaction
           const isTokenOverflow = MessageV2.APIError.isInstance(error) &&
             (error.data.message.includes("prompt is too long") ||
