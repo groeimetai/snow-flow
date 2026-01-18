@@ -15,7 +15,7 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_update_set_manage',
-  description: `Unified tool for Update Set management (create, switch, complete, export, preview, add_artifact)
+  description: `Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact)
 
 ⚠️ CRITICAL: Update Set Tracking & OAuth Context
 
@@ -58,7 +58,7 @@ RECOMMENDED USAGE:
       action: {
         type: 'string',
         description: 'Management action to perform',
-        enum: ['create', 'switch', 'complete', 'export', 'preview', 'add_artifact', 'current']
+        enum: ['create', 'switch', 'complete', 'ignore', 'export', 'preview', 'add_artifact', 'current']
       },
       // Common parameters
       update_set_id: {
@@ -142,6 +142,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return await executeSwitch(args, context);
       case 'complete':
         return await executeComplete(args, context);
+      case 'ignore':
+        return await executeIgnore(args, context);
       case 'export':
         return await executeExport(args, context);
       case 'preview':
@@ -490,6 +492,87 @@ async function executeComplete(args: any, context: ServiceNowContext): Promise<T
     artifact_count: artifactCount,
     notes: notes || null,
     message: 'Update Set marked as complete. No further changes can be made.'
+  });
+}
+
+// ==================== IGNORE ====================
+async function executeIgnore(args: any, context: ServiceNowContext): Promise<ToolResult> {
+  const { update_set_id, notes } = args;
+  const client = await getAuthenticatedClient(context);
+
+  let targetId = update_set_id;
+
+  // If no ID specified, use current Update Set
+  if (!targetId) {
+    const currentResponse = await client.get('/api/now/table/sys_update_set', {
+      params: {
+        sysparm_query: 'is_current=true',
+        sysparm_fields: 'sys_id',
+        sysparm_limit: 1
+      }
+    });
+
+    if (!currentResponse.data.result || currentResponse.data.result.length === 0) {
+      return createErrorResult('No Update Set specified and no active Update Set found');
+    }
+
+    targetId = currentResponse.data.result[0].sys_id;
+  }
+
+  // Get Update Set details
+  const getResponse = await client.get(`/api/now/table/sys_update_set/${targetId}`, {
+    params: {
+      sysparm_fields: 'sys_id,name,description,state'
+    }
+  });
+
+  if (!getResponse.data.result) {
+    return createErrorResult(`Update Set not found: ${targetId}`);
+  }
+
+  const updateSet = getResponse.data.result;
+
+  // Check if already ignored
+  if (updateSet.state === 'ignore') {
+    return createSuccessResult({
+      sys_id: targetId,
+      name: updateSet.name,
+      state: 'ignore',
+      already_ignored: true,
+      message: 'Update Set is already in ignore state'
+    });
+  }
+
+  // Mark as ignore
+  const updateData: any = {
+    state: 'ignore'
+  };
+
+  if (notes) {
+    updateData.description = `${updateSet.description}\n\nIgnore Notes: ${notes}`;
+  }
+
+  await client.put(`/api/now/table/sys_update_set/${targetId}`, updateData);
+
+  // Get artifact count
+  const artifactsResponse = await client.get('/api/now/table/sys_update_xml', {
+    params: {
+      sysparm_query: `update_set=${targetId}`,
+      sysparm_fields: 'sys_id',
+      sysparm_limit: 1000
+    }
+  });
+
+  const artifactCount = artifactsResponse.data.result?.length || 0;
+
+  return createSuccessResult({
+    sys_id: targetId,
+    name: updateSet.name,
+    previous_state: updateSet.state,
+    state: 'ignore',
+    artifact_count: artifactCount,
+    notes: notes || null,
+    message: 'Update Set marked as IGNORE. It will NOT be deployed or migrated to other environments.'
   });
 }
 
