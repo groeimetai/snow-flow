@@ -524,7 +524,7 @@ Use \`tool_search\` with these queries:
  */
 export function generateEnterpriseInstructions(enabledServices: string[]): string {
   const hasJira = enabledServices.includes('jira');
-  const hasAzdo = enabledServices.includes('azdo');
+  const hasAzdo = enabledServices.includes('azure-devops');
   const hasConfluence = enabledServices.includes('confluence');
   const hasGitHub = enabledServices.includes('github');
   const hasGitLab = enabledServices.includes('gitlab');
