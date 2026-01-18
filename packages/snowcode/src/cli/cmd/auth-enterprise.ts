@@ -546,13 +546,14 @@ export const AuthEnterpriseLoginCommand = cmd({
       prompts.log.info("   ℹ️  No sensitive data is stored locally.")
       prompts.log.info("")
 
-      // Step 8: Update AGENTS.md with enterprise documentation
-      // Always update for enterprise users - docs include Activity Tracking and base features
-      try {
-        await updateDocumentationWithEnterprise(availableIntegrations, isEnterpriseUser && user?.role === 'stakeholder' ? 'stakeholder' : undefined)
-        prompts.log.success("   📖 AGENTS.md configured with enterprise development guidelines")
-      } catch (docError: any) {
-        prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
+      // Step 8: Update AGENTS.md with enterprise documentation (only if integrations available)
+      if (availableIntegrations.length > 0) {
+        try {
+          await updateDocumentationWithEnterprise(availableIntegrations, isEnterpriseUser && user?.role === 'stakeholder' ? 'stakeholder' : undefined)
+          prompts.log.success("   📖 AGENTS.md configured with enterprise development guidelines")
+        } catch (docError: any) {
+          prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
+        }
       }
 
       prompts.log.info("")
@@ -726,13 +727,14 @@ export const AuthEnterpriseSyncCommand = cmd({
       prompts.log.info("   ℹ️  No sensitive data is stored locally.")
       prompts.log.info("")
 
-      // Update AGENTS.md with enterprise documentation (using already-computed syncedIntegrations)
-      // Always update for enterprise users - docs include Activity Tracking and base features
-      try {
-        await updateDocumentationWithEnterprise(syncedIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
-        prompts.log.success("   📖 AGENTS.md updated with enterprise development guidelines")
-      } catch (docError: any) {
-        prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
+      // Update AGENTS.md with enterprise documentation (only if integrations synced)
+      if (syncedIntegrations.length > 0) {
+        try {
+          await updateDocumentationWithEnterprise(syncedIntegrations, existingConfig.role === 'stakeholder' ? 'stakeholder' : undefined)
+          prompts.log.success("   📖 AGENTS.md updated with enterprise development guidelines")
+        } catch (docError: any) {
+          prompts.log.warn(`   ⚠️  Could not update AGENTS.md: ${docError.message}`)
+        }
       }
 
     } catch (error: any) {

@@ -161,13 +161,13 @@ export async function restoreEnterpriseDocumentation(projectRoot?: string): Prom
 
     const config = await configFile.json()
 
-    // Need token to restore docs (enabledServices can be empty for base enterprise features)
-    if (!config.token) {
+    // Need token AND enabledServices to restore docs
+    if (!config.token || !config.enabledServices?.length) {
       return
     }
 
-    // Get enabledServices or default to empty array
-    const enabledServices = config.enabledServices || []
+    // Get enabledServices
+    const enabledServices = config.enabledServices
 
     // Check if AGENTS.md exists
     const agentsFile = Bun.file(agentsMdPath)
