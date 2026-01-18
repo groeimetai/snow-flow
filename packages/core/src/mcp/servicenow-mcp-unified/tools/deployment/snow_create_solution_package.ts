@@ -1,20 +1,40 @@
 /**
- * snow_create_solution_package - Create solution packages
+ * snow_create_solution_package - Create solution packages with MULTIPLE artifacts
  *
- * Creates comprehensive solution packages containing multiple related artifacts
+ * ⚠️ USE THIS ONLY FOR MULTI-ARTIFACT SOLUTIONS!
+ * For creating a SINGLE widget, script, or artifact → use snow_artifact_manage instead!
+ *
+ * This tool is for bundling MULTIPLE related artifacts into one deployment package.
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
+import { execute as executeArtifactManage } from './snow_artifact_manage.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_solution_package',
-  description: 'Creates comprehensive solution packages containing multiple related artifacts (widgets, scripts, rules). Manages dependencies and generates deployment documentation.',
+  description: `Creates a MULTI-ARTIFACT solution package with Update Set tracking.
+
+⚠️ WHEN TO USE THIS TOOL:
+- Creating 3+ related artifacts that form a complete solution
+- Need automatic Update Set creation for the entire package
+- Deploying a "feature bundle" (e.g., widget + script includes + business rules)
+
+❌ DO NOT USE FOR:
+- Creating a SINGLE widget → use snow_artifact_manage instead
+- Creating a SINGLE script include → use snow_artifact_manage instead
+- Creating individual artifacts → use snow_artifact_manage instead
+
+✅ GOOD USE CASE:
+"Create HR Portal solution with: widget, 2 script includes, 1 business rule"
+
+❌ BAD USE CASE:
+"Create a widget for displaying incidents" → Use snow_artifact_manage!`,
   // Metadata for tool discovery (not sent to LLM)
   category: 'development',
   subcategory: 'deployment',
-  use_cases: ['deployment', 'packaging', 'solution'],
+  use_cases: ['multi-artifact', 'solution-bundle', 'feature-package'],
   complexity: 'advanced',
   frequency: 'low',
 
@@ -71,29 +91,33 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       });
     }
 
-    // Step 2: Create each artifact
+    // Step 2: Create each artifact using snow_artifact_manage (DRY principle)
     for (const artifact of artifacts) {
       try {
-        const tableMap: Record<string, string> = {
-          widget: 'sp_widget',
-          script_include: 'sys_script_include',
-          business_rule: 'sys_script',
-          table: 'sys_db_object'
-        };
+        // Delegate to snow_artifact_manage for artifact creation
+        const artifactResult = await executeArtifactManage({
+          action: 'create',
+          type: artifact.type,
+          ...artifact.create  // Spread the create config (name, script, template, etc.)
+        }, context);
 
-        const tableName = tableMap[artifact.type];
-        if (!tableName) {
-          results.errors.push(`Unsupported artifact type: ${artifact.type}`);
+        if (!artifactResult.success) {
+          results.errors.push({
+            type: artifact.type,
+            error: artifactResult.error || 'Unknown error'
+          });
           continue;
         }
 
-        const createResponse = await client.post(`/api/now/table/${tableName}`, artifact.create);
+        // Extract result data from the successful response
+        const resultData = artifactResult.data || {};
 
         results.created_artifacts.push({
           type: artifact.type,
-          sys_id: createResponse.data.result.sys_id,
-          name: createResponse.data.result.name || createResponse.data.result.id,
-          table: tableName
+          sys_id: resultData.sys_id,
+          name: resultData.name,
+          table: resultData.table,
+          url: resultData.url
         });
 
       } catch (artifactError: any) {
