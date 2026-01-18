@@ -2,6 +2,7 @@ import z from "zod/v4"
 import { Tool } from "./tool"
 import DESCRIPTION_WRITE from "./todowrite.txt"
 import { Todo } from "../session/todo"
+import { ToolSearch } from "./tool-search"
 
 export const TodoWriteTool = Tool.define("todowrite", {
   description: DESCRIPTION_WRITE,
@@ -13,11 +14,19 @@ export const TodoWriteTool = Tool.define("todowrite", {
       sessionID: opts.sessionID,
       todos: params.todos,
     })
+
+    // Get session-enabled tools for reminder
+    const enabledTools = await ToolSearch.getEnabledTools(opts.sessionID)
+    const toolReminder = enabledTools.size > 0
+      ? `\n\n💡 REMINDER: You have ${enabledTools.size} previously discovered tools still available. Use them directly instead of WebFetch for integration URLs (github.com, raw.githubusercontent.com, atlassian.net, dev.azure.com, gitlab.com).`
+      : ""
+
     return {
       title: `${params.todos.filter((x) => x.status !== "completed").length} todos`,
-      output: JSON.stringify(params.todos, null, 2),
+      output: JSON.stringify(params.todos, null, 2) + toolReminder,
       metadata: {
         todos: params.todos,
+        enabledTools: [...enabledTools],
       },
     }
   },
