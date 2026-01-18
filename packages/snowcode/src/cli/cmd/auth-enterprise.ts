@@ -446,7 +446,8 @@ export const AuthEnterpriseLoginCommand = cmd({
       if (Array.isArray(credentialsData.credentials)) {
         for (const cred of credsArray) {
           if (cred.service && cred.enabled !== false) {
-            availableIntegrations.push(cred.service)
+            // Normalize service name to lowercase for consistent matching
+            availableIntegrations.push(cred.service.toLowerCase())
           }
         }
       } else if (credentialsData.credentials) {
@@ -632,19 +633,23 @@ export const AuthEnterpriseSyncCommand = cmd({
       // Parse credentials to determine available integrations (for config storage)
       const credentials = configData.credentials || {}
       const syncedIntegrations: string[] = []
-      if (credentials.jira?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'jira'))) {
+      // Helper to check if service is in array (case-insensitive)
+      const hasService = (name: string) => Array.isArray(configData.credentials) &&
+        configData.credentials.some((c: any) => c.service?.toLowerCase() === name.toLowerCase())
+
+      if (credentials.jira?.enabled || hasService('jira')) {
         syncedIntegrations.push('jira')
       }
-      if (credentials["azure-devops"]?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'azure-devops'))) {
+      if (credentials["azure-devops"]?.enabled || hasService('azure-devops')) {
         syncedIntegrations.push('azure-devops')
       }
-      if (credentials.confluence?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'confluence'))) {
+      if (credentials.confluence?.enabled || hasService('confluence')) {
         syncedIntegrations.push('confluence')
       }
-      if (credentials.github?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'github'))) {
+      if (credentials.github?.enabled || hasService('github')) {
         syncedIntegrations.push('github')
       }
-      if (credentials.gitlab?.enabled || (Array.isArray(configData.credentials) && configData.credentials.some((c: any) => c.service === 'gitlab'))) {
+      if (credentials.gitlab?.enabled || hasService('gitlab')) {
         syncedIntegrations.push('gitlab')
       }
 
