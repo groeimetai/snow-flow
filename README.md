@@ -1,6 +1,6 @@
 <pre align="center">
     ▲  ▲        █▀▀▀ █▀▀▄ █▀▀█ █   █   █▀▀▀ █▀▀█ █▀▀▄ █▀▀▀
-   ▲ ▼▲ ▼▲      ▀▀▀█ █  █ █  █ █ █ █   █    █  █ █  █ █▀▀
+   ▲ ▼▲ ▼▲     ▀▀▀█ █  █ █  █ █ █ █   █    █  █ █  █ █▀▀
   ▲ ▼  ▼  ▼     ▀▀▀▀ ▀  ▀ ▀▀▀▀ ▀▀▀▀▀   ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀
 </pre>
 
@@ -381,9 +381,9 @@ For teams needing external integrations:
 
 | Plan | Price | Users |
 |------|-------|-------|
-| Individual | $29/mo | 1 developer |
-| Teams | $99/user/mo | 3+ users |
-| Enterprise | Custom | 25+ seats, SSO, white-label |
+| Individual | $99/mo | 1 developer |
+| Teams | $79/user/mo | 3+ users |
+| Enterprise | Custom | 10+ seats, SSO, white-label |
 
 **Start:** [portal.snow-flow.dev](https://portal.snow-flow.dev)
 
