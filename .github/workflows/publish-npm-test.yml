@@ -171,7 +171,7 @@ jobs:
 
             // Add postinstall script to download binary from GitHub releases
             pkg.scripts = pkg.scripts || {};
-            pkg.scripts.postinstall = 'node scripts/postinstall.js';
+            pkg.scripts.postinstall = 'node scripts/postinstall.cjs';
 
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
