@@ -166,6 +166,37 @@ for (const item of targets) {
   })
 
   await $`rm -rf ./dist/${name}/bin/tui`
+
+  // Bundle MCP servers as standalone JS files (fully bundled, no external deps)
+  console.log(`  bundling MCP servers for ${name}`)
+  await $`mkdir -p dist/${name}/mcp`
+
+  // Bundle servicenow-unified MCP server with all dependencies
+  const snUnifiedResult = await Bun.build({
+    entrypoints: ["./src/servicenow/servicenow-mcp-unified/index.ts"],
+    outdir: `dist/${name}/mcp`,
+    target: "bun",
+    format: "esm",
+    naming: "servicenow-unified.js",
+    minify: true,
+  })
+  if (!snUnifiedResult.success) {
+    console.error("  Failed to bundle servicenow-unified:", snUnifiedResult.logs)
+  }
+
+  // Bundle enterprise-proxy MCP server with all dependencies
+  const entProxyResult = await Bun.build({
+    entrypoints: ["./src/servicenow/enterprise-proxy/server.ts"],
+    outdir: `dist/${name}/mcp`,
+    target: "bun",
+    format: "esm",
+    naming: "enterprise-proxy.js",
+    minify: true,
+  })
+  if (!entProxyResult.success) {
+    console.error("  Failed to bundle enterprise-proxy:", entProxyResult.logs)
+  }
+
   await Bun.file(`dist/${name}/package.json`).write(
     JSON.stringify(
       {

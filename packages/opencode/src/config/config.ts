@@ -206,6 +206,27 @@ export namespace Config {
   })
 
   /**
+   * Get the MCP server command based on whether we're running bundled or in development
+   */
+  function getMcpServerCommand(serverName: "servicenow-unified" | "enterprise-proxy"): string[] {
+    // In bundled mode, the MCP servers are in ../mcp/ relative to the binary (which is in bin/)
+    const binDir = path.dirname(process.execPath)
+    const bundledPath = path.join(binDir, "..", "mcp", `${serverName}.js`)
+
+    if (existsSync(bundledPath)) {
+      // Production: use bundled JS with bun (bundled for bun target)
+      return ["bun", "run", bundledPath]
+    }
+
+    // Development: use TypeScript source with bun
+    const devPaths: Record<string, string> = {
+      "servicenow-unified": path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.ts"),
+      "enterprise-proxy": path.join(__dirname, "../servicenow/enterprise-proxy/server.ts"),
+    }
+    return ["bun", "run", devPaths[serverName]]
+  }
+
+  /**
    * Inject ServiceNow MCP servers into the config when credentials are available
    */
   async function injectServiceNowMcpServers(
@@ -223,11 +244,7 @@ export namespace Config {
         log.info("auto-configuring servicenow-unified MCP server from auth store")
         result["servicenow-unified"] = {
           type: "local",
-          command: [
-            "bun",
-            "run",
-            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.ts"),
-          ],
+          command: getMcpServerCommand("servicenow-unified"),
           environment: {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
             SERVICENOW_CLIENT_ID: snAuth.clientId,
@@ -246,11 +263,7 @@ export namespace Config {
         log.info("auto-configuring servicenow-unified MCP server from basic auth")
         result["servicenow-unified"] = {
           type: "local",
-          command: [
-            "bun",
-            "run",
-            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.ts"),
-          ],
+          command: getMcpServerCommand("servicenow-unified"),
           environment: {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
             SERVICENOW_USERNAME: snAuth.username,
@@ -272,11 +285,7 @@ export namespace Config {
         const jwtToken = entAuth.token || entAuth.licenseKey
         result["snow-flow-enterprise"] = {
           type: "local",
-          command: [
-            "bun",
-            "run",
-            path.join(__dirname, "../servicenow/enterprise-proxy/server.ts"),
-          ],
+          command: getMcpServerCommand("enterprise-proxy"),
           environment: {
             SNOW_ENTERPRISE_URL: entAuth.enterpriseUrl,
             SNOW_LICENSE_KEY: jwtToken || "",
