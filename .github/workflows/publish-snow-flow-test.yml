@@ -39,7 +39,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm (required for OIDC)
+        run: npm install -g npm@latest
+
+      - name: Configure npm for OIDC publishing
+        run: |
+          rm -f ~/.npmrc
+          rm -f .npmrc
+          rm -f /home/runner/work/_temp/.npmrc 2>/dev/null || true
+          echo "registry=https://registry.npmjs.org/" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
+          echo "✅ npm configured for OIDC"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -210,19 +221,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish main package to npm
+      - name: Publish main package to npm (OIDC)
         run: |
           cd packages/opencode
+          echo "Publishing snow-flow-test main package..."
           npm publish --access public --tag test --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish platform packages to npm
+      - name: Publish platform packages to npm (OIDC)
         run: |
           cd packages/opencode/dist
-
-          # Configure npm auth globally for subdirectory publishing
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
 
           for dir in snow-flow-test-*/; do
             if [ -d "$dir" ]; then
@@ -234,5 +241,3 @@ jobs:
               cd ..
             fi
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
