@@ -224,8 +224,9 @@ export namespace Config {
         result["servicenow-unified"] = {
           type: "local",
           command: [
-            "node",
-            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.js"),
+            "bun",
+            "run",
+            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.ts"),
           ],
           environment: {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
@@ -246,8 +247,9 @@ export namespace Config {
         result["servicenow-unified"] = {
           type: "local",
           command: [
-            "node",
-            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.js"),
+            "bun",
+            "run",
+            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.ts"),
           ],
           environment: {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
@@ -271,8 +273,9 @@ export namespace Config {
         result["snow-flow-enterprise"] = {
           type: "local",
           command: [
-            "node",
-            path.join(__dirname, "../servicenow/enterprise-proxy/server.js"),
+            "bun",
+            "run",
+            path.join(__dirname, "../servicenow/enterprise-proxy/server.ts"),
           ],
           environment: {
             SNOW_ENTERPRISE_URL: entAuth.enterpriseUrl,
