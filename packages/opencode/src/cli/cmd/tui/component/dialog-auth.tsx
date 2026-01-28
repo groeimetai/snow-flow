@@ -679,10 +679,9 @@ function DialogAuthEnterprise() {
           <text fg={theme.textMuted}>  - Jira, Azure DevOps, Confluence integration</text>
           <text fg={theme.textMuted}>  - Stakeholder read-only seats</text>
           <text fg={theme.textMuted}>  - Custom themes and branding</text>
-          <box paddingTop={1}>
-            <text fg={theme.text}>
-              enter <text fg={theme.textMuted}>continue</text>
-            </text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>continue</text>
           </box>
         </box>
       </Show>
@@ -719,10 +718,9 @@ function DialogAuthEnterprise() {
             }}
           />
           <text fg={theme.textMuted}>Portal: https://{subdomain()}.snow-flow.dev</text>
-          <box paddingTop={1}>
-            <text fg={theme.text}>
-              enter <text fg={theme.textMuted}>verify</text>
-            </text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>verify</text>
           </box>
         </box>
       </Show>
