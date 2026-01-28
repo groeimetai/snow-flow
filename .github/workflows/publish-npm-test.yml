@@ -1,4 +1,4 @@
-name: Snow-Flow Test Release
+name: Release Test
 
 on:
   push:
@@ -43,21 +43,14 @@ jobs:
       - name: Upgrade npm (required for OIDC)
         run: npm install -g npm@latest
 
-      - name: Configure npm authentication
+      - name: Configure npm for OIDC publishing
         run: |
           rm -f ~/.npmrc
           rm -f .npmrc
           rm -f /home/runner/work/_temp/.npmrc 2>/dev/null || true
           echo "registry=https://registry.npmjs.org/" > ~/.npmrc
-          if [ -n "$NPM_TOKEN" ]; then
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
-            echo "✅ npm configured with NPM_TOKEN"
-          else
-            echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
-            echo "⚠️ npm configured for OIDC (requires Trusted Publisher setup)"
-          fi
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
+          echo "✅ npm configured for OIDC"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -93,7 +86,6 @@ jobs:
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 
           # Build ALL platforms from Linux (cross-compilation)
-          # This is MUCH faster than building natively on Windows
           echo "Building all platforms via cross-compilation..."
           bun run build
         env:
@@ -228,15 +220,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish main package to npm
+      - name: Publish main package to npm (OIDC)
         run: |
           cd packages/opencode
           echo "Publishing snow-flow-test main package..."
           npm publish --access public --tag test --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish platform packages to npm
+      - name: Publish platform packages to npm (OIDC)
         run: |
           cd packages/opencode/dist
 
@@ -250,5 +240,3 @@ jobs:
               cd ..
             fi
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
