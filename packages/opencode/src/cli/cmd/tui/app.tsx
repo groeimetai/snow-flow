@@ -22,7 +22,7 @@ import { KeybindProvider } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
 import { Home } from "@tui/routes/home"
 import { Session } from "@tui/routes/session"
-import { Auth } from "@tui/routes/auth"
+import { DialogAuth } from "@tui/component/dialog-auth"
 import { PromptHistoryProvider } from "./component/prompt/history"
 import { FrecencyProvider } from "./component/prompt/frecency"
 import { PromptStashProvider } from "./component/prompt/stash"
@@ -497,8 +497,7 @@ function App() {
         aliases: ["login", "servicenow"],
       },
       onSelect: () => {
-        route.navigate({ type: "auth" })
-        dialog.clear()
+        dialog.replace(() => <DialogAuth />)
       },
       category: "ServiceNow",
     },
@@ -696,9 +695,6 @@ function App() {
         </Match>
         <Match when={route.data.type === "session"}>
           <Session />
-        </Match>
-        <Match when={route.data.type === "auth"}>
-          <Auth />
         </Match>
       </Switch>
     </box>

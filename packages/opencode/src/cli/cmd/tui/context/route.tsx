@@ -13,12 +13,7 @@ export type SessionRoute = {
   initialPrompt?: PromptInfo
 }
 
-export type AuthRoute = {
-  type: "auth"
-  provider?: "servicenow" | "enterprise"
-}
-
-export type Route = HomeRoute | SessionRoute | AuthRoute
+export type Route = HomeRoute | SessionRoute
 
 export const { use: useRoute, provider: RouteProvider } = createSimpleContext({
   name: "Route",
