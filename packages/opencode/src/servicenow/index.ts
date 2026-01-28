@@ -3,25 +3,18 @@
  *
  * This module provides the entry point for ServiceNow integration including:
  * - OAuth authentication
- * - MCP server management
- * - Enterprise proxy
- * - ServiceNow client utilities
+ * - MCP server configuration helpers
+ *
+ * Note: The ServiceNow MCP servers (servicenow-unified, enterprise-proxy) are
+ * standalone processes that are configured via the mcp config in opencode.json.
+ * They are automatically injected when credentials are present in the auth store.
  */
 
-// Auth
+// Auth - these are in the main auth module
 export { ServiceNowOAuth } from "../auth/servicenow-oauth"
 export type { ServiceNowAuthResult, ServiceNowOAuthOptions } from "../auth/servicenow-oauth"
 
-// Utils
-export { ServiceNowClient } from "./utils/servicenow-client"
-export { Logger } from "./utils/logger"
-export { BoundedMap, BoundedArray, BoundedSet } from "./utils/memory-safe-collections"
-export { TimerRegistry, timerRegistry } from "./utils/timer-registry"
-
-// Server exports (for standalone MCP server usage)
-export { ServiceNowUnifiedServer } from "./servicenow-mcp-unified/server"
-
-// MCP Configuration
+// MCP Configuration helpers
 export {
   getServiceNowMcpConfig,
   getServiceNowMcpConfigFromAuth,
