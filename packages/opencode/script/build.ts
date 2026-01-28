@@ -130,7 +130,9 @@ for (const item of targets) {
   console.log(`building ${name}`)
   await $`mkdir -p dist/${name}/bin`
 
-  const parserWorker = fs.realpathSync(path.resolve(dir, "./node_modules/@opentui/core/parser.worker.js"))
+  // Use require.resolve to find the module in hoisted node_modules (monorepo support)
+  const opentuiCorePath = path.dirname(require.resolve("@opentui/core/package.json"))
+  const parserWorker = fs.realpathSync(path.join(opentuiCorePath, "parser.worker.js"))
   const workerPath = "./src/cli/cmd/tui/worker.ts"
 
   // Use platform-specific bunfs root path based on target OS
