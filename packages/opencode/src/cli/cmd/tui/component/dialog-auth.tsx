@@ -489,105 +489,163 @@ function DialogAuthServiceNowBasic() {
 }
 
 /**
- * Enterprise Portal dialog with license key authentication
+ * Enterprise Portal dialog with browser-based device authorization flow
  */
 function DialogAuthEnterprise() {
   const dialog = useDialog()
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"license" | "authenticating">("license")
-  const [licenseKey, setLicenseKey] = createSignal("")
+  const [step, setStep] = createSignal<"subdomain" | "browser" | "code" | "verifying">("subdomain")
+  const [subdomain, setSubdomain] = createSignal("")
+  const [sessionId, setSessionId] = createSignal("")
+  const [authCode, setAuthCode] = createSignal("")
 
-  let licenseInput: TextareaRenderable
+  let subdomainInput: TextareaRenderable
+  let codeInput: TextareaRenderable
 
-  // Load existing credentials
+  // Load saved subdomain from existing enterprise config
   onMount(async () => {
     try {
       const { Auth } = await import("@/auth")
       const entAuth = await Auth.get("enterprise")
-      if (entAuth?.type === "enterprise" && entAuth.licenseKey) {
-        setLicenseKey(entAuth.licenseKey)
+      if (entAuth?.type === "enterprise" && entAuth.enterpriseUrl) {
+        // Extract subdomain from URL like https://acme.snow-flow.dev
+        const match = entAuth.enterpriseUrl.match(/https?:\/\/([^.]+)\.snow-flow\.dev/)
+        if (match) {
+          setSubdomain(match[1])
+        }
       }
     } catch {
       // Auth module not available
     }
-    setTimeout(() => licenseInput?.focus(), 10)
+    setTimeout(() => subdomainInput?.focus(), 10)
   })
 
   useKeyboard((evt) => {
     if (evt.name === "escape") {
-      dialog.replace(() => <DialogAuth />)
+      const currentStep = step()
+      if (currentStep === "subdomain") {
+        dialog.replace(() => <DialogAuth />)
+      } else if (currentStep === "browser" || currentStep === "code") {
+        setStep("subdomain")
+        setSessionId("")
+        setAuthCode("")
+        setTimeout(() => subdomainInput?.focus(), 10)
+      }
     }
   })
 
-  const openPortal = () => {
-    const { spawn } = require("child_process")
-    const url = "https://portal.snow-flow.dev"
-    if (process.platform === "darwin") {
-      spawn("open", [url], { detached: true, stdio: "ignore" })
-    } else if (process.platform === "win32") {
-      spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
-    } else {
-      spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
-    }
-    toast.show({
-      variant: "info",
-      message: "Opening portal in browser...",
-      duration: 3000,
-    })
-  }
-
-  const handleLicenseKey = async () => {
-    const key = licenseKey().trim()
-    if (!key) {
-      toast.show({
-        variant: "error",
-        message: "Please enter your license key",
-      })
+  const startDeviceAuth = async () => {
+    const sub = subdomain().trim().toLowerCase()
+    if (!sub) {
+      toast.show({ variant: "error", message: "Please enter your organization subdomain" })
       return
     }
 
-    setStep("authenticating")
+    // Validate subdomain format (alphanumeric with optional hyphens, no leading/trailing hyphen)
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(sub) && sub.length > 1) {
+      toast.show({ variant: "error", message: "Invalid subdomain format" })
+      return
+    }
+    // Single character subdomain is also valid
+    if (sub.length === 1 && !/^[a-z0-9]$/.test(sub)) {
+      toast.show({ variant: "error", message: "Invalid subdomain format" })
+      return
+    }
+
+    const portalUrl = `https://${sub}.snow-flow.dev`
 
     try {
-      // Authenticate with the portal API
-      const response = await fetch("https://portal.snow-flow.dev/api/auth/login", {
+      // Get machine info
+      const os = await import("os")
+      const machineInfo = `${os.hostname()} (${os.platform()} ${os.arch()})`
+
+      // Request device session
+      const response = await fetch(`${portalUrl}/api/auth/device/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ licenseKey: key }),
+        body: JSON.stringify({ machineInfo }),
       })
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Invalid license key" }))
-        throw new Error(error.message || "Authentication failed")
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || "Failed to start device authorization")
+      }
+
+      const data = await response.json()
+      setSessionId(data.sessionId)
+
+      // Open browser with verification URL
+      const { spawn } = await import("child_process")
+      const url = data.verificationUrl
+      if (process.platform === "darwin") {
+        spawn("open", [url], { detached: true, stdio: "ignore" })
+      } else if (process.platform === "win32") {
+        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+      } else {
+        spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+      }
+
+      toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+      setStep("browser")
+
+      // Auto-advance to code input after a moment
+      setTimeout(() => {
+        setStep("code")
+        setTimeout(() => codeInput?.focus(), 10)
+      }, 2000)
+    } catch (e) {
+      toast.show({ variant: "error", message: e instanceof Error ? e.message : "Failed to start auth" })
+    }
+  }
+
+  const verifyAuthCode = async () => {
+    const code = authCode().trim().toUpperCase()
+    if (!code) {
+      toast.show({ variant: "error", message: "Please enter the authorization code" })
+      return
+    }
+
+    setStep("verifying")
+    const sub = subdomain().trim().toLowerCase()
+    const portalUrl = `https://${sub}.snow-flow.dev`
+
+    try {
+      const response = await fetch(`${portalUrl}/api/auth/device/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: sessionId(),
+          authCode: code,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || "Verification failed")
       }
 
       const data = await response.json()
 
-      // Save to auth store
+      // Save to Auth store
       const { Auth } = await import("@/auth")
       await Auth.set("enterprise", {
         type: "enterprise",
-        licenseKey: key,
         token: data.token,
-        role: data.customer?.role,
+        enterpriseUrl: portalUrl,
+        username: data.user?.username || data.user?.email,
+        email: data.user?.email,
+        role: data.user?.role,
       })
 
-      toast.show({
-        variant: "info",
-        message: `Enterprise connected! Welcome ${data.customer?.name || ""}`.trim(),
-        duration: 5000,
-      })
+      const userName = data.user?.username || data.user?.email || data.customer?.name || "Enterprise"
+      toast.show({ variant: "info", message: `Connected as ${userName}!`, duration: 5000 })
       dialog.clear()
     } catch (e) {
-      toast.show({
-        variant: "error",
-        message: e instanceof Error ? e.message : "Authentication failed",
-        duration: 5000,
-      })
-      setStep("license")
-      setTimeout(() => licenseInput?.focus(), 10)
+      toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })
+      setStep("code")
+      setTimeout(() => codeInput?.focus(), 10)
     }
   }
 
@@ -600,21 +658,21 @@ function DialogAuthEnterprise() {
         <text fg={theme.textMuted}>esc</text>
       </box>
 
-      <Show when={step() === "license"}>
+      <Show when={step() === "subdomain"}>
         <box gap={1}>
-          <text fg={theme.textMuted}>Enter your Snow-Flow Enterprise license key</text>
+          <text fg={theme.textMuted}>Enter your organization subdomain (e.g., "acme" for acme.snow-flow.dev)</text>
           <textarea
-            ref={(val: TextareaRenderable) => (licenseInput = val)}
+            ref={(val: TextareaRenderable) => (subdomainInput = val)}
             height={3}
-            initialValue={licenseKey()}
-            placeholder="SNOW-ENT-XXXX-XXXX-XXXX"
+            initialValue={subdomain()}
+            placeholder="your-org"
             textColor={theme.text}
             focusedTextColor={theme.text}
             cursorColor={theme.text}
             keyBindings={[{ name: "return", action: "submit" }]}
             onSubmit={() => {
-              setLicenseKey(licenseInput.plainText)
-              handleLicenseKey()
+              setSubdomain(subdomainInput.plainText)
+              startDeviceAuth()
             }}
           />
           <text fg={theme.textMuted}>Enterprise features include:</text>
@@ -623,23 +681,58 @@ function DialogAuthEnterprise() {
           <text fg={theme.textMuted}>  - Custom themes and branding</text>
           <box paddingTop={1}>
             <text fg={theme.text}>
-              enter <span style={{ fg: theme.textMuted }}>authenticate</span>
+              enter <text fg={theme.textMuted}>continue</text>
             </text>
-          </box>
-          <box
-            onMouseUp={openPortal}
-          >
-            <text fg={theme.primary}>Don't have a license key? Open portal</text>
           </box>
         </box>
       </Show>
 
-      <Show when={step() === "authenticating"}>
+      <Show when={step() === "browser"}>
         <box gap={1}>
           <text fg={theme.primary} attributes={TextAttributes.BOLD}>
-            Authenticating...
+            Opening browser for verification...
           </text>
-          <text fg={theme.textMuted}>Validating license key with portal.snow-flow.dev</text>
+          <text fg={theme.textMuted}>URL: https://{subdomain()}.snow-flow.dev/device/authorize</text>
+          <box paddingTop={1}>
+            <text fg={theme.text}>After logging in on the portal:</text>
+            <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
+            <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
+          </box>
+        </box>
+      </Show>
+
+      <Show when={step() === "code"}>
+        <box gap={1}>
+          <text fg={theme.textMuted}>Enter the authorization code from the portal</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (codeInput = val)}
+            height={3}
+            initialValue={authCode()}
+            placeholder="ABC-DEF-12"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setAuthCode(codeInput.plainText)
+              verifyAuthCode()
+            }}
+          />
+          <text fg={theme.textMuted}>Portal: https://{subdomain()}.snow-flow.dev</text>
+          <box paddingTop={1}>
+            <text fg={theme.text}>
+              enter <text fg={theme.textMuted}>verify</text>
+            </text>
+          </box>
+        </box>
+      </Show>
+
+      <Show when={step() === "verifying"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Verifying...
+          </text>
+          <text fg={theme.textMuted}>Validating authorization code with {subdomain()}.snow-flow.dev</text>
         </box>
       </Show>
     </box>
