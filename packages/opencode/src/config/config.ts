@@ -195,11 +195,93 @@ export namespace Config {
 
     result.plugin = deduplicatePlugins(result.plugin ?? [])
 
+    // Auto-inject ServiceNow MCP servers when credentials are available
+    result.mcp = result.mcp ?? {}
+    result.mcp = await injectServiceNowMcpServers(result.mcp, auth, log)
+
     return {
       config: result,
       directories,
     }
   })
+
+  /**
+   * Inject ServiceNow MCP servers into the config when credentials are available
+   */
+  async function injectServiceNowMcpServers(
+    mcp: NonNullable<Info["mcp"]>,
+    auth: Record<string, any>,
+    log: ReturnType<typeof Log.create>,
+  ): Promise<NonNullable<Info["mcp"]>> {
+    const result = { ...mcp }
+
+    // Check for ServiceNow OAuth credentials
+    const snAuth = auth["servicenow"]
+    if (snAuth?.type === "servicenow-oauth" && snAuth.instance && snAuth.clientId) {
+      // Only add if not already configured
+      if (!result["servicenow-unified"]) {
+        log.info("auto-configuring servicenow-unified MCP server from auth store")
+        result["servicenow-unified"] = {
+          type: "local",
+          command: [
+            "node",
+            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.js"),
+          ],
+          environment: {
+            SERVICENOW_INSTANCE_URL: snAuth.instance,
+            SERVICENOW_CLIENT_ID: snAuth.clientId,
+            SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
+            ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
+            ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
+          },
+          enabled: true,
+        }
+      }
+    }
+
+    // Check for ServiceNow Basic Auth credentials
+    if (snAuth?.type === "servicenow-basic" && snAuth.instance && snAuth.username) {
+      if (!result["servicenow-unified"]) {
+        log.info("auto-configuring servicenow-unified MCP server from basic auth")
+        result["servicenow-unified"] = {
+          type: "local",
+          command: [
+            "node",
+            path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.js"),
+          ],
+          environment: {
+            SERVICENOW_INSTANCE_URL: snAuth.instance,
+            SERVICENOW_USERNAME: snAuth.username,
+            SERVICENOW_PASSWORD: snAuth.password ?? "",
+          },
+          enabled: true,
+        }
+      }
+    }
+
+    // Check for Enterprise credentials
+    const entAuth = auth["enterprise"]
+    if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token)) {
+      if (!result["snow-flow-enterprise"]) {
+        log.info("auto-configuring snow-flow-enterprise MCP server from auth store")
+        result["snow-flow-enterprise"] = {
+          type: "local",
+          command: [
+            "node",
+            path.join(__dirname, "../servicenow/enterprise-proxy/server.js"),
+          ],
+          environment: {
+            ...(entAuth.licenseKey && { SNOW_LICENSE_KEY: entAuth.licenseKey }),
+            ...(entAuth.token && { SNOW_JWT_TOKEN: entAuth.token }),
+            ...(entAuth.sessionToken && { SNOW_SESSION_TOKEN: entAuth.sessionToken }),
+          },
+          enabled: true,
+        }
+      }
+    }
+
+    return result
+  }
 
   export async function installDependencies(dir: string) {
     const pkg = path.join(dir, "package.json")

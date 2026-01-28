@@ -22,6 +22,7 @@ import { KeybindProvider } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
 import { Home } from "@tui/routes/home"
 import { Session } from "@tui/routes/session"
+import { Auth } from "@tui/routes/auth"
 import { PromptHistoryProvider } from "./component/prompt/history"
 import { FrecencyProvider } from "./component/prompt/frecency"
 import { PromptStashProvider } from "./component/prompt/stash"
@@ -489,6 +490,19 @@ function App() {
       category: "System",
     },
     {
+      title: "ServiceNow Auth",
+      value: "servicenow.auth",
+      slash: {
+        name: "auth",
+        aliases: ["login", "servicenow"],
+      },
+      onSelect: () => {
+        route.navigate({ type: "auth" })
+        dialog.clear()
+      },
+      category: "ServiceNow",
+    },
+    {
       title: "Exit the app",
       value: "app.exit",
       slash: {
@@ -682,6 +696,9 @@ function App() {
         </Match>
         <Match when={route.data.type === "session"}>
           <Session />
+        </Match>
+        <Match when={route.data.type === "auth"}>
+          <Auth />
         </Match>
       </Switch>
     </box>
