@@ -640,7 +640,11 @@ function DialogAuthEnterprise() {
       })
 
       const userName = data.user?.username || data.user?.email || data.customer?.name || "Enterprise"
-      toast.show({ variant: "info", message: `Connected as ${userName}!`, duration: 5000 })
+      toast.show({
+        variant: "info",
+        message: `Connected as ${userName}! MCP server will be available on next restart.`,
+        duration: 5000,
+      })
       dialog.clear()
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })

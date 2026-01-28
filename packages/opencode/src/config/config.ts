@@ -261,9 +261,13 @@ export namespace Config {
 
     // Check for Enterprise credentials
     const entAuth = auth["enterprise"]
-    if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token)) {
+    if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token) && entAuth.enterpriseUrl) {
       if (!result["snow-flow-enterprise"]) {
         log.info("auto-configuring snow-flow-enterprise MCP server from auth store")
+        // The enterprise proxy server expects:
+        // - SNOW_ENTERPRISE_URL: The portal URL (e.g., https://acme.snow-flow.dev)
+        // - SNOW_LICENSE_KEY: The JWT token (confusing name, but it's the auth token)
+        const jwtToken = entAuth.token || entAuth.licenseKey
         result["snow-flow-enterprise"] = {
           type: "local",
           command: [
@@ -271,8 +275,8 @@ export namespace Config {
             path.join(__dirname, "../servicenow/enterprise-proxy/server.js"),
           ],
           environment: {
-            ...(entAuth.licenseKey && { SNOW_LICENSE_KEY: entAuth.licenseKey }),
-            ...(entAuth.token && { SNOW_JWT_TOKEN: entAuth.token }),
+            SNOW_ENTERPRISE_URL: entAuth.enterpriseUrl,
+            SNOW_LICENSE_KEY: jwtToken || "",
             ...(entAuth.sessionToken && { SNOW_SESSION_TOKEN: entAuth.sessionToken }),
           },
           enabled: true,
