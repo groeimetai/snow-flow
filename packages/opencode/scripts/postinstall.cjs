@@ -20,9 +20,14 @@ const pkgDir = path.join(__dirname, '..');
 const binaryName = platform === 'windows' ? 'opencode.exe' : 'opencode';
 const binaryPath = path.join(pkgDir, 'bin', binaryName);
 
+// Check if file exists AND is a real binary (not just a launcher script)
+// Launcher scripts are small (~2KB), actual binaries are 20MB+
 if (fs.existsSync(binaryPath)) {
-  console.log('snow-flow-test: Binary already exists');
-  process.exit(0);
+  var stats = fs.statSync(binaryPath);
+  if (stats.size > 100000) { // > 100KB means it's a real binary
+    console.log('snow-flow-test: Binary already exists');
+    process.exit(0);
+  }
 }
 
 const releaseUrl = 'https://github.com/' + REPO + '/releases/download/v' + VERSION + '/' + tarballName;
