@@ -115,7 +115,11 @@ class EnterpriseProxyServer {
           console.error('[Proxy] Response data:', error.response.data);
         }
 
-        throw new Error('Failed to connect to license server: ' + error.message);
+        // Return empty tools list instead of crashing - allows graceful degradation
+        console.error('[Proxy] Returning empty tools list due to backend error');
+        return {
+          tools: []
+        };
       }
     });
 

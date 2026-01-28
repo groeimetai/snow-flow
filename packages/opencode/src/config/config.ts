@@ -208,7 +208,7 @@ export namespace Config {
   /**
    * Get the MCP server command based on whether we're running bundled or in development
    */
-  function getMcpServerCommand(serverName: "servicenow-unified" | "enterprise-proxy"): string[] {
+  export function getMcpServerCommand(serverName: "servicenow-unified" | "enterprise-proxy"): string[] {
     // In bundled mode, the MCP servers are in ../mcp/ relative to the binary (which is in bin/)
     const binDir = path.dirname(process.execPath)
     const bundledPath = path.join(binDir, "..", "mcp", `${serverName}.js`)

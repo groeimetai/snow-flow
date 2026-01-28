@@ -563,6 +563,84 @@ export namespace MCP {
     s.status[name] = { status: "disabled" }
   }
 
+  /**
+   * Reload MCP servers for a specific server name or add new ones
+   * This is useful after authentication changes (e.g., /auth)
+   */
+  export async function reload(serverName?: string) {
+    log.info("reloading MCP servers", { serverName: serverName ?? "all" })
+    const s = await state()
+    const cfg = await Config.get()
+    const config = cfg.mcp ?? {}
+
+    if (serverName) {
+      // Reload specific server
+      const mcp = config[serverName]
+      if (!mcp || !isMcpConfigured(mcp)) {
+        log.error("MCP server not found in config", { serverName })
+        return s.status
+      }
+
+      // Close existing client
+      const existingClient = s.clients[serverName]
+      if (existingClient) {
+        await existingClient.close().catch((error) => {
+          log.error("Failed to close MCP client during reload", { name: serverName, error })
+        })
+        delete s.clients[serverName]
+      }
+
+      if (mcp.enabled === false) {
+        s.status[serverName] = { status: "disabled" }
+        return s.status
+      }
+
+      const result = await create(serverName, mcp).catch(() => undefined)
+      if (result) {
+        s.status[serverName] = result.status
+        if (result.mcpClient) {
+          s.clients[serverName] = result.mcpClient
+        }
+      }
+    } else {
+      // Reload all servers - close existing and reconnect
+      for (const [name, client] of Object.entries(s.clients)) {
+        await client.close().catch((error) => {
+          log.error("Failed to close MCP client during reload", { name, error })
+        })
+      }
+
+      s.clients = {}
+      s.status = {}
+
+      await Promise.all(
+        Object.entries(config).map(async ([key, mcp]) => {
+          if (!isMcpConfigured(mcp)) {
+            log.error("Ignoring MCP config entry without type during reload", { key })
+            return
+          }
+
+          if (mcp.enabled === false) {
+            s.status[key] = { status: "disabled" }
+            return
+          }
+
+          const result = await create(key, mcp).catch(() => undefined)
+          if (!result) return
+
+          s.status[key] = result.status
+
+          if (result.mcpClient) {
+            s.clients[key] = result.mcpClient
+          }
+        }),
+      )
+    }
+
+    log.info("MCP servers reloaded", { count: Object.keys(s.clients).length })
+    return s.status
+  }
+
   export async function tools() {
     const result: Record<string, Tool> = {}
     const s = await state()

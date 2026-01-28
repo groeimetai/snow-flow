@@ -199,11 +199,44 @@ function DialogAuthServiceNowOAuth() {
       })
 
       if (result.success) {
-        toast.show({
-          variant: "info",
-          message: "ServiceNow connected! MCP server will be available on next restart.",
-          duration: 5000,
-        })
+        // Add ServiceNow MCP server directly (no restart needed)
+        try {
+          const { MCP } = await import("@/mcp")
+          const { getMcpServerCommand } = await import("@/config/config")
+          const { Auth } = await import("@/auth")
+          const snAuth = await Auth.get("servicenow")
+          if (snAuth?.type === "servicenow-oauth") {
+            await MCP.add("servicenow-unified", {
+              type: "local",
+              command: getMcpServerCommand("servicenow-unified"),
+              environment: {
+                SERVICENOW_INSTANCE_URL: snAuth.instance,
+                SERVICENOW_CLIENT_ID: snAuth.clientId,
+                SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
+                ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
+                ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
+              },
+              enabled: true,
+            })
+            toast.show({
+              variant: "info",
+              message: "ServiceNow connected! MCP server is now active.",
+              duration: 5000,
+            })
+          } else {
+            toast.show({
+              variant: "info",
+              message: "ServiceNow connected! MCP server will be available on next restart.",
+              duration: 5000,
+            })
+          }
+        } catch (mcpError) {
+          toast.show({
+            variant: "info",
+            message: "ServiceNow connected! MCP server will be available on next restart.",
+            duration: 5000,
+          })
+        }
         dialog.clear()
       } else {
         toast.show({
@@ -393,11 +426,32 @@ function DialogAuthServiceNowBasic() {
         password: password(),
       })
 
-      toast.show({
-        variant: "info",
-        message: "ServiceNow credentials saved!",
-        duration: 3000,
-      })
+      // Add ServiceNow MCP server directly (no restart needed)
+      try {
+        const { MCP } = await import("@/mcp")
+        const { getMcpServerCommand } = await import("@/config/config")
+        await MCP.add("servicenow-unified", {
+          type: "local",
+          command: getMcpServerCommand("servicenow-unified"),
+          environment: {
+            SERVICENOW_INSTANCE_URL: normalizedInstance,
+            SERVICENOW_USERNAME: username(),
+            SERVICENOW_PASSWORD: password(),
+          },
+          enabled: true,
+        })
+        toast.show({
+          variant: "info",
+          message: "ServiceNow connected! MCP server is now active.",
+          duration: 3000,
+        })
+      } catch (mcpError) {
+        toast.show({
+          variant: "info",
+          message: "ServiceNow credentials saved! MCP server will be available on next restart.",
+          duration: 3000,
+        })
+      }
       dialog.clear()
     } catch (e) {
       toast.show({
@@ -639,12 +693,33 @@ function DialogAuthEnterprise() {
         role: data.user?.role,
       })
 
-      const userName = data.user?.username || data.user?.email || data.customer?.name || "Enterprise"
-      toast.show({
-        variant: "info",
-        message: `Connected as ${userName}! MCP server will be available on next restart.`,
-        duration: 5000,
-      })
+      // Add enterprise MCP server directly (no restart needed)
+      try {
+        const { MCP } = await import("@/mcp")
+        const { getMcpServerCommand } = await import("@/config/config")
+        await MCP.add("snow-flow-enterprise", {
+          type: "local",
+          command: getMcpServerCommand("enterprise-proxy"),
+          environment: {
+            SNOW_ENTERPRISE_URL: portalUrl,
+            SNOW_LICENSE_KEY: data.token,
+          },
+          enabled: true,
+        })
+        toast.show({
+          variant: "info",
+          message: `Connected as ${data.user?.username || data.user?.email || "Enterprise"}! Enterprise MCP server is now active.`,
+          duration: 5000,
+        })
+      } catch (mcpError) {
+        // MCP add failed, but auth succeeded - user can restart
+        const userName = data.user?.username || data.user?.email || data.customer?.name || "Enterprise"
+        toast.show({
+          variant: "info",
+          message: `Connected as ${userName}! MCP server will be available on next restart.`,
+          duration: 5000,
+        })
+      }
       dialog.clear()
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })
