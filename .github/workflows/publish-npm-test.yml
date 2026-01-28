@@ -126,6 +126,12 @@ jobs:
             pkg.description = 'Snow-Flow Test - ServiceNow Multi-Agent Development Framework';
             pkg.private = false;
 
+            // Set repository for OIDC provenance verification
+            pkg.repository = {
+              type: 'git',
+              url: 'https://github.com/groeimetai/snow-flow'
+            };
+
             // Update bin commands
             pkg.bin = {
               'snow-flow-test': './bin/snow-code',
