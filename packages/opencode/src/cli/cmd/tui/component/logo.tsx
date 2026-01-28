@@ -8,9 +8,10 @@ import { useTheme, tint } from "@tui/context/theme"
 // ~ = shadow top only (▀ with fg=shadow)
 const SHADOW_MARKER = /[_^~]/
 
-const LOGO_LEFT = [`                   `, `█▀▀█ █▀▀█ █▀▀█ █▀▀▄`, `█__█ █__█ █^^^ █__█`, `▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀~~▀`]
+// SNOWFLOW logo - S N O W (left, dimmed) + F L O W (right, bright)
+const LOGO_LEFT = [`                   `, `█▀▀▀ █▀▀▄ █▀▀█ █  █`, `▀▀▀█ █__█ █__█ █__█`, `▀▀▀▀ ▀~~▀ ▀▀▀▀ ▀~~▀`]
 
-const LOGO_RIGHT = [`             ▄     `, `█▀▀▀ █▀▀█ █▀▀█ █▀▀█`, `█___ █__█ █__█ █^^^`, `▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀`]
+const LOGO_RIGHT = [`             ▄     `, `█▀▀▀ █    █▀▀█ █  █`, `█^^^ █___ █__█ █__█`, `▀    ▀▀▀▀ ▀▀▀▀ ▀~~▀`]
 
 export function Logo() {
   const { theme } = useTheme()
