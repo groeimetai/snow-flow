@@ -32,9 +32,10 @@ jobs:
           - os: darwin
             arch: arm64
             runner: macos-latest
-          - os: darwin
-            arch: x64
-            runner: macos-15-large
+          # darwin-x64 temporarily disabled - requires paid macos-15-large runner
+          # - os: darwin
+          #   arch: x64
+          #   runner: macos-15-large
           - os: linux
             arch: x64
             runner: ubuntu-latest
@@ -236,9 +237,9 @@ jobs:
             }
 
             // Add optionalDependencies for platform binaries
+            // Note: darwin-x64 disabled (requires paid runner)
             pkg.optionalDependencies = {
               'snow-flow-test-darwin-arm64': '$VERSION',
-              'snow-flow-test-darwin-x64': '$VERSION',
               'snow-flow-test-linux-arm64': '$VERSION',
               'snow-flow-test-linux-x64': '$VERSION',
               'snow-flow-test-windows-x64': '$VERSION'
