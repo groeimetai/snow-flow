@@ -120,6 +120,10 @@ jobs:
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
+            // Read catalog from root package.json
+            const rootPkg = JSON.parse(fs.readFileSync('../../package.json', 'utf8'));
+            const catalog = (rootPkg.workspaces && rootPkg.workspaces.catalog) || {};
+
             // Change name and version, remove private flag
             pkg.name = 'snow-flow-test';
             pkg.version = '$VERSION';
@@ -138,21 +142,29 @@ jobs:
               'snow-code-test': './bin/snow-code'
             };
 
-            // Remove workspace dependencies
-            if (pkg.devDependencies) {
-              Object.keys(pkg.devDependencies).forEach(key => {
-                if (pkg.devDependencies[key].includes('workspace:')) {
-                  delete pkg.devDependencies[key];
+            // Helper to resolve workspace/catalog dependencies
+            function resolveDeps(deps) {
+              if (!deps) return;
+              Object.keys(deps).forEach(key => {
+                const val = deps[key];
+                if (val.includes('workspace:')) {
+                  // Remove workspace dependencies
+                  delete deps[key];
+                } else if (val === 'catalog:' || val.startsWith('catalog:')) {
+                  // Resolve catalog: to actual version
+                  if (catalog[key]) {
+                    deps[key] = catalog[key];
+                  } else {
+                    // Remove if not in catalog
+                    console.warn('Warning: ' + key + ' not found in catalog, removing');
+                    delete deps[key];
+                  }
                 }
               });
             }
-            if (pkg.dependencies) {
-              Object.keys(pkg.dependencies).forEach(key => {
-                if (pkg.dependencies[key].includes('workspace:')) {
-                  delete pkg.dependencies[key];
-                }
-              });
-            }
+
+            resolveDeps(pkg.dependencies);
+            resolveDeps(pkg.devDependencies);
 
             // Remove optionalDependencies - platform packages can't use OIDC
             delete pkg.optionalDependencies;
