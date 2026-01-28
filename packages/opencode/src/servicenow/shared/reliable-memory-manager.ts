@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 
 export interface MemoryEntry {
   key: string;

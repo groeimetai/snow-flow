@@ -10,7 +10,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { ServiceNowClient } from '../../utils/servicenow-client.js';
 import { ServiceNowOAuth } from '../../utils/snow-oauth.js';
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 import { AgentContextProvider } from './agent-context-provider.js';
 import { MCPMemoryManager, AgentContext } from './mcp-memory-manager.js';
 import { MCPResourceManager } from './mcp-resource-manager.js';

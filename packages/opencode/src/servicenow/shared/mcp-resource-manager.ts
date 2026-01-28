@@ -5,7 +5,7 @@
 
 import { readFile, readdir, stat } from 'fs/promises';
 import { join, extname, basename } from 'path';
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 
 export interface MCPResource {
   uri: string;

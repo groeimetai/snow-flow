@@ -4,7 +4,7 @@
  * Implements MCP prompts protocol for reusable prompt templates and workflows
  */
 
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 
 /**
  * Prompt argument definition

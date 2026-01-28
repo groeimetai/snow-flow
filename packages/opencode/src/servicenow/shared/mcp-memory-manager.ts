@@ -6,7 +6,7 @@
 import Database from 'better-sqlite3';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 
 export interface AgentContext {
   session_id: string;

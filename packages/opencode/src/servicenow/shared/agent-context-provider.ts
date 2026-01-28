@@ -4,7 +4,7 @@
  */
 
 import { MCPMemoryManager, AgentContext } from './mcp-memory-manager.js';
-import { Logger } from '../../utils/logger.js';
+import { Logger } from '../utils/logger.js';
 
 export interface MCPOperationContext {
   session_id: string;
