@@ -110,10 +110,11 @@ jobs:
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-            // Change name and version
+            // Change name and version, remove private flag
             pkg.name = 'snow-flow-test';
             pkg.version = '$VERSION';
             pkg.description = 'Snow-Flow Test - ServiceNow Multi-Agent Development Framework';
+            pkg.private = false;
 
             // Update bin commands
             pkg.bin = {
@@ -219,6 +220,9 @@ jobs:
       - name: Publish platform packages to npm
         run: |
           cd packages/opencode/dist
+
+          # Configure npm auth globally for subdirectory publishing
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
 
           for dir in snow-flow-test-*/; do
             if [ -d "$dir" ]; then
