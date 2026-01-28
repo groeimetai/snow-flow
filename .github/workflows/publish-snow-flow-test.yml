@@ -22,111 +22,8 @@ permissions:
   packages: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.os }}-${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: darwin
-            arch: arm64
-            runner: macos-latest
-          # darwin-x64 temporarily disabled - requires paid macos-15-large runner
-          # - os: darwin
-          #   arch: x64
-          #   runner: macos-15-large
-          - os: linux
-            arch: x64
-            runner: ubuntu-latest
-          - os: linux
-            arch: arm64
-            runner: ubuntu-latest
-          - os: windows
-            arch: x64
-            runner: windows-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Get version
-        id: version
-        shell: bash
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
-            echo "version=${BASE_VERSION}-test.${{ github.run_number }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          for i in 1 2 3; do
-            echo "Attempt $i of 3..."
-            if bun install; then
-              break
-            fi
-            sleep 10
-          done
-
-      - name: Build platform binary
-        shell: bash
-        run: |
-          cd packages/opencode
-
-          # Update version in package.json
-          VERSION="${{ steps.version.outputs.version }}"
-          if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-          elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
-            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-          else
-            sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
-          fi
-
-          # Build single platform binary
-          bun run build --single
-        env:
-          SNOWCODE_CHANNEL: test
-
-      - name: Rename output directory
-        shell: bash
-        run: |
-          cd packages/opencode/dist
-
-          # Find the built directory and rename for snow-flow
-          for dir in */; do
-            if [ -d "$dir" ]; then
-              # Replace opencode/snow-code with snow-flow-test in dir name
-              new_name=$(echo "$dir" | sed 's/snow-code/snow-flow-test/' | sed 's/opencode/snow-flow-test/')
-              if [ "$dir" != "$new_name" ]; then
-                mv "$dir" "$new_name"
-              fi
-            fi
-          done
-
-          ls -la
-
-      - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: snow-flow-test-${{ matrix.os }}-${{ matrix.arch }}
-          path: packages/opencode/dist/
-          retention-days: 7
-
-  publish:
-    name: Publish to npm (test)
-    needs: build
+  build-and-publish:
+    name: Build All Platforms & Publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -135,6 +32,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -147,16 +46,6 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: packages/opencode/dist/
-          pattern: snow-flow-test-*
-          merge-multiple: true
-
       - name: Get version
         id: version
         run: |
@@ -167,37 +56,49 @@ jobs:
             echo "version=${BASE_VERSION}-test.${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Bundle ServiceNow MCP servers
+      - name: Install dependencies
+        run: |
+          for i in 1 2 3; do
+            echo "Attempt $i of 3..."
+            if bun install; then
+              break
+            fi
+            sleep 10
+          done
+
+      - name: Build ALL platform binaries (cross-compile)
         run: |
           cd packages/opencode
-          mkdir -p dist/mcp/enterprise-proxy
-          mkdir -p dist/mcp/servicenow-unified
 
-          echo "Bundling ServiceNow MCP servers..."
+          # Update version in package.json
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" package.json
 
-          # Bundle enterprise proxy if it exists
-          if [ -f "src/servicenow/enterprise-proxy/index.ts" ]; then
-            bunx bun build src/servicenow/enterprise-proxy/index.ts \
-              --outdir dist/mcp/enterprise-proxy \
-              --target node \
-              --format esm \
-              --minify || echo "Enterprise proxy bundle completed"
-          fi
+          # Build ALL platforms from Linux (cross-compilation)
+          # This is MUCH faster than building natively on Windows
+          echo "Building all platforms via cross-compilation..."
+          bun run build
+        env:
+          SNOWCODE_CHANNEL: test
 
-          # Bundle unified MCP server if it exists
-          if [ -f "src/servicenow/servicenow-mcp-unified/index.ts" ]; then
-            bunx bun build src/servicenow/servicenow-mcp-unified/index.ts \
-              --outdir dist/mcp/servicenow-unified \
-              --target node \
-              --format esm \
-              --minify || echo "ServiceNow Unified MCP bundle completed"
-          fi
+      - name: Rename output directories
+        run: |
+          cd packages/opencode/dist
 
-          # Copy bundled skills
-          if [ -d "src/bundled-skills" ]; then
-            cp -r src/bundled-skills dist/
-            echo "Copied bundled skills"
-          fi
+          # Find all built directories and rename for snow-flow-test
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              # Replace snow-code with snow-flow-test in dir name
+              new_name=$(echo "$dir" | sed 's/snow-code/snow-flow-test/' | sed 's/opencode/snow-flow-test/')
+              if [ "$dir" != "$new_name" ]; then
+                echo "Renaming $dir to $new_name"
+                mv "$dir" "$new_name"
+              fi
+            fi
+          done
+
+          echo "Built platforms:"
+          ls -la
 
       - name: Prepare package for publishing
         run: |
@@ -236,13 +137,13 @@ jobs:
               });
             }
 
-            // Add optionalDependencies for platform binaries
-            // Note: darwin-x64 disabled (requires paid runner)
+            // Add optionalDependencies for ALL platform binaries
             pkg.optionalDependencies = {
-              'snow-flow-test-darwin-arm64': '$VERSION',
-              'snow-flow-test-linux-arm64': '$VERSION',
-              'snow-flow-test-linux-x64': '$VERSION',
-              'snow-flow-test-windows-x64': '$VERSION'
+              'snow-flow-test-darwin-arm64': '\$VERSION',
+              'snow-flow-test-darwin-x64': '\$VERSION',
+              'snow-flow-test-linux-arm64': '\$VERSION',
+              'snow-flow-test-linux-x64': '\$VERSION',
+              'snow-flow-test-windows-x64': '\$VERSION'
             };
 
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
@@ -263,20 +164,6 @@ jobs:
               echo "Created ${platform_name}.tar.gz"
             fi
           done
-
-          # Create MCP servers tarball
-          if [ -d "mcp" ]; then
-            echo "Creating MCP servers tarball..."
-            tar -czf "snow-flow-mcp.tar.gz" mcp
-            echo "Created snow-flow-mcp.tar.gz"
-          fi
-
-          # Create bundled-skills tarball
-          if [ -d "bundled-skills" ]; then
-            echo "Creating bundled-skills tarball..."
-            tar -czf "snow-flow-skills.tar.gz" bundled-skills
-            echo "Created snow-flow-skills.tar.gz"
-          fi
 
           ls -la *.tar.gz 2>/dev/null || echo "No tarballs created"
 
@@ -306,19 +193,26 @@ jobs:
             snow-code-test
             ```
 
+            ### Supported Platforms
+            - ✅ Linux x64
+            - ✅ Linux arm64
+            - ✅ macOS arm64 (Apple Silicon)
+            - ✅ macOS x64 (Intel)
+            - ✅ Windows x64
+
             ### What's New
             - 100% TypeScript (SolidJS + OpenTUI)
             - No Go binary compilation needed
             - All 373+ ServiceNow MCP tools
             - All 53 bundled skills
-            - 7 auth types (ServiceNow OAuth, Enterprise, Portal, etc.)
+            - 8 auth types (ServiceNow OAuth, Enterprise, Portal, MID Server, etc.)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish main package to npm
         run: |
           cd packages/opencode
-          npm publish --access public --tag test
+          npm publish --access public --tag test --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -332,7 +226,7 @@ jobs:
               echo "Publishing $platform_name..."
 
               cd "$dir"
-              npm publish --access public --tag test || echo "Failed to publish $platform_name"
+              npm publish --access public --tag test --provenance || echo "Failed to publish $platform_name"
               cd ..
             fi
           done
