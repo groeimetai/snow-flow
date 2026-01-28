@@ -34,7 +34,7 @@ jobs:
             runner: macos-latest
           - os: darwin
             arch: x64
-            runner: macos-13
+            runner: macos-15-large
           - os: linux
             arch: x64
             runner: ubuntu-latest
