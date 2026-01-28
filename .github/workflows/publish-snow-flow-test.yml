@@ -43,14 +43,21 @@ jobs:
       - name: Upgrade npm (required for OIDC)
         run: npm install -g npm@latest
 
-      - name: Configure npm for OIDC publishing
+      - name: Configure npm authentication
         run: |
           rm -f ~/.npmrc
           rm -f .npmrc
           rm -f /home/runner/work/_temp/.npmrc 2>/dev/null || true
           echo "registry=https://registry.npmjs.org/" > ~/.npmrc
-          echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
-          echo "✅ npm configured for OIDC"
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+            echo "✅ npm configured with NPM_TOKEN"
+          else
+            echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
+            echo "⚠️ npm configured for OIDC (requires Trusted Publisher setup)"
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -221,13 +228,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish main package to npm (OIDC)
+      - name: Publish main package to npm
         run: |
           cd packages/opencode
           echo "Publishing snow-flow-test main package..."
           npm publish --access public --tag test --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish platform packages to npm (OIDC)
+      - name: Publish platform packages to npm
         run: |
           cd packages/opencode/dist
 
@@ -241,3 +250,5 @@ jobs:
               cd ..
             fi
           done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
