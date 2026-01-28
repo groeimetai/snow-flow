@@ -124,11 +124,12 @@ jobs:
             const rootPkg = JSON.parse(fs.readFileSync('../../package.json', 'utf8'));
             const catalog = (rootPkg.workspaces && rootPkg.workspaces.catalog) || {};
 
-            // Change name and version, remove private flag
+            // Change name and version, remove private flag and type
             pkg.name = 'snow-flow-test';
             pkg.version = '$VERSION';
             pkg.description = 'Snow-Flow Test - ServiceNow Multi-Agent Development Framework';
             pkg.private = false;
+            delete pkg.type; // Remove 'module' type so bin scripts can use CommonJS
 
             // Set repository for OIDC provenance verification
             pkg.repository = {
