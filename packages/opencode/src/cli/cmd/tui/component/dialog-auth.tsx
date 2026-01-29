@@ -874,6 +874,7 @@ function DialogAuthEnterpriseCombined() {
     | "browser"
     | "code"
     | "verifying-enterprise"
+    | "checking-portal-sn"
     | "sn-method"
     | "sn-instance"
     | "sn-oauth-clientid"
@@ -890,6 +891,13 @@ function DialogAuthEnterpriseCombined() {
     token?: string
     user?: { username?: string; email?: string; role?: string }
   }>({})
+
+  // ServiceNow credentials from enterprise portal (if available)
+  const [portalSnCredentials, setPortalSnCredentials] = createSignal<{
+    instanceUrl?: string
+    clientId?: string
+    clientSecret?: string
+  } | null>(null)
 
   // ServiceNow state
   const [snMethod, setSnMethod] = createSignal<"oauth" | "basic">("oauth")
@@ -1091,12 +1099,124 @@ function DialogAuthEnterpriseCombined() {
         duration: 3000,
       })
 
-      // Move to ServiceNow method selection
-      setStep("sn-method")
+      // Check if enterprise portal has ServiceNow credentials
+      setStep("checking-portal-sn")
+      const portalCreds = await fetchPortalSnCredentials(portalUrl, data.token)
+
+      if (portalCreds) {
+        // Portal has ServiceNow credentials - use them directly
+        setPortalSnCredentials(portalCreds)
+        toast.show({
+          variant: "info",
+          message: "ServiceNow credentials found in enterprise portal!",
+          duration: 3000,
+        })
+        // Skip manual ServiceNow input, go directly to completing
+        await startBothMcpServersWithPortalCreds(portalUrl, data.token, portalCreds, data.user)
+      } else {
+        // No ServiceNow credentials on portal - ask user to input manually
+        toast.show({
+          variant: "info",
+          message: "No ServiceNow credentials found on portal. Please configure manually.",
+          duration: 3000,
+        })
+        setStep("sn-method")
+      }
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })
       setStep("code")
       setTimeout(() => codeInput?.focus(), 10)
+    }
+  }
+
+  // === Portal ServiceNow Credentials ===
+
+  const fetchPortalSnCredentials = async (
+    portalUrl: string,
+    token: string
+  ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
+    try {
+      const response = await fetch(`${portalUrl}/api/user-credentials/servicenow/default`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        return null
+      }
+
+      const data = await response.json()
+
+      if (!data.success || !data.instance) {
+        return null
+      }
+
+      const instance = data.instance
+      if (!instance.instanceUrl || !instance.clientId || !instance.clientSecret) {
+        return null
+      }
+
+      return {
+        instanceUrl: instance.instanceUrl,
+        clientId: instance.clientId,
+        clientSecret: instance.clientSecret,
+      }
+    } catch {
+      return null
+    }
+  }
+
+  const startBothMcpServersWithPortalCreds = async (
+    portalUrl: string,
+    token: string,
+    snCreds: { instanceUrl: string; clientId: string; clientSecret: string },
+    user?: { username?: string; email?: string; role?: string }
+  ) => {
+    setStep("completing")
+    try {
+      const { MCP } = await import("@/mcp")
+      const { getMcpServerCommand } = await import("@/config/config")
+
+      // Start enterprise MCP server
+      await MCP.add("snow-flow-enterprise", {
+        type: "local",
+        command: getMcpServerCommand("enterprise-proxy"),
+        environment: {
+          SNOW_ENTERPRISE_URL: portalUrl,
+          SNOW_LICENSE_KEY: token,
+        },
+        enabled: true,
+      })
+
+      // Start ServiceNow MCP server with portal credentials
+      await MCP.add("servicenow-unified", {
+        type: "local",
+        command: getMcpServerCommand("servicenow-unified"),
+        environment: {
+          SERVICENOW_INSTANCE_URL: snCreds.instanceUrl,
+          SERVICENOW_CLIENT_ID: snCreds.clientId,
+          SERVICENOW_CLIENT_SECRET: snCreds.clientSecret,
+        },
+        enabled: true,
+      })
+
+      const userName = user?.username || user?.email || "user"
+      toast.show({
+        variant: "info",
+        message: `Setup complete! Connected as ${userName}. Both MCP servers are now active.`,
+        duration: 5000,
+      })
+      dialog.clear()
+    } catch {
+      toast.show({
+        variant: "info",
+        message: "Credentials saved! MCP servers will be available on next restart.",
+        duration: 5000,
+      })
+      dialog.clear()
     }
   }
 
@@ -1341,6 +1461,19 @@ function DialogAuthEnterpriseCombined() {
             Verifying Enterprise...
           </text>
           <text fg={theme.textMuted}>Validating authorization code with {subdomain()}.snow-flow.dev</text>
+        </box>
+      </Show>
+
+      {/* Step 4b: Checking portal for ServiceNow credentials */}
+      <Show when={step() === "checking-portal-sn"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Checking for ServiceNow credentials...
+            </text>
+          </box>
+          <text fg={theme.textMuted}>Looking up ServiceNow configuration in enterprise portal</text>
         </box>
       </Show>
 
