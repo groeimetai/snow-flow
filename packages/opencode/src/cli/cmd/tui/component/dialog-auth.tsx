@@ -717,33 +717,74 @@ function DialogAuthEnterprise() {
           enabled: true,
         })
 
-        // Also start servicenow-unified if ServiceNow credentials exist
+        // Try to fetch ServiceNow credentials from enterprise portal
         let serviceNowStarted = false
         try {
-          const snAuth = await Auth.get("servicenow")
-          if (snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") {
-            const snEnv: Record<string, string> = {
-              SERVICENOW_INSTANCE_URL: snAuth.instance,
+          // First, try to get ServiceNow credentials from the enterprise portal
+          const portalSnResponse = await fetch(`${portalUrl}/api/user-credentials/servicenow/default`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${data.token}`,
+              Accept: "application/json",
+            },
+          })
+
+          if (portalSnResponse.ok) {
+            const portalSnData = await portalSnResponse.json()
+            if (portalSnData.success && portalSnData.instance) {
+              const instance = portalSnData.instance
+              if (instance.instanceUrl && instance.clientId && instance.clientSecret) {
+                // Save ServiceNow credentials to auth store
+                await Auth.set("servicenow", {
+                  type: "servicenow-oauth",
+                  instance: instance.instanceUrl,
+                  clientId: instance.clientId,
+                  clientSecret: instance.clientSecret,
+                })
+
+                // Start servicenow-unified MCP server with portal credentials
+                await MCP.add("servicenow-unified", {
+                  type: "local",
+                  command: getMcpServerCommand("servicenow-unified"),
+                  environment: {
+                    SERVICENOW_INSTANCE_URL: instance.instanceUrl,
+                    SERVICENOW_CLIENT_ID: instance.clientId,
+                    SERVICENOW_CLIENT_SECRET: instance.clientSecret,
+                  },
+                  enabled: true,
+                })
+                serviceNowStarted = true
+              }
             }
-            if (snAuth.type === "servicenow-oauth") {
-              snEnv.SERVICENOW_CLIENT_ID = snAuth.clientId
-              snEnv.SERVICENOW_CLIENT_SECRET = snAuth.clientSecret ?? ""
-              if (snAuth.accessToken) snEnv.SERVICENOW_ACCESS_TOKEN = snAuth.accessToken
-              if (snAuth.refreshToken) snEnv.SERVICENOW_REFRESH_TOKEN = snAuth.refreshToken
-            } else {
-              snEnv.SERVICENOW_USERNAME = snAuth.username
-              snEnv.SERVICENOW_PASSWORD = snAuth.password ?? ""
+          }
+
+          // If portal didn't have ServiceNow credentials, check local auth store
+          if (!serviceNowStarted) {
+            const snAuth = await Auth.get("servicenow")
+            if (snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") {
+              const snEnv: Record<string, string> = {
+                SERVICENOW_INSTANCE_URL: snAuth.instance,
+              }
+              if (snAuth.type === "servicenow-oauth") {
+                snEnv.SERVICENOW_CLIENT_ID = snAuth.clientId
+                snEnv.SERVICENOW_CLIENT_SECRET = snAuth.clientSecret ?? ""
+                if (snAuth.accessToken) snEnv.SERVICENOW_ACCESS_TOKEN = snAuth.accessToken
+                if (snAuth.refreshToken) snEnv.SERVICENOW_REFRESH_TOKEN = snAuth.refreshToken
+              } else {
+                snEnv.SERVICENOW_USERNAME = snAuth.username
+                snEnv.SERVICENOW_PASSWORD = snAuth.password ?? ""
+              }
+              await MCP.add("servicenow-unified", {
+                type: "local",
+                command: getMcpServerCommand("servicenow-unified"),
+                environment: snEnv,
+                enabled: true,
+              })
+              serviceNowStarted = true
             }
-            await MCP.add("servicenow-unified", {
-              type: "local",
-              command: getMcpServerCommand("servicenow-unified"),
-              environment: snEnv,
-              enabled: true,
-            })
-            serviceNowStarted = true
           }
         } catch {
-          // ServiceNow credentials not available, skip
+          // ServiceNow credentials not available from portal or local, skip
         }
 
         const userName = data.user?.username || data.user?.email || "Enterprise"
