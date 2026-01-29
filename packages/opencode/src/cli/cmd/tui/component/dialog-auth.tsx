@@ -7,7 +7,7 @@ import { useTheme } from "@tui/context/theme"
 import { TextAttributes, TextareaRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/solid"
 
-type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license"
+type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined"
 
 interface AuthCredentials {
   servicenow?: {
@@ -124,6 +124,16 @@ export function DialogAuth() {
       footer: "Jira, Azure DevOps, Confluence",
       onSelect: () => {
         dialog.replace(() => <DialogAuthEnterprise />)
+      },
+    },
+    {
+      title: "Enterprise + ServiceNow",
+      value: "enterprise-combined",
+      description: isEnterpriseConfigured() && isServiceNowConfigured() ? "Both connected" : undefined,
+      category: "Combined",
+      footer: "Complete setup in one flow",
+      onSelect: () => {
+        dialog.replace(() => <DialogAuthEnterpriseCombined />)
       },
     },
   ]
@@ -844,6 +854,710 @@ function DialogAuthEnterprise() {
             Verifying...
           </text>
           <text fg={theme.textMuted}>Validating authorization code with {subdomain()}.snow-flow.dev</text>
+        </box>
+      </Show>
+    </box>
+  )
+}
+
+/**
+ * Enterprise + ServiceNow Combined Auth dialog
+ * Sequentially authenticates both Enterprise and ServiceNow in one flow
+ */
+function DialogAuthEnterpriseCombined() {
+  const dialog = useDialog()
+  const toast = useToast()
+  const { theme } = useTheme()
+
+  type CombinedStep =
+    | "subdomain"
+    | "browser"
+    | "code"
+    | "verifying-enterprise"
+    | "sn-method"
+    | "sn-instance"
+    | "sn-oauth-clientid"
+    | "sn-oauth-secret"
+    | "sn-basic-username"
+    | "sn-basic-password"
+    | "completing"
+
+  const [step, setStep] = createSignal<CombinedStep>("subdomain")
+  const [subdomain, setSubdomain] = createSignal("")
+  const [sessionId, setSessionId] = createSignal("")
+  const [authCode, setAuthCode] = createSignal("")
+  const [enterpriseData, setEnterpriseData] = createSignal<{
+    token?: string
+    user?: { username?: string; email?: string; role?: string }
+  }>({})
+
+  // ServiceNow state
+  const [snMethod, setSnMethod] = createSignal<"oauth" | "basic">("oauth")
+  const [snInstance, setSnInstance] = createSignal("")
+  const [snClientId, setSnClientId] = createSignal("")
+  const [snClientSecret, setSnClientSecret] = createSignal("")
+  const [snUsername, setSnUsername] = createSignal("")
+  const [snPassword, setSnPassword] = createSignal("")
+
+  let subdomainInput: TextareaRenderable
+  let codeInput: TextareaRenderable
+  let snInstanceInput: TextareaRenderable
+  let snClientIdInput: TextareaRenderable
+  let snSecretInput: TextareaRenderable
+  let snUsernameInput: TextareaRenderable
+  let snPasswordInput: TextareaRenderable
+
+  // Load saved credentials
+  onMount(async () => {
+    try {
+      const { Auth } = await import("@/auth")
+
+      // Load enterprise subdomain
+      const entAuth = await Auth.get("enterprise")
+      if (entAuth?.type === "enterprise" && entAuth.enterpriseUrl) {
+        const match = entAuth.enterpriseUrl.match(/https?:\/\/([^.]+)\.snow-flow\.dev/)
+        if (match) {
+          setSubdomain(match[1])
+        }
+      }
+
+      // Load ServiceNow credentials
+      const snAuth = await Auth.get("servicenow")
+      if (snAuth?.type === "servicenow-oauth") {
+        setSnInstance(snAuth.instance)
+        setSnClientId(snAuth.clientId)
+        setSnClientSecret(snAuth.clientSecret)
+        setSnMethod("oauth")
+      } else if (snAuth?.type === "servicenow-basic") {
+        setSnInstance(snAuth.instance)
+        setSnUsername(snAuth.username)
+        setSnMethod("basic")
+      }
+    } catch {
+      // Auth module not available
+    }
+    setTimeout(() => subdomainInput?.focus(), 10)
+  })
+
+  useKeyboard((evt) => {
+    const currentStep = step()
+
+    // Handle escape key for navigation
+    if (evt.name === "escape") {
+      if (currentStep === "subdomain") {
+        dialog.replace(() => <DialogAuth />)
+      } else if (currentStep === "browser" || currentStep === "code") {
+        setStep("subdomain")
+        setSessionId("")
+        setAuthCode("")
+        setTimeout(() => subdomainInput?.focus(), 10)
+      } else if (currentStep === "sn-method") {
+        // Can't go back to enterprise flow, go to main menu
+        dialog.replace(() => <DialogAuth />)
+      } else if (currentStep === "sn-instance") {
+        setStep("sn-method")
+      } else if (currentStep === "sn-oauth-clientid") {
+        setStep("sn-instance")
+        setTimeout(() => snInstanceInput?.focus(), 10)
+      } else if (currentStep === "sn-oauth-secret") {
+        setStep("sn-oauth-clientid")
+        setTimeout(() => snClientIdInput?.focus(), 10)
+      } else if (currentStep === "sn-basic-username") {
+        setStep("sn-instance")
+        setTimeout(() => snInstanceInput?.focus(), 10)
+      } else if (currentStep === "sn-basic-password") {
+        setStep("sn-basic-username")
+        setTimeout(() => snUsernameInput?.focus(), 10)
+      }
+    }
+
+    // Handle 1/2 keypresses for ServiceNow method selection
+    if (currentStep === "sn-method") {
+      if (evt.name === "1") {
+        selectSnMethod("oauth")
+      } else if (evt.name === "2") {
+        selectSnMethod("basic")
+      }
+    }
+  })
+
+  // === Enterprise Auth Functions ===
+
+  const startDeviceAuth = async () => {
+    const sub = subdomain().trim().toLowerCase()
+    if (!sub) {
+      toast.show({ variant: "error", message: "Please enter your organization subdomain" })
+      return
+    }
+
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(sub) && sub.length > 1) {
+      toast.show({ variant: "error", message: "Invalid subdomain format" })
+      return
+    }
+    if (sub.length === 1 && !/^[a-z0-9]$/.test(sub)) {
+      toast.show({ variant: "error", message: "Invalid subdomain format" })
+      return
+    }
+
+    const portalUrl = `https://${sub}.snow-flow.dev`
+
+    try {
+      const os = await import("os")
+      const machineInfo = `${os.hostname()} (${os.platform()} ${os.arch()})`
+
+      const response = await fetch(`${portalUrl}/api/auth/device/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ machineInfo }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || "Failed to start device authorization")
+      }
+
+      const data = await response.json()
+      setSessionId(data.sessionId)
+
+      const { spawn } = await import("child_process")
+      const url = data.verificationUrl
+      if (process.platform === "darwin") {
+        spawn("open", [url], { detached: true, stdio: "ignore" })
+      } else if (process.platform === "win32") {
+        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+      } else {
+        spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+      }
+
+      toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+      setStep("browser")
+
+      setTimeout(() => {
+        setStep("code")
+        setTimeout(() => codeInput?.focus(), 10)
+      }, 2000)
+    } catch (e) {
+      toast.show({ variant: "error", message: e instanceof Error ? e.message : "Failed to start auth" })
+    }
+  }
+
+  const verifyEnterpriseAuth = async () => {
+    const code = authCode().trim().toUpperCase()
+    if (!code) {
+      toast.show({ variant: "error", message: "Please enter the authorization code" })
+      return
+    }
+
+    setStep("verifying-enterprise")
+    const sub = subdomain().trim().toLowerCase()
+    const portalUrl = `https://${sub}.snow-flow.dev`
+
+    try {
+      const response = await fetch(`${portalUrl}/api/auth/device/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: sessionId(),
+          authCode: code,
+        }),
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || "Verification failed")
+      }
+
+      const data = await response.json()
+
+      // Save enterprise auth
+      const { Auth } = await import("@/auth")
+      await Auth.set("enterprise", {
+        type: "enterprise",
+        token: data.token,
+        enterpriseUrl: portalUrl,
+        username: data.user?.username || data.user?.email,
+        email: data.user?.email,
+        role: data.user?.role,
+      })
+
+      setEnterpriseData({
+        token: data.token,
+        user: data.user,
+      })
+
+      toast.show({
+        variant: "info",
+        message: `Enterprise connected as ${data.user?.username || data.user?.email || "user"}!`,
+        duration: 3000,
+      })
+
+      // Move to ServiceNow method selection
+      setStep("sn-method")
+    } catch (e) {
+      toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })
+      setStep("code")
+      setTimeout(() => codeInput?.focus(), 10)
+    }
+  }
+
+  // === ServiceNow Auth Functions ===
+
+  const selectSnMethod = (method: "oauth" | "basic") => {
+    setSnMethod(method)
+    setStep("sn-instance")
+    setTimeout(() => snInstanceInput?.focus(), 10)
+  }
+
+  const handleSnInstanceSubmit = () => {
+    setSnInstance(snInstanceInput.plainText)
+    if (snMethod() === "oauth") {
+      setStep("sn-oauth-clientid")
+      setTimeout(() => snClientIdInput?.focus(), 10)
+    } else {
+      setStep("sn-basic-username")
+      setTimeout(() => snUsernameInput?.focus(), 10)
+    }
+  }
+
+  const completeOAuthSetup = async () => {
+    if (!snInstance() || !snClientId() || !snClientSecret()) {
+      toast.show({ variant: "error", message: "Please fill in all fields" })
+      return
+    }
+
+    setStep("completing")
+    try {
+      const { ServiceNowOAuth } = await import("@/auth/servicenow-oauth")
+      const oauth = new ServiceNowOAuth()
+      const result = await oauth.authenticate({
+        instance: snInstance(),
+        clientId: snClientId(),
+        clientSecret: snClientSecret(),
+      })
+
+      if (!result.success) {
+        throw new Error(result.error ?? "Authentication failed")
+      }
+
+      await startBothMcpServers()
+    } catch (e) {
+      toast.show({
+        variant: "error",
+        message: e instanceof Error ? e.message : "ServiceNow authentication failed",
+        duration: 5000,
+      })
+      setStep("sn-oauth-secret")
+      setTimeout(() => snSecretInput?.focus(), 10)
+    }
+  }
+
+  const completeBasicSetup = async () => {
+    if (!snInstance() || !snUsername() || !snPassword()) {
+      toast.show({ variant: "error", message: "Please fill in all fields" })
+      return
+    }
+
+    setStep("completing")
+    try {
+      const { Auth } = await import("@/auth")
+
+      // Normalize instance URL
+      let normalizedInstance = snInstance().replace(/\/+$/, "")
+      if (!normalizedInstance.startsWith("http://") && !normalizedInstance.startsWith("https://")) {
+        normalizedInstance = `https://${normalizedInstance}`
+      }
+      if (!normalizedInstance.includes(".service-now.com") && !normalizedInstance.includes("localhost")) {
+        normalizedInstance = `https://${normalizedInstance}.service-now.com`
+      }
+
+      await Auth.set("servicenow", {
+        type: "servicenow-basic",
+        instance: normalizedInstance,
+        username: snUsername(),
+        password: snPassword(),
+      })
+
+      setSnInstance(normalizedInstance)
+      await startBothMcpServers()
+    } catch (e) {
+      toast.show({
+        variant: "error",
+        message: e instanceof Error ? e.message : "Failed to save credentials",
+        duration: 5000,
+      })
+      setStep("sn-basic-password")
+      setTimeout(() => snPasswordInput?.focus(), 10)
+    }
+  }
+
+  const startBothMcpServers = async () => {
+    try {
+      const { MCP } = await import("@/mcp")
+      const { getMcpServerCommand } = await import("@/config/config")
+      const { Auth } = await import("@/auth")
+
+      const sub = subdomain().trim().toLowerCase()
+      const portalUrl = `https://${sub}.snow-flow.dev`
+      const entData = enterpriseData()
+
+      // Start enterprise MCP server
+      await MCP.add("snow-flow-enterprise", {
+        type: "local",
+        command: getMcpServerCommand("enterprise-proxy"),
+        environment: {
+          SNOW_ENTERPRISE_URL: portalUrl,
+          SNOW_LICENSE_KEY: entData.token ?? "",
+        },
+        enabled: true,
+      })
+
+      // Start ServiceNow MCP server
+      const snAuth = await Auth.get("servicenow")
+      if (snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") {
+        const snEnv: Record<string, string> = {
+          SERVICENOW_INSTANCE_URL: snAuth.instance,
+        }
+        if (snAuth.type === "servicenow-oauth") {
+          snEnv.SERVICENOW_CLIENT_ID = snAuth.clientId
+          snEnv.SERVICENOW_CLIENT_SECRET = snAuth.clientSecret ?? ""
+          if (snAuth.accessToken) snEnv.SERVICENOW_ACCESS_TOKEN = snAuth.accessToken
+          if (snAuth.refreshToken) snEnv.SERVICENOW_REFRESH_TOKEN = snAuth.refreshToken
+        } else {
+          snEnv.SERVICENOW_USERNAME = snAuth.username
+          snEnv.SERVICENOW_PASSWORD = snAuth.password ?? ""
+        }
+
+        await MCP.add("servicenow-unified", {
+          type: "local",
+          command: getMcpServerCommand("servicenow-unified"),
+          environment: snEnv,
+          enabled: true,
+        })
+      }
+
+      const userName = entData.user?.username || entData.user?.email || "user"
+      toast.show({
+        variant: "info",
+        message: `Setup complete! Connected as ${userName}. Both MCP servers are now active.`,
+        duration: 5000,
+      })
+      dialog.clear()
+    } catch (e) {
+      toast.show({
+        variant: "info",
+        message: "Credentials saved! MCP servers will be available on next restart.",
+        duration: 5000,
+      })
+      dialog.clear()
+    }
+  }
+
+  return (
+    <box paddingLeft={2} paddingRight={2} gap={1}>
+      <box flexDirection="row" justifyContent="space-between">
+        <text attributes={TextAttributes.BOLD} fg={theme.text}>
+          Enterprise + ServiceNow Setup
+        </text>
+        <text fg={theme.textMuted}>esc</text>
+      </box>
+
+      {/* Step 1: Enterprise subdomain */}
+      <Show when={step() === "subdomain"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Step 1 of 2: Enterprise Portal
+          </text>
+          <text fg={theme.textMuted}>Enter your organization subdomain (e.g., "acme" for acme.snow-flow.dev)</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (subdomainInput = val)}
+            height={3}
+            initialValue={subdomain()}
+            placeholder="your-org"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setSubdomain(subdomainInput.plainText)
+              startDeviceAuth()
+            }}
+          />
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>continue</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Step 2: Browser opening */}
+      <Show when={step() === "browser"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Step 1 of 2: Enterprise Portal
+          </text>
+          <text fg={theme.text}>Opening browser for verification...</text>
+          <text fg={theme.textMuted}>URL: https://{subdomain()}.snow-flow.dev/device/authorize</text>
+          <box paddingTop={1}>
+            <text fg={theme.text}>After logging in on the portal:</text>
+            <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
+            <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Step 3: Enter auth code */}
+      <Show when={step() === "code"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Step 1 of 2: Enterprise Portal
+          </text>
+          <text fg={theme.textMuted}>Enter the authorization code from the portal</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (codeInput = val)}
+            height={3}
+            initialValue={authCode()}
+            placeholder="ABC-DEF-12"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setAuthCode(codeInput.plainText)
+              verifyEnterpriseAuth()
+            }}
+          />
+          <text fg={theme.textMuted}>Portal: https://{subdomain()}.snow-flow.dev</text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>verify</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Step 4: Verifying enterprise */}
+      <Show when={step() === "verifying-enterprise"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Verifying Enterprise...
+          </text>
+          <text fg={theme.textMuted}>Validating authorization code with {subdomain()}.snow-flow.dev</text>
+        </box>
+      </Show>
+
+      {/* Step 5: Choose ServiceNow method */}
+      <Show when={step() === "sn-method"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Step 2 of 2: ServiceNow Authentication
+            </text>
+          </box>
+          <text fg={theme.textMuted}>Choose your ServiceNow authentication method:</text>
+          <box paddingTop={1} gap={1}>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[1] OAuth (Recommended)</text>
+              <text fg={theme.textMuted}>- OAuth2 + PKCE</text>
+            </box>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[2] Basic Auth</text>
+              <text fg={theme.textMuted}>- Username/Password</text>
+            </box>
+          </box>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>1 </text>
+            <text fg={theme.textMuted}>OAuth</text>
+            <text fg={theme.text}>  2 </text>
+            <text fg={theme.textMuted}>Basic Auth</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Step 6: ServiceNow instance */}
+      <Show when={step() === "sn-instance"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Step 2 of 2: ServiceNow {snMethod() === "oauth" ? "OAuth" : "Basic Auth"}
+            </text>
+          </box>
+          <text fg={theme.textMuted}>
+            Enter your ServiceNow instance URL (e.g., dev12345 or dev12345.service-now.com)
+          </text>
+          <textarea
+            ref={(val: TextareaRenderable) => (snInstanceInput = val)}
+            height={3}
+            initialValue={snInstance()}
+            placeholder="dev12345.service-now.com"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={handleSnInstanceSubmit}
+          />
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>continue</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* OAuth: Client ID */}
+      <Show when={step() === "sn-oauth-clientid"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Step 2 of 2: ServiceNow OAuth
+            </text>
+          </box>
+          <text fg={theme.textMuted}>
+            OAuth Client ID from ServiceNow: System OAuth {">"} Application Registry
+          </text>
+          <textarea
+            ref={(val: TextareaRenderable) => (snClientIdInput = val)}
+            height={3}
+            initialValue={snClientId()}
+            placeholder="Enter OAuth Client ID"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setSnClientId(snClientIdInput.plainText)
+              setStep("sn-oauth-secret")
+              setTimeout(() => snSecretInput?.focus(), 10)
+            }}
+          />
+          <text fg={theme.textMuted}>Instance: {snInstance()}</text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>continue</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* OAuth: Client Secret */}
+      <Show when={step() === "sn-oauth-secret"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Step 2 of 2: ServiceNow OAuth
+            </text>
+          </box>
+          <text fg={theme.textMuted}>The client secret from your OAuth application</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (snSecretInput = val)}
+            height={3}
+            initialValue={snClientSecret()}
+            placeholder="Enter OAuth Client Secret"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setSnClientSecret(snSecretInput.plainText)
+              completeOAuthSetup()
+            }}
+          />
+          <text fg={theme.textMuted}>Instance: {snInstance()}</text>
+          <text fg={theme.textMuted}>Client ID: {snClientId()}</text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>authenticate</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Basic: Username */}
+      <Show when={step() === "sn-basic-username"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Step 2 of 2: ServiceNow Basic Auth
+            </text>
+          </box>
+          <text fg={theme.textMuted}>ServiceNow username</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (snUsernameInput = val)}
+            height={3}
+            initialValue={snUsername()}
+            placeholder="admin"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setSnUsername(snUsernameInput.plainText)
+              setStep("sn-basic-password")
+              setTimeout(() => snPasswordInput?.focus(), 10)
+            }}
+          />
+          <text fg={theme.textMuted}>Instance: {snInstance()}</text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>continue</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Basic: Password */}
+      <Show when={step() === "sn-basic-password"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Step 2 of 2: ServiceNow Basic Auth
+            </text>
+          </box>
+          <text fg={theme.textMuted}>ServiceNow password</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (snPasswordInput = val)}
+            height={3}
+            initialValue={snPassword()}
+            placeholder="Enter password"
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setSnPassword(snPasswordInput.plainText)
+              completeBasicSetup()
+            }}
+          />
+          <text fg={theme.textMuted}>Instance: {snInstance()}</text>
+          <text fg={theme.textMuted}>Username: {snUsername()}</text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>enter </text>
+            <text fg={theme.textMuted}>save and connect</text>
+          </box>
+        </box>
+      </Show>
+
+      {/* Completing */}
+      <Show when={step() === "completing"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Completing Setup...
+          </text>
+          <text fg={theme.textMuted}>Starting Enterprise and ServiceNow MCP servers...</text>
         </box>
       </Show>
     </box>
