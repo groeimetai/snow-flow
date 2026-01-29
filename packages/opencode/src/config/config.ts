@@ -8,6 +8,7 @@ import { ModelsDev } from "../provider/models"
 import { mergeDeep, pipe, unique } from "remeda"
 import { Global } from "../global"
 import fs from "fs/promises"
+import { readFileSync } from "fs"
 import { lazy } from "../util/lazy"
 import { NamedError } from "@opencode-ai/util/error"
 import { Flag } from "../flag/flag"
@@ -53,18 +54,18 @@ export namespace Config {
     for (const [key, value] of Object.entries(auth)) {
       if (value.type === "wellknown") {
         process.env[value.key] = value.token
-        log.debug("fetching remote config", { url: `${key}/.well-known/opencode` })
-        const response = await fetch(`${key}/.well-known/opencode`)
+        log.debug("fetching remote config", { url: `${key}/.well-known/snow-code` })
+        const response = await fetch(`${key}/.well-known/snow-code`)
         if (!response.ok) {
           throw new Error(`failed to fetch remote config from ${key}: ${response.status}`)
         }
         const wellknown = (await response.json()) as any
         const remoteConfig = wellknown.config ?? {}
         // Add $schema to prevent load() from trying to write back to a non-existent file
-        if (!remoteConfig.$schema) remoteConfig.$schema = "https://opencode.ai/config.json"
+        if (!remoteConfig.$schema) remoteConfig.$schema = "https://snow-flow.dev/config.json"
         result = mergeConfigConcatArrays(
           result,
-          await load(JSON.stringify(remoteConfig), `${key}/.well-known/opencode`),
+          await load(JSON.stringify(remoteConfig), `${key}/.well-known/snow-code`),
         )
         log.debug("loaded remote config from well-known", { url: key })
       }
@@ -81,7 +82,7 @@ export namespace Config {
 
     // Project config has highest precedence (overrides global and remote)
     if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
-      for (const file of ["opencode.jsonc", "opencode.json"]) {
+      for (const file of ["snow-code.jsonc", "snow-code.json"]) {
         const found = await Filesystem.findUp(file, Instance.directory, Instance.worktree)
         for (const resolved of found.toReversed()) {
           result = mergeConfigConcatArrays(result, await loadFile(resolved))
@@ -105,7 +106,7 @@ export namespace Config {
       ...(!Flag.OPENCODE_DISABLE_PROJECT_CONFIG
         ? await Array.fromAsync(
             Filesystem.up({
-              targets: [".opencode"],
+              targets: [".snow-code"],
               start: Instance.directory,
               stop: Instance.worktree,
             }),
@@ -114,7 +115,7 @@ export namespace Config {
       // Always scan ~/.opencode/ (user home directory)
       ...(await Array.fromAsync(
         Filesystem.up({
-          targets: [".opencode"],
+          targets: [".snow-code"],
           start: Global.Path.home,
           stop: Global.Path.home,
         }),
@@ -127,8 +128,8 @@ export namespace Config {
     }
 
     for (const dir of unique(directories)) {
-      if (dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
-        for (const file of ["opencode.jsonc", "opencode.json"]) {
+      if (dir.endsWith(".snow-code") || dir === Flag.SNOW_CODE_CONFIG_DIR) {
+        for (const file of ["snow-code.jsonc", "snow-code.json"]) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
           // to satisfy the type checker
@@ -218,12 +219,59 @@ export namespace Config {
       return ["bun", "run", bundledPath]
     }
 
-    // Development: use TypeScript source with bun
-    const devPaths: Record<string, string> = {
-      "servicenow-unified": path.join(__dirname, "../servicenow/servicenow-mcp-unified/index.ts"),
-      "enterprise-proxy": path.join(__dirname, "../servicenow/enterprise-proxy/server.ts"),
+    // Find the package root by looking for package.json
+    // This works for both development and installed npm packages
+    const findPackageRoot = (): string => {
+      // Try multiple approaches to find the package root
+      const candidates = [
+        // 1. Relative to process.execPath (for bundled binaries in bin/)
+        path.join(binDir, ".."),
+        // 2. From require.main if available
+        require.main?.filename ? path.dirname(require.main.filename) : null,
+        // 3. Walk up from current working directory looking for package.json with snow-flow
+        process.cwd(),
+      ].filter(Boolean) as string[]
+
+      for (const candidate of candidates) {
+        // Check if this looks like our package root
+        const pkgPath = path.join(candidate, "package.json")
+        if (existsSync(pkgPath)) {
+          try {
+            const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"))
+            if (pkg.name === "snow-flow" || pkg.name === "snow-flow-test" || pkg.name === "snow-code") {
+              return candidate
+            }
+          } catch {
+            // Continue to next candidate
+          }
+        }
+        // Check if servicenow directory exists at this location
+        const snDir = path.join(candidate, "src", "servicenow")
+        if (existsSync(snDir)) {
+          return candidate
+        }
+      }
+
+      // Fallback: use __dirname (may be incorrect in bundled builds, but better than nothing)
+      return path.join(__dirname, "../..")
     }
-    return ["bun", "run", devPaths[serverName]]
+
+    const packageRoot = findPackageRoot()
+
+    // Development/installed package: use TypeScript source with bun
+    const devPaths: Record<string, string> = {
+      "servicenow-unified": path.join(packageRoot, "src/servicenow/servicenow-mcp-unified/index.ts"),
+      "enterprise-proxy": path.join(packageRoot, "src/servicenow/enterprise-proxy/server.ts"),
+    }
+
+    const serverPath = devPaths[serverName]
+
+    // Verify the path exists before returning
+    if (!existsSync(serverPath)) {
+      log.error("MCP server file not found", { serverName, path: serverPath, packageRoot })
+    }
+
+    return ["bun", "run", serverPath]
   }
 
   /**
@@ -355,7 +403,7 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opencode/command/", "/.opencode/commands/", "/command/", "/commands/"]
+      const patterns = ["/.snow-code/command/", "/.snow-code/commands/", "/command/", "/commands/"]
       const file = rel(item, patterns) ?? path.basename(item)
       const name = trim(file)
 
@@ -395,7 +443,7 @@ export namespace Config {
       })
       if (!md) continue
 
-      const patterns = ["/.opencode/agent/", "/.opencode/agents/", "/agent/", "/agents/"]
+      const patterns = ["/.snow-code/agent/", "/.snow-code/agents/", "/agent/", "/agents/"]
       const file = rel(item, patterns) ?? path.basename(item)
       const agentName = trim(file)
 
@@ -991,7 +1039,7 @@ export namespace Config {
       command: z
         .record(z.string(), Command)
         .optional()
-        .describe("Command configuration, see https://opencode.ai/docs/commands"),
+        .describe("Command configuration, see https://snow-flow.dev/docs/commands"),
       watcher: z
         .object({
           ignore: z.array(z.string()).optional(),
@@ -1058,7 +1106,7 @@ export namespace Config {
         })
         .catchall(Agent)
         .optional()
-        .describe("Agent configuration, see https://opencode.ai/docs/agents"),
+        .describe("Agent configuration, see https://snow-flow.dev/docs/agents"),
       provider: z
         .record(z.string(), Provider)
         .optional()
@@ -1198,8 +1246,8 @@ export namespace Config {
     let result: Info = pipe(
       {},
       mergeDeep(await loadFile(path.join(Global.Path.config, "config.json"))),
-      mergeDeep(await loadFile(path.join(Global.Path.config, "opencode.json"))),
-      mergeDeep(await loadFile(path.join(Global.Path.config, "opencode.jsonc"))),
+      mergeDeep(await loadFile(path.join(Global.Path.config, "snow-code.json"))),
+      mergeDeep(await loadFile(path.join(Global.Path.config, "snow-code.jsonc"))),
     )
 
     await import(path.join(Global.Path.config, "config"), {
@@ -1210,7 +1258,7 @@ export namespace Config {
       .then(async (mod) => {
         const { provider, model, ...rest } = mod.default
         if (provider && model) result.model = `${provider}/${model}`
-        result["$schema"] = "https://opencode.ai/config.json"
+        result["$schema"] = "https://snow-flow.dev/config.json"
         result = mergeDeep(result, rest)
         await Bun.write(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
         await fs.unlink(path.join(Global.Path.config, "config"))
@@ -1302,9 +1350,9 @@ export namespace Config {
     const parsed = Info.safeParse(data)
     if (parsed.success) {
       if (!parsed.data.$schema) {
-        parsed.data.$schema = "https://opencode.ai/config.json"
+        parsed.data.$schema = "https://snow-flow.dev/config.json"
         // Write the $schema to the original text to preserve variables like {env:VAR}
-        const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://opencode.ai/config.json",')
+        const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://snow-flow.dev/config.json",')
         await Bun.write(configFilepath, updated).catch(() => {})
       }
       const data = parsed.data
@@ -1366,7 +1414,7 @@ export namespace Config {
   }
 
   function globalConfigFile() {
-    const candidates = ["opencode.jsonc", "opencode.json", "config.json"].map((file) =>
+    const candidates = ["snow-code.jsonc", "snow-code.json", "config.json"].map((file) =>
       path.join(Global.Path.config, file),
     )
     for (const file of candidates) {
