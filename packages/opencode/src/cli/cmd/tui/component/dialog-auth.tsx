@@ -706,9 +706,43 @@ function DialogAuthEnterprise() {
           },
           enabled: true,
         })
+
+        // Also start servicenow-unified if ServiceNow credentials exist
+        let serviceNowStarted = false
+        try {
+          const snAuth = await Auth.get("servicenow")
+          if (snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") {
+            const snEnv: Record<string, string> = {
+              SERVICENOW_INSTANCE_URL: snAuth.instance,
+            }
+            if (snAuth.type === "servicenow-oauth") {
+              snEnv.SERVICENOW_CLIENT_ID = snAuth.clientId
+              snEnv.SERVICENOW_CLIENT_SECRET = snAuth.clientSecret ?? ""
+              if (snAuth.accessToken) snEnv.SERVICENOW_ACCESS_TOKEN = snAuth.accessToken
+              if (snAuth.refreshToken) snEnv.SERVICENOW_REFRESH_TOKEN = snAuth.refreshToken
+            } else {
+              snEnv.SERVICENOW_USERNAME = snAuth.username
+              snEnv.SERVICENOW_PASSWORD = snAuth.password ?? ""
+            }
+            await MCP.add("servicenow-unified", {
+              type: "local",
+              command: getMcpServerCommand("servicenow-unified"),
+              environment: snEnv,
+              enabled: true,
+            })
+            serviceNowStarted = true
+          }
+        } catch {
+          // ServiceNow credentials not available, skip
+        }
+
+        const userName = data.user?.username || data.user?.email || "Enterprise"
+        const serverMsg = serviceNowStarted
+          ? "Enterprise + ServiceNow MCP servers are now active."
+          : "Enterprise MCP server is now active."
         toast.show({
           variant: "info",
-          message: `Connected as ${data.user?.username || data.user?.email || "Enterprise"}! Enterprise MCP server is now active.`,
+          message: `Connected as ${userName}! ${serverMsg}`,
           duration: 5000,
         })
       } catch (mcpError) {
