@@ -11,7 +11,7 @@ import type { Config } from "../config/config"
  * Get the default ServiceNow MCP server configuration
  *
  * This returns a local MCP server config that can be merged into the
- * opencode.json mcp configuration.
+ * snow-code.json mcp configuration.
  */
 export function getServiceNowMcpConfig(options?: {
   instance?: string
@@ -144,10 +144,10 @@ export async function getServiceNowMcpConfigFromAuth(): Promise<Config.Mcp | nul
 export const SERVICENOW_MCP_SERVER_NAME = "servicenow-unified"
 
 /**
- * Instructions for configuring ServiceNow MCP in opencode.json
+ * Instructions for configuring ServiceNow MCP in snow-code.json
  */
 export const SERVICENOW_MCP_CONFIG_EXAMPLE = `
-// Add to your opencode.json or opencode.jsonc:
+// Add to your snow-code.json or snow-code.jsonc:
 {
   "mcp": {
     "servicenow-unified": {

@@ -12,8 +12,8 @@ export function FormatError(input: unknown) {
     return [
       `Model not found: ${providerID}/${modelID}`,
       ...(Array.isArray(suggestions) && suggestions.length ? ["Did you mean: " + suggestions.join(", ")] : []),
-      `Try: \`opencode models\` to list available models`,
-      `Or check your config (opencode.json) provider/model names`,
+      `Try: \`snow-code models\` to list available models`,
+      `Or check your config (snow-code.json) provider/model names`,
     ].join("\n")
   }
   if (Provider.InitError.isInstance(input)) {

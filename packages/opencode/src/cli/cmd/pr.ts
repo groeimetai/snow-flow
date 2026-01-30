@@ -91,18 +91,18 @@ export const PrCommand = cmd({
         UI.println("Starting opencode...")
         UI.println()
 
-        // Launch opencode TUI with session ID if available
+        // Launch snow-code TUI with session ID if available
         const { spawn } = await import("child_process")
-        const opencodeArgs = sessionId ? ["-s", sessionId] : []
-        const opencodeProcess = spawn("opencode", opencodeArgs, {
+        const snowCodeArgs = sessionId ? ["-s", sessionId] : []
+        const snowCodeProcess = spawn("snow-code", snowCodeArgs, {
           stdio: "inherit",
           cwd: process.cwd(),
         })
 
         await new Promise<void>((resolve, reject) => {
-          opencodeProcess.on("exit", (code) => {
+          snowCodeProcess.on("exit", (code) => {
             if (code === 0) resolve()
-            else reject(new Error(`opencode exited with code ${code}`))
+            else reject(new Error(`snow-code exited with code ${code}`))
           })
           opencodeProcess.on("error", reject)
         })

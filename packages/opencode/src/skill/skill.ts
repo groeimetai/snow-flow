@@ -110,7 +110,7 @@ export namespace Skill {
       }
     }
 
-    // Scan .opencode/skill/ directories
+    // Scan .snow-code/skill/ directories
     for (const dir of await Config.directories()) {
       for await (const match of OPENCODE_SKILL_GLOB.scan({
         cwd: dir,

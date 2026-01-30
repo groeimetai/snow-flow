@@ -217,7 +217,7 @@ async function executeUninstall(method: Installation.Method, targets: RemovalTar
     prompts.log.info(`  rm "${targets.binary}"`)
 
     const binDir = path.dirname(targets.binary)
-    if (binDir.includes(".opencode")) {
+    if (binDir.includes(".snow-code") || binDir.includes(".opencode")) {
       prompts.log.info(`  rmdir "${binDir}" 2>/dev/null`)
     }
   }
@@ -270,7 +270,7 @@ async function getShellConfigFile(): Promise<string | null> {
     const content = await Bun.file(file)
       .text()
       .catch(() => "")
-    if (content.includes("# opencode") || content.includes(".opencode/bin")) {
+    if (content.includes("# opencode") || content.includes("# snow-code") || content.includes(".opencode/bin") || content.includes(".snow-code/bin")) {
       return file
     }
   }
@@ -288,21 +288,21 @@ async function cleanShellConfig(file: string) {
   for (const line of lines) {
     const trimmed = line.trim()
 
-    if (trimmed === "# opencode") {
+    if (trimmed === "# opencode" || trimmed === "# snow-code") {
       skip = true
       continue
     }
 
     if (skip) {
       skip = false
-      if (trimmed.includes(".opencode/bin") || trimmed.includes("fish_add_path")) {
+      if (trimmed.includes(".opencode/bin") || trimmed.includes(".snow-code/bin") || trimmed.includes("fish_add_path")) {
         continue
       }
     }
 
     if (
-      (trimmed.startsWith("export PATH=") && trimmed.includes(".opencode/bin")) ||
-      (trimmed.startsWith("fish_add_path") && trimmed.includes(".opencode"))
+      (trimmed.startsWith("export PATH=") && (trimmed.includes(".opencode/bin") || trimmed.includes(".snow-code/bin"))) ||
+      (trimmed.startsWith("fish_add_path") && (trimmed.includes(".opencode") || trimmed.includes(".snow-code")))
     ) {
       continue
     }

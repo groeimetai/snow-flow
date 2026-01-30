@@ -6,7 +6,7 @@
  * - MCP server configuration helpers
  *
  * Note: The ServiceNow MCP servers (servicenow-unified, enterprise-proxy) are
- * standalone processes that are configured via the mcp config in opencode.json.
+ * standalone processes that are configured via the mcp config in snow-code.json.
  * They are automatically injected when credentials are present in the auth store.
  */
 
@@ -24,9 +24,9 @@ export {
 } from "./mcp-config"
 
 /**
- * Default ServiceNow MCP configuration for use in opencode.json
+ * Default ServiceNow MCP configuration for use in snow-code.json
  *
- * Example usage in opencode.json:
+ * Example usage in snow-code.json:
  * {
  *   "mcp": {
  *     "servicenow-unified": {

@@ -102,7 +102,7 @@ export namespace Config {
 
     const directories = [
       Global.Path.config,
-      // Only scan project .opencode/ directories when project discovery is enabled
+      // Only scan project .snow-code/ directories when project discovery is enabled
       ...(!Flag.OPENCODE_DISABLE_PROJECT_CONFIG
         ? await Array.fromAsync(
             Filesystem.up({
@@ -112,7 +112,7 @@ export namespace Config {
             }),
           )
         : []),
-      // Always scan ~/.opencode/ (user home directory)
+      // Always scan ~/.snow-code/ (user home directory)
       ...(await Array.fromAsync(
         Filesystem.up({
           targets: [".snow-code"],
@@ -539,9 +539,9 @@ export namespace Config {
    * Deduplicates plugins by name, with later entries (higher priority) winning.
    * Priority order (highest to lowest):
    * 1. Local plugin/ directory
-   * 2. Local opencode.json
+   * 2. Local snow-code.json
    * 3. Global plugin/ directory
-   * 4. Global opencode.json
+   * 4. Global snow-code.json
    *
    * Since plugins are added in low-to-high priority order,
    * we reverse, deduplicate (keeping first occurrence), then restore order.

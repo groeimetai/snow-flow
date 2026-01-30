@@ -59,8 +59,8 @@ Add to your Zed configuration (`~/.config/zed/settings.json`):
 ```json
 {
   "agent_servers": {
-    "OpenCode": {
-      "command": "opencode",
+    "Snow-Code": {
+      "command": "snow-code",
       "args": ["acp"]
     }
   }
