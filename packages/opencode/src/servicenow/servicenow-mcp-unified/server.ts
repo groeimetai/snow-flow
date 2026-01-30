@@ -36,6 +36,7 @@ import { ServiceNowContext, JWTPayload, MCPToolDefinition } from './shared/types
 import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsByRole } from './shared/permission-validator.js';
 import { MCPPromptManager } from '../shared/mcp-prompt-manager.js';
 import { META_TOOLS, tool_search_exec, tool_execute_exec } from './tools/meta/index.js';
+import { ToolSearch } from './shared/tool-search.js';
 
 /**
  * ServiceNow Unified MCP Server
@@ -478,18 +479,56 @@ export class ServiceNowUnifiedServer {
    * Setup MCP request handlers
    */
   private setupHandlers(): void {
-    // List available tools (filtered by lazy mode, domains, and/or user role)
+    // List available tools (filtered by lazy mode, domains, session, and/or user role)
     this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
       // 🆕 Lazy loading via SNOW_LAZY_TOOLS env var
       // This dramatically reduces token usage from ~71k to ~2k by only exposing meta-tools
       // AI uses tool_search + tool_execute to access all 235+ tools dynamically
       const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
 
+      // Extract sessionId for session-based filtering
+      const jwtPayloadForSession = extractJWTPayload((request as any).headers);
+      const sessionId = jwtPayloadForSession?.sessionId ||
+                        (request as any).headers?.['x-session-id'] ||
+                        process.env.SNOW_SESSION_ID;
+
       if (lazyToolsEnabled) {
         console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE');
         console.error('[Server]   Only tool_search + tool_execute exposed (~2k tokens)');
         console.error('[Server]   All 235+ tools accessible via tool_execute');
 
+        // In lazy mode with session filtering enabled, we can optionally show enabled tools
+        // This is controlled by SNOW_LAZY_SHOW_ENABLED=true
+        const showEnabledTools = process.env.SNOW_LAZY_SHOW_ENABLED === 'true';
+        if (showEnabledTools && sessionId) {
+          const enabledToolIds = await ToolSearch.getEnabledTools(sessionId);
+          if (enabledToolIds.size > 0) {
+            console.error(`[Server]   Session ${sessionId} has ${enabledToolIds.size} enabled tools`);
+
+            // Get definitions for enabled tools
+            const enabledToolDefs: MCPToolDefinition[] = [];
+            for (const toolId of enabledToolIds) {
+              const tool = toolRegistry.getTool(toolId);
+              if (tool) {
+                enabledToolDefs.push(tool.definition);
+              }
+            }
+
+            // Return meta-tools + enabled tools
+            const metaToolDefs = META_TOOLS.map(t => t.definition);
+            const allDefs = [...metaToolDefs, ...enabledToolDefs];
+
+            return {
+              tools: allDefs.map(tool => ({
+                name: tool.name,
+                description: tool.description,
+                inputSchema: tool.inputSchema
+              }))
+            };
+          }
+        }
+
+        // Standard lazy mode: just meta-tools
         const metaToolDefs = META_TOOLS.map(t => t.definition);
         return {
           tools: metaToolDefs.map(tool => ({
@@ -556,11 +595,19 @@ export class ServiceNowUnifiedServer {
         console.error(`[Server]   Parameters: ${logArgs}`);
       }
 
+      // Extract sessionId from JWT payload or headers for session-based tool enabling
+      const jwtPayloadForSession = extractJWTPayload((request as any).headers);
+      const sessionId = jwtPayloadForSession?.sessionId ||
+                        (request as any).headers?.['x-session-id'] ||
+                        process.env.SNOW_SESSION_ID;
+
       try {
         // 🆕 Handle meta-tools (tool_search, tool_execute) for lazy loading mode
         if (name === 'tool_search') {
           console.error('[Server] Executing meta-tool: tool_search');
-          const result = await tool_search_exec(args as any, this.context);
+          // Pass sessionId to enable session-based tool enabling
+          const contextWithSession = { ...this.context, sessionId };
+          const result = await tool_search_exec(args as any, contextWithSession);
           return {
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
@@ -568,7 +615,9 @@ export class ServiceNowUnifiedServer {
 
         if (name === 'tool_execute') {
           console.error('[Server] Executing meta-tool: tool_execute');
-          const result = await tool_execute_exec(args as any, this.context);
+          // Pass sessionId for potential future use
+          const contextWithSession = { ...this.context, sessionId };
+          const result = await tool_execute_exec(args as any, contextWithSession);
           return {
             content: [{ type: 'text', text: JSON.stringify(result, null, 2) }]
           };
@@ -773,6 +822,33 @@ export class ServiceNowUnifiedServer {
   }
 
   /**
+   * Extract keywords from tool name and description for search indexing
+   */
+  private extractKeywords(name: string, description: string): string[] {
+    const keywords = new Set<string>();
+
+    // Extract from tool name (e.g., snow_query_incidents -> query, incidents)
+    const nameParts = name.replace(/^snow_/, '').split('_');
+    nameParts.forEach(part => {
+      if (part.length > 2) {
+        keywords.add(part.toLowerCase());
+      }
+    });
+
+    // Extract significant words from description
+    const descWords = description
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 3 && !['this', 'that', 'with', 'from', 'will', 'have', 'been', 'tool'].includes(w));
+
+    // Take top 10 most relevant words from description
+    descWords.slice(0, 10).forEach(w => keywords.add(w));
+
+    return Array.from(keywords);
+  }
+
+  /**
    * Initialize server (discover tools, validate, start)
    *
    * Credential Priority (highest to lowest):
@@ -819,6 +895,23 @@ export class ServiceNowUnifiedServer {
           console.warn(`  - ${err.filePath}: ${err.error}`);
         });
       }
+
+      // Populate ToolSearch index for session-based tool enabling
+      // This mirrors the tool index from the original snow-flow implementation
+      console.error('[Server] Building tool search index...');
+      const allTools = toolRegistry.getToolDefinitions();
+      const toolIndexEntries = allTools.map(tool => {
+        const registeredTool = toolRegistry.getTool(tool.name);
+        return {
+          id: tool.name,
+          description: tool.description.substring(0, 200),
+          category: registeredTool?.domain || 'unknown',
+          keywords: this.extractKeywords(tool.name, tool.description),
+          deferred: true // All tools are deferred in lazy mode
+        };
+      });
+      ToolSearch.registerTools(toolIndexEntries);
+      console.error(`[Server] Tool search index populated with ${toolIndexEntries.length} tools`);
 
       // Test authentication (only if we have credentials)
       if (this.hasValidCredentials()) {

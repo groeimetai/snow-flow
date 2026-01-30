@@ -10,11 +10,17 @@
  * 3. AI calls tool_execute({tool: "snow_query_incidents", args: {...}})
  * 4. Tool is executed and result returned
  *
+ * Session-based tool enabling:
+ * - When enable=true (default), found tools are enabled for the current session
+ * - Enabled tools are persisted to disk and restored on restart
+ * - This allows filtering tools/list to only show enabled tools
+ *
  * @see https://www.anthropic.com/engineering/advanced-tool-use
  */
 
 import { MCPToolDefinition, ServiceNowContext } from '../../shared/types.js';
 import { toolRegistry } from '../../shared/tool-registry.js';
+import { ToolSearch } from '../../shared/tool-search.js';
 
 // ============================================================================
 // tool_search - Search for available tools
@@ -35,11 +41,12 @@ This tool searches through ALL 235+ available tools including:
 - Reporting (dashboards, KPIs, reports)
 - And many more specialized tools
 
-IMPORTANT: After searching, use tool_execute to call the found tools.
+IMPORTANT: After this tool returns, the found tools become IMMEDIATELY AVAILABLE.
+You can call them directly via tool_execute by their exact tool name.
 
 Example workflow:
 1. tool_search({query: "incident query"})
-   → Returns: snow_query_incidents, snow_query_table, ...
+   → Returns: snow_query_incidents, snow_query_table, ... [ENABLED]
 2. tool_execute({tool: "snow_query_incidents", args: {query: "priority=1"}})
    → Executes the tool and returns results`,
   inputSchema: {
@@ -53,6 +60,11 @@ Example workflow:
         type: 'number',
         description: 'Maximum number of results to return (default: 10)',
         default: 10
+      },
+      enable: {
+        type: 'boolean',
+        description: 'Enable found tools for this session (default: true). When enabled, tools are marked [ENABLED] and can be called directly.',
+        default: true
       }
     },
     required: ['query']
@@ -60,71 +72,120 @@ Example workflow:
 };
 
 export async function tool_search_exec(
-  args: { query: string; limit?: number },
+  args: { query: string; limit?: number; enable?: boolean },
   context: ServiceNowContext
 ): Promise<any> {
-  const query = args.query.toLowerCase();
   const limit = args.limit || 10;
-  const queryWords = query.split(/\s+/).filter(w => w.length > 2);
+  const enableTools = args.enable !== false; // Default to true
+  const sessionId = context.sessionId;
 
-  // Get all tools from registry
-  const allTools = toolRegistry.getToolDefinitions();
+  // Use ToolSearch.search() for consistent behavior with snow-flow
+  // This searches the tool index populated at server startup
+  const searchResults = ToolSearch.search(args.query, limit);
 
-  // Score each tool based on query match
-  const scored = allTools.map(tool => {
-    let score = 0;
-    const nameLower = tool.name.toLowerCase();
-    const descLower = tool.description.toLowerCase();
+  // If no results from index, fall back to toolRegistry direct search
+  // This handles the case where the index hasn't been populated yet
+  if (searchResults.length === 0) {
+    // Fallback: search toolRegistry directly
+    const query = args.query.toLowerCase();
+    const queryWords = query.split(/\s+/).filter(w => w.length > 2);
+    const allTools = toolRegistry.getToolDefinitions();
 
-    // Exact name match (highest priority)
-    if (nameLower === query) score += 100;
+    const scored = allTools.map(tool => {
+      let score = 0;
+      const nameLower = tool.name.toLowerCase();
+      const descLower = tool.description.toLowerCase();
 
-    // Name contains query
-    if (nameLower.includes(query)) score += 50;
+      if (nameLower === query) score += 100;
+      if (nameLower.includes(query)) score += 50;
+      const queryPart = query.replace(/^snow_?/, '');
+      if (nameLower.includes(queryPart)) score += 40;
+      if (descLower.includes(query)) score += 20;
 
-    // Name starts with snow_ + query part
-    const queryPart = query.replace(/^snow_?/, '');
-    if (nameLower.includes(queryPart)) score += 40;
+      for (const word of queryWords) {
+        if (nameLower.includes(word)) score += 15;
+        if (descLower.includes(word)) score += 5;
+      }
 
-    // Description contains query
-    if (descLower.includes(query)) score += 20;
+      const registeredTool = toolRegistry.getTool(tool.name);
+      if (registeredTool && registeredTool.domain.toLowerCase().includes(query)) {
+        score += 30;
+      }
 
-    // Word-level matching
-    for (const word of queryWords) {
-      if (nameLower.includes(word)) score += 15;
-      if (descLower.includes(word)) score += 5;
+      return { tool, score, domain: registeredTool?.domain || 'unknown' };
+    });
+
+    const fallbackResults = scored
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+
+    if (fallbackResults.length === 0) {
+      const domains = toolRegistry.getAvailableDomains().slice(0, 15);
+      return {
+        success: false,
+        message: `No tools found matching "${args.query}"`,
+        suggestion: `Try different keywords. Available domains: ${domains.join(', ')}`,
+        available_domains: domains
+      };
     }
 
-    // Domain matching from tool registry
-    const registeredTool = toolRegistry.getTool(tool.name);
-    if (registeredTool && registeredTool.domain.toLowerCase().includes(query)) {
-      score += 30;
+    // Enable and format fallback results
+    if (enableTools && sessionId) {
+      const toolNames = fallbackResults.map(r => r.tool.name);
+      await ToolSearch.enableTools(sessionId, toolNames);
+      console.error(`[tool_search] Enabled ${toolNames.length} tools for session ${sessionId}`);
     }
 
-    return { tool, score, domain: registeredTool?.domain || 'unknown' };
-  });
+    const formattedTools = fallbackResults.map((r, i) => {
+      const params = r.tool.inputSchema?.properties || {};
+      const required = r.tool.inputSchema?.required || [];
+      const paramList = Object.entries(params).map(([name, prop]: [string, any]) => {
+        const isRequired = required.includes(name);
+        const type = prop.type || 'any';
+        return `    ${isRequired ? '*' : ''}${name}: ${type}${prop.description ? ` - ${prop.description.substring(0, 80)}` : ''}`;
+      });
+      const status = enableTools && sessionId ? '[ENABLED]' : '[AVAILABLE]';
+      return {
+        rank: i + 1,
+        name: r.tool.name,
+        status,
+        domain: r.domain,
+        description: r.tool.description.substring(0, 200) + (r.tool.description.length > 200 ? '...' : ''),
+        parameters: paramList.length > 0 ? paramList.slice(0, 5) : ['(no parameters)'],
+        has_more_params: paramList.length > 5
+      };
+    });
 
-  // Filter and sort by score
-  const results = scored
-    .filter(s => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+    const enabledMsg = enableTools && sessionId
+      ? `\n\n✓ ${fallbackResults.length} tool(s) are now ENABLED for this session.\nCall them via tool_execute. Example:\ntool_execute({tool: "${fallbackResults[0]?.tool.name}", args: {...}})`
+      : '';
 
-  if (results.length === 0) {
-    // Get available domains for suggestion
-    const domains = toolRegistry.getAvailableDomains().slice(0, 15);
     return {
-      success: false,
-      message: `No tools found matching "${args.query}"`,
-      suggestion: `Try different keywords. Available domains: ${domains.join(', ')}`,
-      available_domains: domains
+      success: true,
+      query: args.query,
+      count: fallbackResults.length,
+      enabled: enableTools && !!sessionId,
+      sessionId: sessionId || null,
+      tools: formattedTools,
+      usage_hint: `To use a tool, call: tool_execute({tool: "${fallbackResults[0]?.tool.name}", args: {...}})${enabledMsg}`
     };
   }
 
-  // Format results with schema info
-  const formattedTools = results.map((r, i) => {
-    const params = r.tool.inputSchema?.properties || {};
-    const required = r.tool.inputSchema?.required || [];
+  // Process results from ToolSearch.search()
+  // Enable found tools for this session if requested and sessionId is available
+  if (enableTools && sessionId) {
+    const toolIDs = searchResults.map(t => t.id);
+    await ToolSearch.enableTools(sessionId, toolIDs);
+    console.error(`[tool_search] Enabled ${toolIDs.length} tools for session ${sessionId}`);
+  }
+
+  // Format results with schema info from toolRegistry
+  const formattedTools = searchResults.map((entry, i) => {
+    const tool = toolRegistry.getTool(entry.id);
+    const toolDef = tool?.definition;
+    const params = toolDef?.inputSchema?.properties || {};
+    const required = toolDef?.inputSchema?.required || [];
 
     const paramList = Object.entries(params).map(([name, prop]: [string, any]) => {
       const isRequired = required.includes(name);
@@ -132,22 +193,35 @@ export async function tool_search_exec(
       return `    ${isRequired ? '*' : ''}${name}: ${type}${prop.description ? ` - ${prop.description.substring(0, 80)}` : ''}`;
     });
 
+    // Determine status based on deferred flag and enable setting
+    const status = entry.deferred
+      ? (enableTools && sessionId ? '[ENABLED]' : '[DEFERRED]')
+      : '[AVAILABLE]';
+
     return {
       rank: i + 1,
-      name: r.tool.name,
-      domain: r.domain,
-      description: r.tool.description.substring(0, 200) + (r.tool.description.length > 200 ? '...' : ''),
+      name: entry.id,
+      status,
+      domain: entry.category,
+      description: entry.description + (entry.description.length >= 200 ? '...' : ''),
       parameters: paramList.length > 0 ? paramList.slice(0, 5) : ['(no parameters)'],
       has_more_params: paramList.length > 5
     };
   });
 
+  // Build enabled message (consistent with snow-flow)
+  const enabledMsg = enableTools && sessionId
+    ? `\n\n✓ ${searchResults.length} tool(s) are now ENABLED for this session.\nCall them via tool_execute. Example:\ntool_execute({tool: "${searchResults[0]?.id}", args: {...}})`
+    : '';
+
   return {
     success: true,
     query: args.query,
-    count: results.length,
+    count: searchResults.length,
+    enabled: enableTools && !!sessionId,
+    sessionId: sessionId || null,
     tools: formattedTools,
-    usage_hint: `To use a tool, call: tool_execute({tool: "${results[0]?.tool.name}", args: {...}})`
+    usage_hint: `To use a tool, call: tool_execute({tool: "${searchResults[0]?.id}", args: {...}})${enabledMsg}`
   };
 }
 

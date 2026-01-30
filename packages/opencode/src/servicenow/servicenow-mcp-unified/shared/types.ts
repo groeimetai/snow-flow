@@ -36,6 +36,8 @@ export interface ServiceNowContext {
   password?: string;
   // Enterprise features
   enterprise?: EnterpriseLicense;
+  // Session-based tool enabling
+  sessionId?: string;
 }
 
 /**
