@@ -40,7 +40,7 @@ const archMap = {
 let platform = platformMap[os.platform()] || os.platform()
 let arch = archMap[os.arch()] || os.arch()
 
-const binaryName = platform === "windows" ? "opencode.exe" : "opencode"
+const binaryName = platform === "windows" ? "snow-code.exe" : "snow-code"
 
 // First check: binary in our own bin directory (from postinstall download)
 const localBinary = path.join(scriptDir, binaryName)

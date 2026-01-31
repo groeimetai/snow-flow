@@ -6,8 +6,8 @@ import { EMAILOCTOPUS_API_KEY } from "./app"
 ////////////////
 
 const cluster = planetscale.getDatabaseOutput({
-  name: "opencode",
-  organization: "anomalyco",
+  name: "snow-flow",
+  organization: "groeimetai",
 })
 
 const branch =
@@ -101,7 +101,7 @@ export const stripeWebhook = new stripe.WebhookEndpoint("StripeWebhookEndpoint",
 })
 
 const zenProduct = new stripe.Product("ZenBlack", {
-  name: "OpenCode Black",
+  name: "Snow-Flow Enterprise",
 })
 const zenPriceProps = {
   product: zenProduct.id,
