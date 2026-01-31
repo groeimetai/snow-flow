@@ -19,8 +19,12 @@ export function getServiceNowMcpConfig(options?: {
   clientSecret?: string
   accessToken?: string
   refreshToken?: string
+  lazyTools?: boolean
 }): Config.Mcp {
-  const environment: Record<string, string> = {}
+  const environment: Record<string, string> = {
+    // Enable lazy loading by default - reduces token usage from ~71k to ~2k
+    SNOW_LAZY_TOOLS: options?.lazyTools === false ? "false" : "true",
+  }
 
   if (options?.instance) {
     environment.SERVICENOW_INSTANCE_URL = options.instance
@@ -127,6 +131,8 @@ export async function getServiceNowMcpConfigFromAuth(): Promise<Config.Mcp | nul
           SERVICENOW_INSTANCE_URL: snAuth.instance,
           SERVICENOW_USERNAME: snAuth.username,
           SERVICENOW_PASSWORD: snAuth.password,
+          // Enable lazy loading by default - reduces token usage from ~71k to ~2k
+          SNOW_LAZY_TOOLS: "true",
         },
         enabled: true,
       }
@@ -156,7 +162,8 @@ export const SERVICENOW_MCP_CONFIG_EXAMPLE = `
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "your-oauth-client-id",
-        "SERVICENOW_CLIENT_SECRET": "your-oauth-client-secret"
+        "SERVICENOW_CLIENT_SECRET": "your-oauth-client-secret",
+        "SNOW_LAZY_TOOLS": "true"  // Reduces token usage from ~71k to ~2k
       }
     }
   }
