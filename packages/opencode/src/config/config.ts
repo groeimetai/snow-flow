@@ -210,21 +210,49 @@ export namespace Config {
    * Get the MCP server command based on whether we're running bundled or in development
    */
   export function getMcpServerCommand(serverName: "servicenow-unified" | "enterprise-proxy"): string[] {
-    // Find the package root using __dirname (relative to this config.ts file)
-    // __dirname is: packages/opencode/src/config (or equivalent in bundled output)
-    // Package root is: packages/opencode (2 levels up)
-    const configDir = __dirname
-    const packageRootFromConfig = path.resolve(configDir, "../..")
+    // STEP 1: Find the package root by walking up from __dirname looking for package.json
+    // This works reliably in both npm packages and development
+    const findPackageRoot = (): string | undefined => {
+      let current = __dirname
 
-    // Check multiple possible locations for the bundled MCP server
+      for (let i = 0; i < 10; i++) {
+        // Max 10 levels up
+        const pkgPath = path.join(current, "package.json")
+        if (existsSync(pkgPath)) {
+          try {
+            const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"))
+            if (["snow-flow-test", "snow-code", "snow-flow"].includes(pkg.name)) {
+              return current
+            }
+          } catch {
+            /* continue */
+          }
+        }
+        const parent = path.dirname(current)
+        if (parent === current) break // Reached root
+        current = parent
+      }
+      return undefined
+    }
+
+    const packageRoot = findPackageRoot()
+
+    // STEP 2: Check bundled MCP candidates
     const bundledCandidates = [
-      // 1. Relative to this file (most reliable for npm packages)
-      path.join(packageRootFromConfig, "mcp", `${serverName}.js`),
-      // 2. Relative to process.execPath (for standalone binaries)
+      // 1. Relative to found package root (most reliable)
+      packageRoot ? path.join(packageRoot, "mcp", `${serverName}.js`) : null,
+
+      // 2. Relative to __dirname - for bin/ directory in npm package
+      // When __dirname is bin/, the mcp/ folder is at ../mcp/
+      path.join(__dirname, "..", "mcp", `${serverName}.js`),
+
+      // 3. Relative to process.execPath (for standalone binaries)
       path.join(path.dirname(process.execPath), "..", "mcp", `${serverName}.js`),
-      // 3. In node_modules (for when running from a different package)
+
+      // 4. In cwd/node_modules (for when running from another package)
       path.join(process.cwd(), "node_modules", "snow-flow-test", "mcp", `${serverName}.js`),
-    ]
+      path.join(process.cwd(), "node_modules", "snow-code", "mcp", `${serverName}.js`),
+    ].filter(Boolean) as string[]
 
     for (const bundledPath of bundledCandidates) {
       if (existsSync(bundledPath)) {
@@ -234,56 +262,24 @@ export namespace Config {
       }
     }
 
-    // Find the package root by looking for package.json
-    // This works for both development and installed npm packages
-    const findPackageRoot = (): string => {
-      // Try multiple approaches to find the package root
-      const candidates = [
-        // 1. Relative to this config file
-        packageRootFromConfig,
-        // 2. From require.main if available
-        require.main?.filename ? path.dirname(require.main.filename) : null,
-        // 3. Walk up from current working directory looking for package.json with snow-flow
-        process.cwd(),
-      ].filter(Boolean) as string[]
+    // STEP 3: Fallback to TypeScript source (development mode)
+    const devRoot = packageRoot || path.resolve(__dirname, "../..")
 
-      for (const candidate of candidates) {
-        // Check if this looks like our package root
-        const pkgPath = path.join(candidate, "package.json")
-        if (existsSync(pkgPath)) {
-          try {
-            const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"))
-            if (pkg.name === "snow-flow" || pkg.name === "snow-flow-test" || pkg.name === "snow-code") {
-              return candidate
-            }
-          } catch {
-            // Continue to next candidate
-          }
-        }
-        // Check if servicenow directory exists at this location
-        const snDir = path.join(candidate, "src", "servicenow")
-        if (existsSync(snDir)) {
-          return candidate
-        }
-      }
-
-      // Fallback: use __dirname (may be incorrect in bundled builds, but better than nothing)
-      return packageRootFromConfig
-    }
-
-    const packageRoot = findPackageRoot()
-
-    // Development/installed package: use TypeScript source with bun
     const devPaths: Record<string, string> = {
-      "servicenow-unified": path.join(packageRoot, "src/servicenow/servicenow-mcp-unified/index.ts"),
-      "enterprise-proxy": path.join(packageRoot, "src/servicenow/enterprise-proxy/server.ts"),
+      "servicenow-unified": path.join(devRoot, "src/servicenow/servicenow-mcp-unified/index.ts"),
+      "enterprise-proxy": path.join(devRoot, "src/servicenow/enterprise-proxy/server.ts"),
     }
 
     const serverPath = devPaths[serverName]
 
     // Verify the path exists before returning
     if (!existsSync(serverPath)) {
-      log.error("MCP server file not found", { serverName, path: serverPath, packageRoot })
+      log.error("MCP server file not found", {
+        serverName,
+        path: serverPath,
+        packageRoot: packageRoot || "not found",
+        __dirname,
+      })
     }
 
     return ["bun", "run", serverPath]
