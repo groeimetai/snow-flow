@@ -483,10 +483,12 @@ export class ServiceNowUnifiedServer {
     // Deferred tools must be enabled via tool_search before they can be executed
     this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
       // Extract sessionId for checking which tools are enabled
+      // Falls back to current session file written by snow-code
       const jwtPayloadForSession = extractJWTPayload((request as any).headers);
       const sessionId = jwtPayloadForSession?.sessionId ||
                         (request as any).headers?.['x-session-id'] ||
-                        process.env.SNOW_SESSION_ID;
+                        process.env.SNOW_SESSION_ID ||
+                        ToolSearch.getCurrentSession();
 
       // Get enabled tools for this session
       const enabledToolIds = sessionId ? await ToolSearch.getEnabledTools(sessionId) : new Set<string>();
@@ -585,10 +587,12 @@ export class ServiceNowUnifiedServer {
       }
 
       // Extract sessionId from JWT payload or headers for session-based tool enabling
+      // Falls back to current session file written by snow-code
       const jwtPayloadForSession = extractJWTPayload((request as any).headers);
       const sessionId = jwtPayloadForSession?.sessionId ||
                         (request as any).headers?.['x-session-id'] ||
-                        process.env.SNOW_SESSION_ID;
+                        process.env.SNOW_SESSION_ID ||
+                        ToolSearch.getCurrentSession();
 
       try {
         // 🆕 Handle meta-tools (tool_search, tool_execute) for lazy loading mode

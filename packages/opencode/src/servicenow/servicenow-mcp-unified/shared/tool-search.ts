@@ -58,6 +58,71 @@ function getSessionFilePath(sessionID: string): string {
   return path.join(getStorageDir(), `enabled-tools-${safeSessionID}.json`);
 }
 
+/**
+ * Get the current session ID file path
+ * This file is written by snow-code and read by MCP server
+ */
+function getCurrentSessionFilePath(): string {
+  // Use platform-specific data directory
+  let dataDir: string;
+  if (process.platform === 'darwin') {
+    dataDir = path.join(os.homedir(), 'Library', 'Application Support', 'snow-code');
+  } else if (process.platform === 'win32' && process.env.APPDATA) {
+    dataDir = path.join(process.env.APPDATA, 'snow-code');
+  } else {
+    dataDir = path.join(os.homedir(), '.local', 'share', 'snow-code');
+  }
+
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+
+  return path.join(dataDir, 'current-session.json');
+}
+
+/**
+ * Get the current session ID from the session file
+ * Falls back to environment variable or undefined
+ */
+export function getCurrentSessionId(): string | undefined {
+  // First check environment variable
+  if (process.env.SNOW_SESSION_ID) {
+    return process.env.SNOW_SESSION_ID;
+  }
+
+  // Then check session file
+  try {
+    const filePath = getCurrentSessionFilePath();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      if (data.sessionId) {
+        return data.sessionId;
+      }
+    }
+  } catch (e: any) {
+    console.error(`[ToolSearch] Failed to read current session: ${e.message}`);
+  }
+
+  return undefined;
+}
+
+/**
+ * Set the current session ID (called by snow-code when session starts)
+ */
+export function setCurrentSessionId(sessionId: string): void {
+  try {
+    const filePath = getCurrentSessionFilePath();
+    const data = JSON.stringify({
+      sessionId,
+      updatedAt: new Date().toISOString()
+    }, null, 2);
+    fs.writeFileSync(filePath, data, 'utf-8');
+    console.error(`[ToolSearch] Set current session: ${sessionId}`);
+  } catch (e: any) {
+    console.error(`[ToolSearch] Failed to set current session: ${e.message}`);
+  }
+}
+
 // In-memory cache for enabled tools per session
 const enabledToolsCache = new Map<string, Set<string>>();
 
@@ -363,4 +428,16 @@ export namespace ToolSearch {
 
     return false; // Deferred and no session = cannot execute
   }
+
+  /**
+   * Get the current session ID (re-exported from module level)
+   * Used by MCP server to get sessionId when not passed in request
+   */
+  export const getCurrentSession = getCurrentSessionId;
+
+  /**
+   * Set the current session ID (re-exported from module level)
+   * Called by snow-code when a session starts/changes
+   */
+  export const setCurrentSession = setCurrentSessionId;
 }

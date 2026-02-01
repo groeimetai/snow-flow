@@ -67,6 +67,7 @@ import { Editor } from "../../util/editor"
 import stripAnsi from "strip-ansi"
 import { Footer } from "./footer.tsx"
 import { usePromptRef } from "../../context/prompt"
+import { setCurrentSessionId } from "@/session/current-session"
 import { useExit } from "../../context/exit"
 import { Filesystem } from "@/util/filesystem"
 import { Global } from "@/global"
@@ -920,6 +921,11 @@ export function Session() {
 
   // snap to bottom when session changes
   createEffect(on(() => route.sessionID, toBottom))
+
+  // Set current session for MCP server (enables session-based tool enabling)
+  createEffect(on(() => route.sessionID, (sessionId) => {
+    setCurrentSessionId(sessionId)
+  }))
 
   return (
     <context.Provider
