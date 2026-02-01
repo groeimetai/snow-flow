@@ -493,6 +493,9 @@ export class ServiceNowUnifiedServer {
       // Get enabled tools for this session
       const enabledToolIds = sessionId ? await ToolSearch.getEnabledTools(sessionId) : new Set<string>();
 
+      // Debug: Log session info
+      console.error(`[Server] ListTools request - sessionId: ${sessionId || 'none'}`);
+
       // Domain filtering via SNOW_TOOL_DOMAINS env var
       const toolDomainsEnv = process.env.SNOW_TOOL_DOMAINS;
 
@@ -524,8 +527,19 @@ export class ServiceNowUnifiedServer {
       const stats = ToolSearch.getStats();
       const totalAvailable = toolRegistry.getToolDefinitions().length;
 
-      // Add meta-tools (tool_search, tool_execute) first - these are always available
-      const metaToolDefs = META_TOOLS.map(t => t.definition);
+      // Add meta-tools (tool_search, tool_execute) first - these are ALWAYS available
+      // Defensive: check if META_TOOLS is defined and has entries
+      const metaToolDefs = (META_TOOLS && META_TOOLS.length > 0)
+        ? META_TOOLS.map(t => t.definition)
+        : [];
+
+      if (metaToolDefs.length === 0) {
+        console.error('[Server] ⚠️  WARNING: META_TOOLS is empty! tool_search/tool_execute not available');
+      }
+
+      // Debug: Check tool index status
+      const indexStats = ToolSearch.getStats();
+      console.error(`[Server] Tool index: ${indexStats.total} tools, ${indexStats.deferred} deferred, ${indexStats.immediate} immediate`);
 
       // DEFERRED LOADING MODE:
       // Only return meta-tools + enabled tools to reduce token usage (~71k -> ~2k)
@@ -540,12 +554,21 @@ export class ServiceNowUnifiedServer {
         return false;
       });
 
+      // Debug: If many tools are enabled, log details
+      if (enabledToolIds.size > 10) {
+        console.error(`[Server] ⚠️  Many tools enabled (${enabledToolIds.size}) - session may have stale data`);
+        // Log first 5 enabled tool names
+        const first5 = Array.from(enabledToolIds).slice(0, 5);
+        console.error(`[Server]    First 5: ${first5.join(', ')}`);
+      }
+
       console.error(
         `[Server] Listing tools for role: ${userRole}` +
         (toolDomainsEnv ? ` (domains: ${toolDomainsEnv})` : '')
       );
       console.error(`[Server]   Meta-tools: ${metaToolDefs.length}`);
       console.error(`[Server]   Enabled this session: ${enabledToolIds.size}`);
+      console.error(`[Server]   Filtered to return: ${enabledTools.length}`);
       console.error(`[Server]   Total available: ${totalAvailable} (use tool_search to enable)`);
 
       // Build final tools list
@@ -563,6 +586,8 @@ export class ServiceNowUnifiedServer {
           inputSchema: tool.inputSchema
         }))
       ];
+
+      console.error(`[Server] Returning ${toolsToReturn.length} tools total`);
 
       return {
         tools: toolsToReturn
