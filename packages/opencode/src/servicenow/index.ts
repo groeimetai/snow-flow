@@ -26,6 +26,8 @@ export {
 /**
  * Default ServiceNow MCP configuration for use in snow-code.json
  *
+ * Tools use deferred loading by default - they must be enabled via tool_search first.
+ *
  * Example usage in snow-code.json:
  * {
  *   "mcp": {
@@ -35,8 +37,7 @@ export {
  *       "environment": {
  *         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
  *         "SERVICENOW_CLIENT_ID": "your-client-id",
- *         "SERVICENOW_CLIENT_SECRET": "your-client-secret",
- *         "SNOW_LAZY_TOOLS": "true"
+ *         "SERVICENOW_CLIENT_SECRET": "your-client-secret"
  *       }
  *     }
  *   }
@@ -53,8 +54,6 @@ export function getDefaultServiceNowMcpConfig() {
       SERVICENOW_INSTANCE_URL: process.env.SERVICENOW_INSTANCE_URL ?? "",
       SERVICENOW_CLIENT_ID: process.env.SERVICENOW_CLIENT_ID ?? "",
       SERVICENOW_CLIENT_SECRET: process.env.SERVICENOW_CLIENT_SECRET ?? "",
-      // Enable lazy loading by default - reduces token usage from ~71k to ~2k
-      SNOW_LAZY_TOOLS: "true",
     },
     enabled: true,
   }

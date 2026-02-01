@@ -479,69 +479,19 @@ export class ServiceNowUnifiedServer {
    * Setup MCP request handlers
    */
   private setupHandlers(): void {
-    // List available tools (filtered by lazy mode, domains, session, and/or user role)
+    // List available tools with deferred status
+    // Deferred tools must be enabled via tool_search before they can be executed
     this.server.setRequestHandler(ListToolsRequestSchema, async (request) => {
-      // 🆕 Lazy loading via SNOW_LAZY_TOOLS env var
-      // This dramatically reduces token usage from ~71k to ~2k by only exposing meta-tools
-      // AI uses tool_search + tool_execute to access all 235+ tools dynamically
-      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
-
-      // Extract sessionId for session-based filtering
+      // Extract sessionId for checking which tools are enabled
       const jwtPayloadForSession = extractJWTPayload((request as any).headers);
       const sessionId = jwtPayloadForSession?.sessionId ||
                         (request as any).headers?.['x-session-id'] ||
                         process.env.SNOW_SESSION_ID;
 
-      if (lazyToolsEnabled) {
-        console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE');
-        console.error('[Server]   Only tool_search + tool_execute exposed (~2k tokens)');
-        console.error('[Server]   All 235+ tools accessible via tool_execute');
+      // Get enabled tools for this session
+      const enabledToolIds = sessionId ? await ToolSearch.getEnabledTools(sessionId) : new Set<string>();
 
-        // In lazy mode with session filtering enabled, we can optionally show enabled tools
-        // This is controlled by SNOW_LAZY_SHOW_ENABLED=true
-        const showEnabledTools = process.env.SNOW_LAZY_SHOW_ENABLED === 'true';
-        if (showEnabledTools && sessionId) {
-          const enabledToolIds = await ToolSearch.getEnabledTools(sessionId);
-          if (enabledToolIds.size > 0) {
-            console.error(`[Server]   Session ${sessionId} has ${enabledToolIds.size} enabled tools`);
-
-            // Get definitions for enabled tools
-            const enabledToolDefs: MCPToolDefinition[] = [];
-            for (const toolId of enabledToolIds) {
-              const tool = toolRegistry.getTool(toolId);
-              if (tool) {
-                enabledToolDefs.push(tool.definition);
-              }
-            }
-
-            // Return meta-tools + enabled tools
-            const metaToolDefs = META_TOOLS.map(t => t.definition);
-            const allDefs = [...metaToolDefs, ...enabledToolDefs];
-
-            return {
-              tools: allDefs.map(tool => ({
-                name: tool.name,
-                description: tool.description,
-                inputSchema: tool.inputSchema
-              }))
-            };
-          }
-        }
-
-        // Standard lazy mode: just meta-tools
-        const metaToolDefs = META_TOOLS.map(t => t.definition);
-        return {
-          tools: metaToolDefs.map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            inputSchema: tool.inputSchema
-          }))
-        };
-      }
-
-      // 🆕 Domain filtering via SNOW_TOOL_DOMAINS env var
-      // This reduces token usage when using MCP with external clients like Claude Code
-      // Example: SNOW_TOOL_DOMAINS=operations,deployment,cmdb
+      // Domain filtering via SNOW_TOOL_DOMAINS env var
       const toolDomainsEnv = process.env.SNOW_TOOL_DOMAINS;
 
       let allTools: MCPToolDefinition[];
@@ -563,24 +513,63 @@ export class ServiceNowUnifiedServer {
         allTools = toolRegistry.getToolDefinitions();
       }
 
-      // 🆕 Phase 2: Role-based tool filtering
+      // Role-based tool filtering
       const jwtPayload = extractJWTPayload((request as any).headers);
       const userRole = jwtPayload?.role || 'developer';
       const filteredTools = filterToolsByRole(allTools, jwtPayload);
 
+      // Get tool index stats
+      const stats = ToolSearch.getStats();
       const totalAvailable = toolRegistry.getToolDefinitions().length;
+
       console.error(
         `[Server] Listing ${filteredTools.length}/${totalAvailable} tools` +
         (toolDomainsEnv ? ` (domains: ${toolDomainsEnv})` : '') +
         ` for role: ${userRole}`
       );
+      console.error(`[Server]   Deferred: ${stats.deferred}, Immediate: ${stats.immediate}, Enabled this session: ${enabledToolIds.size}`);
+
+      // Add meta-tools (tool_search, tool_execute) first - these are always available
+      const metaToolDefs = META_TOOLS.map(t => t.definition);
+
+      // Map tools with their status in description
+      const toolsWithStatus = await Promise.all(filteredTools.map(async tool => {
+        const indexEntry = ToolSearch.getToolFromIndex(tool.name);
+        const isDeferred = indexEntry?.deferred ?? true; // Default to deferred if not in index
+        const isEnabled = enabledToolIds.has(tool.name);
+
+        // Determine status
+        let status: string;
+        if (!isDeferred) {
+          status = '[AVAILABLE]';
+        } else if (isEnabled) {
+          status = '[ENABLED]';
+        } else {
+          status = '[DEFERRED]';
+        }
+
+        // Prepend status to description
+        const description = `${status} ${tool.description}`;
+
+        return {
+          name: tool.name,
+          description,
+          inputSchema: tool.inputSchema
+        };
+      }));
+
+      // Combine meta-tools + all other tools
+      const allToolsWithMeta = [
+        ...metaToolDefs.map(tool => ({
+          name: tool.name,
+          description: `[AVAILABLE] ${tool.description}`,
+          inputSchema: tool.inputSchema
+        })),
+        ...toolsWithStatus
+      ];
 
       return {
-        tools: filteredTools.map(tool => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema
-        }))
+        tools: allToolsWithMeta
       };
     });
 
@@ -632,7 +621,18 @@ export class ServiceNowUnifiedServer {
           );
         }
 
-        // 🆕 Phase 2: Permission validation before execution
+        // Check if tool is deferred and needs to be enabled first
+        const canExecute = await ToolSearch.canExecuteTool(sessionId, name);
+        if (!canExecute) {
+          const toolStatus = await ToolSearch.getToolStatus(sessionId, name);
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Tool "${name}" is ${toolStatus} and must be enabled first. ` +
+            `Use tool_search({query: "${name.replace('snow_', '')}"}) to enable it.`
+          );
+        }
+
+        // Phase 2: Permission validation before execution
         const jwtPayload = extractJWTPayload((request as any).headers);
         validateJWTExpiry(jwtPayload);
         validatePermission(tool.definition, jwtPayload);

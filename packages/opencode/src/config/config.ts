@@ -299,8 +299,6 @@ export namespace Config {
             SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
             ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
             ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
-            // Enable lazy loading mode by default - reduces token usage from ~71k to ~2k
-            SNOW_LAZY_TOOLS: "true",
           },
           enabled: true,
         }
@@ -318,26 +316,8 @@ export namespace Config {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
             SERVICENOW_USERNAME: snAuth.username,
             SERVICENOW_PASSWORD: snAuth.password ?? "",
-            // Enable lazy loading mode by default - reduces token usage from ~71k to ~2k
-            SNOW_LAZY_TOOLS: "true",
           },
           enabled: true,
-        }
-      }
-    }
-
-    // Always inject SNOW_LAZY_TOOLS=true for servicenow-unified if not explicitly set
-    // This ensures lazy loading is enabled even for manually configured servers
-    if (result["servicenow-unified"] && result["servicenow-unified"].type === "local") {
-      const env = result["servicenow-unified"].environment || {}
-      if (!("SNOW_LAZY_TOOLS" in env)) {
-        log.info("injecting SNOW_LAZY_TOOLS=true into servicenow-unified MCP server")
-        result["servicenow-unified"] = {
-          ...result["servicenow-unified"],
-          environment: {
-            ...env,
-            SNOW_LAZY_TOOLS: "true",
-          },
         }
       }
     }

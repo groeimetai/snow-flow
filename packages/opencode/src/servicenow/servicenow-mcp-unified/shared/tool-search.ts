@@ -307,4 +307,60 @@ export namespace ToolSearch {
       categories
     };
   }
+
+  /**
+   * Get a tool from the index by ID
+   */
+  export function getToolFromIndex(toolId: string): ToolIndexEntry | undefined {
+    return toolIndex.find(t => t.id === toolId);
+  }
+
+  /**
+   * Get tool status for display
+   * Returns [AVAILABLE], [ENABLED], or [DEFERRED]
+   */
+  export async function getToolStatus(
+    sessionID: string | undefined,
+    toolID: string
+  ): Promise<'[AVAILABLE]' | '[ENABLED]' | '[DEFERRED]'> {
+    const tool = getToolFromIndex(toolID);
+    if (!tool) {
+      return '[AVAILABLE]'; // Unknown tool, assume available
+    }
+
+    if (!tool.deferred) {
+      return '[AVAILABLE]'; // Not deferred, always available
+    }
+
+    // Tool is deferred - check if enabled for this session
+    if (sessionID) {
+      const enabled = await isToolEnabled(sessionID, toolID);
+      if (enabled) {
+        return '[ENABLED]';
+      }
+    }
+
+    return '[DEFERRED]';
+  }
+
+  /**
+   * Check if a tool can be executed (not deferred OR enabled)
+   */
+  export async function canExecuteTool(sessionID: string | undefined, toolID: string): Promise<boolean> {
+    const tool = getToolFromIndex(toolID);
+    if (!tool) {
+      return true; // Unknown tool, allow execution (let it fail naturally if not found)
+    }
+
+    if (!tool.deferred) {
+      return true; // Not deferred, always available
+    }
+
+    // Tool is deferred - check if enabled for this session
+    if (sessionID) {
+      return await isToolEnabled(sessionID, toolID);
+    }
+
+    return false; // Deferred and no session = cannot execute
+  }
 }

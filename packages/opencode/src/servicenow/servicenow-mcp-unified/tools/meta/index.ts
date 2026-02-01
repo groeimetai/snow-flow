@@ -269,6 +269,7 @@ export async function tool_execute_exec(
 ): Promise<any> {
   const toolName = args.tool;
   const toolArgs = args.args || {};
+  const sessionId = context.sessionId;
 
   // Get tool from registry
   const tool = toolRegistry.getTool(toolName);
@@ -288,6 +289,19 @@ export async function tool_execute_exec(
         ? `Did you mean one of these? ${similar.join(', ')}`
         : 'Use tool_search to find available tools',
       hint: 'Use tool_search({query: "your task"}) to find the right tool'
+    };
+  }
+
+  // Check if tool is deferred and needs to be enabled first
+  const canExecute = await ToolSearch.canExecuteTool(sessionId, toolName);
+  if (!canExecute) {
+    const toolStatus = await ToolSearch.getToolStatus(sessionId, toolName);
+    const queryHint = toolName.replace('snow_', '').replace(/_/g, ' ');
+    return {
+      success: false,
+      error: `Tool "${toolName}" is ${toolStatus} and must be enabled first`,
+      hint: `Use tool_search({query: "${queryHint}"}) to enable this tool`,
+      status: toolStatus
     };
   }
 
