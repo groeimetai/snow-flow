@@ -167,56 +167,26 @@ export class ToolRegistry {
   }
 
   /**
-   * Initialize tool registry with auto-discovery or static fallback
+   * Initialize tool registry with static imports
+   *
+   * Static imports are used because:
+   * 1. They're bundled at build time and always available
+   * 2. File-based discovery fails in npm packages (only index.js is shipped)
+   * 3. Static mode correctly handles the *_def and *_exec export patterns
    */
   async initialize(): Promise<ToolDiscoveryResult> {
-    console.error('[ToolRegistry] Initializing...');
+    console.error('[ToolRegistry] Initializing with static imports...');
 
     const startTime = Date.now();
-    const result: ToolDiscoveryResult = {
-      toolsFound: 0,
-      toolsRegistered: 0,
-      toolsFailed: 0,
-      domains: [],
-      errors: [],
-      duration: 0
-    };
 
-    // First, try file-based discovery
-    const domains = await this.discoverDomains();
-
-    if (domains.length > 0) {
-      // File discovery worked - use dynamic loading
-      console.error('[ToolRegistry] Using file-based discovery mode');
-      result.domains = domains;
-      console.error(`[ToolRegistry] Found ${domains.length} domains: ${domains.join(', ')}`);
-
-      for (const domain of domains) {
-        const domainPath = path.join(this.config.toolsDirectory, domain);
-        const domainResult = await this.discoverDomainTools(domain, domainPath);
-
-        result.toolsFound += domainResult.toolsFound;
-        result.toolsRegistered += domainResult.toolsRegistered;
-        result.toolsFailed += domainResult.toolsFailed;
-        result.errors.push(...domainResult.errors);
-      }
-    } else {
-      // File discovery failed - use static imports (bundled mode)
-      console.error('[ToolRegistry] File discovery failed, using static imports (bundled mode)');
-      this.useStaticMode = true;
-
-      const staticResult = await this.loadStaticTools();
-      result.domains = staticResult.domains;
-      result.toolsFound = staticResult.toolsFound;
-      result.toolsRegistered = staticResult.toolsRegistered;
-      result.toolsFailed = staticResult.toolsFailed;
-      result.errors = staticResult.errors;
-    }
+    // Always use static imports - they're reliable in both dev and npm package
+    this.useStaticMode = true;
+    const result = await this.loadStaticTools();
 
     result.duration = Date.now() - startTime;
 
     console.error('[ToolRegistry] Initialization complete:');
-    console.error(`  - Mode: ${this.useStaticMode ? 'static (bundled)' : 'dynamic (file-based)'}`);
+    console.error(`  - Mode: static (bundled)`);
     console.error(`  - Domains: ${result.domains.length}`);
     console.error(`  - Tools found: ${result.toolsFound}`);
     console.error(`  - Tools registered: ${result.toolsRegistered}`);
