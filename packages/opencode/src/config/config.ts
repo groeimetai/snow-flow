@@ -210,13 +210,28 @@ export namespace Config {
    * Get the MCP server command based on whether we're running bundled or in development
    */
   export function getMcpServerCommand(serverName: "servicenow-unified" | "enterprise-proxy"): string[] {
-    // In bundled mode, the MCP servers are in ../mcp/ relative to the binary (which is in bin/)
-    const binDir = path.dirname(process.execPath)
-    const bundledPath = path.join(binDir, "..", "mcp", `${serverName}.js`)
+    // Find the package root using __dirname (relative to this config.ts file)
+    // __dirname is: packages/opencode/src/config (or equivalent in bundled output)
+    // Package root is: packages/opencode (2 levels up)
+    const configDir = __dirname
+    const packageRootFromConfig = path.resolve(configDir, "../..")
 
-    if (existsSync(bundledPath)) {
-      // Production: use bundled JS with bun (bundled for bun target)
-      return ["bun", "run", bundledPath]
+    // Check multiple possible locations for the bundled MCP server
+    const bundledCandidates = [
+      // 1. Relative to this file (most reliable for npm packages)
+      path.join(packageRootFromConfig, "mcp", `${serverName}.js`),
+      // 2. Relative to process.execPath (for standalone binaries)
+      path.join(path.dirname(process.execPath), "..", "mcp", `${serverName}.js`),
+      // 3. In node_modules (for when running from a different package)
+      path.join(process.cwd(), "node_modules", "snow-flow-test", "mcp", `${serverName}.js`),
+    ]
+
+    for (const bundledPath of bundledCandidates) {
+      if (existsSync(bundledPath)) {
+        log.info("found bundled MCP server", { serverName, path: bundledPath })
+        // Production: use bundled JS with node (it's standard JS, not bun-specific)
+        return ["node", bundledPath]
+      }
     }
 
     // Find the package root by looking for package.json
@@ -224,8 +239,8 @@ export namespace Config {
     const findPackageRoot = (): string => {
       // Try multiple approaches to find the package root
       const candidates = [
-        // 1. Relative to process.execPath (for bundled binaries in bin/)
-        path.join(binDir, ".."),
+        // 1. Relative to this config file
+        packageRootFromConfig,
         // 2. From require.main if available
         require.main?.filename ? path.dirname(require.main.filename) : null,
         // 3. Walk up from current working directory looking for package.json with snow-flow
@@ -253,7 +268,7 @@ export namespace Config {
       }
 
       // Fallback: use __dirname (may be incorrect in bundled builds, but better than nothing)
-      return path.join(__dirname, "../..")
+      return packageRootFromConfig
     }
 
     const packageRoot = findPackageRoot()
