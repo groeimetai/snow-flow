@@ -524,54 +524,48 @@ export class ServiceNowUnifiedServer {
       const stats = ToolSearch.getStats();
       const totalAvailable = toolRegistry.getToolDefinitions().length;
 
-      console.error(
-        `[Server] Listing ${filteredTools.length}/${totalAvailable} tools` +
-        (toolDomainsEnv ? ` (domains: ${toolDomainsEnv})` : '') +
-        ` for role: ${userRole}`
-      );
-      console.error(`[Server]   Deferred: ${stats.deferred}, Immediate: ${stats.immediate}, Enabled this session: ${enabledToolIds.size}`);
-
       // Add meta-tools (tool_search, tool_execute) first - these are always available
       const metaToolDefs = META_TOOLS.map(t => t.definition);
 
-      // Map tools with their status in description
-      const toolsWithStatus = await Promise.all(filteredTools.map(async tool => {
+      // DEFERRED LOADING MODE:
+      // Only return meta-tools + enabled tools to reduce token usage (~71k -> ~2k)
+      // Deferred tools must be enabled via tool_search before they appear here
+      const enabledTools = filteredTools.filter(tool => {
         const indexEntry = ToolSearch.getToolFromIndex(tool.name);
-        const isDeferred = indexEntry?.deferred ?? true; // Default to deferred if not in index
-        const isEnabled = enabledToolIds.has(tool.name);
+        const isDeferred = indexEntry?.deferred ?? true;
 
-        // Determine status
-        let status: string;
-        if (!isDeferred) {
-          status = '[AVAILABLE]';
-        } else if (isEnabled) {
-          status = '[ENABLED]';
-        } else {
-          status = '[DEFERRED]';
-        }
+        // Include if: not deferred OR enabled for this session
+        if (!isDeferred) return true;
+        if (enabledToolIds.has(tool.name)) return true;
+        return false;
+      });
 
-        // Prepend status to description
-        const description = `${status} ${tool.description}`;
+      console.error(
+        `[Server] Listing tools for role: ${userRole}` +
+        (toolDomainsEnv ? ` (domains: ${toolDomainsEnv})` : '')
+      );
+      console.error(`[Server]   Meta-tools: ${metaToolDefs.length}`);
+      console.error(`[Server]   Enabled this session: ${enabledToolIds.size}`);
+      console.error(`[Server]   Total available: ${totalAvailable} (use tool_search to enable)`);
 
-        return {
-          name: tool.name,
-          description,
-          inputSchema: tool.inputSchema
-        };
-      }));
-
-      // Combine meta-tools + all other tools
-      const allToolsWithMeta = [
+      // Build final tools list
+      const toolsToReturn = [
+        // Meta-tools always available
         ...metaToolDefs.map(tool => ({
           name: tool.name,
-          description: `[AVAILABLE] ${tool.description}`,
+          description: tool.description,
           inputSchema: tool.inputSchema
         })),
-        ...toolsWithStatus
+        // Only enabled tools (not all deferred tools)
+        ...enabledTools.map(tool => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema
+        }))
       ];
 
       return {
-        tools: allToolsWithMeta
+        tools: toolsToReturn
       };
     });
 
