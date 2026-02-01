@@ -189,8 +189,8 @@ jobs:
             if [ -d "$dir" ]; then
               platform_name=$(basename "$dir")
               echo "Creating tarball for $platform_name..."
-              # Create tarball with bin/ directory structure
-              tar -czf "${platform_name}.tar.gz" -C "$dir" bin
+              # Create tarball with bin/ and mcp/ directories
+              tar -czf "${platform_name}.tar.gz" -C "$dir" bin mcp
               echo "Created ${platform_name}.tar.gz"
             fi
           done
