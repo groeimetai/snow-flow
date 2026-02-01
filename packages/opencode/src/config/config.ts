@@ -326,6 +326,22 @@ export namespace Config {
       }
     }
 
+    // Always inject SNOW_LAZY_TOOLS=true for servicenow-unified if not explicitly set
+    // This ensures lazy loading is enabled even for manually configured servers
+    if (result["servicenow-unified"] && result["servicenow-unified"].type === "local") {
+      const env = result["servicenow-unified"].environment || {}
+      if (!("SNOW_LAZY_TOOLS" in env)) {
+        log.info("injecting SNOW_LAZY_TOOLS=true into servicenow-unified MCP server")
+        result["servicenow-unified"] = {
+          ...result["servicenow-unified"],
+          environment: {
+            ...env,
+            SNOW_LAZY_TOOLS: "true",
+          },
+        }
+      }
+    }
+
     // Check for Enterprise credentials
     const entAuth = auth["enterprise"]
     if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token) && entAuth.enterpriseUrl) {
