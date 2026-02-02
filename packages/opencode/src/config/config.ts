@@ -29,6 +29,7 @@ import { existsSync } from "fs"
 import { Bus } from "@/bus"
 import { GlobalBus } from "@/bus/global"
 import { Event } from "../server/event"
+import { getCurrentSessionId } from "../session/current-session"
 
 export namespace Config {
   const log = Log.create({ service: "config" })
@@ -301,6 +302,7 @@ export namespace Config {
       // Only add if not already configured
       if (!result["servicenow-unified"]) {
         log.info("auto-configuring servicenow-unified MCP server from auth store")
+        const sessionId = getCurrentSessionId()
         result["servicenow-unified"] = {
           type: "local",
           command: getMcpServerCommand("servicenow-unified"),
@@ -308,6 +310,8 @@ export namespace Config {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
             SERVICENOW_CLIENT_ID: snAuth.clientId,
             SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
+            SNOW_LAZY_TOOLS: "true",
+            ...(sessionId && { SNOW_SESSION_ID: sessionId }),
             ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
             ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
           },
@@ -320,6 +324,7 @@ export namespace Config {
     if (snAuth?.type === "servicenow-basic" && snAuth.instance && snAuth.username) {
       if (!result["servicenow-unified"]) {
         log.info("auto-configuring servicenow-unified MCP server from basic auth")
+        const sessionId = getCurrentSessionId()
         result["servicenow-unified"] = {
           type: "local",
           command: getMcpServerCommand("servicenow-unified"),
@@ -327,6 +332,8 @@ export namespace Config {
             SERVICENOW_INSTANCE_URL: snAuth.instance,
             SERVICENOW_USERNAME: snAuth.username,
             SERVICENOW_PASSWORD: snAuth.password ?? "",
+            SNOW_LAZY_TOOLS: "true",
+            ...(sessionId && { SNOW_SESSION_ID: sessionId }),
           },
           enabled: true,
         }

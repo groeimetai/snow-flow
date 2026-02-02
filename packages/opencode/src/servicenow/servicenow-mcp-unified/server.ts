@@ -493,8 +493,16 @@ export class ServiceNowUnifiedServer {
       // Get enabled tools for this session
       const enabledToolIds = sessionId ? await ToolSearch.getEnabledTools(sessionId) : new Set<string>();
 
-      // Debug: Log session info
+      // Debug: Log session info and sources
       console.error(`[Server] ListTools request - sessionId: ${sessionId || 'none'}`);
+      if (!sessionId) {
+        console.error('[Server] ⚠️ No session ID found - all deferred tools will be hidden');
+        console.error('[Server]   Checked sources:');
+        console.error(`[Server]     - JWT payload: ${jwtPayloadForSession?.sessionId || 'none'}`);
+        console.error(`[Server]     - x-session-id header: ${(request as any).headers?.['x-session-id'] || 'none'}`);
+        console.error(`[Server]     - SNOW_SESSION_ID env: ${process.env.SNOW_SESSION_ID || 'none'}`);
+        console.error(`[Server]     - current-session.json: ${ToolSearch.getCurrentSession() || 'none'}`);
+      }
 
       // Domain filtering via SNOW_TOOL_DOMAINS env var
       const toolDomainsEnv = process.env.SNOW_TOOL_DOMAINS;
@@ -541,14 +549,44 @@ export class ServiceNowUnifiedServer {
       const indexStats = ToolSearch.getStats();
       console.error(`[Server] Tool index: ${indexStats.total} tools, ${indexStats.deferred} deferred, ${indexStats.immediate} immediate`);
 
+      // Check if lazy tools mode is enabled
+      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
+      console.error(`[Server] SNOW_LAZY_TOOLS: ${lazyToolsEnabled ? 'ENABLED' : 'disabled'}`);
+
+      // If tool index is empty, warn - tools may not be filtered correctly
+      if (indexStats.total === 0) {
+        console.error('[Server] ⚠️ Tool index is EMPTY - deferred filtering may not work correctly');
+        console.error('[Server]   All tools will be returned (not deferred)');
+      }
+
       // DEFERRED LOADING MODE:
       // Only return meta-tools + enabled tools to reduce token usage (~71k -> ~2k)
       // Deferred tools must be enabled via tool_search before they appear here
       const enabledTools = filteredTools.filter(tool => {
-        const indexEntry = ToolSearch.getToolFromIndex(tool.name);
-        const isDeferred = indexEntry?.deferred ?? true;
+        // If lazy tools mode is enabled and tool index is populated,
+        // only return non-deferred tools and session-enabled tools
+        if (lazyToolsEnabled && indexStats.total > 0) {
+          const indexEntry = ToolSearch.getToolFromIndex(tool.name);
+          // Default to deferred=true when SNOW_LAZY_TOOLS is set
+          const isDeferred = indexEntry?.deferred ?? true;
 
-        // Include if: not deferred OR enabled for this session
+          // Include if: not deferred OR enabled for this session
+          if (!isDeferred) return true;
+          if (enabledToolIds.has(tool.name)) return true;
+          return false;
+        }
+
+        // Fallback: If lazy tools mode is disabled or index not ready,
+        // check the old way (tool index entry or default to allowing)
+        const indexEntry = ToolSearch.getToolFromIndex(tool.name);
+        if (!indexEntry) {
+          // No index entry - if SNOW_LAZY_TOOLS is set, treat as deferred
+          if (lazyToolsEnabled) return false;
+          // Otherwise allow (backwards compatibility)
+          return true;
+        }
+
+        const isDeferred = indexEntry.deferred;
         if (!isDeferred) return true;
         if (enabledToolIds.has(tool.name)) return true;
         return false;
