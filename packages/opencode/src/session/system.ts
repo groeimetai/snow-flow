@@ -6,6 +6,7 @@ import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_ANTHROPIC_WITHOUT_TODO from "./prompt/qwen.txt"
 import PROMPT_BEAST from "./prompt/beast.txt"
 import PROMPT_GEMINI from "./prompt/gemini.txt"
+import PROMPT_CODER from "./prompt/coder.txt"
 
 import PROMPT_CODEX from "./prompt/codex_header.txt"
 import type { Provider } from "@/provider/provider"
@@ -16,11 +17,34 @@ export namespace SystemPrompt {
   }
 
   export function provider(model: Provider.Model) {
-    if (model.api.id.includes("gpt-5")) return [PROMPT_CODEX]
-    if (model.api.id.includes("gpt-") || model.api.id.includes("o1") || model.api.id.includes("o3"))
+    const id = model.api.id.toLowerCase()
+
+    // Codex (GPT-5 with OAuth)
+    if (id.includes("gpt-5")) return [PROMPT_CODEX]
+
+    // Autonomous/Research (GPT, Perplexity, xAI, Cohere)
+    if (
+      id.includes("gpt-") ||
+      id.includes("o1") ||
+      id.includes("o3") ||
+      id.includes("sonar") ||
+      id.includes("perplexity") ||
+      id.includes("grok") ||
+      id.includes("command-")
+    )
       return [PROMPT_BEAST]
-    if (model.api.id.includes("gemini-")) return [PROMPT_GEMINI]
-    if (model.api.id.includes("claude")) return [PROMPT_ANTHROPIC]
+
+    // Google Gemini
+    if (id.includes("gemini-")) return [PROMPT_GEMINI]
+
+    // Anthropic Claude
+    if (id.includes("claude")) return [PROMPT_ANTHROPIC]
+
+    // Code-Focused Models (DeepSeek, Codestral, Qwen Coder, StarCoder)
+    if (id.includes("deepseek") || id.includes("codestral") || id.includes("coder") || id.includes("starcoder"))
+      return [PROMPT_CODER]
+
+    // General Purpose / Fallback (Llama, Mistral, Qwen, Mixtral, Yi, Phi, etc.)
     return [PROMPT_ANTHROPIC_WITHOUT_TODO]
   }
 
