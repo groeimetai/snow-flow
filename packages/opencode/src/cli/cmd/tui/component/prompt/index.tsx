@@ -92,13 +92,19 @@ export function Prompt(props: PromptProps) {
   const pasteStyleId = syntax().getStyleId("extmark.paste")!
   let promptPartTypeId = 0
 
-  sdk.event.on(TuiEvent.PromptAppend.type, (evt) => {
+  const unsubscribePromptAppend = sdk.event.on(TuiEvent.PromptAppend.type, (evt) => {
+    if (input.isDestroyed) return
     input.insertText(evt.properties.text)
     setTimeout(() => {
+      if (input.isDestroyed) return
       input.getLayoutNode().markDirty()
       input.gotoBufferEnd()
       renderer.requestRender()
     }, 0)
+  })
+
+  onCleanup(() => {
+    unsubscribePromptAppend?.()
   })
 
   createEffect(() => {
@@ -924,6 +930,7 @@ export function Prompt(props: PromptProps) {
 
                 // Force layout update and render for the pasted content
                 setTimeout(() => {
+                  if (input.isDestroyed) return
                   input.getLayoutNode().markDirty()
                   renderer.requestRender()
                 }, 0)
@@ -935,6 +942,7 @@ export function Prompt(props: PromptProps) {
                 }
                 props.ref?.(ref)
                 setTimeout(() => {
+                  if (input.isDestroyed) return
                   input.cursorColor = theme.text
                 }, 0)
               }}
