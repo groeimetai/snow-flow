@@ -390,7 +390,14 @@ export namespace ToolSearch {
   ): Promise<'[AVAILABLE]' | '[ENABLED]' | '[DEFERRED]'> {
     const tool = getToolFromIndex(toolID);
     if (!tool) {
-      return '[AVAILABLE]'; // Unknown tool, assume available
+      // Unknown tool - treat as deferred (must be enabled via tool_search first)
+      if (sessionID) {
+        const enabled = await isToolEnabled(sessionID, toolID);
+        if (enabled) {
+          return '[ENABLED]';
+        }
+      }
+      return '[DEFERRED]';
     }
 
     if (!tool.deferred) {
@@ -414,7 +421,12 @@ export namespace ToolSearch {
   export async function canExecuteTool(sessionID: string | undefined, toolID: string): Promise<boolean> {
     const tool = getToolFromIndex(toolID);
     if (!tool) {
-      return true; // Unknown tool, allow execution (let it fail naturally if not found)
+      // Unknown tool - treat as deferred (must be enabled via tool_search first)
+      // This ensures lazy loading works even if tool index is incomplete
+      if (sessionID) {
+        return await isToolEnabled(sessionID, toolID);
+      }
+      return false;
     }
 
     if (!tool.deferred) {
