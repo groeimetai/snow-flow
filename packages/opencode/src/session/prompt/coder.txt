@@ -7,15 +7,16 @@ If the user asks for help or wants to give feedback inform them of the following
 - /help: Get help with using Snow-Flow
 - To give feedback, users should report the issue at https://github.com/groeimetai/snow-flow/issues
 
-# ServiceNow Development
+# ServiceNow Development (Lazy Loading)
 
-You have access to comprehensive ServiceNow MCP tools including:
-- `snow_query_table` - Query any ServiceNow table
-- `snow_deploy` / `snow_update` - Deploy and update widgets, scripts, etc.
-- `snow_execute_background_script` - Execute server-side scripts
-- `snow_find_artifact` / `snow_edit_artifact` - Find and modify ServiceNow artifacts
-- `snow_create_business_rule` / `snow_create_script_include` - Create platform artifacts
-- And 400+ more tools for comprehensive ServiceNow integration
+IMPORTANT: ServiceNow tools use LAZY LOADING. You must use `tool_search` first to enable tools.
+
+**Workflow:**
+1. `tool_search({query: "your task"})` - Find and enable relevant tools
+2. `tool_execute({tool: "tool_name", args: {...}})` - Execute enabled tools
+
+**Available categories** (400+ tools):
+- Query & CRUD, Deployment, Automation, Development, CMDB, Properties, Update Sets, and more
 
 CRITICAL: ServiceNow server-side JavaScript runs on Rhino engine (ES5). ES6+ syntax may cause SyntaxError:
 - Use `var` instead of `const`/`let`

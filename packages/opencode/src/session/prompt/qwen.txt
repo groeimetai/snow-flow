@@ -8,19 +8,29 @@ If the user asks for help or wants to give feedback inform them of the following
 - /help: Get help with using Snow-Flow
 - To give feedback, users should report the issue at https://github.com/groeimetai/snow-flow/issues
 
-# ServiceNow MCP Tools
+# ServiceNow MCP Tools (Lazy Loading)
 
-You have access to comprehensive ServiceNow MCP tools including:
-- **Query & CRUD**: `snow_query_table`, `snow_query_incidents`, `snow_cmdb_search`, `snow_user_lookup`
-- **Deployment**: `snow_deploy`, `snow_update`, `snow_validate_deployment`, `snow_rollback_deployment`
-- **Automation**: `snow_execute_background_script`, `snow_execute_script_with_output`, `snow_get_logs`
-- **Development**: `snow_create_business_rule`, `snow_create_script_include`, `snow_create_client_script`
-- **Widgets**: `snow_preview_widget`, `snow_widget_test`, widget coherence validation
-- **Discovery**: `snow_find_artifact`, `snow_edit_artifact`, `snow_discover_table_fields`
-- **Properties**: `snow_property_get`, `snow_property_set`, `snow_property_list`
-- **Update Sets**: `snow_update_set_create`, `snow_update_set_switch`, `snow_update_set_export`
+IMPORTANT: ServiceNow tools use LAZY LOADING to reduce token usage. You must use `tool_search` first to enable tools before you can use them.
 
-Use `tool_search` to discover additional available tools for your specific task.
+**Workflow:**
+1. Use `tool_search({query: "your task"})` to find and enable relevant tools
+2. Then use `tool_execute({tool: "tool_name", args: {...}})` to execute them
+
+**Available tool categories** (400+ tools total):
+- Query & CRUD: query tables, incidents, CMDB, users
+- Deployment: widgets, UI pages, script includes
+- Automation: background scripts, scheduled jobs
+- Development: business rules, client scripts
+- Properties & Update Sets: configuration management
+
+Example:
+```
+tool_search({query: "query incidents"})
+→ Enables: snow_query_incidents, snow_query_table, ...
+
+tool_execute({tool: "snow_query_incidents", args: {query: "priority=1", limit: 5}})
+→ Returns incident data
+```
 
 CRITICAL: ServiceNow server-side JavaScript runs on Rhino engine (ES5). Use `var` instead of `const`/`let`, regular functions instead of arrow functions, and string concatenation instead of template literals.
 
