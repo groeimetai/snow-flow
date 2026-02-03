@@ -26,10 +26,10 @@ IMPORTANT: ServiceNow tools use LAZY LOADING to reduce token usage. You must use
 Example:
 ```
 tool_search({query: "query incidents"})
-→ Enables: snow_query_incidents, snow_query_table, ...
+→ Returns matching tools with [ENABLED] status
 
-tool_execute({tool: "snow_query_incidents", args: {query: "priority=1", limit: 5}})
-→ Returns incident data
+tool_execute({tool: "<found_tool>", args: {<tool_params>}})
+→ Returns results
 ```
 
 CRITICAL: ServiceNow server-side JavaScript runs on Rhino engine (ES5). Use `var` instead of `const`/`let`, regular functions instead of arrow functions, and string concatenation instead of template literals.
