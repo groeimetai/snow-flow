@@ -549,9 +549,10 @@ export class ServiceNowUnifiedServer {
       const indexStats = ToolSearch.getStats();
       console.error(`[Server] Tool index: ${indexStats.total} tools, ${indexStats.deferred} deferred, ${indexStats.immediate} immediate`);
 
-      // Check if lazy tools mode is enabled
-      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
-      console.error(`[Server] SNOW_LAZY_TOOLS: ${lazyToolsEnabled ? 'ENABLED' : 'disabled'}`);
+      // Check if lazy tools mode is enabled (DEFAULT: true for token efficiency)
+      // Set SNOW_LAZY_TOOLS=false to disable and load all tools at startup
+      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS !== 'false';
+      console.error(`[Server] SNOW_LAZY_TOOLS: ${lazyToolsEnabled ? 'ENABLED (default)' : 'DISABLED'}`);
 
       // If tool index is empty, warn - tools may not be filtered correctly
       if (indexStats.total === 0) {
@@ -919,6 +920,10 @@ export class ServiceNowUnifiedServer {
    */
   async initialize(): Promise<void> {
     console.error('[Server] ServiceNow Unified MCP Server starting...');
+    console.error('[Server] ========== ENVIRONMENT CHECK ==========');
+    console.error(`[Server] SNOW_LAZY_TOOLS = "${process.env.SNOW_LAZY_TOOLS || 'NOT SET'}"`);
+    console.error(`[Server] SNOW_SESSION_ID = "${process.env.SNOW_SESSION_ID || 'NOT SET'}"`);
+    console.error('[Server] ========================================');
 
     try {
       // STEP 0: Try enterprise portal fetch FIRST (secure mode - no local secrets!)
@@ -1002,21 +1007,20 @@ export class ServiceNowUnifiedServer {
         console.error(`    - ${domain}: ${count} tools`);
       });
 
-      // 🆕 Show optimization hints when all tools are loaded
-      // This helps users reduce token usage when using external MCP clients
-      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS === 'true';
+      // Show lazy tools mode status (DEFAULT: enabled for token efficiency)
+      const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS !== 'false';
       const domainFilterEnabled = !!process.env.SNOW_TOOL_DOMAINS;
 
       if (lazyToolsEnabled) {
-        console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE (SNOW_LAZY_TOOLS=true)');
+        console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE (default)');
         console.error('[Server]    Token usage: ~2k (down from ~71k)');
         console.error('[Server]    AI uses tool_search + tool_execute to access all tools');
+        console.error('[Server]    Set SNOW_LAZY_TOOLS=false to disable');
       } else if (domainFilterEnabled) {
         console.error('[Server] 🔧 Domain filtering ACTIVE via SNOW_TOOL_DOMAINS');
       } else {
-        console.error('[Server] 💡 TIP: To reduce token usage with external MCP clients:');
-        console.error('[Server]    Option 1 (recommended): SNOW_LAZY_TOOLS=true (~2k tokens)');
-        console.error('[Server]    Option 2: SNOW_TOOL_DOMAINS=operations,deployment,cmdb (~15k tokens)');
+        console.error('[Server] ⚠️  LAZY TOOLS DISABLED - all tools loaded (~71k tokens)');
+        console.error('[Server]    Remove SNOW_LAZY_TOOLS=false to enable lazy loading');
       }
 
       console.error('[Server] Initialization complete ✅');

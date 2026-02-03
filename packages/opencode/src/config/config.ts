@@ -301,8 +301,11 @@ export namespace Config {
     if (snAuth?.type === "servicenow-oauth" && snAuth.instance && snAuth.clientId) {
       // Only add if not already configured
       if (!result["servicenow-unified"]) {
-        log.info("auto-configuring servicenow-unified MCP server from auth store")
         const sessionId = getCurrentSessionId()
+        log.info("auto-configuring servicenow-unified MCP server from auth store", {
+          SNOW_LAZY_TOOLS: "true",
+          SNOW_SESSION_ID: sessionId || "none",
+        })
         result["servicenow-unified"] = {
           type: "local",
           command: getMcpServerCommand("servicenow-unified"),
