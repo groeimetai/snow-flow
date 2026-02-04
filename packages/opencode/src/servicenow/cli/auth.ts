@@ -609,6 +609,12 @@ export function registerAuthCommands(program: Command) {
             } catch (syncErr: any) {
               authLogger.warn(`MCP sync error: ${syncErr.message}`);
             }
+
+            // Update CLAUDE.md and AGENTS.md with enterprise workflow instructions
+            // Use features from enterprise config if available, otherwise default to all
+            const enabledFeatures = enterpriseConfig.features || ['jira', 'azure-devops', 'confluence', 'github', 'gitlab'];
+            const userRole = enterpriseConfig.role || 'developer';
+            await updateDocumentationWithEnterprise(enabledFeatures, userRole);
           }
         } catch (err: any) {
           // Show warning if enterprise configuration failed
