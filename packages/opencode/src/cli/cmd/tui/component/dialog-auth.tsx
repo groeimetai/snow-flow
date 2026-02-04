@@ -14,6 +14,54 @@ import {
 } from "../../../../servicenow/cli/enterprise-docs-generator.js"
 
 /**
+ * Fetch active integrations from enterprise portal
+ * Returns list of service types that the user has credentials for
+ */
+async function fetchActiveIntegrations(portalUrl: string, token: string): Promise<string[]> {
+  try {
+    const response = await fetch(`${portalUrl}/api/user-credentials`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      console.error('[Enterprise] Failed to fetch user credentials:', response.status)
+      return []
+    }
+
+    const data = await response.json()
+
+    if (!data.success || !Array.isArray(data.credentials)) {
+      console.error('[Enterprise] Invalid credentials response')
+      return []
+    }
+
+    // Extract unique service types from credentials
+    const serviceTypes = new Set<string>()
+    for (const credential of data.credentials) {
+      if (credential.serviceType && typeof credential.serviceType === 'string') {
+        // Normalize service type (e.g., 'azuredevops' -> 'azure-devops')
+        let serviceType = credential.serviceType.toLowerCase()
+        if (serviceType === 'azuredevops') {
+          serviceType = 'azure-devops'
+        }
+        serviceTypes.add(serviceType)
+      }
+    }
+
+    const activeServices = Array.from(serviceTypes)
+    console.error(`[Enterprise] Found active integrations: ${activeServices.join(', ')}`)
+    return activeServices
+  } catch (error) {
+    console.error('[Enterprise] Error fetching active integrations:', error)
+    return []
+  }
+}
+
+/**
  * Update CLAUDE.md and AGENTS.md with enterprise workflow instructions
  * Called after successful enterprise authentication
  */
@@ -870,11 +918,12 @@ function DialogAuthEnterprise() {
         })
       }
 
-      // Update documentation with enterprise instructions
+      // Update documentation with enterprise instructions (only for active integrations)
       try {
-        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const sub = subdomain().trim().toLowerCase()
+        const activeFeatures = await fetchActiveIntegrations(`https://${sub}.snow-flow.dev`, data.token)
         const userRole = data.user?.role || 'developer'
-        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+        await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
         console.error('[Enterprise] Failed to update documentation:', docError)
       }
@@ -1325,11 +1374,11 @@ function DialogAuthEnterpriseCombined() {
         duration: 5000,
       })
 
-      // Update documentation with enterprise instructions
+      // Update documentation with enterprise instructions (only for active integrations)
       try {
-        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const activeFeatures = await fetchActiveIntegrations(portalUrl, token)
         const userRole = user?.role || 'developer'
-        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+        await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
         console.error('[Enterprise] Failed to update documentation:', docError)
       }
@@ -1342,11 +1391,11 @@ function DialogAuthEnterpriseCombined() {
         duration: 5000,
       })
 
-      // Update documentation with enterprise instructions even if MCP server failed
+      // Update documentation with enterprise instructions even if MCP server failed (only for active integrations)
       try {
-        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const activeFeatures = await fetchActiveIntegrations(portalUrl, token)
         const userRole = user?.role || 'developer'
-        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+        await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
         console.error('[Enterprise] Failed to update documentation:', docError)
       }
@@ -1497,11 +1546,11 @@ function DialogAuthEnterpriseCombined() {
         duration: 5000,
       })
 
-      // Update documentation with enterprise instructions
+      // Update documentation with enterprise instructions (only for active integrations)
       try {
-        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const activeFeatures = await fetchActiveIntegrations(portalUrl, entData.token ?? '')
         const userRole = entData.user?.role || 'developer'
-        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+        await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
         console.error('[Enterprise] Failed to update documentation:', docError)
       }
@@ -1514,11 +1563,12 @@ function DialogAuthEnterpriseCombined() {
         duration: 5000,
       })
 
-      // Update documentation with enterprise instructions even if MCP server failed
+      // Update documentation with enterprise instructions even if MCP server failed (only for active integrations)
       try {
-        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const sub = subdomain().trim().toLowerCase()
+        const activeFeatures = await fetchActiveIntegrations(`https://${sub}.snow-flow.dev`, enterpriseData().token ?? '')
         const userRole = enterpriseData().user?.role || 'developer'
-        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+        await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
         console.error('[Enterprise] Failed to update documentation:', docError)
       }
