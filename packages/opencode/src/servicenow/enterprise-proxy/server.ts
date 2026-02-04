@@ -27,8 +27,8 @@ import {
   ListToolsRequestSchema,
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
-  Tool
 } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { listEnterpriseTools, proxyToolCall } from './proxy.js';
 
 // Configuration from environment variables

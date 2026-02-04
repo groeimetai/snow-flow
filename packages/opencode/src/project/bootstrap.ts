@@ -13,6 +13,28 @@ import { Log } from "@/util/log"
 import { ShareNext } from "@/share/share-next"
 import { Snapshot } from "../snapshot"
 import { Truncate } from "../tool/truncation"
+import path from "path"
+import AGENTS_TEMPLATE from "./agents-template.txt"
+
+/**
+ * Ensures AGENTS.md exists in the project directory.
+ * Creates it from template if it doesn't exist.
+ */
+async function ensureAgentsMd() {
+  const agentsMdPath = path.join(Instance.directory, "AGENTS.md")
+
+  try {
+    const exists = await Bun.file(agentsMdPath).exists()
+    if (!exists) {
+      await Bun.write(agentsMdPath, AGENTS_TEMPLATE)
+      Log.Default.info("created AGENTS.md", { path: agentsMdPath })
+    }
+  } catch (error) {
+    Log.Default.warn("failed to create AGENTS.md", {
+      error: error instanceof Error ? error.message : String(error)
+    })
+  }
+}
 
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
@@ -26,6 +48,9 @@ export async function InstanceBootstrap() {
   Vcs.init()
   Snapshot.init()
   Truncate.init()
+
+  // Create AGENTS.md if it doesn't exist
+  await ensureAgentsMd()
 
   Bus.subscribe(Command.Event.Executed, async (payload) => {
     if (payload.properties.name === Command.Default.INIT) {

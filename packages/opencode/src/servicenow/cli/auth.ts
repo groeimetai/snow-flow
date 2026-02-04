@@ -11,14 +11,14 @@ import {
   addEnterpriseMcpServerWithToken,
   isEnterpriseMcpConfigured,
   type EnterpriseMcpConfig,
-  type EnterpriseMcpConfigWithToken,
 } from '../config/snow-code-config.js';
-import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
+import { validateLicenseKey } from '../enterprise-proxy/proxy.js';
 import { syncMcpConfigs } from '../utils/sync-mcp-configs.js';
 import {
   generateEnterpriseInstructions,
   generateStakeholderDocumentation,
 } from './enterprise-docs-generator.js';
+import type { ModelInfo } from '../utils/dynamic-models.js';
 
 const authLogger = new Logger('auth');
 
@@ -502,10 +502,10 @@ export function registerAuthCommands(program: Command) {
       if (options.provider) {
         // List models for specific provider
         prompts.log.info(`${options.provider.toUpperCase()}:`);
-        const models = await getProviderModels(options.provider);
+        const models: ModelInfo[] = await getProviderModels(options.provider);
 
         if (models.length > 0) {
-          models.forEach((model, i) => {
+          models.forEach((model: ModelInfo, i: number) => {
             prompts.log.message(`  ${i + 1}. ${model.name}`);
             prompts.log.message(`     ID: ${model.value}`);
             if (model.contextWindow) {
@@ -518,13 +518,13 @@ export function registerAuthCommands(program: Command) {
         }
       } else {
         // List all providers
-        const allModels = await getAllProviderModels();
+        const allModels: Record<string, ModelInfo[]> = await getAllProviderModels();
 
         for (const [provider, models] of Object.entries(allModels)) {
           prompts.log.info(`${provider.toUpperCase()}:`);
 
           if (models.length > 0) {
-            models.forEach((model, i) => {
+            models.forEach((model: ModelInfo, i: number) => {
               prompts.log.message(`  ${i + 1}. ${model.name}`);
               prompts.log.message(`     ID: ${model.value}`);
               prompts.log.message('');
