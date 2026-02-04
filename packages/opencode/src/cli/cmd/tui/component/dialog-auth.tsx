@@ -6,6 +6,78 @@ import { useToast } from "@tui/ui/toast"
 import { useTheme } from "@tui/context/theme"
 import { TextAttributes, TextareaRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/solid"
+import * as path from "path"
+import * as fs from "fs/promises"
+import {
+  generateEnterpriseInstructions,
+  generateStakeholderDocumentation,
+} from "../../../../servicenow/cli/enterprise-docs-generator.js"
+
+/**
+ * Update CLAUDE.md and AGENTS.md with enterprise workflow instructions
+ * Called after successful enterprise authentication
+ */
+async function updateDocumentationWithEnterprise(enabledServices?: string[], role?: string): Promise<void> {
+  if (!enabledServices || enabledServices.length === 0) {
+    return
+  }
+
+  const cwd = process.cwd()
+  const claudeMdPath = path.join(cwd, 'CLAUDE.md')
+  const agentsMdPath = path.join(cwd, 'AGENTS.md')
+
+  const enterpriseMarker = '<!-- SNOW-FLOW-ENTERPRISE-START -->'
+  const enterpriseEndMarker = '<!-- SNOW-FLOW-ENTERPRISE-END -->'
+
+  // Generate appropriate documentation based on role
+  let enterpriseContent: string
+  if (role === 'stakeholder') {
+    enterpriseContent = generateStakeholderDocumentation()
+  } else {
+    enterpriseContent = generateEnterpriseInstructions(enabledServices)
+  }
+
+  const markedContent = `\n${enterpriseMarker}\n${enterpriseContent}\n${enterpriseEndMarker}\n`
+
+  // Helper to update a file with enterprise content
+  async function updateFile(filePath: string): Promise<void> {
+    try {
+      let content = ''
+      try {
+        content = await fs.readFile(filePath, 'utf-8')
+      } catch {
+        // File doesn't exist, create it
+        content = `# Project Documentation\n`
+      }
+
+      // Check if enterprise section already exists
+      const startIdx = content.indexOf(enterpriseMarker)
+      const endIdx = content.indexOf(enterpriseEndMarker)
+
+      if (startIdx !== -1 && endIdx !== -1) {
+        // Replace existing enterprise section
+        content = content.substring(0, startIdx) + markedContent + content.substring(endIdx + enterpriseEndMarker.length)
+      } else if (startIdx !== -1) {
+        // Marker exists but no end marker, append
+        content = content.substring(0, startIdx) + markedContent
+      } else {
+        // No existing section, append to end
+        content = content + markedContent
+      }
+
+      await fs.writeFile(filePath, content, 'utf-8')
+      console.error(`[Enterprise] Updated ${path.basename(filePath)} with enterprise instructions`)
+    } catch (err) {
+      console.error(`[Enterprise] Failed to update ${path.basename(filePath)}:`, err)
+    }
+  }
+
+  // Update both files
+  await Promise.all([
+    updateFile(claudeMdPath),
+    updateFile(agentsMdPath),
+  ])
+}
 
 type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined"
 
@@ -805,6 +877,16 @@ function DialogAuthEnterprise() {
           duration: 5000,
         })
       }
+
+      // Update documentation with enterprise instructions
+      try {
+        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const userRole = data.user?.role || 'developer'
+        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+      } catch (docError) {
+        console.error('[Enterprise] Failed to update documentation:', docError)
+      }
+
       dialog.clear()
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })
@@ -1250,6 +1332,16 @@ function DialogAuthEnterpriseCombined() {
         message: `Setup complete! Connected as ${userName}. Both MCP servers are now active.`,
         duration: 5000,
       })
+
+      // Update documentation with enterprise instructions
+      try {
+        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const userRole = user?.role || 'developer'
+        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+      } catch (docError) {
+        console.error('[Enterprise] Failed to update documentation:', docError)
+      }
+
       dialog.clear()
     } catch {
       toast.show({
@@ -1257,6 +1349,16 @@ function DialogAuthEnterpriseCombined() {
         message: "Credentials saved! MCP servers will be available on next restart.",
         duration: 5000,
       })
+
+      // Update documentation with enterprise instructions even if MCP server failed
+      try {
+        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const userRole = user?.role || 'developer'
+        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+      } catch (docError) {
+        console.error('[Enterprise] Failed to update documentation:', docError)
+      }
+
       dialog.clear()
     }
   }
@@ -1402,6 +1504,16 @@ function DialogAuthEnterpriseCombined() {
         message: `Setup complete! Connected as ${userName}. Both MCP servers are now active.`,
         duration: 5000,
       })
+
+      // Update documentation with enterprise instructions
+      try {
+        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const userRole = entData.user?.role || 'developer'
+        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+      } catch (docError) {
+        console.error('[Enterprise] Failed to update documentation:', docError)
+      }
+
       dialog.clear()
     } catch (e) {
       toast.show({
@@ -1409,6 +1521,16 @@ function DialogAuthEnterpriseCombined() {
         message: "Credentials saved! MCP servers will be available on next restart.",
         duration: 5000,
       })
+
+      // Update documentation with enterprise instructions even if MCP server failed
+      try {
+        const defaultFeatures = ['jira', 'azure-devops', 'confluence', 'github', 'gitlab']
+        const userRole = enterpriseData().user?.role || 'developer'
+        await updateDocumentationWithEnterprise(defaultFeatures, userRole)
+      } catch (docError) {
+        console.error('[Enterprise] Failed to update documentation:', docError)
+      }
+
       dialog.clear()
     }
   }
