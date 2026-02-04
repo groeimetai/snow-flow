@@ -29,7 +29,7 @@ import {
   GetPromptRequestSchema,
   Tool
 } from '@modelcontextprotocol/sdk/types.js';
-import axios, { AxiosInstance } from 'axios';
+import { listEnterpriseTools, proxyToolCall } from './proxy.js';
 
 // Configuration from environment variables
 const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || '';
@@ -41,7 +41,6 @@ const LICENSE_KEY = (process.env.SNOW_LICENSE_KEY || '').trim(); // Remove newli
 
 class EnterpriseProxyServer {
   private server: Server;
-  private httpClient: AxiosInstance;
   private availableTools: Tool[] = [];
 
   constructor() {
@@ -67,16 +66,6 @@ class EnterpriseProxyServer {
       }
     );
 
-    // Create HTTP client for license server
-    this.httpClient = axios.create({
-      baseURL: LICENSE_SERVER_URL,
-      headers: {
-        'Authorization': `Bearer ${LICENSE_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 120000 // 2 minutes
-    });
-
     this.setupHandlers();
     this.logConfiguration();
   }
@@ -94,13 +83,13 @@ class EnterpriseProxyServer {
   }
 
   private setupHandlers() {
-    // List tools handler
+    // List tools handler - uses proxy.ts with JWT auto-refresh
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       try {
         console.error('[Proxy] Fetching available tools from license server...');
 
-        var response = await this.httpClient.get('/mcp/tools/list');
-        this.availableTools = response.data.tools || [];
+        var tools = await listEnterpriseTools();
+        this.availableTools = tools as Tool[];
 
         console.error(`[Proxy] ✓ ${this.availableTools.length} tools available`);
 
@@ -110,11 +99,6 @@ class EnterpriseProxyServer {
       } catch (error: any) {
         console.error('[Proxy] ✗ Failed to fetch tools:', error.message);
 
-        if (error.response) {
-          console.error('[Proxy] Response status:', error.response.status);
-          console.error('[Proxy] Response data:', error.response.data);
-        }
-
         // Return empty tools list instead of crashing - allows graceful degradation
         console.error('[Proxy] Returning empty tools list due to backend error');
         return {
@@ -123,7 +107,7 @@ class EnterpriseProxyServer {
       }
     });
 
-    // Call tool handler
+    // Call tool handler - uses proxy.ts with JWT auto-refresh
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       var toolName = request.params.name;
       var toolArgs = request.params.arguments || {};
@@ -131,18 +115,9 @@ class EnterpriseProxyServer {
       try {
         console.error(`[Proxy] Executing tool: ${toolName}`);
 
-        // Call enterprise server (credentials are fetched by server from Portal API)
         var startTime = Date.now();
-        var response = await this.httpClient.post('/mcp/tools/call', {
-          tool: toolName,
-          arguments: toolArgs
-          // NOTE: Credentials no longer passed - enterprise server fetches from Portal API
-        });
+        var result = await proxyToolCall(toolName, toolArgs);
         var duration = Date.now() - startTime;
-
-        if (!response.data.success) {
-          throw new Error(response.data.error || 'Tool execution failed');
-        }
 
         console.error(`[Proxy] ✓ Tool executed successfully (${duration}ms)`);
 
@@ -150,17 +125,12 @@ class EnterpriseProxyServer {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(response.data.result, null, 2)
+              text: JSON.stringify(result, null, 2)
             }
           ]
         };
       } catch (error: any) {
         console.error(`[Proxy] ✗ Tool execution failed: ${error.message}`);
-
-        if (error.response) {
-          console.error('[Proxy] Response status:', error.response.status);
-          console.error('[Proxy] Response data:', JSON.stringify(error.response.data, null, 2));
-        }
 
         return {
           content: [
@@ -168,8 +138,7 @@ class EnterpriseProxyServer {
               type: 'text',
               text: JSON.stringify({
                 error: error.message,
-                tool: toolName,
-                details: error.response?.data || null
+                tool: toolName
               }, null, 2)
             }
           ],
