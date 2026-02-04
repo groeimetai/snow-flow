@@ -33,7 +33,7 @@
     "@anthropic-ai/sdk": "0.67.0",
     "@clack/prompts": "^0.11.0",
     "@hono/zod-validator": "0.7.4",
-    "@modelcontextprotocol/sdk": "1.25.2",
+    "@modelcontextprotocol/sdk": "1.26.0",
     "@octokit/graphql": "9.0.2",
     "@octokit/rest": "22.0.0",
     "@openauthjs/openauth": "^0.4.3",
