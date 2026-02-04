@@ -15,6 +15,10 @@ import {
 } from '../config/snow-code-config.js';
 import { validateLicenseKey } from '../mcp/enterprise-proxy/proxy.js';
 import { syncMcpConfigs } from '../utils/sync-mcp-configs.js';
+import {
+  generateEnterpriseInstructions,
+  generateStakeholderDocumentation,
+} from './enterprise-docs-generator.js';
 
 const authLogger = new Logger('auth');
 
@@ -242,7 +246,7 @@ async function enterpriseLicenseFlow(): Promise<void> {
 
     // Update documentation with enterprise features
     // Pass the available features from license validation (e.g., 'jira', 'azdo', 'confluence')
-    await updateDocumentationWithEnterprise(validation.features);
+    await updateDocumentationWithEnterprise(validation.features, role as string);
   } catch (error: any) {
     if (error.message.includes('.mcp.json not found')) {
       prompts.log.error('⚠️  Project not initialized');
@@ -261,16 +265,68 @@ async function enterpriseLicenseFlow(): Promise<void> {
 /**
  * Update project documentation (CLAUDE.md and AGENTS.md) with enterprise server information
  *
- * NOTE: Documentation generation has been moved to Snow-Flow TUI
- * This function is now a no-op as the TUI handles the comprehensive documentation
- * generation when users run `/auth`.
- *
- * @deprecated Use /auth in the Snow-Flow TUI for enterprise documentation
+ * Generates comprehensive workflow instructions for enterprise integrations
+ * (Jira, Azure DevOps, Confluence, GitHub, GitLab) when user authenticates.
  */
-async function updateDocumentationWithEnterprise(_enabledServices?: string[]): Promise<void> {
-  // Documentation generation is now handled by /auth in the TUI
-  // This prevents duplicate/conflicting documentation being written
-  authLogger.debug('Documentation generation delegated to /auth in TUI');
+async function updateDocumentationWithEnterprise(enabledServices?: string[], role?: string): Promise<void> {
+  if (!enabledServices || enabledServices.length === 0) {
+    authLogger.debug('No enabled services provided, skipping documentation update');
+    return;
+  }
+
+  const cwd = process.cwd();
+  const claudeMdPath = path.join(cwd, 'CLAUDE.md');
+  const agentsMdPath = path.join(cwd, 'AGENTS.md');
+
+  const enterpriseMarker = '<!-- SNOW-FLOW-ENTERPRISE-START -->';
+  const enterpriseEndMarker = '<!-- SNOW-FLOW-ENTERPRISE-END -->';
+
+  try {
+    let instructions: string;
+
+    if (role === 'stakeholder') {
+      instructions = generateStakeholderDocumentation();
+    } else {
+      instructions = generateEnterpriseInstructions(enabledServices);
+    }
+
+    const wrappedInstructions = `\n${enterpriseMarker}\n${instructions}\n${enterpriseEndMarker}\n`;
+
+    for (const docPath of [claudeMdPath, agentsMdPath]) {
+      try {
+        let existingContent = '';
+
+        try {
+          existingContent = await fs.readFile(docPath, 'utf-8');
+        } catch (err: any) {
+          if (err.code !== 'ENOENT') throw err;
+        }
+
+        const markerStart = existingContent.indexOf(enterpriseMarker);
+        const markerEnd = existingContent.indexOf(enterpriseEndMarker);
+
+        let newContent: string;
+
+        if (markerStart !== -1 && markerEnd !== -1) {
+          newContent =
+            existingContent.substring(0, markerStart) +
+            wrappedInstructions.trim() +
+            existingContent.substring(markerEnd + enterpriseEndMarker.length);
+        } else {
+          newContent = existingContent + wrappedInstructions;
+        }
+
+        await fs.writeFile(docPath, newContent, 'utf-8');
+        authLogger.info(`Updated ${path.basename(docPath)} with enterprise instructions`);
+      } catch (err: any) {
+        authLogger.warn(`Could not update ${path.basename(docPath)}: ${err.message}`);
+      }
+    }
+
+    prompts.log.success('✅ Updated CLAUDE.md and AGENTS.md with enterprise workflow instructions');
+  } catch (error: any) {
+    authLogger.warn(`Failed to update documentation: ${error.message}`);
+  }
 }
 
 /**
