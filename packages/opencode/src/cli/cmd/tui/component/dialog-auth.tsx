@@ -23,7 +23,6 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[], rol
   }
 
   const cwd = process.cwd()
-  const claudeMdPath = path.join(cwd, 'CLAUDE.md')
   const agentsMdPath = path.join(cwd, 'AGENTS.md')
 
   const enterpriseMarker = '<!-- SNOW-FLOW-ENTERPRISE-START -->'
@@ -39,44 +38,37 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[], rol
 
   const markedContent = `\n${enterpriseMarker}\n${enterpriseContent}\n${enterpriseEndMarker}\n`
 
-  // Helper to update a file with enterprise content
-  async function updateFile(filePath: string): Promise<void> {
+  // Update AGENTS.md with enterprise content
+  try {
+    let content = ''
     try {
-      let content = ''
-      try {
-        content = await fs.readFile(filePath, 'utf-8')
-      } catch {
-        // File doesn't exist, create it
-        content = `# Project Documentation\n`
-      }
-
-      // Check if enterprise section already exists
-      const startIdx = content.indexOf(enterpriseMarker)
-      const endIdx = content.indexOf(enterpriseEndMarker)
-
-      if (startIdx !== -1 && endIdx !== -1) {
-        // Replace existing enterprise section
-        content = content.substring(0, startIdx) + markedContent + content.substring(endIdx + enterpriseEndMarker.length)
-      } else if (startIdx !== -1) {
-        // Marker exists but no end marker, append
-        content = content.substring(0, startIdx) + markedContent
-      } else {
-        // No existing section, append to end
-        content = content + markedContent
-      }
-
-      await fs.writeFile(filePath, content, 'utf-8')
-      console.error(`[Enterprise] Updated ${path.basename(filePath)} with enterprise instructions`)
-    } catch (err) {
-      console.error(`[Enterprise] Failed to update ${path.basename(filePath)}:`, err)
+      content = await fs.readFile(agentsMdPath, 'utf-8')
+    } catch {
+      // File doesn't exist, skip update
+      console.error('[Enterprise] AGENTS.md not found, skipping documentation update')
+      return
     }
-  }
 
-  // Update both files
-  await Promise.all([
-    updateFile(claudeMdPath),
-    updateFile(agentsMdPath),
-  ])
+    // Check if enterprise section already exists
+    const startIdx = content.indexOf(enterpriseMarker)
+    const endIdx = content.indexOf(enterpriseEndMarker)
+
+    if (startIdx !== -1 && endIdx !== -1) {
+      // Replace existing enterprise section
+      content = content.substring(0, startIdx) + markedContent + content.substring(endIdx + enterpriseEndMarker.length)
+    } else if (startIdx !== -1) {
+      // Marker exists but no end marker, append
+      content = content.substring(0, startIdx) + markedContent
+    } else {
+      // No existing section, append to end
+      content = content + markedContent
+    }
+
+    await fs.writeFile(agentsMdPath, content, 'utf-8')
+    console.error('[Enterprise] Updated AGENTS.md with enterprise instructions')
+  } catch (err) {
+    console.error('[Enterprise] Failed to update AGENTS.md:', err)
+  }
 }
 
 type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined"
