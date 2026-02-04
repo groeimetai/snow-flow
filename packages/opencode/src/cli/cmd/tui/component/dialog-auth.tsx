@@ -86,15 +86,24 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[], rol
 
   const markedContent = `\n${enterpriseMarker}\n${enterpriseContent}\n${enterpriseEndMarker}\n`
 
-  // Update AGENTS.md with enterprise content
+  // Update AGENTS.md with enterprise content (create if doesn't exist)
   try {
     let content = ''
+    let fileExists = true
     try {
       content = await fs.readFile(agentsMdPath, 'utf-8')
     } catch {
-      // File doesn't exist, skip update
-      console.error('[Enterprise] AGENTS.md not found, skipping documentation update')
-      return
+      // File doesn't exist, create it with enterprise content
+      fileExists = false
+      console.error('[Enterprise] AGENTS.md not found, creating new file')
+    }
+
+    // If file doesn't exist, create with header
+    if (!fileExists) {
+      content = `# AGENTS.md - AI Agent Instructions
+
+This file contains instructions for AI agents working in this codebase.
+`
     }
 
     // Check if enterprise section already exists
@@ -113,7 +122,7 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[], rol
     }
 
     await fs.writeFile(agentsMdPath, content, 'utf-8')
-    console.error('[Enterprise] Updated AGENTS.md with enterprise instructions')
+    console.error(`[Enterprise] ${fileExists ? 'Updated' : 'Created'} AGENTS.md with enterprise instructions`)
   } catch (err) {
     console.error('[Enterprise] Failed to update AGENTS.md:', err)
   }
