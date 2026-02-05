@@ -72,8 +72,9 @@ function getConfiguredLicenseKey(): string | undefined {
   return undefined;
 }
 
-// Get the license key using the priority resolution
-const TRIMMED_LICENSE_KEY = getConfiguredLicenseKey();
+// NOTE: We no longer cache the license key at module load time
+// Instead, getJwtToken() calls getConfiguredLicenseKey() dynamically
+// This ensures we always use the freshest token from enterprise.json
 
 // Generate unique machine ID for tracking
 let INSTANCE_ID: string;
@@ -114,6 +115,18 @@ function isJwtToken(value: string): boolean {
  * Caches the JWT token until it expires.
  */
 async function getJwtToken(): Promise<string> {
+  // Always read the latest token from enterprise.json (dynamic, not cached at startup)
+  // This ensures we pick up new tokens after /auth without restarting the MCP server
+  const currentLicenseKey = getConfiguredLicenseKey();
+
+  // Check if the token has changed since last cached
+  // If so, invalidate the cache to force using the new token
+  if (cachedJwtToken && currentLicenseKey && cachedJwtToken !== currentLicenseKey) {
+    proxyLogger.log('info', 'Token in enterprise.json has changed, invalidating cache');
+    cachedJwtToken = null;
+    jwtTokenExpiry = 0;
+  }
+
   // Return cached token if still valid (with 5 minute buffer)
   const now = Date.now();
   if (cachedJwtToken && jwtTokenExpiry > now + 5 * 60 * 1000) {
@@ -123,33 +136,33 @@ async function getJwtToken(): Promise<string> {
     return cachedJwtToken;
   }
 
-  if (!TRIMMED_LICENSE_KEY) {
+  if (!currentLicenseKey) {
     throw new Error('SNOW_LICENSE_KEY or SNOW_ENTERPRISE_LICENSE_KEY not configured. Run: snow-flow auth login');
   }
 
-  // Check if SNOW_LICENSE_KEY is already a JWT token (from device auth)
-  // Device auth flow sets SNOW_LICENSE_KEY to a JWT token directly
-  if (isJwtToken(TRIMMED_LICENSE_KEY)) {
-    proxyLogger.log('info', 'Using JWT token directly from SNOW_LICENSE_KEY (device auth mode)', {
-      tokenLength: TRIMMED_LICENSE_KEY.length,
-      tokenPreview: TRIMMED_LICENSE_KEY.substring(0, 20) + '...'
+  // Check if the license key is already a JWT token (from device auth)
+  // Device auth flow sets the token directly in enterprise.json
+  if (isJwtToken(currentLicenseKey)) {
+    proxyLogger.log('info', 'Using JWT token directly from enterprise.json (device auth mode)', {
+      tokenLength: currentLicenseKey.length,
+      tokenPreview: currentLicenseKey.substring(0, 20) + '...'
     });
 
     // Cache the JWT token
     // Note: We don't know the exact expiry from the token without decoding it,
     // but device auth tokens are valid for 7 days. We'll use a shorter cache
     // to ensure we don't use an expired token.
-    cachedJwtToken = TRIMMED_LICENSE_KEY;
+    cachedJwtToken = currentLicenseKey;
     jwtTokenExpiry = now + 6 * 24 * 60 * 60 * 1000; // 6 days cache (1 day buffer)
 
-    return TRIMMED_LICENSE_KEY;
+    return currentLicenseKey;
   }
 
-  // SNOW_LICENSE_KEY is a raw license key (SNOW-ENT-* format)
+  // License key is a raw license key (SNOW-ENT-* format)
   // Exchange it for a JWT token via the portal API
   proxyLogger.log('info', 'Exchanging license key for JWT token', {
-    licenseKeyLength: TRIMMED_LICENSE_KEY.length,
-    licenseKeyPreview: TRIMMED_LICENSE_KEY.substring(0, 20) + '...',
+    licenseKeyLength: currentLicenseKey.length,
+    licenseKeyPreview: currentLicenseKey.substring(0, 20) + '...',
     portalUrl: PORTAL_URL,
     enterpriseUrl: ENTERPRISE_URL
   });
@@ -158,7 +171,7 @@ async function getJwtToken(): Promise<string> {
     const response = await axios.post(
       `${PORTAL_URL}/api/auth/mcp/login`,
       {
-        licenseKey: TRIMMED_LICENSE_KEY,
+        licenseKey: currentLicenseKey,
         machineId: INSTANCE_ID,
         role: 'developer' // Default role for MCP connections
       },
@@ -236,7 +249,8 @@ async function getJwtToken(): Promise<string> {
  * @returns Array of enterprise tools
  */
 export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
-  if (!TRIMMED_LICENSE_KEY) {
+  const licenseKey = getConfiguredLicenseKey();
+  if (!licenseKey) {
     proxyLogger.log('error', 'SNOW_LICENSE_KEY not configured');
     throw new Error(
       'SNOW_LICENSE_KEY or SNOW_ENTERPRISE_LICENSE_KEY not configured. Run: snow-flow auth login'
@@ -344,13 +358,14 @@ export async function proxyToolCall(
   toolName: string,
   args: Record<string, any>
 ): Promise<any> {
-  if (!TRIMMED_LICENSE_KEY) {
+  const licenseKey = getConfiguredLicenseKey();
+  if (!licenseKey) {
     throw new Error(
       'SNOW_LICENSE_KEY or SNOW_ENTERPRISE_LICENSE_KEY not configured. Run: snow-flow auth login'
     );
   }
 
-  // Get JWT token (cached or fetch new one)
+  // Get JWT token (cached or fetch new one - reads dynamically from enterprise.json)
   const jwtToken = await getJwtToken();
 
   // Prepare request (credentials are fetched by enterprise server from Portal API)
