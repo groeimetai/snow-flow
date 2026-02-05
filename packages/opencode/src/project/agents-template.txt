@@ -15,6 +15,34 @@ Transform user intent expressed in natural language into concrete ServiceNow art
 
 ---
 
+## 🌐 WEB TOOLS (Disabled by Default)
+
+The following tools are **disabled by default** to prevent accidental prompt injection from external web content:
+
+- **webfetch** – Fetches and reads content from arbitrary URLs
+- **websearch** – Searches the web via Exa API
+- **codesearch** – Searches code repositories via Exa API
+
+These tools make external HTTP calls that could expose the agent to untrusted content. They are opt-in only.
+
+### Enabling Web Tools
+
+Users can enable them in their `snow-code.jsonc` configuration:
+
+```jsonc
+{
+  "tools": {
+    "webfetch": true,
+    "websearch": true,
+    "codesearch": true
+  }
+}
+```
+
+Enable only the tools you need. Each can be toggled independently.
+
+---
+
 ## 🔍 HOW MCP TOOLS WORK
 
 ### CRITICAL: Tools are NOT directly available!

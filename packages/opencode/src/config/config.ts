@@ -1241,7 +1241,7 @@ export namespace Config {
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: Permission.optional(),
-      tools: z.record(z.string(), z.boolean()).optional(),
+      tools: z.record(z.string(), z.boolean()).optional().describe("Enable/disable specific tools. Web tools (webfetch, websearch, codesearch) are disabled by default."),
       enterprise: z
         .object({
           url: z.string().optional().describe("Enterprise URL"),

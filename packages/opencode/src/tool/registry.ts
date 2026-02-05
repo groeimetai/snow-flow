@@ -134,12 +134,16 @@ export namespace ToolRegistry {
     agent?: Agent.Info,
   ) {
     const tools = await all()
+    const config = await Config.get()
     const result = await Promise.all(
       tools
         .filter((t) => {
-          // Enable websearch/codesearch for zen users OR via enable flag
+          // Web tools: off by default, opt-in via config.tools
+          if (t.id === "webfetch") {
+            return config.tools?.webfetch === true
+          }
           if (t.id === "codesearch" || t.id === "websearch") {
-            return model.providerID === "opencode" || Flag.OPENCODE_ENABLE_EXA
+            return config.tools?.[t.id] === true || Flag.OPENCODE_ENABLE_EXA
           }
 
           // use apply tool in same format as codex
