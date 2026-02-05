@@ -12,6 +12,7 @@ import { SyncProvider, useSync } from "@tui/context/sync"
 import { LocalProvider, useLocal } from "@tui/context/local"
 import { DialogModel, useConnected } from "@tui/component/dialog-model"
 import { DialogMcp } from "@tui/component/dialog-mcp"
+import { DialogWebTools } from "@tui/component/dialog-web-tools"
 import { DialogStatus } from "@tui/component/dialog-status"
 import { DialogThemeList } from "@tui/component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
@@ -392,6 +393,17 @@ function App() {
       },
       onSelect: () => {
         dialog.replace(() => <DialogMcp />)
+      },
+    },
+    {
+      title: "Toggle web tools",
+      value: "webtools.list",
+      category: "Agent",
+      slash: {
+        name: "webtools",
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogWebTools />)
       },
     },
     {
