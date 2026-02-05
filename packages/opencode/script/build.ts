@@ -172,10 +172,11 @@ for (const item of targets) {
   await $`mkdir -p dist/${name}/mcp`
 
   // Bundle servicenow-unified MCP server with all dependencies
+  // IMPORTANT: Use target: "node" so the output works with both node and bun
   const snUnifiedResult = await Bun.build({
     entrypoints: ["./src/servicenow/servicenow-mcp-unified/index.ts"],
     outdir: `dist/${name}/mcp`,
-    target: "bun",
+    target: "node",
     format: "esm",
     naming: "servicenow-unified.js",
     minify: true,
@@ -185,10 +186,11 @@ for (const item of targets) {
   }
 
   // Bundle enterprise-proxy MCP server with all dependencies
+  // IMPORTANT: Use target: "node" so the output works with both node and bun
   const entProxyResult = await Bun.build({
     entrypoints: ["./src/servicenow/enterprise-proxy/server.ts"],
     outdir: `dist/${name}/mcp`,
-    target: "bun",
+    target: "node",
     format: "esm",
     naming: "enterprise-proxy.js",
     minify: true,

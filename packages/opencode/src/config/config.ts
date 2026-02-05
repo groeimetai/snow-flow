@@ -258,8 +258,9 @@ export namespace Config {
     for (const bundledPath of bundledCandidates) {
       if (existsSync(bundledPath)) {
         log.info("found bundled MCP server", { serverName, path: bundledPath })
-        // Production: use bundled JS with node (it's standard JS, not bun-specific)
-        return ["node", bundledPath]
+        // Use bun for bundled JS - it works with both bun-targeted and node-targeted builds
+        // Node.js doesn't support import.meta.require used in bun-targeted builds
+        return ["bun", "run", bundledPath]
       }
     }
 

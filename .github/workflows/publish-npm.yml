@@ -1,14 +1,16 @@
-name: Release Test
+name: Release
 
 on:
   push:
+    tags:
+      - 'v*'
     branches:
-      - test
-      - snow-flow-test
+      - main
+      - production
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g., 1.0.0-test.1)'
+        description: 'Version to build (e.g., 9.0.0)'
         required: false
         default: ''
 
@@ -52,6 +54,17 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
           echo "✅ npm configured for OIDC"
 
+      - name: Debug OIDC setup
+        run: |
+          echo "=== npm version ==="
+          npm --version
+          echo "=== OIDC token available? ==="
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            echo "✅ OIDC token request token is available"
+          else
+            echo "❌ OIDC token request token NOT available"
+          fi
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -62,9 +75,11 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.version }}" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ $GITHUB_REF == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           else
             BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
-            echo "version=${BASE_VERSION}-test.${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "version=${BASE_VERSION}.${{ github.run_number }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Install dependencies
@@ -89,18 +104,18 @@ jobs:
           echo "Building all platforms via cross-compilation..."
           bun run build
         env:
-          OPENCODE_CHANNEL: test
+          OPENCODE_CHANNEL: stable
           OPENCODE_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Rename output directories
         run: |
           cd packages/opencode/dist
 
-          # Find all built directories and rename for snow-flow-test
+          # Find all built directories and rename for snow-flow
           for dir in */; do
             if [ -d "$dir" ]; then
-              # Replace snow-code with snow-flow-test in dir name
-              new_name=$(echo "$dir" | sed 's/snow-code/snow-flow-test/' | sed 's/opencode/snow-flow-test/')
+              # Replace snow-code with snow-flow in dir name
+              new_name=$(echo "$dir" | sed 's/snow-code/snow-flow/' | sed 's/opencode/snow-flow/')
               if [ "$dir" != "$new_name" ]; then
                 echo "Renaming $dir to $new_name"
                 mv "$dir" "$new_name"
@@ -116,7 +131,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           cd packages/opencode
 
-          # Update package.json for test release
+          # Update package.json for production release
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -126,9 +141,9 @@ jobs:
             const catalog = (rootPkg.workspaces && rootPkg.workspaces.catalog) || {};
 
             // Change name and version, remove private flag and type
-            pkg.name = 'snow-flow-test';
+            pkg.name = 'snow-flow';
             pkg.version = '$VERSION';
-            pkg.description = 'Snow-Flow Test - ServiceNow Multi-Agent Development Framework';
+            pkg.description = 'Snow-Flow - ServiceNow Multi-Agent Development Framework powered by AI';
             pkg.private = false;
             delete pkg.type; // Remove 'module' type so bin scripts can use CommonJS
 
@@ -138,12 +153,13 @@ jobs:
               url: 'https://github.com/groeimetai/snow-flow'
             };
 
-            // Update bin commands - include snow-code for compatibility
+            // Update bin commands - all aliases for maximum compatibility
+            // This ensures 'snow-code' and 'snow-flow' work immediately after install
             pkg.bin = {
-              'snow-flow-test': './bin/snow-code',
-              'snow-code-test': './bin/snow-code',
+              'snow-flow': './bin/snow-code',
               'snow-code': './bin/snow-code',
-              'snow-flow': './bin/snow-code'
+              'snowcode': './bin/snow-code',
+              'snowflow': './bin/snow-code'
             };
 
             // Helper to resolve workspace/catalog dependencies
@@ -187,7 +203,7 @@ jobs:
         run: |
           cd packages/opencode/dist
 
-          for dir in snow-flow-test-*/; do
+          for dir in snow-flow-*/; do
             if [ -d "$dir" ]; then
               platform_name=$(basename "$dir")
               echo "Creating tarball for $platform_name..."
@@ -203,52 +219,51 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          name: Snow-Flow Test v${{ steps.version.outputs.version }}
-          prerelease: true
-          generate_release_notes: false
+          name: Snow-Flow v${{ steps.version.outputs.version }}
+          prerelease: false
+          generate_release_notes: true
           files: |
             packages/opencode/dist/*.tar.gz
           body: |
-            ## Snow-Flow Test Release (TypeScript)
+            ## Installation
 
-            This is a **pure TypeScript** test release - no Go dependencies!
-
-            ### Install
             ```bash
-            npm install -g snow-flow-test@${{ steps.version.outputs.version }}
+            npm install -g snow-flow@${{ steps.version.outputs.version }}
             ```
 
-            ### Run
+            ## Run
+
             ```bash
-            snow-flow-test
-            # or
-            snow-code-test
-            # or (compatible with production)
-            snow-code
             snow-flow
+            # or
+            snow-code
             ```
+
+            ## What's New
+
+            - 100% TypeScript (SolidJS + OpenTUI)
+            - 373+ ServiceNow MCP tools
+            - 53 bundled skills
+            - 8 auth types (ServiceNow OAuth, Enterprise, Portal, MID Server, etc.)
+            - Enterprise integrations (Jira, Azure DevOps, Confluence, GitHub, GitLab)
+
+            ## Platform Binaries
+
+            Binaries are automatically downloaded during npm install.
+            Manual download available above if needed.
 
             ### Supported Platforms
-            - ✅ Linux x64
-            - ✅ Linux arm64
-            - ✅ macOS arm64 (Apple Silicon)
-            - ✅ macOS x64 (Intel)
+            - ✅ Linux x64 / arm64
+            - ✅ macOS arm64 (Apple Silicon) / x64 (Intel)
             - ✅ Windows x64
-
-            ### What's New
-            - 100% TypeScript (SolidJS + OpenTUI)
-            - No Go binary compilation needed
-            - All 373+ ServiceNow MCP tools
-            - All 53 bundled skills
-            - 8 auth types (ServiceNow OAuth, Enterprise, Portal, MID Server, etc.)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish main package to npm (OIDC)
         run: |
           cd packages/opencode
-          echo "Publishing snow-flow-test main package..."
-          npm publish --access public --tag test --provenance
+          echo "Publishing snow-flow main package..."
+          npm publish --access public --provenance
 
       # Platform binaries are distributed via GitHub releases
       # Users can download from: https://github.com/groeimetai/snow-flow/releases
