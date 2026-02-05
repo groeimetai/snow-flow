@@ -116,10 +116,11 @@ async function enterpriseLicenseFlow(): Promise<void> {
     const originalLicenseKey = process.env.SNOW_LICENSE_KEY;
     process.env.SNOW_LICENSE_KEY = licenseKey;
 
-    let validation: { valid: boolean; error?: string; features?: string[]; serverUrl?: string };
+    let validation: { valid: boolean; error?: string; features?: string[]; serverUrl?: string; token?: string; subdomain?: string };
 
     try {
-      validation = await validateLicenseKey(licenseKey);
+      // Initial validation with default role to check if license is valid
+      validation = await validateLicenseKey(licenseKey, 'developer');
 
       if (!validation.valid) {
         prompts.log.error(`License validation failed: ${validation.error || 'Unknown error'}`);
@@ -222,10 +223,47 @@ async function enterpriseLicenseFlow(): Promise<void> {
       return;
     }
 
+    // Re-validate with the selected role to get the correct JWT token
+    prompts.log.step('Generating enterprise JWT token...');
+
+    const roleValidation = await validateLicenseKey(licenseKey, role as string);
+    if (!roleValidation.valid || !roleValidation.token) {
+      prompts.log.error(`Failed to generate JWT token: ${roleValidation.error || 'Unknown error'}`);
+      authLogger.error(`JWT generation failed: ${roleValidation.error}`);
+
+      // Restore original license key
+      if (originalLicenseKey) {
+        process.env.SNOW_LICENSE_KEY = originalLicenseKey;
+      } else {
+        delete process.env.SNOW_LICENSE_KEY;
+      }
+
+      return;
+    }
+
+    // Save the JWT token to ~/.snow-code/enterprise.json
+    // This is the primary token source used by the enterprise proxy
+    const enterpriseJsonDir = path.join(os.homedir(), '.snow-code');
+    const enterpriseJsonPath = path.join(enterpriseJsonDir, 'enterprise.json');
+
+    try {
+      await fs.mkdir(enterpriseJsonDir, { recursive: true });
+      await fs.writeFile(enterpriseJsonPath, JSON.stringify({
+        subdomain: roleValidation.subdomain || 'enterprise',
+        token: roleValidation.token,
+      }, null, 2), 'utf-8');
+
+      authLogger.info('Saved enterprise JWT token to ~/.snow-code/enterprise.json');
+      prompts.log.success('✅ JWT token saved to ~/.snow-code/enterprise.json');
+    } catch (saveError: any) {
+      authLogger.warn(`Could not save enterprise.json: ${saveError.message}`);
+      prompts.log.warn(`Warning: Could not save token to ~/.snow-code/enterprise.json: ${saveError.message}`);
+    }
+
     const enterpriseConfig: EnterpriseMcpConfig = {
-      licenseKey,
+      licenseKey: roleValidation.token, // Use the JWT token instead of license key
       role: role as 'developer' | 'stakeholder' | 'admin',
-      serverUrl: validation.serverUrl,
+      serverUrl: roleValidation.serverUrl || validation.serverUrl,
     };
 
     // Inform user about server-side credentials
@@ -234,9 +272,7 @@ async function enterpriseLicenseFlow(): Promise<void> {
       prompts.log.info('   Visit: https://enterprise.snow-flow.dev to configure integrations');
     }
 
-    // Add enterprise MCP server to SnowCode config (generates JWT)
-    prompts.log.step('Generating enterprise JWT token...');
-
+    // Add enterprise MCP server to project .mcp.json (uses the JWT token)
     await addEnterpriseMcpServer(enterpriseConfig);
 
     prompts.log.success('✅ Enterprise MCP server configured');

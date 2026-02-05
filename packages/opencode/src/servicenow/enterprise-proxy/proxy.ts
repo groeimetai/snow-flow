@@ -444,15 +444,19 @@ export async function proxyToolCall(
 /**
  * Validate license key with enterprise server
  * @param licenseKey - License key to validate
- * @returns Validation response
+ * @param role - User role (developer, stakeholder, admin)
+ * @returns Validation response including JWT token
  */
 export async function validateLicenseKey(
-  licenseKey: string
+  licenseKey: string,
+  role: string = 'developer'
 ): Promise<{
   valid: boolean;
   error?: string;
   features?: string[];
   serverUrl?: string;
+  token?: string;
+  subdomain?: string;
 }> {
   try {
     // Use /api/auth/mcp/login to validate and get JWT token
@@ -461,7 +465,7 @@ export async function validateLicenseKey(
       {
         licenseKey: licenseKey.trim(),
         machineId: INSTANCE_ID,
-        role: 'developer'
+        role: role
       },
       {
         headers: {
@@ -480,10 +484,13 @@ export async function validateLicenseKey(
       };
     }
 
+    // Return the JWT token so it can be saved to enterprise.json
     return {
       valid: true,
       features: ['jira', 'azdo', 'confluence'], // All features for enterprise
       serverUrl: ENTERPRISE_URL,
+      token: response.data.token,
+      subdomain: response.data.customer?.subdomain || response.data.subdomain,
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
