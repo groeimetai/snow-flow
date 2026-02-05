@@ -333,13 +333,13 @@ function DialogAuthServiceNowOAuth() {
         // Add ServiceNow MCP server directly (no restart needed)
         try {
           const { MCP } = await import("@/mcp")
-          const { getMcpServerCommand } = await import("@/config/config")
+          const { Config } = await import("@/config/config")
           const { Auth } = await import("@/auth")
           const snAuth = await Auth.get("servicenow")
           if (snAuth?.type === "servicenow-oauth") {
             await MCP.add("servicenow-unified", {
               type: "local",
-              command: getMcpServerCommand("servicenow-unified"),
+              command: Config.getMcpServerCommand("servicenow-unified"),
               environment: {
                 SERVICENOW_INSTANCE_URL: snAuth.instance,
                 SERVICENOW_CLIENT_ID: snAuth.clientId,
@@ -560,10 +560,10 @@ function DialogAuthServiceNowBasic() {
       // Add ServiceNow MCP server directly (no restart needed)
       try {
         const { MCP } = await import("@/mcp")
-        const { getMcpServerCommand } = await import("@/config/config")
+        const { Config } = await import("@/config/config")
         await MCP.add("servicenow-unified", {
           type: "local",
-          command: getMcpServerCommand("servicenow-unified"),
+          command: Config.getMcpServerCommand("servicenow-unified"),
           environment: {
             SERVICENOW_INSTANCE_URL: normalizedInstance,
             SERVICENOW_USERNAME: username(),
@@ -843,10 +843,10 @@ function DialogAuthEnterprise() {
       // Add enterprise MCP server directly (no restart needed)
       try {
         const { MCP } = await import("@/mcp")
-        const { getMcpServerCommand } = await import("@/config/config")
+        const { Config } = await import("@/config/config")
         await MCP.add("snow-flow-enterprise", {
           type: "local",
-          command: getMcpServerCommand("enterprise-proxy"),
+          command: Config.getMcpServerCommand("enterprise-proxy"),
           environment: {
             SNOW_PORTAL_URL: portalUrl,
             SNOW_LICENSE_KEY: data.token,
@@ -882,7 +882,7 @@ function DialogAuthEnterprise() {
                 // Start servicenow-unified MCP server with portal credentials
                 await MCP.add("servicenow-unified", {
                   type: "local",
-                  command: getMcpServerCommand("servicenow-unified"),
+                  command: Config.getMcpServerCommand("servicenow-unified"),
                   environment: {
                     SERVICENOW_INSTANCE_URL: instance.instanceUrl,
                     SERVICENOW_CLIENT_ID: instance.clientId,
@@ -913,7 +913,7 @@ function DialogAuthEnterprise() {
               }
               await MCP.add("servicenow-unified", {
                 type: "local",
-                command: getMcpServerCommand("servicenow-unified"),
+                command: Config.getMcpServerCommand("servicenow-unified"),
                 environment: snEnv,
                 enabled: true,
               })
@@ -1383,12 +1383,12 @@ function DialogAuthEnterpriseCombined() {
     setStep("completing")
     try {
       const { MCP } = await import("@/mcp")
-      const { getMcpServerCommand } = await import("@/config/config")
+      const { Config } = await import("@/config/config")
 
       // Start enterprise MCP server
       await MCP.add("snow-flow-enterprise", {
         type: "local",
-        command: getMcpServerCommand("enterprise-proxy"),
+        command: Config.getMcpServerCommand("enterprise-proxy"),
         environment: {
           SNOW_PORTAL_URL: portalUrl,
           SNOW_LICENSE_KEY: token,
@@ -1399,7 +1399,7 @@ function DialogAuthEnterpriseCombined() {
       // Start ServiceNow MCP server with portal credentials
       await MCP.add("servicenow-unified", {
         type: "local",
-        command: getMcpServerCommand("servicenow-unified"),
+        command: Config.getMcpServerCommand("servicenow-unified"),
         environment: {
           SERVICENOW_INSTANCE_URL: snCreds.instanceUrl,
           SERVICENOW_CLIENT_ID: snCreds.clientId,
@@ -1538,7 +1538,7 @@ function DialogAuthEnterpriseCombined() {
   const startBothMcpServers = async () => {
     try {
       const { MCP } = await import("@/mcp")
-      const { getMcpServerCommand } = await import("@/config/config")
+      const { Config } = await import("@/config/config")
       const { Auth } = await import("@/auth")
 
       const sub = subdomain().trim().toLowerCase()
@@ -1548,7 +1548,7 @@ function DialogAuthEnterpriseCombined() {
       // Start enterprise MCP server
       await MCP.add("snow-flow-enterprise", {
         type: "local",
-        command: getMcpServerCommand("enterprise-proxy"),
+        command: Config.getMcpServerCommand("enterprise-proxy"),
         environment: {
           SNOW_PORTAL_URL: portalUrl,
           SNOW_LICENSE_KEY: entData.token ?? "",
@@ -1574,7 +1574,7 @@ function DialogAuthEnterpriseCombined() {
 
         await MCP.add("servicenow-unified", {
           type: "local",
-          command: getMcpServerCommand("servicenow-unified"),
+          command: Config.getMcpServerCommand("servicenow-unified"),
           environment: snEnv,
           enabled: true,
         })

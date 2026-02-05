@@ -56,7 +56,7 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow Development**: Update sets, deployment, artifact management
 - **ServiceNow UI**: Widget development, workspaces, UI builder
 - **ServiceNow ITSM**: Incident, change, problem management
-- **Enterprise Integrations**: Jira, Azure DevOps, Confluence (if activated)
+- **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (always available when enterprise MCP server is connected — call tools directly by name)
 
 ---
 
@@ -68,11 +68,12 @@ When you have MCP tools available for a service (GitHub, Jira, Azure DevOps, Ser
 
 | Service | ✅ CORRECT | ❌ WRONG |
 |---------|-----------|----------|
-| GitHub | Use `tool_search({query: "github"})` → then use found tools | WebFetch to github.com URLs |
-| Jira | Use `tool_search({query: "jira"})` → then use found tools | WebFetch to jira.atlassian.net |
-| Azure DevOps | Use `tool_search({query: "azure devops"})` → then use found tools | WebFetch to dev.azure.com |
-| ServiceNow | Use `tool_search({query: "servicenow"})` → then use found tools | WebFetch to instance.service-now.com |
-| GitLab | Use `tool_search({query: "gitlab"})` → then use found tools | WebFetch to gitlab.com |
+| GitHub | Call directly: `github_list_issues(...)`, `github_create_issue(...)` | WebFetch to github.com URLs |
+| Jira | Call directly: `jira_search_issues(...)`, `jira_get_issue(...)` | WebFetch to jira.atlassian.net |
+| Azure DevOps | Call directly: `azdo_search_work_items(...)`, `azdo_get_work_item(...)` | WebFetch to dev.azure.com |
+| Confluence | Call directly: `confluence_search_content(...)`, `confluence_get_page(...)` | WebFetch to confluence URLs |
+| GitLab | Call directly: `gitlab_list_issues(...)`, `gitlab_create_issue(...)` | WebFetch to gitlab.com |
+| ServiceNow | Use `tool_search({query: "servicenow"})` → then use found snow_* tools | WebFetch to instance.service-now.com |
 
 **Why MCP tools are better:**
 1. **Authentication built-in**: MCP tools use pre-configured auth, WebFetch doesn't

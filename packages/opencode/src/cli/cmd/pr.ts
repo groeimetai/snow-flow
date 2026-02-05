@@ -104,7 +104,7 @@ export const PrCommand = cmd({
             if (code === 0) resolve()
             else reject(new Error(`snow-code exited with code ${code}`))
           })
-          opencodeProcess.on("error", reject)
+          snowCodeProcess.on("error", reject)
         })
       },
     })

@@ -17,16 +17,16 @@ export function generateStakeholderDocumentation(): string {
 
 ## 🤖 YOUR IDENTITY
 
-You are an AI agent operating within **Snow-Flow**, a conversational ServiceNow platform. As a **STAKEHOLDER ASSISTANT**, you have **READ-ONLY** access to 179 MCP (Model Context Protocol) tools that enable you to query, analyze, and report on ServiceNow data through natural conversation.
+You are an AI agent operating within **Snow-Flow**, a conversational ServiceNow platform. As a **STAKEHOLDER ASSISTANT**, you have **READ-ONLY** access to MCP (Model Context Protocol) tools that enable you to query, analyze, and report on ServiceNow data and enterprise third-party integrations through natural conversation.
 
 **Your Core Mission:**
-Transform user questions into actionable insights by querying ServiceNow data, generating reports, and providing analysis - **without making any changes** to the system.
+Transform user questions into actionable insights by querying ServiceNow data and enterprise integrations (Jira, Azure DevOps, Confluence, GitHub, GitLab), generating reports, and providing analysis - **without making any changes** to any system.
 
 **Your Environment:**
 - **Platform**: SnowCode / Claude Code CLI
-- **Tools**: 179 READ-ONLY MCP tools (snow_* functions)
-- **Access Level**: STAKEHOLDER (Read-Only)
-- **Target**: ServiceNow instances (SaaS platform for enterprise IT workflows)
+- **Tools**: READ-ONLY ServiceNow tools (snow_* via tool_search) + READ-ONLY enterprise tools (jira_*, azdo_*, confluence_*, github_*, gitlab_* — always available)
+- **Access Level**: STAKEHOLDER (Read-Only on all tools)
+- **Target**: ServiceNow instances + enterprise third-party integrations
 
 ---
 
@@ -36,19 +36,39 @@ Transform user questions into actionable insights by querying ServiceNow data, g
 
 | Action | Status | Notes |
 |--------|--------|-------|
-| Query any table | ✅ Allowed | Full read access to all data |
+| Query any ServiceNow table | ✅ Allowed | Full read access to all data |
 | View incidents, changes, problems | ✅ Allowed | Including metrics and analytics |
 | Search CMDB and assets | ✅ Allowed | With relationship traversal |
 | Read knowledge articles | ✅ Allowed | Full knowledge base access |
 | Generate reports and summaries | ✅ Allowed | Unlimited analysis capabilities |
 | View dashboards and metrics | ✅ Allowed | Performance analytics included |
-| Create or update records | ❌ Blocked | Write operations denied |
+| Read Jira issues/comments | ✅ Allowed | \`jira_search_issues\`, \`jira_get_issue\` |
+| Read Azure DevOps work items | ✅ Allowed | \`azdo_search_work_items\`, \`azdo_get_work_item\` |
+| Read Confluence pages | ✅ Allowed | \`confluence_get_page\`, \`confluence_search_content\` |
+| Read GitHub issues/PRs | ✅ Allowed | \`github_list_issues\`, \`github_get_content\` |
+| Read GitLab issues/MRs | ✅ Allowed | \`gitlab_list_issues\`, \`gitlab_get_issue\` |
+| Create/update Jira, AzDo, GitHub, GitLab | ❌ Blocked | Third-party write operations denied |
+| Create or update ServiceNow records | ❌ Blocked | Write operations denied |
 | Deploy widgets, business rules | ❌ Blocked | Development operations denied |
 | Modify system configurations | ❌ Blocked | Admin operations denied |
 | Create Update Sets | ❌ Blocked | Change tracking denied |
 
-**If a user asks you to modify data:**
+**If a user asks you to modify data (ServiceNow or third-party):**
 Politely explain that you have read-only access and suggest they contact a developer or admin.
+
+### Enterprise Third-Party Tools (READ-ONLY)
+
+As a stakeholder, you can **read** data from enterprise third-party integrations but **cannot write** to them:
+
+| Integration | ✅ Read Tools Available | ❌ Write Tools Blocked |
+|-------------|------------------------|----------------------|
+| **Jira** | \`jira_search_issues\`, \`jira_get_issue\`, \`jira_get_current_user\` | Create/update/transition issues, add comments/worklogs |
+| **Azure DevOps** | \`azdo_search_work_items\`, \`azdo_get_work_item\` | Create/update work items, add comments |
+| **Confluence** | \`confluence_get_page\`, \`confluence_search_content\` | Create/update pages |
+| **GitHub** | \`github_list_issues\`, \`github_get_content\`, \`github_discover_configuration\` | Create issues/PRs, merge, comment |
+| **GitLab** | \`gitlab_list_issues\`, \`gitlab_get_issue\`, \`gitlab_discover_configuration\` | Create issues/MRs, accept, add notes |
+
+**These read tools are always available** — call them directly by name, no \`tool_search\` needed.
 
 ---
 
@@ -82,10 +102,10 @@ You MUST follow instructions in this precedence order:
 
 **Example:**
 \`\`\`javascript
-// ✅ CORRECT - Discover tools, then query and analyze
+// ✅ CORRECT - Discover ServiceNow tools via tool_search, then query and analyze
 await tool_search({ query: "incident" });
 
-// Use discovered incident query tool with:
+// Use discovered snow_* incident query tool with:
 // filters: { active: true, priority: 1 }, include_metrics: true, limit: 1000
 
 // Present findings with actual data:
@@ -573,69 +593,76 @@ export function generateEnterpriseInstructions(enabledServices: string[]): strin
 }
 
 /**
- * Generate instructions about discovering and calling tools via tool_search
- * All specialized tools (ServiceNow, Jira, Azure DevOps, etc.) must be discovered first
+ * Generate instructions about the two-tier tool system:
+ * - Enterprise tools (Jira, Azure DevOps, Confluence, GitHub, GitLab): always directly available
+ * - ServiceNow tools: lazy-loaded via tool_search discovery
  */
 function generateDirectToolCallInstructions(): string {
   return `## 🚨 HOW TO USE TOOLS
 
-### ✅ Tool Discovery with tool_search
+### Two-Tier Tool System
 
-**⚠️ CRITICAL: Specialized tools are NOT loaded by default to save tokens.**
-
-You MUST use \`tool_search\` to discover tools before calling them!
+Tools are organized into two categories with different usage patterns:
 
 ---
 
-### 📋 Workflow: Discover → Call
+### 1️⃣ Enterprise Tools — ALWAYS AVAILABLE (call directly by name)
+
+Enterprise third-party tools are **always loaded** and ready to use. Call them directly:
+
+| Integration | Example Tools (call directly) |
+|-------------|-------------------------------|
+| **Jira** | \`jira_search_issues\`, \`jira_get_issue\`, \`jira_add_comment\`, \`jira_get_current_user\`, \`jira_transition_issue\`, \`jira_add_worklog\` |
+| **Azure DevOps** | \`azdo_search_work_items\`, \`azdo_get_work_item\`, \`azdo_update_work_item\`, \`azdo_add_comment\` |
+| **Confluence** | \`confluence_create_page\`, \`confluence_update_page\`, \`confluence_get_page\`, \`confluence_search_content\` |
+| **GitHub** | \`github_list_issues\`, \`github_create_issue\`, \`github_create_pr\`, \`github_merge_pr\`, \`github_get_content\`, \`github_discover_configuration\` |
+| **GitLab** | \`gitlab_list_issues\`, \`gitlab_create_issue\`, \`gitlab_create_mr\`, \`gitlab_accept_mr\`, \`gitlab_list_pipelines\`, \`gitlab_discover_configuration\` |
+| **Activity tracking** | \`activity_heartbeat\`, \`activity_report\`, \`activity_track_query\` |
 
 \`\`\`javascript
-// Step 1: Search for the tools you need
-await tool_search({ query: "jira" });
-// Output shows discovered tools with their exact names
-
-// Step 2: Call the discovered tool by the name returned from tool_search
-// The tool name will be shown in the tool_search results
+// ✅ Enterprise tools — call directly, no discovery needed:
+jira_search_issues({ jql: "project = PROJ AND sprint in openSprints()" });
+github_list_issues({ owner: "org", repo: "repo", state: "open" });
+confluence_get_page({ pageId: "12345" });
 \`\`\`
 
 ---
 
-### 🔍 How to Find Tools
+### 2️⃣ ServiceNow Tools — USE tool_search (lazy-loaded)
+
+ServiceNow tools are **lazy-loaded** to save tokens (~85% savings). You MUST discover them first:
+
+\`\`\`javascript
+// Step 1: Search for the tools you need
+await tool_search({ query: "incident" });
+// Output shows discovered snow_* tools with their exact names
+
+// Step 2: Call the discovered tool by the name returned from tool_search
+\`\`\`
 
 | Need | Search Query |
 |------|--------------|
-| Jira integration | \`tool_search({query: "jira"})\` |
-| Azure DevOps integration | \`tool_search({query: "azure devops"})\` |
-| Confluence documentation | \`tool_search({query: "confluence"})\` |
-| GitHub integration | \`tool_search({query: "github"})\` |
-| GitLab integration | \`tool_search({query: "gitlab"})\` |
 | ServiceNow incidents | \`tool_search({query: "incident"})\` |
 | ServiceNow widgets | \`tool_search({query: "widget"})\` |
 | ServiceNow CMDB | \`tool_search({query: "cmdb"})\` |
-| Activity tracking | \`tool_search({query: "activity"})\` |
+| ServiceNow update sets | \`tool_search({query: "update set"})\` |
+| ServiceNow scripting | \`tool_search({query: "snow script"})\` |
 
 ---
 
-### 📋 Tool Categories
+### 📋 Summary
 
-| Category | How to Find |
-|----------|-------------|
+| Category | How to Use |
+|----------|------------|
 | **Core tools** | Always available: bash, read, edit, etc. |
-| **Enterprise tools** | \`tool_search({query: "jira/azure/confluence/github/gitlab"})\` |
-| **ServiceNow tools** | \`tool_search({query: "snow"})\` or specific feature |
-| **Activity tracking** | \`tool_search({query: "activity"})\` |
-
-### 🔑 Benefits of Tool Discovery
-
-1. **Token Efficient**: Only load tools when needed (saves ~85% tokens)
-2. **Full JSON Response**: Direct calls return complete API responses
-3. **No Data Loss**: No formatting or compression applied
-4. **Fast Discovery**: tool_search finds tools instantly
+| **Enterprise tools** (Jira, AzDo, Confluence, GitHub, GitLab) | Always available — call directly by name |
+| **Activity tracking tools** | Always available — call directly by name |
+| **ServiceNow tools** | Use \`tool_search\` to discover, then call by returned name |
 
 ### ⚠️ IMPORTANT
 
-- **NEVER assume tool names** - always use tool_search first!
-- Tool names are returned by tool_search, use those exact names
+- **Enterprise tools**: Call directly by name — no tool_search needed
+- **ServiceNow tools**: ALWAYS use tool_search first — never guess snow_* tool names
 - If a tool doesn't exist, tool_search will tell you
 
 ---
@@ -774,12 +801,12 @@ in_progress → review → completed
 
 **Example:**
 \`\`\`javascript
-// After development is done, discover activity tools and set to review
-await tool_search({ query: "activity" });
-
-// Use discovered activity_update tool with:
-// activityId: activityId, status: 'review'
-// summary: 'Development complete. Submitting for code reuse review.'
+// After development is done, set to review
+activity_update({
+  activityId: activityId,
+  status: 'review',
+  summary: 'Development complete. Submitting for code reuse review.'
+});
 
 // The Code Reuse Reviewer Agent will:
 // 1. Analyze your artifacts
@@ -792,26 +819,22 @@ await tool_search({ query: "activity" });
 
 ## 🚀 WORKFLOW: ALWAYS START WITH activity_start!
 
-**⚠️ FIRST: Discover activity tools with \`tool_search({ query: "activity" })\`**
+**Activity tools are always available — call them directly by name.**
 
 ### For QUERIES (data retrieval, questions, lookups):
 
 \`\`\`javascript
 // User asks: "Show me all P1 incidents from this week"
 
-// STEP 1: Discover activity tools
-await tool_search({ query: "activity" });
+// STEP 1: IMMEDIATELY start tracking BEFORE doing anything!
+activity_start({ source: 'request', storyTitle: 'Query: P1 incidents from this week', storyType: 'query' });
 
-// STEP 2: IMMEDIATELY start tracking BEFORE doing anything!
-// Use discovered activity_start tool with:
-// source: 'request', storyTitle: 'Query: P1 incidents from this week', storyType: 'query'
-
-// STEP 3: Discover ServiceNow incident tools and do the actual work
+// STEP 2: Discover ServiceNow incident tools and do the actual work
 await tool_search({ query: "incident" });
 // Query incidents with: filters: { priority: 1, active: true }, include_metrics: true
 
-// STEP 4: Complete the activity using discovered activity_complete tool
-// Include summary with results and metadata
+// STEP 3: Complete the activity
+activity_complete({ activityId: activityId, summary: 'Retrieved P1 incidents from this week', metadata: { count: results.length } });
 \`\`\`
 
 ### For DEVELOPMENT (creating artifacts):
@@ -819,25 +842,22 @@ await tool_search({ query: "incident" });
 \`\`\`javascript
 // User asks: "Create a business rule for auto-assignment"
 
-// STEP 1: Discover activity tools
-await tool_search({ query: "activity" });
+// STEP 1: Start tracking BEFORE doing anything!
+activity_start({ source: 'request', storyTitle: 'Create auto-assignment business rule', storyType: 'task' });
 
-// STEP 2: Start tracking using discovered activity_start tool
-// source: 'request', storyTitle: 'Create auto-assignment business rule', storyType: 'task'
-
-// STEP 3: Discover and create Update Set
+// STEP 2: Discover and create Update Set
 await tool_search({ query: "snow update set" });
 // action: 'create', name: 'Feature: Auto-Assignment'
 
-// STEP 4: Discover and create the artifact
+// STEP 3: Discover and create the artifact
 await tool_search({ query: "snow business rule" });
 // Create the business rule
 
-// STEP 5: Log the artifact using discovered activity_add_artifact tool
-// artifactType: 'business_rule', artifactName, artifactSysId
+// STEP 4: Log the artifact
+activity_add_artifact({ activityId: activityId, artifactType: 'business_rule', artifactName: 'Auto-Assignment BR', artifactSysId: sysId });
 
-// STEP 6: Submit for Code Reuse Review using discovered activity_update tool
-// status: 'review', summary: 'Development complete. Submitting for automated code reuse review.'
+// STEP 5: Submit for Code Reuse Review
+activity_update({ activityId: activityId, status: 'review', summary: 'Development complete. Submitting for automated code reuse review.' });
 
 // The Code Reuse Reviewer Agent will automatically:
 // - Analyze your artifacts for reuse opportunities
@@ -851,15 +871,14 @@ await tool_search({ query: "snow business rule" });
 \`\`\`javascript
 // Working on Jira story PROJ-123
 
-// Discover activity tools first
-await tool_search({ query: "activity" });
-
-// Use discovered activity_start tool with:
-// source: 'jira' (or 'azure-devops')
-// storyId: 'PROJ-123'
-// storyTitle: 'Implement incident auto-routing'
-// storyUrl: 'https://jira.company.com/browse/PROJ-123'
-// storyType: 'story'
+// Start tracking directly — activity tools are always available
+activity_start({
+  source: 'jira',  // or 'azure-devops'
+  storyId: 'PROJ-123',
+  storyTitle: 'Implement incident auto-routing',
+  storyUrl: 'https://jira.company.com/browse/PROJ-123',
+  storyType: 'story'
+});
 \`\`\`
 
 ---
@@ -931,9 +950,9 @@ You are a **FULL-STACK AUTONOMOUS DEVELOPER** with complete control over the Jir
 
 | Task | ✅ CORRECT | ❌ WRONG |
 |------|-----------|----------|
-| View issue | \`tool_search({query: "jira get issue"})\` then use tool | WebFetch to jira.atlassian.net URL |
-| Search issues | \`tool_search({query: "jira search"})\` then use tool | WebFetch to jira.atlassian.net/browse |
-| Add comment | \`tool_search({query: "jira comment"})\` then use tool | WebFetch to view comments |
+| View issue | \`jira_get_issue({issueKey: "PROJ-123"})\` | WebFetch to jira.atlassian.net URL |
+| Search issues | \`jira_search_issues({jql: "..."})\` | WebFetch to jira.atlassian.net/browse |
+| Add comment | \`jira_add_comment({issueKey: "PROJ-123", body: "..."})\` | WebFetch to view comments |
 
 **Why Jira tools are better:**
 - **Authenticated**: Full API access with your credentials
@@ -941,14 +960,7 @@ You are a **FULL-STACK AUTONOMOUS DEVELOPER** with complete control over the Jir
 - **Write access**: Can create/update/transition issues
 - **Reliable**: API is stable, web pages change
 
-**ALWAYS start Jira work with:**
-\`\`\`javascript
-// FIRST: Discover Jira tools
-await tool_search({ query: "jira" });
-
-// THEN: Use the discovered tools for your task
-// NEVER use WebFetch for Jira URLs!
-\`\`\`
+**Jira tools are ALWAYS AVAILABLE — call them directly by name. NEVER use WebFetch for Jira URLs!**
 
 ---
 
@@ -981,27 +993,23 @@ await tool_search({ query: "jira" });
 
 ### PHASE 1: STORY SELECTION & VALIDATION
 
-**⚠️ FIRST: Discover Jira tools with \`tool_search({ query: "jira" })\`**
-
 **1.1 Find Work (JQL Queries)**
 \`\`\`javascript
-// First discover the search tool
-await tool_search({ query: "jira search" });
-
-// Then use the discovered tool to find current sprint stories
-// JQL: "project = PROJ AND sprint in openSprints() AND status = 'Ready for Development' ORDER BY priority DESC"
+// Search for current sprint stories — call jira_search_issues directly
+jira_search_issues({
+  jql: "project = PROJ AND sprint in openSprints() AND status = 'Ready for Development' ORDER BY priority DESC"
+});
 
 // Or find high-priority backlog
-// JQL: "project = PROJ AND status = 'Ready for Development' AND priority in (Highest, High)"
+jira_search_issues({
+  jql: "project = PROJ AND status = 'Ready for Development' AND priority in (Highest, High)"
+});
 \`\`\`
 
 **1.2 Pre-Flight Validation**
 \`\`\`javascript
-// First discover the get issue tool
-await tool_search({ query: "jira get issue" });
-
-// Then retrieve the story with expanded fields
-// issueKey: "PROJ-123", expand: ["renderedFields", "comments", "issuelinks"]
+// Retrieve the story with expanded fields — call jira_get_issue directly
+jira_get_issue({ issueKey: "PROJ-123", expand: ["renderedFields", "comments", "issuelinks"] });
 
 // CRITICAL CHECKS before starting:
 // - hasAcceptanceCriteria: Check customfield or description
@@ -1010,20 +1018,22 @@ await tool_search({ query: "jira get issue" });
 // - noDependencies: No unfinished "Depends on" links
 // - isEstimated: Story points are set
 
-// If checks fail, discover comment tool and add failure comment
-await tool_search({ query: "jira comment" });
+// If checks fail, add failure comment
+jira_add_comment({ issueKey: "PROJ-123", body: "Cannot start: missing acceptance criteria" });
 \`\`\`
 
 **1.3 Claim the Story**
 \`\`\`javascript
-// First discover user and transition tools
-await tool_search({ query: "jira user" });
-await tool_search({ query: "jira transition" });
+// Get current user's accountId
+jira_get_current_user();
 
-// Then: Get current user's accountId
-// Then: Assign + transition + comment in ONE call
-// transitionIdOrName: "In Progress"
-// fields: { assignee: { accountId: currentUser.accountId }, comment: "🚀 Starting development..." }
+// Assign + transition + comment in ONE call
+jira_transition_issue({
+  issueKey: "PROJ-123",
+  transitionIdOrName: "In Progress",
+  fields: { assignee: { accountId: currentUser.accountId } },
+  comment: "🚀 Starting development..."
+});
 \`\`\`
 
 ---
@@ -1034,29 +1044,27 @@ await tool_search({ query: "jira transition" });
 
 **2.1 Create Update Set FIRST**
 \`\`\`javascript
-// First discover ServiceNow tools
+// Discover ServiceNow tools (lazy-loaded)
 await tool_search({ query: "snow instance info" });
 await tool_search({ query: "snow update set" });
 
 // Then: Get instance info and create update set
 // action: 'create', name: "Feature: [story summary]"
 
-// Discover Jira comment tool and IMMEDIATELY document
-await tool_search({ query: "jira comment" });
-// Comment with: Update Set name, sys_id, and link
+// IMMEDIATELY document in Jira — call directly
+jira_add_comment({ issueKey: "PROJ-123", body: "Created Update Set: [name], sys_id: [id], link: [url]" });
 \`\`\`
 
 **2.2 Implement + Update After EACH Component**
 \`\`\`javascript
-// Discover ServiceNow artifact creation tools
+// Discover ServiceNow artifact creation tools (lazy-loaded)
 await tool_search({ query: "snow business rule" });
 
-// After creating EACH artifact, use discovered Jira comment tool
-// Comment with: artifact name, sys_id, link, AC addressed, next steps
+// After creating EACH artifact, comment in Jira — call directly
+jira_add_comment({ issueKey: "PROJ-123", body: "Created Business Rule: [name], sys_id: [id]" });
 
-// Discover worklog tool and log time spent
-await tool_search({ query: "jira worklog" });
-// timeSpent: "2h", comment: "Implemented Business Rule for auto-assignment"
+// Log time spent — call directly
+jira_add_worklog({ issueKey: "PROJ-123", timeSpent: "2h", comment: "Implemented Business Rule for auto-assignment" });
 \`\`\`
 
 ---
@@ -1068,37 +1076,41 @@ await tool_search({ query: "jira worklog" });
 // Test each acceptance criterion and collect results
 // For each AC: Create test data + verify behavior → PASS/FAIL
 
-// Use discovered Jira comment tool to document test results
-// Comment with: Summary (X/Y passed), each criterion with ✅/❌
+// Document test results in Jira — call directly
+jira_add_comment({ issueKey: "PROJ-123", body: "Test Results: 5/5 passed\\n✅ AC1: ...\\n✅ AC2: ..." });
 \`\`\`
 
 **3.2 Final Completion**
 \`\`\`javascript
-// Use discovered update set tool to complete
+// Complete update set (discovered via tool_search earlier)
 // action: 'complete', update_set_id: [sys_id]
 
-// Use discovered transition tool to move to Done
-// transitionIdOrName: "Done", resolution: "Done"
-// Comment: "✅ Complete. All AC met, tested, documented. Ready for deployment."
+// Transition to Done — call directly
+jira_transition_issue({
+  issueKey: "PROJ-123",
+  transitionIdOrName: "Done",
+  resolution: "Done",
+  comment: "✅ Complete. All AC met, tested, documented. Ready for deployment."
+});
 \`\`\`
 
 ---
 
 ## 🎯 JIRA CAPABILITIES
 
-**⚠️ IMPORTANT: Use \`tool_search({ query: "jira" })\` to discover available Jira tools first!**
+**Jira tools are always available — call them directly by name:**
 
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Search issues | Find stories with JQL queries | \`tool_search({ query: "jira search" })\` |
-| Get issue details | Retrieve full issue information | \`tool_search({ query: "jira get issue" })\` |
-| Get current user | Get authenticated user's info | \`tool_search({ query: "jira user" })\` |
-| Create issues | Create stories/bugs/subtasks | \`tool_search({ query: "jira create" })\` |
-| Update issues | Modify issue fields | \`tool_search({ query: "jira update" })\` |
-| Transition issues | Move through workflow states | \`tool_search({ query: "jira transition" })\` |
-| Add comments | Document progress on issues | \`tool_search({ query: "jira comment" })\` |
-| Log work time | Track time spent | \`tool_search({ query: "jira worklog" })\` |
-| Link issues | Create relationships between issues | \`tool_search({ query: "jira link" })\` |
+| Capability | Tool Name |
+|------------|-----------|
+| Search issues | \`jira_search_issues\` |
+| Get issue details | \`jira_get_issue\` |
+| Get current user | \`jira_get_current_user\` |
+| Create issues | \`jira_create_issue\` |
+| Update issues | \`jira_update_issue\` |
+| Transition issues | \`jira_transition_issue\` |
+| Add comments | \`jira_add_comment\` |
+| Log work time | \`jira_add_worklog\` |
+| Link issues | \`jira_link_issues\` |
 
 ---
 
@@ -1139,9 +1151,9 @@ function generateAzureDevOpsInstructions(): string {
 
 | Task | ✅ CORRECT | ❌ WRONG |
 |------|-----------|----------|
-| View work item | \`tool_search({query: "azure get work item"})\` then use tool | WebFetch to dev.azure.com URL |
-| Search items | \`tool_search({query: "azure search"})\` then use tool | WebFetch to dev.azure.com/_workitems |
-| Add comment | \`tool_search({query: "azure comment"})\` then use tool | WebFetch to view comments |
+| View work item | \`azdo_get_work_item({id: 123})\` | WebFetch to dev.azure.com URL |
+| Search items | \`azdo_search_work_items({wiql: "..."})\` | WebFetch to dev.azure.com/_workitems |
+| Add comment | \`azdo_add_comment({workItemId: 123, text: "..."})\` | WebFetch to view comments |
 
 **Why Azure DevOps tools are better:**
 - **Authenticated**: Full API access with your credentials
@@ -1149,66 +1161,57 @@ function generateAzureDevOpsInstructions(): string {
 - **Write access**: Can create/update work items
 - **Reliable**: API is stable, web pages change
 
-**ALWAYS start Azure DevOps work with:**
-\`\`\`javascript
-// FIRST: Discover Azure DevOps tools
-await tool_search({ query: "azure devops" });
-
-// THEN: Use the discovered tools for your task
-// NEVER use WebFetch for Azure DevOps URLs!
-\`\`\`
+**Azure DevOps tools are ALWAYS AVAILABLE — call them directly by name. NEVER use WebFetch for Azure DevOps URLs!**
 
 ---
 
 ### FIND & START WORK
 
 \`\`\`javascript
-// First discover the search tool
-await tool_search({ query: "azure search" });
+// Search for work items — call directly
+azdo_search_work_items({
+  wiql: "SELECT * FROM WorkItems WHERE [System.AssignedTo] = @Me AND [System.State] = 'New'"
+});
 
-// Then use the discovered tool to find work with WIQL
-// WIQL: "SELECT * FROM WorkItems WHERE [System.AssignedTo] = @Me AND [System.State] = 'New'"
-
-// Discover update tool and start work
-await tool_search({ query: "azure update" });
-// Set: "System.State": "Active", "System.AssignedTo": "user@company.com"
+// Start work — call directly
+azdo_update_work_item({
+  id: 123,
+  fields: { "System.State": "Active", "System.AssignedTo": "user@company.com" }
+});
 \`\`\`
 
 ### REAL-TIME UPDATES (CRITICAL!)
 
 \`\`\`javascript
-// Discover comment tool
-await tool_search({ query: "azure comment" });
+// After each component, add comment — call directly
+azdo_add_comment({ workItemId: 123, text: "Created Business Rule: [name], sys_id: [id], link: [url]" });
 
-// After each component, add comment + update remaining work
-// Comment: Component name, sys_id, link, next steps
-
-// Use discovered update tool for remaining work
-// "Microsoft.VSTS.Scheduling.RemainingWork": 4  // hours left
+// Update remaining work — call directly
+azdo_update_work_item({ id: 123, fields: { "Microsoft.VSTS.Scheduling.RemainingWork": 4 } });
 \`\`\`
 
 ### COMPLETION
 
 \`\`\`javascript
-// Use discovered comment tool for final comment
-// Comment with: Deliverables list, Update Set link, Testing results
+// Final comment — call directly
+azdo_add_comment({ workItemId: 123, text: "Deliverables: [...], Update Set: [link], Tests: all passed" });
 
-// Use discovered update tool to close
-// "System.State": "Closed", "Microsoft.VSTS.Scheduling.RemainingWork": 0
+// Close work item — call directly
+azdo_update_work_item({ id: 123, fields: { "System.State": "Closed", "Microsoft.VSTS.Scheduling.RemainingWork": 0 } });
 \`\`\`
 
 ### 🎯 AZURE DEVOPS CAPABILITIES
 
-**⚠️ IMPORTANT: Use \`tool_search({ query: "azure devops" })\` to discover available tools first!**
+**Azure DevOps tools are always available — call them directly by name:**
 
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Search work items | Find work items with WIQL queries | \`tool_search({ query: "azure search" })\` |
-| Get work item details | Retrieve full work item info | \`tool_search({ query: "azure get work item" })\` |
-| Create work items | Create new tasks/stories/bugs | \`tool_search({ query: "azure create" })\` |
-| Update work items | Modify fields and state | \`tool_search({ query: "azure update" })\` |
-| Add comments | Document progress | \`tool_search({ query: "azure comment" })\` |
-| Link work items | Create relationships | \`tool_search({ query: "azure link" })\` |
+| Capability | Tool Name |
+|------------|-----------|
+| Search work items | \`azdo_search_work_items\` |
+| Get work item details | \`azdo_get_work_item\` |
+| Create work items | \`azdo_create_work_item\` |
+| Update work items | \`azdo_update_work_item\` |
+| Add comments | \`azdo_add_comment\` |
+| Link work items | \`azdo_link_work_items\` |
 
 `;
 }
@@ -1237,35 +1240,32 @@ Confluence API returns **relative URLs** in \`_links.webui\`. You MUST construct
 
 ### CREATE DOCUMENTATION AFTER DEVELOPMENT
 
-**⚠️ FIRST: Discover Confluence tools with \`tool_search({ query: "confluence" })\`**
-
 \`\`\`javascript
-// First discover the create page tool
-await tool_search({ query: "confluence create" });
-
-// Then use the discovered tool to create documentation
-// spaceKey: "DEV", title: "Feature: [Name]"
-// content: HTML with overview, components table (type, name, sys_id, link)
+// Create documentation — call directly
+confluence_create_page({
+  spaceKey: "DEV",
+  title: "Feature: [Name]",
+  content: "<h2>Overview</h2><p>...</p><table>...</table>"
+});
 
 // Construct full URL for sharing (API returns relative URL!)
 // Full URL: https://your-domain.atlassian.net/wiki + page._links.webui
 
-// Discover Jira comment tool and link back
-await tool_search({ query: "jira comment" });
-// Comment: "📚 Documentation: [full confluence URL]"
+// Link back in Jira — call directly
+jira_add_comment({ issueKey: "PROJ-123", body: "📚 Documentation: [full confluence URL]" });
 \`\`\`
 
 ### 🎯 CONFLUENCE CAPABILITIES
 
-**⚠️ IMPORTANT: Use \`tool_search({ query: "confluence" })\` to discover available tools first!**
+**Confluence tools are always available — call them directly by name:**
 
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Create pages | Create new documentation | \`tool_search({ query: "confluence create" })\` |
-| Update pages | Modify existing pages | \`tool_search({ query: "confluence update" })\` |
-| Get page content | Retrieve page details | \`tool_search({ query: "confluence get page" })\` |
-| Search content | Search across documentation | \`tool_search({ query: "confluence search" })\` |
-| List space pages | Browse pages in a space | \`tool_search({ query: "confluence space" })\` |
+| Capability | Tool Name |
+|------------|-----------|
+| Create pages | \`confluence_create_page\` |
+| Update pages | \`confluence_update_page\` |
+| Get page content | \`confluence_get_page\` |
+| Search content | \`confluence_search_content\` |
+| List space pages | \`confluence_list_pages\` |
 
 `;
 }
@@ -1285,11 +1285,11 @@ You are an **AUTONOMOUS DEVELOPER** with complete control over GitHub workflows.
 
 | Task | ✅ CORRECT | ❌ WRONG |
 |------|-----------|----------|
-| View issue | \`tool_search({query: "github issues"})\` then use tool | WebFetch to github.com URL |
-| Check PR | \`tool_search({query: "github pr"})\` then use tool | WebFetch to github.com/pulls URL |
-| Read file | \`tool_search({query: "github content"})\` then use tool | WebFetch to raw.githubusercontent.com |
-| Search code | \`tool_search({query: "github search"})\` then use tool | WebFetch to github.com/search |
-| View workflow | \`tool_search({query: "github workflow"})\` then use tool | WebFetch to github.com/actions |
+| View issue | \`github_list_issues({owner, repo, state: "open"})\` | WebFetch to github.com URL |
+| Check PR | \`github_list_pull_requests({owner, repo})\` | WebFetch to github.com/pulls URL |
+| Read file | \`github_get_content({owner, repo, path})\` | WebFetch to raw.githubusercontent.com |
+| Search code | \`github_search_code({query: "..."})\` | WebFetch to github.com/search |
+| View workflow | \`github_list_workflow_runs({owner, repo})\` | WebFetch to github.com/actions |
 
 **Why GitHub tools are better:**
 - **Authenticated**: Full API access, no rate limits
@@ -1297,14 +1297,7 @@ You are an **AUTONOMOUS DEVELOPER** with complete control over GitHub workflows.
 - **Write access**: Can create/update/merge, not just read
 - **Reliable**: API is stable, web pages change
 
-**ALWAYS start GitHub work with:**
-\`\`\`javascript
-// FIRST: Discover GitHub tools
-await tool_search({ query: "github" });
-
-// THEN: Use the discovered tools for your task
-// NEVER use WebFetch for GitHub URLs!
-\`\`\`
+**GitHub tools are ALWAYS AVAILABLE — call them directly by name. NEVER use WebFetch for GitHub URLs!**
 
 ---
 
@@ -1330,30 +1323,22 @@ await tool_search({ query: "github" });
 
 ## 🔍 DISCOVERY: FINDING YOUR REPOSITORIES
 
-**⚠️ FIRST: Discover GitHub tools with \`tool_search({ query: "github" })\`**
-
 ### ALWAYS START WITH DISCOVERY
 
 \`\`\`javascript
-// First discover the configuration tool
-await tool_search({ query: "github discover" });
-
-// Then use the discovered tool to get:
-// - Current user info
-// - Accessible repositories
-// - Default organization
-// - Available workflows
+// Get environment info — call directly
+github_discover_configuration();
+// Returns: Current user info, accessible repositories, default organization, available workflows
 \`\`\`
 
 ### Find Issues to Work On
 
 \`\`\`javascript
-// Discover search and issue tools
-await tool_search({ query: "github issues" });
+// List open issues — call directly
+github_list_issues({ owner: "org", repo: "repo", state: "open", labels: "bug" });
 
-// Then use discovered tools to:
-// - Search for open issues: "repo:owner/repo is:open is:issue label:bug -assignee:*"
-// - Get specific issue details by issue number
+// Search across repos
+github_search_code({ query: "repo:owner/repo is:open is:issue label:bug -assignee:*" });
 \`\`\`
 
 ---
@@ -1363,114 +1348,100 @@ await tool_search({ query: "github issues" });
 ### PHASE 1: ISSUE MANAGEMENT
 
 \`\`\`javascript
-// Discover issue creation tools
-await tool_search({ query: "github create issue" });
+// Create issue — call directly
+github_create_issue({ owner: "org", repo: "repo", title: "Feature: ...", body: "## AC\\n- [ ] ...", labels: ["feature"], assignees: ["user"] });
 
-// Create issue with: owner, repo, title, body (with AC), labels, assignees
+// Update labels
+github_update_issue({ owner: "org", repo: "repo", issueNumber: 123, labels: ["in-progress"] });
 
-// Discover update tool
-await tool_search({ query: "github update issue" });
-// Update labels to add "in-progress"
-
-// Discover comment tool
-await tool_search({ query: "github comment" });
-// Add progress comment with development plan
+// Add progress comment
+github_add_comment({ owner: "org", repo: "repo", issueNumber: 123, body: "Development plan: ..." });
 \`\`\`
 
 ### PHASE 2: PULL REQUEST WORKFLOW
 
 \`\`\`javascript
-// Discover PR creation tool
-await tool_search({ query: "github create pr" });
-// Create PR with: owner, repo, title, body (with "Closes #123"), head, base branch
+// Create PR — call directly
+github_create_pr({ owner: "org", repo: "repo", title: "Feature: ...", body: "Closes #123", head: "feature-branch", base: "main" });
 
-// Discover PR files tool
-await tool_search({ query: "github pr files" });
 // List files changed in PR
+github_list_pr_files({ owner: "org", repo: "repo", pullNumber: 456 });
 
-// Discover merge tool
-await tool_search({ query: "github merge" });
-// Merge with: pullNumber, mergeMethod ("squash"), commitTitle
+// Merge PR
+github_merge_pr({ owner: "org", repo: "repo", pullNumber: 456, mergeMethod: "squash", commitTitle: "feat: ..." });
 \`\`\`
 
 ### PHASE 3: WORKFLOW MONITORING
 
 \`\`\`javascript
-// Discover workflow tools
-await tool_search({ query: "github workflow" });
-// List recent workflow runs for branch and status
+// List recent workflow runs — call directly
+github_list_workflow_runs({ owner: "org", repo: "repo", branch: "feature-branch" });
 
-// Get specific workflow run details by runId
-
-// Discover rerun tool
-await tool_search({ query: "github rerun" });
 // If run.conclusion === "failure", rerun the workflow
+github_rerun_workflow({ owner: "org", repo: "repo", runId: 789 });
 \`\`\`
 
 ### PHASE 4: RELEASES
 
 \`\`\`javascript
-// Discover release tools
-await tool_search({ query: "github releases" });
-// Create release with: tagName, name, body (changelog), draft, prerelease
-
-// Get latest release to check current version
+// Create release — call directly
+github_create_release({ owner: "org", repo: "repo", tagName: "v1.0.0", name: "v1.0.0", body: "## Changelog\\n- ...", draft: false, prerelease: false });
 \`\`\`
 
 ---
 
 ## 🎯 GITHUB CAPABILITIES
 
-**⚠️ IMPORTANT: Use \`tool_search({ query: "github" })\` to discover available GitHub tools first!**
+**GitHub tools are always available — call them directly by name:**
 
-### Discovery Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Get current user | Get authenticated user info | \`tool_search({ query: "github user" })\` |
-| List repositories | List accessible repos | \`tool_search({ query: "github repositories" })\` |
-| Discover configuration | Complete environment discovery | \`tool_search({ query: "github discover" })\` |
+### Discovery
+| Capability | Tool Name |
+|------------|-----------|
+| Get current user | \`github_get_current_user\` |
+| List repositories | \`github_list_repositories\` |
+| Discover configuration | \`github_discover_configuration\` |
 
-### Issue Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List/search issues | Find repository issues | \`tool_search({ query: "github issues" })\` |
-| Get issue details | Retrieve issue information | \`tool_search({ query: "github get issue" })\` |
-| Create issues | Create new issues | \`tool_search({ query: "github create issue" })\` |
-| Update issues | Modify issue fields | \`tool_search({ query: "github update issue" })\` |
-| Add comments | Document progress | \`tool_search({ query: "github comment" })\` |
+### Issues
+| Capability | Tool Name |
+|------------|-----------|
+| List/search issues | \`github_list_issues\` |
+| Get issue details | \`github_get_issue\` |
+| Create issues | \`github_create_issue\` |
+| Update issues | \`github_update_issue\` |
+| Add comments | \`github_add_comment\` |
 
-### Pull Request Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List PRs | List pull requests | \`tool_search({ query: "github pull request" })\` |
-| Create PRs | Create new PR | \`tool_search({ query: "github create pr" })\` |
-| Merge PRs | Merge pull requests | \`tool_search({ query: "github merge" })\` |
-| List changed files | See PR changes | \`tool_search({ query: "github pr files" })\` |
+### Pull Requests
+| Capability | Tool Name |
+|------------|-----------|
+| List PRs | \`github_list_pull_requests\` |
+| Create PRs | \`github_create_pr\` |
+| Merge PRs | \`github_merge_pr\` |
+| List changed files | \`github_list_pr_files\` |
 
-### Workflow Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List workflow runs | View CI/CD runs | \`tool_search({ query: "github workflow" })\` |
-| Rerun workflows | Retry failed runs | \`tool_search({ query: "github rerun" })\` |
-| Cancel workflows | Stop running workflows | \`tool_search({ query: "github cancel" })\` |
+### Workflows
+| Capability | Tool Name |
+|------------|-----------|
+| List workflow runs | \`github_list_workflow_runs\` |
+| Rerun workflows | \`github_rerun_workflow\` |
+| Cancel workflows | \`github_cancel_workflow\` |
 
-### Release Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List releases | View releases | \`tool_search({ query: "github releases" })\` |
-| Create releases | Publish new release | \`tool_search({ query: "github create release" })\` |
+### Releases
+| Capability | Tool Name |
+|------------|-----------|
+| List releases | \`github_list_releases\` |
+| Create releases | \`github_create_release\` |
 
-### Search Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Search code | Find code snippets | \`tool_search({ query: "github search code" })\` |
-| Search repos | Find repositories | \`tool_search({ query: "github search repo" })\` |
+### Search
+| Capability | Tool Name |
+|------------|-----------|
+| Search code | \`github_search_code\` |
+| Search repos | \`github_search_repos\` |
 
-### Repository Sync Capabilities (NEW!)
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Download repository | Clone/download repo to local directory | \`tool_search({ query: "github download repository" })\` |
-| Upload files | Push files to GitHub with optional PR | \`tool_search({ query: "github upload files" })\` |
+### Repository Sync
+| Capability | Tool Name |
+|------------|-----------|
+| Download repository | \`github_download_repository\` |
+| Upload files | \`github_upload_files\` |
 
 ---
 
@@ -1483,14 +1454,11 @@ You can sync ServiceNow artifacts (widgets, scripts, etc.) between GitHub reposi
 ### Import Flow: GitHub → Local → ServiceNow
 
 \`\`\`javascript
-// Step 1: Discover download tool
-await tool_search({ query: "github download repository" });
-
-// Step 2: Download repo or specific folder to local directory
-// Parameters: owner, repo, localPath, path (optional subfolder), method ("tarball" or "git")
+// Step 1: Download repo or specific folder — call directly
+github_download_repository({ owner: "org", repo: "repo", localPath: "/tmp/repo", path: "widgets/my-widget", method: "tarball" });
 // Returns: { localPath, files[], ref }
 
-// Step 3: Use snow_artifact_manage with artifact_directory
+// Step 2: Use snow_artifact_manage with artifact_directory (discover via tool_search — ServiceNow tool)
 await tool_search({ query: "snow artifact manage" });
 // Parameters: action: "create", type: "widget", name, artifact_directory: "/tmp/downloaded-widget"
 // Auto-maps: template.html → template, server.js → script, client.js → client_script, etc.
@@ -1499,16 +1467,13 @@ await tool_search({ query: "snow artifact manage" });
 ### Export Flow: ServiceNow → Local → GitHub
 
 \`\`\`javascript
-// Step 1: Export artifact to local files
+// Step 1: Export artifact to local files (discover via tool_search — ServiceNow tool)
 await tool_search({ query: "snow artifact manage" });
 // Parameters: action: "export", type: "widget", identifier, export_path, format: "files"
 // Creates: template.html, server.js, client.js, style.css, metadata.json
 
-// Step 2: Discover upload tool
-await tool_search({ query: "github upload files" });
-
-// Step 3: Upload to GitHub with optional PR
-// Parameters: owner, repo, localPath, remotePath, commitMessage, createBranch, createPR, prTitle
+// Step 2: Upload to GitHub with optional PR — call directly
+github_upload_files({ owner: "org", repo: "repo", localPath: "/tmp/export", remotePath: "widgets/my-widget", commitMessage: "Export widget", createPR: true, prTitle: "Add widget export" });
 // Returns: { commitSha, filesUploaded[], branch, prUrl }
 \`\`\`
 
@@ -1531,7 +1496,7 @@ When using \`artifact_directory\`, files are auto-mapped:
 For non-standard file names, use explicit \`_file\` parameters:
 
 \`\`\`javascript
-// Discover artifact manage tool
+// Discover ServiceNow artifact manage tool (lazy-loaded)
 await tool_search({ query: "snow artifact manage" });
 
 // Create with explicit file paths:
@@ -1580,10 +1545,10 @@ You are an **AUTONOMOUS DEVELOPER** with complete control over GitLab workflows.
 
 | Task | ✅ CORRECT | ❌ WRONG |
 |------|-----------|----------|
-| View issue | \`tool_search({query: "gitlab issues"})\` then use tool | WebFetch to gitlab.com URL |
-| Check MR | \`tool_search({query: "gitlab mr"})\` then use tool | WebFetch to gitlab.com/-/merge_requests |
-| Read file | \`tool_search({query: "gitlab content"})\` then use tool | WebFetch to gitlab.com/-/raw |
-| View pipeline | \`tool_search({query: "gitlab pipeline"})\` then use tool | WebFetch to gitlab.com/-/pipelines |
+| View issue | \`gitlab_list_issues({projectId, state: "opened"})\` | WebFetch to gitlab.com URL |
+| Check MR | \`gitlab_list_merge_requests({projectId})\` | WebFetch to gitlab.com/-/merge_requests |
+| Read file | \`gitlab_get_content({projectId, path})\` | WebFetch to gitlab.com/-/raw |
+| View pipeline | \`gitlab_list_pipelines({projectId})\` | WebFetch to gitlab.com/-/pipelines |
 
 **Why GitLab tools are better:**
 - **Authenticated**: Full API access, no rate limits
@@ -1591,14 +1556,7 @@ You are an **AUTONOMOUS DEVELOPER** with complete control over GitLab workflows.
 - **Write access**: Can create/update/merge, not just read
 - **Reliable**: API is stable, web pages change
 
-**ALWAYS start GitLab work with:**
-\`\`\`javascript
-// FIRST: Discover GitLab tools
-await tool_search({ query: "gitlab" });
-
-// THEN: Use the discovered tools for your task
-// NEVER use WebFetch for GitLab URLs!
-\`\`\`
+**GitLab tools are ALWAYS AVAILABLE — call them directly by name. NEVER use WebFetch for GitLab URLs!**
 
 ---
 
@@ -1624,30 +1582,22 @@ await tool_search({ query: "gitlab" });
 
 ## 🔍 DISCOVERY: FINDING YOUR PROJECTS
 
-**⚠️ FIRST: Discover GitLab tools with \`tool_search({ query: "gitlab" })\`**
-
 ### ALWAYS START WITH DISCOVERY
 
 \`\`\`javascript
-// First discover the configuration tool
-await tool_search({ query: "gitlab discover" });
-
-// Then use the discovered tool to get:
-// - Current user info
-// - Accessible projects
-// - Default groups
-// - Recent activity
+// Get environment info — call directly
+gitlab_discover_configuration();
+// Returns: Current user info, accessible projects, default groups, recent activity
 \`\`\`
 
 ### Find Issues to Work On
 
 \`\`\`javascript
-// Discover issue tools
-await tool_search({ query: "gitlab issues" });
+// List open issues — call directly
+gitlab_list_issues({ projectId: "123", state: "opened", labels: "bug", orderBy: "priority" });
 
-// Then use discovered tools to:
-// - List open issues: projectId, state: "opened", labels, orderBy
-// - Get specific issue details by issueIid
+// Get specific issue details
+gitlab_get_issue({ projectId: "123", issueIid: 42 });
 \`\`\`
 
 ---
@@ -1657,118 +1607,108 @@ await tool_search({ query: "gitlab issues" });
 ### PHASE 1: ISSUE MANAGEMENT
 
 \`\`\`javascript
-// Discover issue creation tools
-await tool_search({ query: "gitlab create issue" });
-// Create issue with: projectId, title, description (with AC), labels, weight
+// Create issue — call directly
+gitlab_create_issue({ projectId: "123", title: "Feature: ...", description: "## AC\\n- [ ] ...", labels: "feature" });
 
-// Discover update tool
-await tool_search({ query: "gitlab update issue" });
-// Update labels to add "in-progress"
+// Update labels
+gitlab_update_issue({ projectId: "123", issueIid: 42, labels: "in-progress" });
 
-// Discover note tool
-await tool_search({ query: "gitlab note" });
-// Add progress note with development plan
+// Add progress note
+gitlab_add_note({ projectId: "123", issueIid: 42, body: "Development plan: ..." });
 \`\`\`
 
 ### PHASE 2: MERGE REQUEST WORKFLOW
 
 \`\`\`javascript
-// Discover MR creation tool
-await tool_search({ query: "gitlab create mr" });
-// Create MR with: projectId, title, description (with "Closes #123"), sourceBranch, targetBranch
+// Create MR — call directly
+gitlab_create_mr({ projectId: "123", title: "Feature: ...", description: "Closes #42", sourceBranch: "feature-branch", targetBranch: "main" });
 
-// Discover MR changes tool
-await tool_search({ query: "gitlab mr changes" });
 // List files changed in MR
+gitlab_list_mr_changes({ projectId: "123", mrIid: 10 });
 
-// Add review note using discovered note tool
-// body: "Ready for review. All tests passing."
+// Add review note
+gitlab_add_note({ projectId: "123", mrIid: 10, body: "Ready for review. All tests passing.", noteableType: "merge_request" });
 
-// Discover accept tool
-await tool_search({ query: "gitlab accept" });
-// Accept/merge with: mrIid, squash, shouldRemoveSourceBranch
+// Accept/merge MR
+gitlab_accept_mr({ projectId: "123", mrIid: 10, squash: true, shouldRemoveSourceBranch: true });
 \`\`\`
 
 ### PHASE 3: PIPELINE MANAGEMENT
 
 \`\`\`javascript
-// Discover pipeline tools
-await tool_search({ query: "gitlab pipeline" });
-// List recent pipelines for ref and status
-// Get specific pipeline details by pipelineId
+// List recent pipelines — call directly
+gitlab_list_pipelines({ projectId: "123", ref: "feature-branch" });
 
-// Discover jobs tool
-await tool_search({ query: "gitlab jobs" });
 // List jobs in pipeline
+gitlab_list_jobs({ projectId: "123", pipelineId: 456 });
 
-// Discover retry tool
-await tool_search({ query: "gitlab retry" });
-// If pipeline.status === "failed", retry the pipeline
+// If pipeline.status === "failed", retry
+gitlab_retry_pipeline({ projectId: "123", pipelineId: 456 });
 
-// Discover cancel tool
-await tool_search({ query: "gitlab cancel" });
 // Cancel running pipeline if needed
+gitlab_cancel_pipeline({ projectId: "123", pipelineId: 456 });
 \`\`\`
 
 ### PHASE 4: RELEASES
 
 \`\`\`javascript
-// Discover release tools
-await tool_search({ query: "gitlab releases" });
-// Create release with: tagName, name, description (changelog), ref
+// Create release — call directly
+gitlab_create_release({ projectId: "123", tagName: "v1.0.0", name: "v1.0.0", description: "## Changelog\\n- ...", ref: "main" });
+
 // List releases to check current versions
+gitlab_list_releases({ projectId: "123" });
 \`\`\`
 
 ---
 
 ## 🎯 GITLAB CAPABILITIES
 
-**⚠️ IMPORTANT: Use \`tool_search({ query: "gitlab" })\` to discover available GitLab tools first!**
+**GitLab tools are always available — call them directly by name:**
 
-### Discovery Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Get current user | Get authenticated user info | \`tool_search({ query: "gitlab user" })\` |
-| List projects | List accessible projects | \`tool_search({ query: "gitlab projects" })\` |
-| Discover configuration | Complete environment discovery | \`tool_search({ query: "gitlab discover" })\` |
+### Discovery
+| Capability | Tool Name |
+|------------|-----------|
+| Get current user | \`gitlab_get_current_user\` |
+| List projects | \`gitlab_list_projects\` |
+| Discover configuration | \`gitlab_discover_configuration\` |
 
-### Issue Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List issues | List project issues | \`tool_search({ query: "gitlab issues" })\` |
-| Get issue details | Retrieve issue information | \`tool_search({ query: "gitlab get issue" })\` |
-| Create issues | Create new issues | \`tool_search({ query: "gitlab create issue" })\` |
-| Update issues | Modify issue fields | \`tool_search({ query: "gitlab update issue" })\` |
-| Add notes | Document progress | \`tool_search({ query: "gitlab note" })\` |
+### Issues
+| Capability | Tool Name |
+|------------|-----------|
+| List issues | \`gitlab_list_issues\` |
+| Get issue details | \`gitlab_get_issue\` |
+| Create issues | \`gitlab_create_issue\` |
+| Update issues | \`gitlab_update_issue\` |
+| Add notes | \`gitlab_add_note\` |
 
-### Merge Request Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List MRs | List merge requests | \`tool_search({ query: "gitlab merge request" })\` |
-| Create MRs | Create new MR | \`tool_search({ query: "gitlab create mr" })\` |
-| Accept MRs | Merge requests | \`tool_search({ query: "gitlab accept" })\` |
-| List changes | See MR changes | \`tool_search({ query: "gitlab mr changes" })\` |
+### Merge Requests
+| Capability | Tool Name |
+|------------|-----------|
+| List MRs | \`gitlab_list_merge_requests\` |
+| Create MRs | \`gitlab_create_mr\` |
+| Accept MRs | \`gitlab_accept_mr\` |
+| List changes | \`gitlab_list_mr_changes\` |
 
-### Pipeline Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List pipelines | View CI/CD pipelines | \`tool_search({ query: "gitlab pipeline" })\` |
-| Retry pipelines | Retry failed runs | \`tool_search({ query: "gitlab retry" })\` |
-| Cancel pipelines | Stop running pipelines | \`tool_search({ query: "gitlab cancel" })\` |
-| List jobs | View pipeline jobs | \`tool_search({ query: "gitlab jobs" })\` |
+### Pipelines
+| Capability | Tool Name |
+|------------|-----------|
+| List pipelines | \`gitlab_list_pipelines\` |
+| Retry pipelines | \`gitlab_retry_pipeline\` |
+| Cancel pipelines | \`gitlab_cancel_pipeline\` |
+| List jobs | \`gitlab_list_jobs\` |
 
-### Release Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| List releases | View releases | \`tool_search({ query: "gitlab releases" })\` |
-| Create releases | Publish new release | \`tool_search({ query: "gitlab create release" })\` |
+### Releases
+| Capability | Tool Name |
+|------------|-----------|
+| List releases | \`gitlab_list_releases\` |
+| Create releases | \`gitlab_create_release\` |
 
-### Other Capabilities
-| Capability | Description | How to Find |
-|------------|-------------|-------------|
-| Labels | Project labels | \`tool_search({ query: "gitlab labels" })\` |
-| Milestones | Project milestones | \`tool_search({ query: "gitlab milestones" })\` |
-| Search | Search projects | \`tool_search({ query: "gitlab search" })\` |
+### Other
+| Capability | Tool Name |
+|------------|-----------|
+| Labels | \`gitlab_list_labels\` |
+| Milestones | \`gitlab_list_milestones\` |
+| Search | \`gitlab_search\` |
 
 ---
 
@@ -1798,17 +1738,18 @@ function generateCrossPlatformWorkflow(hasJira: boolean, hasAzdo: boolean, hasCo
   if (hasJira && hasConfluence) {
     workflow += `### JIRA + SERVICENOW + CONFLUENCE
 
-**First discover tools:** \`tool_search({ query: "jira" })\`, \`tool_search({ query: "confluence" })\`, \`tool_search({ query: "snow update set" })\`
+**Enterprise tools** (call directly): \`jira_search_issues\`, \`jira_transition_issue\`, \`jira_add_comment\`, \`confluence_create_page\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
 **Complete Flow:**
-1. Get story from Jira → Use discovered Jira search tool
-2. Transition to "In Progress" → Use discovered Jira transition tool
-3. Create Update Set in ServiceNow → Use discovered update set tool
-4. Develop + add Jira comments after EACH component
-5. Test + document results in Jira
-6. Create Confluence docs → Use discovered Confluence create tool
-7. Final Jira comment with Update Set + Confluence links
-8. Transition to "Done" → Use discovered Jira transition tool
+1. Get story from Jira → \`jira_search_issues\`
+2. Transition to "In Progress" → \`jira_transition_issue\`
+3. Create Update Set in ServiceNow → discovered snow_* update set tool
+4. Develop + add Jira comments after EACH component → \`jira_add_comment\`
+5. Test + document results in Jira → \`jira_add_comment\`
+6. Create Confluence docs → \`confluence_create_page\`
+7. Final Jira comment with Update Set + Confluence links → \`jira_add_comment\`
+8. Transition to "Done" → \`jira_transition_issue\`
 
 `;
   }
@@ -1816,12 +1757,13 @@ function generateCrossPlatformWorkflow(hasJira: boolean, hasAzdo: boolean, hasCo
   if (hasAzdo && hasConfluence) {
     workflow += `### AZURE DEVOPS + SERVICENOW + CONFLUENCE
 
-**First discover tools:** \`tool_search({ query: "azure devops" })\`, \`tool_search({ query: "confluence" })\`
+**Enterprise tools** (call directly): \`azdo_search_work_items\`, \`azdo_update_work_item\`, \`azdo_add_comment\`, \`confluence_create_page\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
-Same flow as Jira, use discovered Azure DevOps tools:
-- Search tool for finding work items
-- Update tool for state changes
-- Comment tool for updates
+Same flow as Jira, use Azure DevOps tools directly:
+- \`azdo_search_work_items\` for finding work items
+- \`azdo_update_work_item\` for state changes
+- \`azdo_add_comment\` for updates
 
 `;
   }
@@ -1830,18 +1772,19 @@ Same flow as Jira, use discovered Azure DevOps tools:
   if (hasGitHub) {
     workflow += `### GITHUB + SERVICENOW
 
-**First discover tools:** \`tool_search({ query: "github" })\`, \`tool_search({ query: "snow update set" })\`
+**Enterprise tools** (call directly): \`github_list_issues\`, \`github_update_issue\`, \`github_add_comment\`, \`github_create_pr\`, \`github_merge_pr\`, \`github_list_workflow_runs\`, \`github_create_release\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
 **Complete Flow:**
-1. Get issue from GitHub → Use discovered GitHub issues tool
-2. Assign to yourself and add "in-progress" label → Use discovered GitHub update tool
-3. Create Update Set in ServiceNow → Use discovered update set tool
-4. Develop + add GitHub comments after EACH component → Use discovered GitHub comment tool
-5. Create PR when ready → Use discovered GitHub PR tool
-6. Monitor workflow runs → Use discovered GitHub workflow tool
-7. Merge PR → Use discovered GitHub merge tool
-8. Create release if needed → Use discovered GitHub release tool
-9. Close issue → Use discovered GitHub update tool with state: "closed"
+1. Get issue from GitHub → \`github_list_issues\`
+2. Assign to yourself and add "in-progress" label → \`github_update_issue\`
+3. Create Update Set in ServiceNow → discovered snow_* update set tool
+4. Develop + add GitHub comments after EACH component → \`github_add_comment\`
+5. Create PR when ready → \`github_create_pr\`
+6. Monitor workflow runs → \`github_list_workflow_runs\`
+7. Merge PR → \`github_merge_pr\`
+8. Create release if needed → \`github_create_release\`
+9. Close issue → \`github_update_issue\` with state: "closed"
 
 `;
   }
@@ -1850,18 +1793,19 @@ Same flow as Jira, use discovered Azure DevOps tools:
   if (hasGitLab) {
     workflow += `### GITLAB + SERVICENOW
 
-**First discover tools:** \`tool_search({ query: "gitlab" })\`, \`tool_search({ query: "snow update set" })\`
+**Enterprise tools** (call directly): \`gitlab_list_issues\`, \`gitlab_update_issue\`, \`gitlab_add_note\`, \`gitlab_create_mr\`, \`gitlab_accept_mr\`, \`gitlab_list_pipelines\`, \`gitlab_create_release\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
 **Complete Flow:**
-1. Get issue from GitLab → Use discovered GitLab issues tool
-2. Assign to yourself and add labels → Use discovered GitLab update tool
-3. Create Update Set in ServiceNow → Use discovered update set tool
-4. Develop + add GitLab notes after EACH component → Use discovered GitLab note tool
-5. Create MR when ready → Use discovered GitLab MR tool
-6. Monitor pipelines → Use discovered GitLab pipeline tool
-7. Accept MR → Use discovered GitLab accept tool
-8. Create release if needed → Use discovered GitLab release tool
-9. Close issue → Use discovered GitLab update tool with stateEvent: "close"
+1. Get issue from GitLab → \`gitlab_list_issues\`
+2. Assign to yourself and add labels → \`gitlab_update_issue\`
+3. Create Update Set in ServiceNow → discovered snow_* update set tool
+4. Develop + add GitLab notes after EACH component → \`gitlab_add_note\`
+5. Create MR when ready → \`gitlab_create_mr\`
+6. Monitor pipelines → \`gitlab_list_pipelines\`
+7. Accept MR → \`gitlab_accept_mr\`
+8. Create release if needed → \`gitlab_create_release\`
+9. Close issue → \`gitlab_update_issue\` with stateEvent: "close"
 
 `;
   }
@@ -1870,18 +1814,19 @@ Same flow as Jira, use discovered Azure DevOps tools:
   if (hasGitHub && hasJira) {
     workflow += `### GITHUB + JIRA + SERVICENOW
 
-**First discover tools:** \`tool_search({ query: "github" })\`, \`tool_search({ query: "jira" })\`, \`tool_search({ query: "snow update set" })\`
+**Enterprise tools** (call directly): \`github_create_pr\`, \`github_merge_pr\`, \`github_list_workflow_runs\`, \`jira_search_issues\`, \`jira_transition_issue\`, \`jira_add_comment\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
 **Complete Flow (Code in GitHub, Stories in Jira):**
-1. Get story from Jira → Use discovered Jira search tool
-2. Transition to "In Progress" → Use discovered Jira transition tool
-3. Create Update Set in ServiceNow → Use discovered update set tool
-4. Develop in ServiceNow + update Jira → Use discovered Jira comment tool
-5. Create GitHub PR for code changes → Use discovered GitHub PR tool
-6. Link PR in Jira comment
-7. Monitor GitHub Actions → Use discovered GitHub workflow tool
-8. Merge PR → Use discovered GitHub merge tool
-9. Complete Jira story → Use discovered Jira transition tool
+1. Get story from Jira → \`jira_search_issues\`
+2. Transition to "In Progress" → \`jira_transition_issue\`
+3. Create Update Set in ServiceNow → discovered snow_* update set tool
+4. Develop in ServiceNow + update Jira → \`jira_add_comment\`
+5. Create GitHub PR for code changes → \`github_create_pr\`
+6. Link PR in Jira comment → \`jira_add_comment\`
+7. Monitor GitHub Actions → \`github_list_workflow_runs\`
+8. Merge PR → \`github_merge_pr\`
+9. Complete Jira story → \`jira_transition_issue\`
 
 `;
   }
@@ -1890,18 +1835,19 @@ Same flow as Jira, use discovered Azure DevOps tools:
   if (hasGitLab && hasJira) {
     workflow += `### GITLAB + JIRA + SERVICENOW
 
-**First discover tools:** \`tool_search({ query: "gitlab" })\`, \`tool_search({ query: "jira" })\`, \`tool_search({ query: "snow update set" })\`
+**Enterprise tools** (call directly): \`gitlab_create_mr\`, \`gitlab_accept_mr\`, \`gitlab_list_pipelines\`, \`jira_search_issues\`, \`jira_transition_issue\`, \`jira_add_comment\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
 **Complete Flow (Code in GitLab, Stories in Jira):**
-1. Get story from Jira → Use discovered Jira search tool
-2. Transition to "In Progress" → Use discovered Jira transition tool
-3. Create Update Set in ServiceNow → Use discovered update set tool
-4. Develop in ServiceNow + update Jira → Use discovered Jira comment tool
-5. Create GitLab MR for code changes → Use discovered GitLab MR tool
-6. Link MR in Jira comment
-7. Monitor GitLab Pipelines → Use discovered GitLab pipeline tool
-8. Accept MR → Use discovered GitLab accept tool
-9. Complete Jira story → Use discovered Jira transition tool
+1. Get story from Jira → \`jira_search_issues\`
+2. Transition to "In Progress" → \`jira_transition_issue\`
+3. Create Update Set in ServiceNow → discovered snow_* update set tool
+4. Develop in ServiceNow + update Jira → \`jira_add_comment\`
+5. Create GitLab MR for code changes → \`gitlab_create_mr\`
+6. Link MR in Jira comment → \`jira_add_comment\`
+7. Monitor GitLab Pipelines → \`gitlab_list_pipelines\`
+8. Accept MR → \`gitlab_accept_mr\`
+9. Complete Jira story → \`jira_transition_issue\`
 
 `;
   }
@@ -1909,19 +1855,22 @@ Same flow as Jira, use discovered Azure DevOps tools:
   // GitHub/GitLab + Confluence workflow
   if ((hasGitHub || hasGitLab) && hasConfluence) {
     const vcs = hasGitHub ? 'GitHub' : 'GitLab';
-    const vcsLower = hasGitHub ? 'github' : 'gitlab';
+    const vcsIssues = hasGitHub ? 'github_list_issues' : 'gitlab_list_issues';
+    const vcsPR = hasGitHub ? 'github_create_pr' : 'gitlab_create_mr';
+    const vcsComment = hasGitHub ? 'github_add_comment' : 'gitlab_add_note';
 
     workflow += `### ${vcs.toUpperCase()} + CONFLUENCE + SERVICENOW
 
-**First discover tools:** \`tool_search({ query: "${vcsLower}" })\`, \`tool_search({ query: "confluence" })\`, \`tool_search({ query: "snow update set" })\`
+**Enterprise tools** (call directly): \`${vcsIssues}\`, \`${vcsPR}\`, \`${vcsComment}\`, \`confluence_create_page\`
+**ServiceNow tools** (discover first): \`tool_search({ query: "snow update set" })\`
 
 **Complete Flow:**
-1. Get issue from ${vcs} → Use discovered ${vcs} issues tool
-2. Create Update Set in ServiceNow → Use discovered update set tool
-3. Develop + update ${vcs} issues → Use discovered ${vcs} tools
-4. Create ${hasGitHub ? 'PR' : 'MR'} when ready → Use discovered ${vcs} ${hasGitHub ? 'PR' : 'MR'} tool
-5. Create Confluence documentation → Use discovered Confluence create tool
-6. Link documentation to ${vcs} issue
+1. Get issue from ${vcs} → \`${vcsIssues}\`
+2. Create Update Set in ServiceNow → discovered snow_* update set tool
+3. Develop + update ${vcs} issues → \`${vcsComment}\`
+4. Create ${hasGitHub ? 'PR' : 'MR'} when ready → \`${vcsPR}\`
+5. Create Confluence documentation → \`confluence_create_page\`
+6. Link documentation to ${vcs} issue → \`${vcsComment}\`
 7. Complete and close
 
 `;

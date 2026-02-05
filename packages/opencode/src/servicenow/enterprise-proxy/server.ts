@@ -271,17 +271,34 @@ Instead, use: \`github_get_content({owner: "...", repo: "...", path: "..."})\`
 - Fetching public web content not covered by MCP tools
 - User explicitly provides a URL to fetch
 
-## Tool Discovery Pattern
+## Enterprise Tools Are Always Available
+
+Enterprise tools (GitHub, Jira, Azure DevOps, Confluence, GitLab) are **always directly available** — no discovery needed. Call them by name:
 
 \`\`\`
-1. tool_search({query: "github issues"})
-   → Returns: github_create_issue, github_list_issues, github_update_issue...
+// GitHub — call directly:
+github_list_issues({owner: "org", repo: "repo", state: "open"})
+github_create_issue({owner: "org", repo: "repo", title: "Bug fix", body: "..."})
 
-2. Use the found tool directly:
-   github_create_issue({repo: "owner/repo", title: "Bug fix", body: "..."})
+// Jira — call directly:
+jira_search_issues({jql: "project = PROJ AND status = Open"})
+
+// Azure DevOps — call directly:
+azdo_search_work_items({wiql: "SELECT * FROM WorkItems WHERE ..."})
+
+// Confluence — call directly:
+confluence_search_content({query: "release notes"})
+
+// GitLab — call directly:
+gitlab_list_issues({projectId: "123", state: "opened"})
 \`\`\`
 
-**Remember: If MCP tools exist for a service, ALWAYS use them!**`,
+For **ServiceNow** tools, use \`tool_search\` to discover them (they are lazy-loaded):
+\`\`\`
+tool_search({query: "incident"}) → then use the discovered snow_* tool
+\`\`\`
+
+**Remember: If MCP tools exist for a service, ALWAYS use them instead of WebFetch!**`,
 
       'github-workflow': `# GitHub Workflow with MCP Tools
 

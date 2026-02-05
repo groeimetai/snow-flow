@@ -23,10 +23,12 @@ export interface EnterpriseMcpConfigWithToken {
 }
 
 interface McpServerConfig {
-  command?: string;
+  type?: string;
+  command?: string | string[];
   args?: string[];
   env?: Record<string, string>;
   environment?: Record<string, string>;
+  enabled?: boolean;
 }
 
 interface McpConfig {
@@ -104,12 +106,13 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
 
   // Add enterprise MCP server
   mcpConfig[serversKey]!['snow-flow-enterprise'] = {
-    command: 'bun',
-    args: ['run', proxyServerPath],
-    env: {
+    type: 'local',
+    command: ['bun', 'run', proxyServerPath],
+    environment: {
       SNOW_PORTAL_URL: config.serverUrl || 'https://portal.snow-flow.dev',
       SNOW_LICENSE_KEY: config.licenseKey,
     },
+    enabled: true,
   };
 
   await writeMcpConfig(projectMcpPath, mcpConfig);
@@ -138,12 +141,13 @@ export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfi
 
   // Add enterprise MCP server with JWT token
   mcpConfig[serversKey]!['snow-flow-enterprise'] = {
-    command: 'bun',
-    args: ['run', proxyServerPath],
-    env: {
+    type: 'local',
+    command: ['bun', 'run', proxyServerPath],
+    environment: {
       SNOW_PORTAL_URL: config.serverUrl,
       SNOW_LICENSE_KEY: config.token, // JWT token stored as license key
     },
+    enabled: true,
   };
 
   await writeMcpConfig(projectMcpPath, mcpConfig);

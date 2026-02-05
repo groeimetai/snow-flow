@@ -12,10 +12,12 @@ import path from 'path';
 import os from 'os';
 
 interface McpServerConfig {
-  command?: string;
+  type?: string;
+  command?: string | string[];
   args?: string[];
   env?: Record<string, string>;
   environment?: Record<string, string>;
+  enabled?: boolean;
 }
 
 interface McpConfig {

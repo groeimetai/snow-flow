@@ -11,7 +11,7 @@ export default defineConfig({
       cloudflare: {
         nodeCompat: true,
       },
-    }),
+    }) as any,
   ],
   server: {
     allowedHosts: true,
