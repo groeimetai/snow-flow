@@ -252,11 +252,22 @@ export namespace Config {
 
       // 4. In cwd/node_modules (for when running from another package)
       path.join(process.cwd(), "node_modules", "snow-flow-test", "mcp", `${serverName}.js`),
+      path.join(process.cwd(), "node_modules", "snow-flow", "mcp", `${serverName}.js`),
       path.join(process.cwd(), "node_modules", "snow-code", "mcp", `${serverName}.js`),
     ].filter(Boolean) as string[]
 
+    log.info("getMcpServerCommand searching for bundled MCP", {
+      serverName,
+      __dirname,
+      execPath: process.execPath,
+      packageRoot: packageRoot || "not found",
+      candidates: bundledCandidates,
+    })
+
     for (const bundledPath of bundledCandidates) {
-      if (existsSync(bundledPath)) {
+      const exists = existsSync(bundledPath)
+      log.info("checking bundled path", { bundledPath, exists })
+      if (exists) {
         log.info("found bundled MCP server", { serverName, path: bundledPath })
         // Use bun for bundled JS - it works with both bun-targeted and node-targeted builds
         // Node.js doesn't support import.meta.require used in bun-targeted builds
@@ -344,7 +355,7 @@ export namespace Config {
       }
     }
 
-    // Check for Enterprise credentials
+    // Check for Enterprise credentials (from auth store)
     const entAuth = auth["enterprise"]
     if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token) && entAuth.enterpriseUrl) {
       if (!result["snow-flow-enterprise"]) {
@@ -363,6 +374,35 @@ export namespace Config {
           },
           enabled: true,
         }
+      }
+    }
+
+    // Fallback: Check for Enterprise credentials from ~/.snow-code/enterprise.json
+    // This file is created by device auth flow and should be the primary token source
+    if (!result["snow-flow-enterprise"]) {
+      try {
+        const enterpriseJsonPath = path.join(os.homedir(), ".snow-code", "enterprise.json")
+        if (existsSync(enterpriseJsonPath)) {
+          const content = readFileSync(enterpriseJsonPath, "utf-8")
+          const enterpriseData = JSON.parse(content)
+          if (enterpriseData.token && enterpriseData.subdomain) {
+            log.info("auto-configuring snow-flow-enterprise MCP server from enterprise.json", {
+              subdomain: enterpriseData.subdomain,
+            })
+            const enterpriseUrl = `https://${enterpriseData.subdomain}.snow-flow.dev`
+            result["snow-flow-enterprise"] = {
+              type: "local",
+              command: getMcpServerCommand("enterprise-proxy"),
+              environment: {
+                SNOW_ENTERPRISE_URL: enterpriseUrl,
+                SNOW_LICENSE_KEY: enterpriseData.token,
+              },
+              enabled: true,
+            }
+          }
+        }
+      } catch (err) {
+        log.debug("failed to read enterprise.json fallback", { error: err })
       }
     }
 
