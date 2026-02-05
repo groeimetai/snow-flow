@@ -107,7 +107,7 @@ export async function addEnterpriseMcpServer(config: EnterpriseMcpConfig): Promi
     command: 'bun',
     args: ['run', proxyServerPath],
     env: {
-      SNOW_ENTERPRISE_URL: config.serverUrl || 'https://portal.snow-flow.dev',
+      SNOW_PORTAL_URL: config.serverUrl || 'https://portal.snow-flow.dev',
       SNOW_LICENSE_KEY: config.licenseKey,
     },
   };
@@ -141,7 +141,7 @@ export async function addEnterpriseMcpServerWithToken(config: EnterpriseMcpConfi
     command: 'bun',
     args: ['run', proxyServerPath],
     env: {
-      SNOW_ENTERPRISE_URL: config.serverUrl,
+      SNOW_PORTAL_URL: config.serverUrl,
       SNOW_LICENSE_KEY: config.token, // JWT token stored as license key
     },
   };

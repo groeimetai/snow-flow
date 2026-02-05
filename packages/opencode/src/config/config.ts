@@ -361,15 +361,16 @@ export namespace Config {
       if (!result["snow-flow-enterprise"]) {
         log.info("auto-configuring snow-flow-enterprise MCP server from auth store")
         // The enterprise proxy server expects:
-        // - SNOW_ENTERPRISE_URL: The portal URL (e.g., https://acme.snow-flow.dev)
+        // - SNOW_PORTAL_URL: The portal URL (e.g., https://acme.snow-flow.dev) for JWT token exchange
         // - SNOW_LICENSE_KEY: The JWT token (confusing name, but it's the auth token)
+        // Note: SNOW_ENTERPRISE_URL is NOT passed here so the proxy uses its correct default (https://enterprise.snow-flow.dev)
         const jwtToken = entAuth.token || entAuth.licenseKey
         result["snow-flow-enterprise"] = {
           type: "local",
           command: getMcpServerCommand("enterprise-proxy"),
           environment: {
-            SNOW_ENTERPRISE_URL: entAuth.enterpriseUrl,
             SNOW_LICENSE_KEY: jwtToken || "",
+            SNOW_PORTAL_URL: entAuth.enterpriseUrl || "",
             ...(entAuth.sessionToken && { SNOW_SESSION_TOKEN: entAuth.sessionToken }),
           },
           enabled: true,
@@ -389,13 +390,13 @@ export namespace Config {
             log.info("auto-configuring snow-flow-enterprise MCP server from enterprise.json", {
               subdomain: enterpriseData.subdomain,
             })
-            const enterpriseUrl = `https://${enterpriseData.subdomain}.snow-flow.dev`
+            const portalUrl = `https://${enterpriseData.subdomain}.snow-flow.dev`
             result["snow-flow-enterprise"] = {
               type: "local",
               command: getMcpServerCommand("enterprise-proxy"),
               environment: {
-                SNOW_ENTERPRISE_URL: enterpriseUrl,
                 SNOW_LICENSE_KEY: enterpriseData.token,
+                SNOW_PORTAL_URL: portalUrl,
               },
               enabled: true,
             }

@@ -848,7 +848,7 @@ function DialogAuthEnterprise() {
           type: "local",
           command: getMcpServerCommand("enterprise-proxy"),
           environment: {
-            SNOW_ENTERPRISE_URL: portalUrl,
+            SNOW_PORTAL_URL: portalUrl,
             SNOW_LICENSE_KEY: data.token,
           },
           enabled: true,
@@ -1390,7 +1390,7 @@ function DialogAuthEnterpriseCombined() {
         type: "local",
         command: getMcpServerCommand("enterprise-proxy"),
         environment: {
-          SNOW_ENTERPRISE_URL: portalUrl,
+          SNOW_PORTAL_URL: portalUrl,
           SNOW_LICENSE_KEY: token,
         },
         enabled: true,
@@ -1550,7 +1550,7 @@ function DialogAuthEnterpriseCombined() {
         type: "local",
         command: getMcpServerCommand("enterprise-proxy"),
         environment: {
-          SNOW_ENTERPRISE_URL: portalUrl,
+          SNOW_PORTAL_URL: portalUrl,
           SNOW_LICENSE_KEY: entData.token ?? "",
         },
         enabled: true,
