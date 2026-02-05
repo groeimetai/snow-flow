@@ -824,6 +824,22 @@ function DialogAuthEnterprise() {
         role: data.user?.role,
       })
 
+      // Also save to ~/.snow-code/enterprise.json for the enterprise proxy
+      // This is the primary token source used by the MCP server
+      try {
+        const os = await import("os")
+        const enterpriseJsonDir = path.join(os.homedir(), '.snow-code')
+        const enterpriseJsonPath = path.join(enterpriseJsonDir, 'enterprise.json')
+        await fs.mkdir(enterpriseJsonDir, { recursive: true })
+        await fs.writeFile(enterpriseJsonPath, JSON.stringify({
+          subdomain: sub,
+          token: data.token,
+        }, null, 2), 'utf-8')
+        console.error('[Enterprise] Saved JWT token to ~/.snow-code/enterprise.json')
+      } catch (saveErr) {
+        console.error('[Enterprise] Could not save enterprise.json:', saveErr)
+      }
+
       // Add enterprise MCP server directly (no restart needed)
       try {
         const { MCP } = await import("@/mcp")
@@ -1260,6 +1276,22 @@ function DialogAuthEnterpriseCombined() {
         email: data.user?.email,
         role: data.user?.role,
       })
+
+      // Also save to ~/.snow-code/enterprise.json for the enterprise proxy
+      // This is the primary token source used by the MCP server
+      try {
+        const os = await import("os")
+        const enterpriseJsonDir = path.join(os.homedir(), '.snow-code')
+        const enterpriseJsonPath = path.join(enterpriseJsonDir, 'enterprise.json')
+        await fs.mkdir(enterpriseJsonDir, { recursive: true })
+        await fs.writeFile(enterpriseJsonPath, JSON.stringify({
+          subdomain: sub,
+          token: data.token,
+        }, null, 2), 'utf-8')
+        console.error('[Enterprise] Saved JWT token to ~/.snow-code/enterprise.json')
+      } catch (saveErr) {
+        console.error('[Enterprise] Could not save enterprise.json:', saveErr)
+      }
 
       setEnterpriseData({
         token: data.token,
