@@ -5,10 +5,18 @@
  * IMPORTANT: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are
  * fetched by the enterprise MCP server from the Portal API using the JWT token.
  * No local credentials are needed.
+ *
+ * TOKEN RESOLUTION ORDER:
+ * 1. ~/.snow-code/enterprise.json (most recent device auth token)
+ * 2. SNOW_LICENSE_KEY environment variable (from .mcp.json)
+ * This ensures the freshest token is always used, even if .mcp.json is stale.
  */
 
 import axios, { AxiosError } from 'axios';
 import { machineIdSync } from 'node-machine-id';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import {
   EnterpriseToolCallRequest,
   EnterpriseToolCallResponse,
@@ -20,9 +28,52 @@ import { proxyLogger } from './logger.js';
 // Configuration from environment variables
 const ENTERPRISE_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
 const PORTAL_URL = process.env.SNOW_PORTAL_URL || 'https://portal.snow-flow.dev';
-const LICENSE_KEY = process.env.SNOW_LICENSE_KEY || process.env.SNOW_ENTERPRISE_LICENSE_KEY;
-const TRIMMED_LICENSE_KEY = LICENSE_KEY ? LICENSE_KEY.trim() : undefined; // Remove newlines/whitespace
 const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.31';
+
+/**
+ * Get the license key/token from the most reliable source
+ * Priority:
+ * 1. ~/.snow-code/enterprise.json (freshest token from device auth)
+ * 2. SNOW_LICENSE_KEY environment variable (from .mcp.json)
+ *
+ * This solves the problem where users have multiple projects with different
+ * .mcp.json files that may contain stale tokens.
+ */
+function getConfiguredLicenseKey(): string | undefined {
+  // 1. First try to read from enterprise.json (most recent device auth)
+  const enterpriseJsonPath = path.join(os.homedir(), '.snow-code', 'enterprise.json');
+  try {
+    if (fs.existsSync(enterpriseJsonPath)) {
+      const content = fs.readFileSync(enterpriseJsonPath, 'utf-8');
+      const config = JSON.parse(content);
+      if (config.token) {
+        proxyLogger.log('debug', 'Using token from ~/.snow-code/enterprise.json (device auth)', {
+          tokenLength: config.token.length,
+          subdomain: config.subdomain || 'unknown'
+        });
+        return config.token.trim();
+      }
+    }
+  } catch (err) {
+    proxyLogger.log('debug', 'Could not read enterprise.json, falling back to env var', {
+      error: err instanceof Error ? err.message : String(err)
+    });
+  }
+
+  // 2. Fall back to environment variable (from .mcp.json)
+  const envKey = process.env.SNOW_LICENSE_KEY || process.env.SNOW_ENTERPRISE_LICENSE_KEY;
+  if (envKey) {
+    proxyLogger.log('debug', 'Using token from SNOW_LICENSE_KEY environment variable', {
+      tokenLength: envKey.length
+    });
+    return envKey.trim();
+  }
+
+  return undefined;
+}
+
+// Get the license key using the priority resolution
+const TRIMMED_LICENSE_KEY = getConfiguredLicenseKey();
 
 // Generate unique machine ID for tracking
 let INSTANCE_ID: string;

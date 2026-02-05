@@ -12,12 +12,17 @@
  * fetched by the enterprise MCP server from the Portal API using the JWT token.
  * No local credentials are needed - just SNOW_ENTERPRISE_URL and SNOW_LICENSE_KEY.
  *
+ * TOKEN RESOLUTION:
+ * The proxy reads tokens from (in order):
+ * 1. ~/.snow-code/enterprise.json (most recent device auth token)
+ * 2. SNOW_LICENSE_KEY environment variable (from .mcp.json)
+ *
  * Usage:
  * node server.js
  *
  * Environment Variables:
  * - SNOW_ENTERPRISE_URL: License server URL (required)
- * - SNOW_LICENSE_KEY: JWT token for authentication (required)
+ * - SNOW_LICENSE_KEY: JWT token for authentication (optional if enterprise.json exists)
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -29,11 +34,37 @@ import {
   GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import { listEnterpriseTools, proxyToolCall } from './proxy.js';
 
 // Configuration from environment variables
-const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || '';
-const LICENSE_KEY = (process.env.SNOW_LICENSE_KEY || '').trim(); // Remove newlines/whitespace
+const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
+
+/**
+ * Check if a valid token source exists
+ * Either enterprise.json or SNOW_LICENSE_KEY env var
+ */
+function hasValidTokenSource(): boolean {
+  // Check enterprise.json
+  const enterpriseJsonPath = path.join(os.homedir(), '.snow-code', 'enterprise.json');
+  try {
+    if (fs.existsSync(enterpriseJsonPath)) {
+      const content = fs.readFileSync(enterpriseJsonPath, 'utf-8');
+      const config = JSON.parse(content);
+      if (config.token) {
+        return true;
+      }
+    }
+  } catch {
+    // Ignore errors, check env var next
+  }
+
+  // Check env var
+  const envKey = process.env.SNOW_LICENSE_KEY || process.env.SNOW_ENTERPRISE_LICENSE_KEY;
+  return !!envKey?.trim();
+}
 
 // NOTE: Credentials (Jira, Azure DevOps, Confluence, GitHub, GitLab) are fetched
 // by the enterprise MCP server from the Portal API using the JWT token.
@@ -48,8 +79,12 @@ class EnterpriseProxyServer {
     if (!LICENSE_SERVER_URL) {
       throw new Error('SNOW_ENTERPRISE_URL environment variable is required');
     }
-    if (!LICENSE_KEY) {
-      throw new Error('SNOW_LICENSE_KEY environment variable is required');
+    if (!hasValidTokenSource()) {
+      throw new Error(
+        'No valid token found. Either:\n' +
+        '  1. Run: snow-code auth login (to create ~/.snow-code/enterprise.json)\n' +
+        '  2. Or set SNOW_LICENSE_KEY environment variable'
+      );
     }
 
     // Create MCP server
@@ -71,11 +106,37 @@ class EnterpriseProxyServer {
   }
 
   private logConfiguration() {
+    // Determine token source for logging
+    let tokenSource = 'environment variable';
+    let tokenPreview = '(none)';
+
+    const enterpriseJsonPath = path.join(os.homedir(), '.snow-code', 'enterprise.json');
+    try {
+      if (fs.existsSync(enterpriseJsonPath)) {
+        const content = fs.readFileSync(enterpriseJsonPath, 'utf-8');
+        const config = JSON.parse(content);
+        if (config.token) {
+          tokenSource = '~/.snow-code/enterprise.json';
+          tokenPreview = config.token.substring(0, 20) + '...';
+        }
+      }
+    } catch {
+      // Fall back to env var
+    }
+
+    if (tokenSource === 'environment variable') {
+      const envKey = process.env.SNOW_LICENSE_KEY || process.env.SNOW_ENTERPRISE_LICENSE_KEY;
+      if (envKey?.trim()) {
+        tokenPreview = envKey.trim().substring(0, 20) + '...';
+      }
+    }
+
     console.error('═══════════════════════════════════════════════════');
     console.error('Snow-Flow Enterprise MCP Proxy');
     console.error('═══════════════════════════════════════════════════');
     console.error(`License Server: ${LICENSE_SERVER_URL}`);
-    console.error(`JWT Token: ${LICENSE_KEY.substring(0, 20)}...`);
+    console.error(`Token Source: ${tokenSource}`);
+    console.error(`JWT Token: ${tokenPreview}`);
     console.error('');
     console.error('Credentials are fetched from Portal API by enterprise server');
     console.error('═══════════════════════════════════════════════════');
