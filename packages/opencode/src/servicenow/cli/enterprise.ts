@@ -197,7 +197,7 @@ export async function showEnterpriseStatus(): Promise<void> {
   // Show MCP server info if configured
   if (mcpConfigured) {
     console.log(chalk.bold('   Type:'), 'Enterprise MCP Server (Jira, Azure DevOps, Confluence)');
-    console.log(chalk.gray('   Config:'), '~/.snow-code/config.json');
+    console.log(chalk.gray('   Config:'), '~/.config/snow-code/snow-code.json');
     console.log(chalk.gray('   Reconfigure:'), 'snow-flow enterprise setup');
   }
 

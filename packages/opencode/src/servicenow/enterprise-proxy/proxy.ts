@@ -23,7 +23,7 @@ import {
   EnterpriseToolListResponse,
   EnterpriseTool,
 } from './types.js';
-import { proxyLogger } from './logger.js';
+import { mcpDebug } from '../shared/mcp-debug.js';
 
 // Configuration from environment variables
 const ENTERPRISE_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
@@ -47,7 +47,7 @@ function getConfiguredLicenseKey(): string | undefined {
       const content = fs.readFileSync(enterpriseJsonPath, 'utf-8');
       const config = JSON.parse(content);
       if (config.token) {
-        proxyLogger.log('debug', 'Using token from ~/.snow-code/enterprise.json (device auth)', {
+        mcpDebug('[Enterprise Proxy] Using token from ~/.snow-code/enterprise.json (device auth)', {
           tokenLength: config.token.length,
           subdomain: config.subdomain || 'unknown'
         });
@@ -55,7 +55,7 @@ function getConfiguredLicenseKey(): string | undefined {
       }
     }
   } catch (err) {
-    proxyLogger.log('debug', 'Could not read enterprise.json, falling back to env var', {
+    mcpDebug('[Enterprise Proxy] Could not read enterprise.json, falling back to env var', {
       error: err instanceof Error ? err.message : String(err)
     });
   }
@@ -63,7 +63,7 @@ function getConfiguredLicenseKey(): string | undefined {
   // 2. Fall back to environment variable (from .mcp.json)
   const envKey = process.env.SNOW_LICENSE_KEY || process.env.SNOW_ENTERPRISE_LICENSE_KEY;
   if (envKey) {
-    proxyLogger.log('debug', 'Using token from SNOW_LICENSE_KEY environment variable', {
+    mcpDebug('[Enterprise Proxy] Using token from SNOW_LICENSE_KEY environment variable', {
       tokenLength: envKey.length
     });
     return envKey.trim();
@@ -122,7 +122,7 @@ async function getJwtToken(): Promise<string> {
   // Check if the token has changed since last cached
   // If so, invalidate the cache to force using the new token
   if (cachedJwtToken && currentLicenseKey && cachedJwtToken !== currentLicenseKey) {
-    proxyLogger.log('info', 'Token in enterprise.json has changed, invalidating cache');
+    mcpDebug('[Enterprise Proxy] Token in enterprise.json has changed, invalidating cache');
     cachedJwtToken = null;
     jwtTokenExpiry = 0;
   }
@@ -130,7 +130,7 @@ async function getJwtToken(): Promise<string> {
   // Return cached token if still valid (with 5 minute buffer)
   const now = Date.now();
   if (cachedJwtToken && jwtTokenExpiry > now + 5 * 60 * 1000) {
-    proxyLogger.log('debug', 'Using cached JWT token', {
+    mcpDebug('[Enterprise Proxy] Using cached JWT token', {
       expiresIn: Math.floor((jwtTokenExpiry - now) / 1000 / 60) + ' minutes'
     });
     return cachedJwtToken;
@@ -143,7 +143,7 @@ async function getJwtToken(): Promise<string> {
   // Check if the license key is already a JWT token (from device auth)
   // Device auth flow sets the token directly in enterprise.json
   if (isJwtToken(currentLicenseKey)) {
-    proxyLogger.log('info', 'Using JWT token directly from enterprise.json (device auth mode)', {
+    mcpDebug('[Enterprise Proxy] Using JWT token directly from enterprise.json (device auth mode)', {
       tokenLength: currentLicenseKey.length,
       tokenPreview: currentLicenseKey.substring(0, 20) + '...'
     });
@@ -160,7 +160,7 @@ async function getJwtToken(): Promise<string> {
 
   // License key is a raw license key (SNOW-ENT-* format)
   // Exchange it for a JWT token via the portal API
-  proxyLogger.log('info', 'Exchanging license key for JWT token', {
+  mcpDebug('[Enterprise Proxy] Exchanging license key for JWT token', {
     licenseKeyLength: currentLicenseKey.length,
     licenseKeyPreview: currentLicenseKey.substring(0, 20) + '...',
     portalUrl: PORTAL_URL,
@@ -195,7 +195,7 @@ async function getJwtToken(): Promise<string> {
     cachedJwtToken = jwtToken;
     jwtTokenExpiry = now + 7 * 24 * 60 * 60 * 1000; // 7 days
 
-    proxyLogger.log('info', 'Successfully obtained JWT token', {
+    mcpDebug('[Enterprise Proxy] Successfully obtained JWT token', {
       tokenLength: jwtToken.length,
       customer: response.data.customer?.name,
       role: response.data.customer?.role
@@ -208,7 +208,7 @@ async function getJwtToken(): Promise<string> {
 
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError;
-      proxyLogger.log('error', 'Failed to obtain JWT token', {
+      mcpDebug('[Enterprise Proxy] Failed to obtain JWT token', {
         status: axiosError.response?.status,
         statusText: axiosError.response?.statusText,
         responseData: axiosError.response?.data,
@@ -251,7 +251,7 @@ async function getJwtToken(): Promise<string> {
 export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
   const licenseKey = getConfiguredLicenseKey();
   if (!licenseKey) {
-    proxyLogger.log('error', 'SNOW_LICENSE_KEY not configured');
+    mcpDebug('[Enterprise Proxy] SNOW_LICENSE_KEY not configured');
     throw new Error(
       'SNOW_LICENSE_KEY or SNOW_ENTERPRISE_LICENSE_KEY not configured. Run: snow-flow auth login'
     );
@@ -262,14 +262,14 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
     const jwtToken = await getJwtToken();
 
     // Log request info for debugging
-    proxyLogger.log('debug', 'Fetching enterprise tools', {
+    mcpDebug('[Enterprise Proxy] Fetching enterprise tools', {
       jwtTokenLength: jwtToken.length,
       enterpriseUrl: ENTERPRISE_URL,
       instanceId: INSTANCE_ID.substring(0, 16) + '...',
       version: VERSION
     });
 
-    proxyLogger.log('info', 'Sending request to enterprise server', {
+    mcpDebug('[Enterprise Proxy] Sending request to enterprise server', {
       url: `${ENTERPRISE_URL}/mcp/tools/list`,
       authHeaderLength: `Bearer ${jwtToken}`.length
     });
@@ -286,7 +286,7 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
       }
     );
 
-    proxyLogger.log('info', `Successfully fetched ${response.data.tools?.length || 0} enterprise tools`);
+    mcpDebug(`[Enterprise Proxy] Successfully fetched ${response.data.tools?.length || 0} enterprise tools`);
     return response.data.tools || [];
   } catch (error) {
     // If JWT token exchange failed, the error is already logged and thrown
@@ -298,7 +298,7 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
       const axiosError = error as AxiosError;
 
       // Log detailed error info
-      proxyLogger.log('error', 'Enterprise tools list request failed', {
+      mcpDebug('[Enterprise Proxy] Enterprise tools list request failed', {
         status: axiosError.response?.status,
         statusText: axiosError.response?.statusText,
         responseData: axiosError.response?.data,
@@ -314,7 +314,7 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
         // Check if the error is due to JWT malformation (common after KMS secret updates)
         const responseData = axiosError.response?.data as any;
         if (responseData?.error && responseData.error.toLowerCase().includes('jwt')) {
-          proxyLogger.log('error', 'JWT token rejected by server - clearing cache', {
+          mcpDebug('[Enterprise Proxy] JWT token rejected by server - clearing cache', {
             serverError: responseData.error
           });
           throw new Error(
@@ -338,7 +338,7 @@ export async function listEnterpriseTools(): Promise<EnterpriseTool[]> {
       }
     }
 
-    proxyLogger.log('error', 'Unexpected error listing tools', {
+    mcpDebug('[Enterprise Proxy] Unexpected error listing tools', {
       error: error instanceof Error ? error.message : String(error)
     });
 

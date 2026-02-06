@@ -11,7 +11,6 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { proxyToolCall, listEnterpriseTools } from './proxy.js';
-import { proxyLogger } from './logger.js';
 import { mcpDebug } from '../shared/mcp-debug.js';
 
 const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.31';
@@ -36,12 +35,12 @@ const server = new Server(
  * Returns list of available enterprise tools from license server
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  proxyLogger.log('info', 'Received tools/list request from MCP client');
+  mcpDebug('[Enterprise Proxy] Received tools/list request from MCP client');
 
   try {
     const tools = await listEnterpriseTools();
 
-    proxyLogger.log('info', `Returning ${tools.length} tools to MCP client`);
+    mcpDebug(`[Enterprise Proxy] Returning ${tools.length} tools to MCP client`);
 
     return {
       tools: tools.map((tool) => ({
@@ -52,7 +51,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     };
   } catch (error) {
     // Return empty list on error (allows MCP server to start even if enterprise server is down)
-    proxyLogger.log('error', 'Failed to list tools - returning empty list', {
+    mcpDebug('[Enterprise Proxy] Failed to list tools - returning empty list', {
       error: error instanceof Error ? error.message : String(error)
     });
     mcpDebug(
@@ -69,14 +68,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
-  proxyLogger.log('info', `Received tool call: ${name}`, {
+  mcpDebug(`[Enterprise Proxy] Received tool call: ${name}`, {
     arguments: args
   });
 
   try {
     const result = await proxyToolCall(name, args || {});
 
-    proxyLogger.log('info', `Tool call succeeded: ${name}`);
+    mcpDebug(`[Enterprise Proxy] Tool call succeeded: ${name}`);
 
     // Format result as MCP response
     return {
@@ -93,7 +92,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const errorMessage =
       error instanceof Error ? error.message : String(error);
 
-    proxyLogger.log('error', `Tool call failed: ${name}`, {
+    mcpDebug(`[Enterprise Proxy] Tool call failed: ${name}`, {
       error: errorMessage
     });
 
@@ -114,7 +113,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
  */
 async function main() {
   try {
-    proxyLogger.log('info', 'Starting Enterprise Proxy MCP Server', {
+    mcpDebug('[Enterprise Proxy] Starting Enterprise Proxy MCP Server', {
       version: VERSION,
       enterpriseUrl: process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev',
       licenseKeyConfigured: !!process.env.SNOW_LICENSE_KEY,
@@ -133,11 +132,10 @@ async function main() {
     mcpDebug(
       `[Enterprise Proxy] License Key: ${process.env.SNOW_LICENSE_KEY ? '✓ Configured' : '✗ Not configured'}`
     );
-    mcpDebug(`[Enterprise Proxy] Logs: ${proxyLogger.getLogPath() || 'stderr only'}`);
 
-    proxyLogger.log('info', 'Enterprise Proxy successfully started and ready for requests');
+    mcpDebug('[Enterprise Proxy] Enterprise Proxy successfully started and ready for requests');
   } catch (error) {
-    proxyLogger.log('error', 'Fatal startup error', {
+    mcpDebug('[Enterprise Proxy] Fatal startup error', {
       error: error instanceof Error ? error.message : String(error)
     });
     mcpDebug(

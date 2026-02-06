@@ -1308,7 +1308,6 @@ export namespace Config {
   export const global = lazy(async () => {
     let result: Info = pipe(
       {},
-      mergeDeep(await loadFile(path.join(Global.Path.config, "config.json"))),
       mergeDeep(await loadFile(path.join(Global.Path.config, "snow-code.json"))),
       mergeDeep(await loadFile(path.join(Global.Path.config, "snow-code.jsonc"))),
     )
@@ -1323,7 +1322,7 @@ export namespace Config {
         if (provider && model) result.model = `${provider}/${model}`
         result["$schema"] = "https://snow-flow.dev/config.json"
         result = mergeDeep(result, rest)
-        await Bun.write(path.join(Global.Path.config, "config.json"), JSON.stringify(result, null, 2))
+        await Bun.write(path.join(Global.Path.config, "snow-code.json"), JSON.stringify(result, null, 2))
         await fs.unlink(path.join(Global.Path.config, "config"))
       })
       .catch(() => {})
@@ -1477,7 +1476,7 @@ export namespace Config {
   }
 
   function globalConfigFile() {
-    const candidates = ["snow-code.jsonc", "snow-code.json", "config.json"].map((file) =>
+    const candidates = ["snow-code.jsonc", "snow-code.json"].map((file) =>
       path.join(Global.Path.config, file),
     )
     for (const file of candidates) {

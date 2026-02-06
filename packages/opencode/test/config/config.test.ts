@@ -521,7 +521,7 @@ test("updates config and writes to file", async () => {
       const newConfig = { model: "updated/model" }
       await Config.update(newConfig as any)
 
-      const writtenConfig = JSON.parse(await Bun.file(path.join(tmp.path, "config.json")).text())
+      const writtenConfig = JSON.parse(await Bun.file(path.join(tmp.path, "snow-code.json")).text())
       expect(writtenConfig.model).toBe("updated/model")
     },
   })
