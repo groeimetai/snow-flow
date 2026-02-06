@@ -106,7 +106,7 @@ export namespace Pty {
       ...process.env,
       ...input.env,
       TERM: "xterm-256color",
-      OPENCODE_TERMINAL: "1",
+      SNOW_CODE_TERMINAL: "1",
     } as Record<string, string>
     log.info("creating session", { id, cmd: command, args, cwd })
 

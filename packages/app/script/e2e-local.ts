@@ -58,28 +58,28 @@ const sandbox = await fs.mkdtemp(path.join(os.tmpdir(), "opencode-e2e-"))
 
 const serverEnv = {
   ...process.env,
-  OPENCODE_DISABLE_SHARE: "true",
-  OPENCODE_DISABLE_LSP_DOWNLOAD: "true",
-  OPENCODE_DISABLE_DEFAULT_PLUGINS: "true",
-  OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: "true",
-  OPENCODE_TEST_HOME: path.join(sandbox, "home"),
+  SNOW_CODE_DISABLE_SHARE: "true",
+  SNOW_CODE_DISABLE_LSP_DOWNLOAD: "true",
+  SNOW_CODE_DISABLE_DEFAULT_PLUGINS: "true",
+  SNOW_CODE_EXPERIMENTAL_DISABLE_FILEWATCHER: "true",
+  SNOW_CODE_TEST_HOME: path.join(sandbox, "home"),
   XDG_DATA_HOME: path.join(sandbox, "share"),
   XDG_CACHE_HOME: path.join(sandbox, "cache"),
   XDG_CONFIG_HOME: path.join(sandbox, "config"),
   XDG_STATE_HOME: path.join(sandbox, "state"),
-  OPENCODE_E2E_PROJECT_DIR: repoDir,
-  OPENCODE_E2E_SESSION_TITLE: "E2E Session",
-  OPENCODE_E2E_MESSAGE: "Seeded for UI e2e",
-  OPENCODE_E2E_MODEL: "opencode/gpt-5-nano",
-  OPENCODE_CLIENT: "app",
+  SNOW_CODE_E2E_PROJECT_DIR: repoDir,
+  SNOW_CODE_E2E_SESSION_TITLE: "E2E Session",
+  SNOW_CODE_E2E_MESSAGE: "Seeded for UI e2e",
+  SNOW_CODE_E2E_MODEL: "opencode/gpt-5-nano",
+  SNOW_CODE_CLIENT: "app",
 } satisfies Record<string, string>
 
 const runnerEnv = {
   ...serverEnv,
   PLAYWRIGHT_SERVER_HOST: "127.0.0.1",
   PLAYWRIGHT_SERVER_PORT: String(serverPort),
-  VITE_OPENCODE_SERVER_HOST: "127.0.0.1",
-  VITE_OPENCODE_SERVER_PORT: String(serverPort),
+  VITE_SNOW_CODE_SERVER_HOST: "127.0.0.1",
+  VITE_SNOW_CODE_SERVER_PORT: String(serverPort),
   PLAYWRIGHT_PORT: String(webPort),
 } satisfies Record<string, string>
 

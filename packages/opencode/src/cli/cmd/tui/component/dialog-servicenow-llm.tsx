@@ -69,8 +69,8 @@ export function DialogAuthServiceNowLLM() {
           duration: 5000,
         })
         // Go back to auth menu after a moment
-        setTimeout(() => {
-          const { DialogAuth } = require("./dialog-auth")
+        setTimeout(async () => {
+          const { DialogAuth } = await import("./dialog-auth")
           dialog.replace(() => <DialogAuth />)
         }, 2000)
         return

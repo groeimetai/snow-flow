@@ -20,15 +20,15 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Install opencode
-        run: curl -fsSL https://opencode.ai/install | bash
+      - name: Install snow-code
+        run: curl -fsSL https://snow-flow.dev/install | bash
 
       - name: Generate daily PR recap
         id: recap
         env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SNOW_CODE_API_KEY: ${{ secrets.SNOW_CODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENCODE_PERMISSION: |
+          SNOW_CODE_PERMISSION: |
             {
               "bash": {
                 "*": "deny",
@@ -42,7 +42,7 @@ jobs:
         run: |
           TODAY=$(date -u +%Y-%m-%d)
 
-          opencode run -m opencode/claude-sonnet-4-5 "Generate a daily PR activity recap for the OpenCode repository.
+          snow-code run -m snow-code/claude-sonnet-4-5 "Generate a daily PR activity recap for the Snow-Flow repository.
 
           TODAY'S DATE: ${TODAY}
 

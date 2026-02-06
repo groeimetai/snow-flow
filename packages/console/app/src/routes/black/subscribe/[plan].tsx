@@ -152,11 +152,11 @@ function Failure(props: { message: string }) {
 function Success(props: SuccessData) {
   return (
     <div data-slot="success">
-      <p data-slot="title">You're on the OpenCode Black waitlist</p>
+      <p data-slot="title">You're on the Snow-Flow Black waitlist</p>
       <dl data-slot="details">
         <div>
           <dt>Subscription plan</dt>
-          <dd>OpenCode Black {props.plan}</dd>
+          <dd>Snow-Flow Black {props.plan}</dd>
         </div>
         <div>
           <dt>Amount</dt>
@@ -338,7 +338,7 @@ export default function BlackSubscribe() {
 
   return (
     <>
-      <Title>Subscribe to OpenCode Black</Title>
+      <Title>Subscribe to Snow-Flow Black</Title>
       <section data-slot="subscribe-form">
         <div data-slot="form-card">
           <Switch>
@@ -347,7 +347,7 @@ export default function BlackSubscribe() {
             <Match when={true}>
               <>
                 <div data-slot="plan-header">
-                  <p data-slot="title">Subscribe to OpenCode Black</p>
+                  <p data-slot="title">Subscribe to Snow-Flow Black</p>
                   <p data-slot="price">
                     <span data-slot="amount">${planData.id}</span> <span data-slot="period">per month</span>
                     <Show when={planData.multiplier}>

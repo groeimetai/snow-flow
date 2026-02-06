@@ -6,7 +6,7 @@ import { join } from "path"
 
 const FORK_REPO = "anomalyco/zed-extensions"
 const UPSTREAM_REPO = "zed-industries/extensions"
-const EXTENSION_NAME = "opencode"
+const EXTENSION_NAME = "snow-code"
 
 async function main() {
   const version = process.argv[2]

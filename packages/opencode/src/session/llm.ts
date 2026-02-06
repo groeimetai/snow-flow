@@ -225,14 +225,14 @@ export namespace LLM {
       headers: {
         ...(input.model.providerID.startsWith("opencode")
           ? {
-              "x-opencode-project": Instance.project.id,
-              "x-opencode-session": input.sessionID,
-              "x-opencode-request": input.user.id,
-              "x-opencode-client": Flag.OPENCODE_CLIENT,
+              "x-snow-code-project": Instance.project.id,
+              "x-snow-code-session": input.sessionID,
+              "x-snow-code-request": input.user.id,
+              "x-snow-code-client": Flag.OPENCODE_CLIENT,
             }
           : input.model.providerID !== "anthropic"
             ? {
-                "User-Agent": `opencode/${Installation.VERSION}`,
+                "User-Agent": `snow-code/${Installation.VERSION}`,
               }
             : undefined),
         ...input.model.headers,

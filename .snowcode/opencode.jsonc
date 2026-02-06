@@ -2,10 +2,10 @@
   "$schema": "https://snow-flow.dev/config.json",
   // "plugin": ["opencode-openai-codex-auth"],
   // "enterprise": {
-  //   "url": "https://enterprise.dev.opencode.ai",
+  //   "url": "https://enterprise.dev.snow-flow.dev",
   // },
   "provider": {
-    "opencode": {
+    "snow-code": {
       "options": {},
     },
   },

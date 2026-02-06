@@ -45,7 +45,7 @@ jobs:
         if: steps.commits.outputs.has_commits == 'true'
         uses: sst/opencode/github@latest
         env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SNOW_CODE_API_KEY: ${{ secrets.SNOW_CODE_API_KEY }}
         with:
           model: opencode/gpt-5.2
           agent: docs

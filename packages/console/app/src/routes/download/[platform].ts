@@ -12,16 +12,16 @@ const assetNames: Record<string, string> = {
 
 // Doing this on the server lets us preserve the original name for platforms we don't care to rename for
 const downloadNames: Record<string, string> = {
-  "darwin-aarch64-dmg": "OpenCode Desktop.dmg",
-  "darwin-x64-dmg": "OpenCode Desktop.dmg",
-  "windows-x64-nsis": "OpenCode Desktop Installer.exe",
+  "darwin-aarch64-dmg": "Snow-Flow Desktop.dmg",
+  "darwin-x64-dmg": "Snow-Flow Desktop.dmg",
+  "windows-x64-nsis": "Snow-Flow Desktop Installer.exe",
 } satisfies { [K in DownloadPlatform]?: string }
 
 export async function GET({ params: { platform } }: APIEvent) {
   const assetName = assetNames[platform]
   if (!assetName) return new Response("Not Found", { status: 404 })
 
-  const resp = await fetch(`https://github.com/anomalyco/opencode/releases/latest/download/${assetName}`, {
+  const resp = await fetch(`https://github.com/groeimetai/snow-flow/releases/latest/download/${assetName}`, {
     cf: {
       // in case gh releases has rate limits
       cacheTtl: 60 * 5,

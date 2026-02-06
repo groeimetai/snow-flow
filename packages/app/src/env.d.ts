@@ -1,6 +1,6 @@
 interface ImportMetaEnv {
-  readonly VITE_OPENCODE_SERVER_HOST: string
-  readonly VITE_OPENCODE_SERVER_PORT: string
+  readonly VITE_SNOW_CODE_SERVER_HOST: string
+  readonly VITE_SNOW_CODE_SERVER_PORT: string
 }
 
 interface ImportMeta {

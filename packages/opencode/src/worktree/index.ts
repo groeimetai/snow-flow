@@ -222,7 +222,7 @@ export namespace Worktree {
   async function candidate(root: string, base?: string) {
     for (const attempt of Array.from({ length: 26 }, (_, i) => i)) {
       const name = base ? (attempt === 0 ? base : `${base}-${randomName()}`) : randomName()
-      const branch = `opencode/${name}`
+      const branch = `snow-code/${name}`
       const directory = path.join(root, name)
 
       if (await exists(directory)) continue

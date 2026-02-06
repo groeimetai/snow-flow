@@ -9,6 +9,6 @@ import { $ } from "bun"
 
 await $`bun install`
 
-await $`gh release download --pattern "opencode-linux-*64.tar.gz" --pattern "opencode-darwin-*64.zip" -D dist`
+await $`gh release download --pattern "snow-code-linux-*64.tar.gz" --pattern "snow-code-darwin-*64.zip" -D dist`
 
 await import(`../packages/opencode/script/publish-registries.ts`)

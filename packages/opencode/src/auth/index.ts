@@ -3,7 +3,7 @@ import { Global } from "../global"
 import fs from "fs/promises"
 import z from "zod"
 
-export const OAUTH_DUMMY_KEY = "opencode-oauth-dummy-key"
+export const OAUTH_DUMMY_KEY = "snow-code-oauth-dummy-key"
 
 export namespace Auth {
   export const Oauth = z

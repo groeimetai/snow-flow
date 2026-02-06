@@ -156,9 +156,9 @@ pub fn create_command(app: &tauri::AppHandle, args: &str) -> Command {
         .sidecar("opencode-cli")
         .unwrap()
         .args(args.split_whitespace())
-        .env("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
-        .env("OPENCODE_EXPERIMENTAL_FILEWATCHER", "true")
-        .env("OPENCODE_CLIENT", "desktop")
+        .env("SNOW_CODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
+        .env("SNOW_CODE_EXPERIMENTAL_FILEWATCHER", "true")
+        .env("SNOW_CODE_CLIENT", "desktop")
         .env("XDG_STATE_HOME", &state_dir);
 
     #[cfg(not(target_os = "windows"))]
@@ -174,9 +174,9 @@ pub fn create_command(app: &tauri::AppHandle, args: &str) -> Command {
 
         app.shell()
             .command(&shell)
-            .env("OPENCODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
-            .env("OPENCODE_EXPERIMENTAL_FILEWATCHER", "true")
-            .env("OPENCODE_CLIENT", "desktop")
+            .env("SNOW_CODE_EXPERIMENTAL_ICON_DISCOVERY", "true")
+            .env("SNOW_CODE_EXPERIMENTAL_FILEWATCHER", "true")
+            .env("SNOW_CODE_CLIENT", "desktop")
             .env("XDG_STATE_HOME", &state_dir)
             .args(["-il", "-c", &cmd])
     };

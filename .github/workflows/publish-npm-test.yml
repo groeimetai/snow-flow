@@ -89,8 +89,8 @@ jobs:
           echo "Building all platforms via cross-compilation..."
           bun run build
         env:
-          OPENCODE_CHANNEL: test
-          OPENCODE_VERSION: ${{ steps.version.outputs.version }}
+          SNOW_CODE_CHANNEL: test
+          SNOW_CODE_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Rename output directories
         run: |

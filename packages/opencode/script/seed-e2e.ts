@@ -1,9 +1,9 @@
-const dir = process.env.OPENCODE_E2E_PROJECT_DIR ?? process.cwd()
-const title = process.env.OPENCODE_E2E_SESSION_TITLE ?? "E2E Session"
-const text = process.env.OPENCODE_E2E_MESSAGE ?? "Seeded for UI e2e"
-const model = process.env.OPENCODE_E2E_MODEL ?? "opencode/gpt-5-nano"
+const dir = process.env.SNOW_CODE_E2E_PROJECT_DIR ?? process.cwd()
+const title = process.env.SNOW_CODE_E2E_SESSION_TITLE ?? "E2E Session"
+const text = process.env.SNOW_CODE_E2E_MESSAGE ?? "Seeded for UI e2e"
+const model = process.env.SNOW_CODE_E2E_MODEL ?? "snow-code/gpt-5-nano"
 const parts = model.split("/")
-const providerID = parts[0] ?? "opencode"
+const providerID = parts[0] ?? "snow-code"
 const modelID = parts[1] ?? "gpt-5-nano"
 const now = Date.now()
 

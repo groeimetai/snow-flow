@@ -8,7 +8,7 @@ jobs:
   check-standards:
     if: |
       github.event.pull_request.user.login != 'actions-user' &&
-      github.event.pull_request.user.login != 'opencode' &&
+      github.event.pull_request.user.login != 'snow-code' &&
       github.event.pull_request.user.login != 'rekram1-node' &&
       github.event.pull_request.user.login != 'thdxr' &&
       github.event.pull_request.user.login != 'kommander' &&
@@ -16,7 +16,7 @@ jobs:
       github.event.pull_request.user.login != 'fwang' &&
       github.event.pull_request.user.login != 'adamdotdevin' &&
       github.event.pull_request.user.login != 'iamdavidhill' &&
-      github.event.pull_request.user.login != 'opencode-agent[bot]'
+      github.event.pull_request.user.login != 'snow-code-agent[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
