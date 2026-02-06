@@ -43,9 +43,13 @@ let arch = archMap[os.arch()] || os.arch()
 const binaryName = platform === "windows" ? "snow-code.exe" : "snow-code"
 
 // First check: binary in our own bin directory (from postinstall download)
+// Only run if file is >100KB (actual compiled binary), not this launcher script (~2KB)
 const localBinary = path.join(scriptDir, binaryName)
 if (fs.existsSync(localBinary)) {
-  run(localBinary)
+  const stats = fs.statSync(localBinary)
+  if (stats.size > 100000) {
+    run(localBinary)
+  }
 }
 
 // Second check: look in node_modules for platform packages
