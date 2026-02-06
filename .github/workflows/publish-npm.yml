@@ -5,8 +5,7 @@ on:
     tags:
       - 'v*'
     branches:
-      - main
-      - production
+      - '**'
   workflow_dispatch:
     inputs:
       version:
@@ -37,6 +36,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Determine release channel
+        id: channel
+        run: |
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            echo "channel=stable" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "🏷️ Tag push - stable release"
+          elif [[ $GITHUB_REF == refs/heads/main || $GITHUB_REF == refs/heads/production ]]; then
+            echo "channel=stable" >> $GITHUB_OUTPUT
+            echo "npm_tag=latest" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "🚀 Main/production branch - stable release"
+          else
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            # Sanitize branch name for npm prerelease tag (only alphanumeric and hyphens)
+            SAFE_BRANCH=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+            echo "channel=dev" >> $GITHUB_OUTPUT
+            echo "npm_tag=dev" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "branch_slug=$SAFE_BRANCH" >> $GITHUB_OUTPUT
+            echo "🔧 Branch '$BRANCH_NAME' - dev release (npm tag: dev)"
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -64,6 +87,10 @@ jobs:
           else
             echo "❌ OIDC token request token NOT available"
           fi
+          echo "=== Release channel ==="
+          echo "Channel: ${{ steps.channel.outputs.channel }}"
+          echo "npm tag: ${{ steps.channel.outputs.npm_tag }}"
+          echo "Prerelease: ${{ steps.channel.outputs.prerelease }}"
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -77,6 +104,9 @@ jobs:
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           elif [[ $GITHUB_REF == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.channel.outputs.channel }}" == "dev" ]]; then
+            BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+            echo "version=${BASE_VERSION}-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
           else
             BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
             echo "version=${BASE_VERSION}.${{ github.run_number }}" >> $GITHUB_OUTPUT
@@ -104,7 +134,7 @@ jobs:
           echo "Building all platforms via cross-compilation..."
           bun run build
         env:
-          OPENCODE_CHANNEL: stable
+          OPENCODE_CHANNEL: ${{ steps.channel.outputs.channel }}
           OPENCODE_VERSION: ${{ steps.version.outputs.version }}
 
       - name: Rename output directories
@@ -131,7 +161,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           cd packages/opencode
 
-          # Update package.json for production release
+          # Update package.json for release
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -220,8 +250,8 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Snow-Flow v${{ steps.version.outputs.version }}
-          prerelease: false
-          generate_release_notes: true
+          prerelease: ${{ steps.channel.outputs.prerelease == 'true' }}
+          generate_release_notes: ${{ steps.channel.outputs.channel == 'stable' }}
           files: |
             packages/opencode/dist/*.tar.gz
           body: |
@@ -253,17 +283,23 @@ jobs:
             Manual download available above if needed.
 
             ### Supported Platforms
-            - ✅ Linux x64 / arm64
-            - ✅ macOS arm64 (Apple Silicon) / x64 (Intel)
-            - ✅ Windows x64
+            - Linux x64 / arm64
+            - macOS arm64 (Apple Silicon) / x64 (Intel)
+            - Windows x64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish main package to npm (OIDC)
         run: |
           cd packages/opencode
-          echo "Publishing snow-flow main package..."
-          npm publish --access public --provenance
+          NPM_TAG="${{ steps.channel.outputs.npm_tag }}"
+          echo "Publishing snow-flow with tag: $NPM_TAG"
+
+          if [ "$NPM_TAG" = "latest" ]; then
+            npm publish --access public --provenance
+          else
+            npm publish --access public --tag "$NPM_TAG" --provenance
+          fi
 
       # Platform binaries are distributed via GitHub releases
       # Users can download from: https://github.com/groeimetai/snow-flow/releases

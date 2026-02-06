@@ -13,6 +13,7 @@ import {
   generateStakeholderDocumentation,
 } from "../../../../servicenow/cli/enterprise-docs-generator.js"
 import { isRemoteEnvironment } from "@/auth/servicenow-oauth"
+import { DialogAuthServiceNowLLM } from "./dialog-servicenow-llm"
 
 /**
  * Fetch active integrations from enterprise portal
@@ -129,7 +130,7 @@ This file contains instructions for AI agents working in this codebase.
   }
 }
 
-type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined"
+type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined" | "servicenow-llm"
 
 interface AuthCredentials {
   servicenow?: {
@@ -159,6 +160,7 @@ export function DialogAuth() {
   const dialog = useDialog()
   const toast = useToast()
   const [credentials, setCredentials] = createSignal<AuthCredentials>({})
+  const [llmConfigured, setLlmConfigured] = createSignal(false)
 
   // Load existing credentials on mount
   onMount(async () => {
@@ -199,6 +201,18 @@ export function DialogAuth() {
           },
         }))
       }
+
+      // Check if servicenow-llm provider is configured
+      try {
+        const { Config } = await import("@/config/config")
+        const config = await Config.get()
+        const llmProvider = config.provider?.["servicenow-llm"]
+        if (llmProvider && Object.keys((llmProvider as any)?.models || {}).length > 0) {
+          setLlmConfigured(true)
+        }
+      } catch {
+        // Config not available
+      }
     } catch {
       // Auth module not available
     }
@@ -236,6 +250,16 @@ export function DialogAuth() {
       footer: "Username/Password",
       onSelect: () => {
         dialog.replace(() => <DialogAuthServiceNowBasic />)
+      },
+    },
+    {
+      title: "ServiceNow LLM",
+      value: "servicenow-llm",
+      description: llmConfigured() ? "Configured" : undefined,
+      category: "ServiceNow",
+      footer: "MID Server LLM",
+      onSelect: () => {
+        dialog.replace(() => <DialogAuthServiceNowLLM />)
       },
     },
     {

@@ -1635,7 +1635,7 @@ export type Config = {
   }
   server?: ServerConfig
   /**
-   * Command configuration, see https://opencode.ai/docs/commands
+   * Command configuration, see https://snow-flow.dev/docs/commands
    */
   command?: {
     [key: string]: {
@@ -1696,7 +1696,7 @@ export type Config = {
     [key: string]: AgentConfig | undefined
   }
   /**
-   * Agent configuration, see https://opencode.ai/docs/agents
+   * Agent configuration, see https://snow-flow.dev/docs/agents
    */
   agent?: {
     plan?: AgentConfig
@@ -1762,6 +1762,9 @@ export type Config = {
   instructions?: Array<string>
   layout?: LayoutConfig
   permission?: PermissionConfig
+  /**
+   * Enable/disable specific tools. Web tools (webfetch, websearch, codesearch) are disabled by default.
+   */
   tools?: {
     [key: string]: boolean
   }
@@ -2162,7 +2165,82 @@ export type WellKnownAuth = {
   token: string
 }
 
-export type Auth = OAuth | ApiAuth | WellKnownAuth
+export type ServiceNowOAuth = {
+  type: "servicenow-oauth"
+  instance: string
+  clientId: string
+  clientSecret: string
+  accessToken?: string
+  refreshToken?: string
+  expiresAt?: number
+}
+
+export type ServiceNowBasic = {
+  type: "servicenow-basic"
+  instance: string
+  username: string
+  password: string
+}
+
+export type Enterprise = {
+  type: "enterprise"
+  licenseKey?: string
+  enterpriseUrl?: string
+  token?: string
+  sessionToken?: string
+  username?: string
+  email?: string
+  role?: string
+  machineId?: string
+  jiraBaseUrl?: string
+  confluenceUrl?: string
+  atlassianEmail?: string
+  atlassianApiToken?: string
+  azureOrg?: string
+  azureProject?: string
+  azurePat?: string
+}
+
+export type Portal = {
+  type: "portal"
+  token: string
+  refreshToken?: string
+  expiresAt?: number
+  userId: number
+  email: string
+  name?: string
+  plan: "individual" | "teams"
+  organizationId?: number
+  organizationName?: string
+  role?: "owner" | "admin" | "developer" | "stakeholder"
+  machineId?: string
+}
+
+export type MidServer = {
+  type: "mid-server"
+  instance: string
+  midServerName: string
+  midServerSysId?: string
+  authType?: "basic" | "oauth" | "mutual-tls"
+  username?: string
+  password?: string
+  clientId?: string
+  clientSecret?: string
+  accessToken?: string
+  refreshToken?: string
+  expiresAt?: number
+  certPath?: string
+  keyPath?: string
+  caPath?: string
+  midServerUrl?: string
+  proxyEnabled?: boolean
+  routeLlmRequests?: boolean
+  routeApiRequests?: boolean
+  timeout?: number
+  retries?: number
+}
+
+export type Auth = OAuth | ApiAuth | WellKnownAuth | ServiceNowOAuth | ServiceNowBasic | Enterprise | Portal | MidServer
 
 export type GlobalHealthData = {
   body?: never

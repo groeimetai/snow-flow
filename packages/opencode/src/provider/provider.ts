@@ -85,6 +85,47 @@ export namespace Provider {
     options?: Record<string, any>
   }>
 
+  function createSSEStream(content: string, model: string, usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number }): string[] {
+    const id = `chatcmpl-${crypto.randomUUID()}`
+    const chunks: string[] = []
+
+    // Role chunk
+    chunks.push(`data: ${JSON.stringify({
+      id, object: "chat.completion.chunk", model,
+      choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }],
+    })}\n\n`)
+
+    // Content chunks (~10 chars per chunk for smooth streaming
+    const words = content.split(/(\s+)/)
+    let current = ""
+    for (const word of words) {
+      current += word
+      if (current.length >= 10 || word.includes("\n")) {
+        chunks.push(`data: ${JSON.stringify({
+          id, object: "chat.completion.chunk", model,
+          choices: [{ index: 0, delta: { content: current }, finish_reason: null }],
+        })}\n\n`)
+        current = ""
+      }
+    }
+    if (current) {
+      chunks.push(`data: ${JSON.stringify({
+        id, object: "chat.completion.chunk", model,
+        choices: [{ index: 0, delta: { content: current }, finish_reason: null }],
+      })}\n\n`)
+    }
+
+    // Finish chunk
+    chunks.push(`data: ${JSON.stringify({
+      id, object: "chat.completion.chunk", model,
+      choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+      usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    })}\n\n`)
+
+    chunks.push("data: [DONE]\n\n")
+    return chunks
+  }
+
   const CUSTOM_LOADERS: Record<string, CustomLoader> = {
     async anthropic() {
       return {
@@ -503,6 +544,32 @@ export namespace Provider {
           headers: {
             "X-Cerebras-3rd-Party-Integration": "opencode",
           },
+        },
+      }
+    },
+    "servicenow-llm": async (input) => {
+      const snAuth = await Auth.get("servicenow")
+      if (!snAuth) return { autoload: false }
+
+      let apiKey: string | undefined
+      let baseURL: string | undefined
+
+      if (snAuth.type === "servicenow-oauth" && snAuth.accessToken) {
+        apiKey = snAuth.accessToken
+        baseURL = `${snAuth.instance}/api/snow_flow/llm`
+      } else if (snAuth.type === "servicenow-basic") {
+        apiKey = Buffer.from(`${snAuth.username}:${snAuth.password}`).toString("base64")
+        baseURL = `${snAuth.instance}/api/snow_flow/llm`
+      }
+
+      if (!apiKey || !baseURL) return { autoload: false }
+
+      return {
+        autoload: !!Object.keys(input.models).length,
+        options: {
+          apiKey,
+          baseURL,
+          timeout: 180000,
         },
       }
     },
@@ -980,6 +1047,57 @@ export namespace Provider {
       const key = Bun.hash.xxHash32(JSON.stringify({ npm: model.api.npm, options }))
       const existing = s.sdk.get(key)
       if (existing) return existing
+
+      // ServiceNow LLM: wrap fetch to unwrap MID Server responses and convert to SSE
+      if (model.providerID === "servicenow-llm") {
+        const existingFetch = options["fetch"]
+        options["fetch"] = async (input: any, init?: any) => {
+          const fetchFn = existingFetch ?? fetch
+          const response = await fetchFn(input, init)
+
+          // Already SSE, no transformation needed
+          const contentType = response.headers.get("content-type") || ""
+          if (contentType.includes("text/event-stream")) {
+            return response
+          }
+
+          const body = await response.json()
+
+          // Unwrap ServiceNow { "result": ... } wrapper
+          let unwrapped = body
+          if (body && typeof body === "object" && "result" in body) {
+            unwrapped = body.result
+          }
+
+          // Detect response format and convert to OpenAI
+          let content: string
+          let modelName = unwrapped?.model || "servicenow-llm"
+          const usage = unwrapped?.usage
+
+          if (unwrapped?.choices?.[0]?.message?.content) {
+            content = unwrapped.choices[0].message.content
+          } else if (unwrapped?.success === true && typeof unwrapped.response === "string") {
+            content = unwrapped.response
+          } else {
+            content = typeof unwrapped === "string" ? unwrapped : JSON.stringify(unwrapped)
+          }
+
+          // Convert to SSE stream
+          const sseChunks = createSSEStream(content, modelName, usage)
+          const stream = new ReadableStream({
+            start(controller) {
+              for (const chunk of sseChunks) {
+                controller.enqueue(new TextEncoder().encode(chunk))
+              }
+              controller.close()
+            },
+          })
+
+          return new Response(stream, {
+            headers: { "content-type": "text/event-stream" },
+          })
+        }
+      }
 
       const customFetch = options["fetch"]
 
