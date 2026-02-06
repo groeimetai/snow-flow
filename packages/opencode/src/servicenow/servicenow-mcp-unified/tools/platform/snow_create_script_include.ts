@@ -8,6 +8,8 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
+import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_create_script_include',
@@ -62,26 +64,57 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: 'Validate ES5 compliance before creation',
         default: true
+      },
+      script_file: {
+        type: 'string',
+        description: 'Path to local script file. File content will be used as the script. Alternative to inline script parameter.'
+      },
+      upsert: {
+        type: 'boolean',
+        description: 'If true and a Script Include with the same name already exists, update it instead of returning an error.',
+        default: false
       }
     },
-    required: ['name', 'script']
+    required: ['name']
   }
 };
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
     name,
-    script,
+    script: inlineScript,
+    script_file,
     description = '',
     client_callable = false,
     access = 'package_private',
     active = true,
     api_name,
-    validate_es5 = true
+    validate_es5 = true,
+    upsert = false
   } = args;
 
   try {
     const client = await getAuthenticatedClient(context);
+
+    // Resolve script content: script_file takes priority if provided, then inline script
+    let script = inlineScript;
+    let scriptSource = 'inline';
+
+    if (script_file) {
+      if (!existsSync(script_file)) {
+        return createErrorResult(`Script file not found: ${script_file}`);
+      }
+      try {
+        script = await fs.readFile(script_file, 'utf-8');
+        scriptSource = script_file;
+      } catch (e: any) {
+        return createErrorResult(`Failed to read script file '${script_file}': ${e.message}`);
+      }
+    }
+
+    if (!script) {
+      return createErrorResult('Either script or script_file parameter is required');
+    }
 
     // Validate ES5 compliance if requested (warning only, does not block creation)
     const es5Warnings: string[] = [];
@@ -107,7 +140,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
     }
 
-    // Create Script Include
+    // Check for existing Script Include
+    const existingResponse = await client.get('/api/now/table/sys_script_include', {
+      params: {
+        sysparm_query: `name=${name}`,
+        sysparm_fields: 'sys_id,name',
+        sysparm_limit: 1
+      }
+    });
+
+    const existingRecord = existingResponse.data.result && existingResponse.data.result.length > 0
+      ? existingResponse.data.result[0]
+      : null;
+
+    if (existingRecord && !upsert) {
+      return createErrorResult(
+        `Script Include '${name}' already exists (sys_id: ${existingRecord.sys_id}). ` +
+        `Use upsert=true to update the existing record, or use snow_artifact_manage with action='update'.`
+      );
+    }
+
+    // Build Script Include data
     const scriptIncludeData: any = {
       name,
       script,
@@ -118,11 +171,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       api_name: api_name || name
     };
 
-    const response = await client.post('/api/now/table/sys_script_include', scriptIncludeData);
-    const scriptInclude = response.data.result;
+    let scriptInclude: any;
+    let wasUpdated = false;
+
+    if (existingRecord && upsert) {
+      // Update existing record
+      const updateResponse = await client.patch(
+        `/api/now/table/sys_script_include/${existingRecord.sys_id}`,
+        scriptIncludeData
+      );
+      scriptInclude = updateResponse.data.result;
+      wasUpdated = true;
+    } else {
+      // Create new record
+      const createResponse = await client.post('/api/now/table/sys_script_include', scriptIncludeData);
+      scriptInclude = createResponse.data.result;
+    }
 
     const successData: any = {
-      created: true,
+      created: !wasUpdated,
+      updated: wasUpdated,
+      action: wasUpdated ? 'updated' : 'created',
       script_include: {
         sys_id: scriptInclude.sys_id,
         name: scriptInclude.name,
@@ -130,6 +199,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         client_callable: scriptInclude.client_callable === 'true',
         access: scriptInclude.access,
         active: scriptInclude.active === 'true'
+      },
+      script_source: scriptSource,
+      script_size: {
+        lines: script.split('\n').length,
+        characters: script.length
       },
       usage: client_callable
         ? {

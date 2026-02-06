@@ -133,13 +133,14 @@ export const toolDefinition: MCPToolDefinition = {
 ⚡ ACTIONS:
 - create: Create new artifact (widget, page, script, table, field, etc.)
 - get: Retrieve artifact by sys_id or identifier
-- update: Update existing artifact fields
+- update: Update existing artifact fields (supports _file parameters for file-based updates)
 - delete: Delete artifact (supports soft delete)
 - find: Search artifacts by query
 - list: List all artifacts of a type
 - analyze: Analyze artifact dependencies
 - export: Export artifact to JSON/XML
 - import: Import artifact from JSON/XML file
+- verify: Compare local files against deployed artifact content
 
 🗃️ SUPPORTED ARTIFACT TYPES:
 - sp_widget / widget: Service Portal widgets
@@ -178,7 +179,7 @@ export const toolDefinition: MCPToolDefinition = {
       action: {
         type: 'string',
         description: 'Management action to perform',
-        enum: ['create', 'get', 'update', 'delete', 'find', 'list', 'analyze', 'export', 'import']
+        enum: ['create', 'get', 'update', 'delete', 'find', 'list', 'analyze', 'export', 'import', 'verify']
       },
       // Common parameters
       type: {
@@ -407,36 +408,36 @@ export const toolDefinition: MCPToolDefinition = {
       },
       artifact_directory: {
         type: 'string',
-        description: '[create] Directory containing artifact files. Auto-maps files like template.html→template, server.js→script, etc.'
+        description: '[create/update/verify] Directory containing artifact files. Auto-maps files like template.html→template, server.js→script, etc.'
       },
       // Generic _file suffix parameters for explicit file mapping
       template_file: {
         type: 'string',
-        description: '[create] Path to HTML template file (widgets)'
+        description: '[create/update/verify] Path to HTML template file (widgets)'
       },
       server_script_file: {
         type: 'string',
-        description: '[create] Path to server-side script file'
+        description: '[create/update/verify] Path to server-side script file'
       },
       client_script_file: {
         type: 'string',
-        description: '[create] Path to client-side script file'
+        description: '[create/update/verify] Path to client-side script file'
       },
       css_file: {
         type: 'string',
-        description: '[create] Path to CSS stylesheet file (widgets)'
+        description: '[create/update/verify] Path to CSS stylesheet file (widgets)'
       },
       option_schema_file: {
         type: 'string',
-        description: '[create] Path to option schema JSON file (widgets)'
+        description: '[create/update/verify] Path to option schema JSON file (widgets)'
       },
       script_file: {
         type: 'string',
-        description: '[create] Path to script file (for script includes, business rules, etc.)'
+        description: '[create/update/verify] Path to script file (for script includes, business rules, etc.)'
       },
       condition_file: {
         type: 'string',
-        description: '[create] Path to condition script file (business rules, UI actions)'
+        description: '[create/update/verify] Path to condition script file (business rules, UI actions)'
       },
 
       // Scope
@@ -483,6 +484,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return await executeExport(args, context, tableName);
       case 'import':
         return await executeImport(args, context, tableName);
+      case 'verify':
+        return await executeVerify(args, context, tableName);
       default:
         return createErrorResult(`Unknown action: ${action}. Valid actions: create, get, update, delete, find, list, analyze, export, import`);
     }
@@ -495,6 +498,78 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       )
     );
   }
+}
+
+// ==================== FILE RESOLUTION HELPER ====================
+async function resolveFileContent(args: any, tableName: string): Promise<{
+  resolvedFields: Record<string, string>;
+  fileSourceInfo: string[];
+  error?: string;
+}> {
+  const {
+    artifact_directory,
+    template_file,
+    server_script_file,
+    client_script_file,
+    css_file,
+    option_schema_file,
+    script_file,
+    condition_file,
+    name
+  } = args;
+
+  const resolvedFields: Record<string, string> = {};
+  const fileSourceInfo: string[] = [];
+
+  // Step 1: Process artifact_directory if provided (lowest priority)
+  if (artifact_directory) {
+    const mappings = FILE_MAPPINGS[tableName];
+    if (mappings) {
+      for (const [field, filenames] of Object.entries(mappings)) {
+        for (const filename of filenames) {
+          const resolvedFilename = filename.replace('{name}', name || '');
+          const fullPath = path.join(artifact_directory, resolvedFilename);
+          if (existsSync(fullPath)) {
+            try {
+              resolvedFields[field] = await fs.readFile(fullPath, 'utf-8');
+              fileSourceInfo.push(`${field} ← ${resolvedFilename}`);
+            } catch (e) {
+              // Skip files that can't be read
+            }
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Step 2: Process individual _file parameters (medium priority - override directory)
+  const fileParams: Record<string, string | undefined> = {
+    template: template_file,
+    script: script_file,
+    client_script: client_script_file,
+    css: css_file,
+    option_schema: option_schema_file,
+    condition: condition_file,
+    server_script: server_script_file
+  };
+
+  for (const [field, filePath] of Object.entries(fileParams)) {
+    if (filePath && typeof filePath === 'string') {
+      if (existsSync(filePath)) {
+        try {
+          resolvedFields[field] = await fs.readFile(filePath, 'utf-8');
+          fileSourceInfo.push(`${field} ← ${path.basename(filePath)} (explicit)`);
+        } catch (e: any) {
+          return { resolvedFields, fileSourceInfo, error: `Failed to read file '${filePath}': ${e.message}` };
+        }
+      } else {
+        return { resolvedFields, fileSourceInfo, error: `File not found: ${filePath}` };
+      }
+    }
+  }
+
+  return { resolvedFields, fileSourceInfo };
 }
 
 // ==================== CREATE ====================
@@ -554,58 +629,13 @@ async function executeCreate(args: any, context: ServiceNowContext, tableName: s
 
   // ==================== RESOLVE FILE-BASED CONTENT ====================
   // Priority: inline content > _file params > artifact_directory
-  const resolvedFields: Record<string, string> = {};
-  const fileSourceInfo: string[] = [];
-
-  // Step 1: Process artifact_directory if provided (lowest priority)
-  if (artifact_directory) {
-    const mappings = FILE_MAPPINGS[tableName];
-    if (mappings) {
-      for (const [field, filenames] of Object.entries(mappings)) {
-        for (const filename of filenames) {
-          const resolvedFilename = filename.replace('{name}', name);
-          const fullPath = path.join(artifact_directory, resolvedFilename);
-          if (existsSync(fullPath)) {
-            try {
-              resolvedFields[field] = await fs.readFile(fullPath, 'utf-8');
-              fileSourceInfo.push(`${field} ← ${resolvedFilename}`);
-            } catch (e) {
-              // Skip files that can't be read
-            }
-            break;
-          }
-        }
-      }
-    }
+  const fileResolution = await resolveFileContent(args, tableName);
+  if (fileResolution.error) {
+    return createErrorResult(fileResolution.error);
   }
+  const { resolvedFields, fileSourceInfo } = fileResolution;
 
-  // Step 2: Process individual _file parameters (medium priority - override directory)
-  const fileParams: Record<string, string | undefined> = {
-    template: template_file,
-    script: script_file,
-    client_script: client_script_file,
-    css: css_file,
-    option_schema: option_schema_file,
-    condition: condition_file,
-    server_script: server_script_file
-  };
-
-  for (const [field, filePath] of Object.entries(fileParams)) {
-    if (filePath && typeof filePath === 'string') {
-      if (existsSync(filePath)) {
-        try {
-          resolvedFields[field] = await fs.readFile(filePath, 'utf-8');
-          fileSourceInfo.push(`${field} ← ${path.basename(filePath)} (explicit)`);
-        } catch (e: any) {
-          return createErrorResult(`Failed to read file '${filePath}': ${e.message}`);
-        }
-      } else {
-        return createErrorResult(`File not found: ${filePath}`);
-      }
-    }
-  }
-
-  // Step 3: Inline content has highest priority (will override in artifact building below)
+  // Note: Inline content has highest priority (will override in artifact building below)
 
   // ES5 validation warnings
   const warnings: string[] = [];
@@ -1052,14 +1082,23 @@ async function executeGet(args: any, context: ServiceNowContext, tableName: stri
 
 // ==================== UPDATE ====================
 async function executeUpdate(args: any, context: ServiceNowContext, tableName: string): Promise<ToolResult> {
-  const { type, sys_id, identifier, config, validate = true, create_backup = false, validate_es5 = true } = args;
+  const { type, sys_id, identifier, config = {}, validate = true, create_backup = false, validate_es5 = true } = args;
 
   if (!sys_id && !identifier) {
     return createErrorResult('sys_id or identifier is required for update action');
   }
 
-  if (!config || Object.keys(config).length === 0) {
-    return createErrorResult('config (fields to update) is required for update action');
+  // Resolve file-based content (supports script_file, template_file, artifact_directory, etc.)
+  const fileResolution = await resolveFileContent(args, tableName);
+  if (fileResolution.error) {
+    return createErrorResult(fileResolution.error);
+  }
+
+  // Merge: config values (highest priority) > file-based content
+  const mergedConfig = { ...fileResolution.resolvedFields, ...config };
+
+  if (Object.keys(mergedConfig).length === 0) {
+    return createErrorResult('No update content provided. Use config object and/or file parameters (script_file, template_file, artifact_directory, etc.)');
   }
 
   const client = await getAuthenticatedClient(context);
@@ -1075,14 +1114,14 @@ async function executeUpdate(args: any, context: ServiceNowContext, tableName: s
 
   // ES5 validation
   if (validate_es5) {
-    if (config.script) {
-      var validation = validateES5Syntax(config.script);
+    if (mergedConfig.script) {
+      var validation = validateES5Syntax(mergedConfig.script);
       if (!validation.valid) {
         warnings.push(`Script contains ES6+ syntax. Consider using ES5 for compatibility.`);
       }
     }
-    if (config.server_script) {
-      var validation2 = validateES5Syntax(config.server_script);
+    if (mergedConfig.server_script) {
+      var validation2 = validateES5Syntax(mergedConfig.server_script);
       if (!validation2.valid) {
         warnings.push(`Server script contains ES6+ syntax. Consider using ES5 for compatibility.`);
       }
@@ -1091,7 +1130,7 @@ async function executeUpdate(args: any, context: ServiceNowContext, tableName: s
 
   // Widget-specific validation
   if (validate && tableName === 'sp_widget') {
-    if (config.template !== undefined && !config.template.trim()) {
+    if (mergedConfig.template !== undefined && !mergedConfig.template.trim()) {
       return createErrorResult('Widget template cannot be empty');
     }
   }
@@ -1115,11 +1154,11 @@ async function executeUpdate(args: any, context: ServiceNowContext, tableName: s
 
   // Sanitize string fields
   var sanitizedConfig: any = {};
-  for (var key of Object.keys(config)) {
-    if (typeof config[key] === 'string') {
-      sanitizedConfig[key] = sanitizeString(config[key]);
+  for (var key of Object.keys(mergedConfig)) {
+    if (typeof mergedConfig[key] === 'string') {
+      sanitizedConfig[key] = sanitizeString(mergedConfig[key]);
     } else {
-      sanitizedConfig[key] = config[key];
+      sanitizedConfig[key] = mergedConfig[key];
     }
   }
 
@@ -1134,11 +1173,15 @@ async function executeUpdate(args: any, context: ServiceNowContext, tableName: s
     name: updatedArtifact.name || updatedArtifact.id || identifier,
     type: type,
     table: tableName,
-    updated_fields: Object.keys(config),
+    updated_fields: Object.keys(mergedConfig),
     backup_id: backupId,
     artifact: updatedArtifact,
     url: `${context.instanceUrl}/nav_to.do?uri=${tableName}.do?sys_id=${targetSysId}`
   };
+
+  if (fileResolution.fileSourceInfo.length > 0) {
+    result.file_sources = fileResolution.fileSourceInfo;
+  }
 
   if (warnings.length > 0) {
     result.warnings = warnings;
@@ -1663,6 +1706,92 @@ async function executeImport(args: any, context: ServiceNowContext, tableName: s
     type: type,
     table: tableName,
     url: `${context.instanceUrl}/nav_to.do?uri=${tableName}.do?sys_id=${importResult.sys_id}`
+  });
+}
+
+// ==================== VERIFY ====================
+async function executeVerify(args: any, context: ServiceNowContext, tableName: string): Promise<ToolResult> {
+  const { type, sys_id, identifier } = args;
+
+  if (!sys_id && !identifier) {
+    return createErrorResult('sys_id or identifier is required for verify action');
+  }
+
+  // Resolve local file content
+  const fileResolution = await resolveFileContent(args, tableName);
+  if (fileResolution.error) {
+    return createErrorResult(fileResolution.error);
+  }
+
+  if (Object.keys(fileResolution.resolvedFields).length === 0) {
+    return createErrorResult('No local files to verify against. Provide file parameters (script_file, template_file, etc.) or artifact_directory.');
+  }
+
+  const client = await getAuthenticatedClient(context);
+
+  // Get the deployed artifact (full content)
+  var artifact = await findArtifactByIdOrIdentifier(client, tableName, sys_id, identifier);
+  if (!artifact) {
+    return createErrorResult(`${type} '${sys_id || identifier}' not found`);
+  }
+
+  // Compare each resolved field with deployed content
+  const comparisons: any[] = [];
+  let allMatch = true;
+
+  for (const [field, localContent] of Object.entries(fileResolution.resolvedFields)) {
+    const deployedContent = artifact[field] || '';
+    const normalizedLocal = (localContent as string).replace(/\r\n/g, '\n').trim();
+    const normalizedDeployed = deployedContent.replace(/\r\n/g, '\n').trim();
+
+    const matches = normalizedLocal === normalizedDeployed;
+    if (!matches) allMatch = false;
+
+    const comparison: any = {
+      field,
+      matches,
+      local: {
+        lines: normalizedLocal.split('\n').length,
+        characters: normalizedLocal.length
+      },
+      deployed: {
+        lines: normalizedDeployed.split('\n').length,
+        characters: normalizedDeployed.length
+      }
+    };
+
+    if (!matches) {
+      comparison.difference = {
+        line_diff: normalizedLocal.split('\n').length - normalizedDeployed.split('\n').length,
+        char_diff: normalizedLocal.length - normalizedDeployed.length
+      };
+
+      // Show first differing line for debugging
+      const localLines = normalizedLocal.split('\n');
+      const deployedLines = normalizedDeployed.split('\n');
+      for (let i = 0; i < Math.max(localLines.length, deployedLines.length); i++) {
+        if (localLines[i] !== deployedLines[i]) {
+          comparison.first_diff_line = i + 1;
+          comparison.first_diff_local = (localLines[i] || '(missing)').substring(0, 200);
+          comparison.first_diff_deployed = (deployedLines[i] || '(missing)').substring(0, 200);
+          break;
+        }
+      }
+    }
+
+    comparisons.push(comparison);
+  }
+
+  return createSuccessResult({
+    action: 'verify',
+    verified: allMatch,
+    sys_id: artifact.sys_id,
+    name: artifact.name || artifact.id || identifier,
+    type: type,
+    table: tableName,
+    comparisons: comparisons,
+    file_sources: fileResolution.fileSourceInfo,
+    url: `${context.instanceUrl}/nav_to.do?uri=${tableName}.do?sys_id=${artifact.sys_id}`
   });
 }
 
