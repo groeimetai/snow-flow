@@ -79,7 +79,7 @@ CONFLUENCE_API_TOKEN=ATATT3xFfGF0...
 
 ### SnowCode Configuration
 
-Automatically added to `~/.snow-code/config.json`:
+Automatically added to `~/.config/snow-code/snow-code.json`:
 
 ```json
 {
@@ -102,6 +102,7 @@ Automatically added to `~/.snow-code/config.json`:
 ## Files
 
 - **index.ts** - MCP Server entry point (stdio transport)
+- **server.ts** - Server setup and configuration
 - **proxy.ts** - HTTPS client for enterprise server communication
 - **credentials.ts** - Environment variable credential gathering
 - **types.ts** - TypeScript type definitions
@@ -293,7 +294,7 @@ $ snow-flow auth login
 ? Enterprise License Key: SNOW-ENT-CUST-ABC123
 
 ✓ Enterprise MCP Proxy configured
-✓ .snow-code/config.json updated
+✓ snow-code.json updated
 ```
 
 ### Manual Testing
