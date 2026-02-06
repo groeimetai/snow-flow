@@ -15,6 +15,7 @@
 
 import { AxiosError } from 'axios';
 import { RetryConfig, ServiceNowError, ToolResult } from './types';
+import { mcpDebug } from './mcp-debug.js';
 
 /**
  * Error classification
@@ -154,7 +155,7 @@ export async function retryWithBackoff<T>(
 
   for (let attempt = 1; attempt <= retryConfig.maxAttempts; attempt++) {
     try {
-      console.error(`[ErrorHandler] Attempt ${attempt}/${retryConfig.maxAttempts}`);
+      mcpDebug(`[ErrorHandler] Attempt ${attempt}/${retryConfig.maxAttempts}`);
       return await operation();
     } catch (error: any) {
       lastError = error;
@@ -162,19 +163,19 @@ export async function retryWithBackoff<T>(
       // Check if error is retryable
       const snowFlowError = classifyError(error);
       if (!snowFlowError.retryable) {
-        console.error('[ErrorHandler] Non-retryable error:', snowFlowError.type);
+        mcpDebug('[ErrorHandler] Non-retryable error:', snowFlowError.type);
         throw snowFlowError;
       }
 
       // Last attempt - throw error
       if (attempt === retryConfig.maxAttempts) {
-        console.error('[ErrorHandler] All retry attempts exhausted');
+        mcpDebug('[ErrorHandler] All retry attempts exhausted');
         throw snowFlowError;
       }
 
       // Calculate backoff delay
       const delay = calculateBackoff(attempt, retryConfig);
-      console.error(`[ErrorHandler] Retrying in ${delay}ms (attempt ${attempt}/${retryConfig.maxAttempts})`);
+      mcpDebug(`[ErrorHandler] Retrying in ${delay}ms (attempt ${attempt}/${retryConfig.maxAttempts})`);
 
       // Wait before retry
       await sleep(delay);
@@ -421,7 +422,7 @@ export function handleError(
   };
 
   // Log error with context
-  console.error(`[ErrorHandler] Error in ${toolName}:`, {
+  mcpDebug(`[ErrorHandler] Error in ${toolName}:`, {
     type: snowFlowError.type,
     message: snowFlowError.message,
     retryable: snowFlowError.retryable,

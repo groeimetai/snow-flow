@@ -38,6 +38,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { listEnterpriseTools, proxyToolCall } from './proxy.js';
+import { mcpDebug } from '../shared/mcp-debug.js';
 
 // Configuration from environment variables
 const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
@@ -131,37 +132,37 @@ class EnterpriseProxyServer {
       }
     }
 
-    console.error('═══════════════════════════════════════════════════');
-    console.error('Snow-Flow Enterprise MCP Proxy');
-    console.error('═══════════════════════════════════════════════════');
-    console.error(`License Server: ${LICENSE_SERVER_URL}`);
-    console.error(`Token Source: ${tokenSource}`);
-    console.error(`JWT Token: ${tokenPreview}`);
-    console.error('');
-    console.error('Credentials are fetched from Portal API by enterprise server');
-    console.error('═══════════════════════════════════════════════════');
-    console.error('');
+    mcpDebug('═══════════════════════════════════════════════════');
+    mcpDebug('Snow-Flow Enterprise MCP Proxy');
+    mcpDebug('═══════════════════════════════════════════════════');
+    mcpDebug(`License Server: ${LICENSE_SERVER_URL}`);
+    mcpDebug(`Token Source: ${tokenSource}`);
+    mcpDebug(`JWT Token: ${tokenPreview}`);
+    mcpDebug('');
+    mcpDebug('Credentials are fetched from Portal API by enterprise server');
+    mcpDebug('═══════════════════════════════════════════════════');
+    mcpDebug('');
   }
 
   private setupHandlers() {
     // List tools handler - uses proxy.ts with JWT auto-refresh
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       try {
-        console.error('[Proxy] Fetching available tools from license server...');
+        mcpDebug('[Proxy] Fetching available tools from license server...');
 
         var tools = await listEnterpriseTools();
         this.availableTools = tools as Tool[];
 
-        console.error(`[Proxy] ✓ ${this.availableTools.length} tools available`);
+        mcpDebug(`[Proxy] ✓ ${this.availableTools.length} tools available`);
 
         return {
           tools: this.availableTools
         };
       } catch (error: any) {
-        console.error('[Proxy] ✗ Failed to fetch tools:', error.message);
+        mcpDebug('[Proxy] ✗ Failed to fetch tools:', error.message);
 
         // Return empty tools list instead of crashing - allows graceful degradation
-        console.error('[Proxy] Returning empty tools list due to backend error');
+        mcpDebug('[Proxy] Returning empty tools list due to backend error');
         return {
           tools: []
         };
@@ -174,13 +175,13 @@ class EnterpriseProxyServer {
       var toolArgs = request.params.arguments || {};
 
       try {
-        console.error(`[Proxy] Executing tool: ${toolName}`);
+        mcpDebug(`[Proxy] Executing tool: ${toolName}`);
 
         var startTime = Date.now();
         var result = await proxyToolCall(toolName, toolArgs);
         var duration = Date.now() - startTime;
 
-        console.error(`[Proxy] ✓ Tool executed successfully (${duration}ms)`);
+        mcpDebug(`[Proxy] ✓ Tool executed successfully (${duration}ms)`);
 
         return {
           content: [
@@ -191,7 +192,7 @@ class EnterpriseProxyServer {
           ]
         };
       } catch (error: any) {
-        console.error(`[Proxy] ✗ Tool execution failed: ${error.message}`);
+        mcpDebug(`[Proxy] ✗ Tool execution failed: ${error.message}`);
 
         return {
           content: [
@@ -217,7 +218,7 @@ class EnterpriseProxyServer {
 
     // List prompts handler
     this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
-      console.error(`[Proxy] Listing ${ENTERPRISE_PROMPTS.length} prompts`);
+      mcpDebug(`[Proxy] Listing ${ENTERPRISE_PROMPTS.length} prompts`);
       return {
         prompts: ENTERPRISE_PROMPTS
       };
@@ -226,7 +227,7 @@ class EnterpriseProxyServer {
     // Get prompt handler
     this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       var promptName = request.params.name;
-      console.error(`[Proxy] Getting prompt: ${promptName}`);
+      mcpDebug(`[Proxy] Getting prompt: ${promptName}`);
 
       var content = PROMPT_CONTENT[promptName];
       if (!content) {
@@ -251,8 +252,8 @@ class EnterpriseProxyServer {
   async run() {
     var transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('[Proxy] ✓ Enterprise MCP Proxy running on stdio');
-    console.error('[Proxy] Ready to receive requests from Claude Code');
+    mcpDebug('[Proxy] ✓ Enterprise MCP Proxy running on stdio');
+    mcpDebug('[Proxy] Ready to receive requests from Claude Code');
   }
 }
 
@@ -260,10 +261,10 @@ class EnterpriseProxyServer {
 try {
   var proxy = new EnterpriseProxyServer();
   proxy.run().catch(function(error) {
-    console.error('[Proxy] Fatal error:', error);
+    mcpDebug('[Proxy] Fatal error:', error);
     process.exit(1);
   });
 } catch (error: any) {
-  console.error('[Proxy] Failed to start:', error.message);
+  mcpDebug('[Proxy] Failed to start:', error.message);
   process.exit(1);
 }

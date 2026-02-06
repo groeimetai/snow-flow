@@ -37,6 +37,7 @@ import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsBy
 import { MCPPromptManager } from '../shared/mcp-prompt-manager.js';
 import { META_TOOLS, tool_search_exec, tool_execute_exec } from './tools/meta/index.js';
 import { ToolSearch } from './shared/tool-search.js';
+import { mcpDebug, mcpWarn } from './shared/mcp-debug.js';
 
 /**
  * ServiceNow Unified MCP Server
@@ -158,19 +159,19 @@ export class ServiceNowUnifiedServer {
             : parseInt(servicenowCreds.expiresAt, 10);
         }
 
-        console.error('[Auth] ✅ Loaded credentials from:', authPath);
-        console.error('[Auth]    Instance:', instance);
-        console.error('[Auth]    Auth Type:', effectiveAuthType);
+        mcpDebug('[Auth] ✅ Loaded credentials from:', authPath);
+        mcpDebug('[Auth]    Instance:', instance);
+        mcpDebug('[Auth]    Auth Type:', effectiveAuthType);
         if (hasValidOAuth) {
-          console.error('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
-          console.error('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
-          console.error('[Auth]    Has Access Token:', !!servicenowCreds.accessToken);
+          mcpDebug('[Auth]    Client ID:', clientId ? '***' + clientId.slice(-4) : 'MISSING');
+          mcpDebug('[Auth]    Has Refresh Token:', !!servicenowCreds.refreshToken);
+          mcpDebug('[Auth]    Has Access Token:', !!servicenowCreds.accessToken);
           if (tokenExpiry) {
             const expiresIn = Math.round((tokenExpiry - Date.now()) / 1000 / 60);
-            console.error('[Auth]    Token Expires In:', expiresIn > 0 ? `${expiresIn} minutes` : 'EXPIRED');
+            mcpDebug('[Auth]    Token Expires In:', expiresIn > 0 ? `${expiresIn} minutes` : 'EXPIRED');
           }
         } else {
-          console.error('[Auth]    Username:', username);
+          mcpDebug('[Auth]    Username:', username);
         }
 
         return {
@@ -186,15 +187,15 @@ export class ServiceNowUnifiedServer {
           password: hasValidBasic ? password : undefined
         };
       } catch (error: any) {
-        console.error('[Auth] Failed to load from', authPath, ':', error.message);
+        mcpDebug('[Auth] Failed to load from', authPath, ':', error.message);
         continue;
       }
     }
 
     // No valid auth.json found
-    console.error('[Auth] No valid auth.json found in any location');
-    console.error('[Auth] Checked paths:');
-    authPaths.forEach(p => console.error('[Auth]   -', p));
+    mcpDebug('[Auth] No valid auth.json found in any location');
+    mcpDebug('[Auth] Checked paths:');
+    authPaths.forEach(p => mcpDebug('[Auth]   -', p));
     return undefined;
   }
 
@@ -240,7 +241,7 @@ export class ServiceNowUnifiedServer {
         try {
           const payload = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64').toString());
           if (payload.exp && payload.exp * 1000 < Date.now()) {
-            console.error('[Auth] Enterprise JWT expired, skipping enterprise portal fetch');
+            mcpDebug('[Auth] Enterprise JWT expired, skipping enterprise portal fetch');
             continue;
           }
         } catch {
@@ -254,11 +255,11 @@ export class ServiceNowUnifiedServer {
           portalUrl = `https://${subdomain}.snow-flow.dev`;
         }
 
-        console.error('[Auth] Found enterprise auth from:', authPath);
-        console.error('[Auth]   Portal URL:', portalUrl);
+        mcpDebug('[Auth] Found enterprise auth from:', authPath);
+        mcpDebug('[Auth]   Portal URL:', portalUrl);
         return { jwt, portalUrl, subdomain };
       } catch (error: any) {
-        console.error('[Auth] Failed to load enterprise auth from', authPath, ':', error.message);
+        mcpDebug('[Auth] Failed to load enterprise auth from', authPath, ':', error.message);
         continue;
       }
     }
@@ -279,7 +280,7 @@ export class ServiceNowUnifiedServer {
       return undefined;
     }
 
-    console.error('[Auth] 🔐 Fetching ServiceNow credentials from enterprise portal (secure mode)...');
+    mcpDebug('[Auth] 🔐 Fetching ServiceNow credentials from enterprise portal (secure mode)...');
 
     try {
       // Call the portal API to get ServiceNow credentials
@@ -289,8 +290,8 @@ export class ServiceNowUnifiedServer {
       );
 
       if (!response.success || !response.instance) {
-        console.error('[Auth] Enterprise portal returned no ServiceNow instance');
-        console.error('[Auth] Response:', JSON.stringify(response));
+        mcpDebug('[Auth] Enterprise portal returned no ServiceNow instance');
+        mcpDebug('[Auth] Response:', JSON.stringify(response));
         return undefined;
       }
 
@@ -298,14 +299,14 @@ export class ServiceNowUnifiedServer {
 
       // Validate required fields
       if (!instance.instanceUrl || !instance.clientId || !instance.clientSecret) {
-        console.error('[Auth] Enterprise portal returned incomplete credentials');
+        mcpDebug('[Auth] Enterprise portal returned incomplete credentials');
         return undefined;
       }
 
-      console.error('[Auth] ✅ Fetched ServiceNow credentials from enterprise portal');
-      console.error('[Auth]    Instance:', instance.instanceUrl);
-      console.error('[Auth]    Client ID:', instance.clientId ? '***' + instance.clientId.slice(-4) : 'MISSING');
-      console.error('[Auth]    Environment:', instance.environmentType || 'unknown');
+      mcpDebug('[Auth] ✅ Fetched ServiceNow credentials from enterprise portal');
+      mcpDebug('[Auth]    Instance:', instance.instanceUrl);
+      mcpDebug('[Auth]    Client ID:', instance.clientId ? '***' + instance.clientId.slice(-4) : 'MISSING');
+      mcpDebug('[Auth]    Environment:', instance.environmentType || 'unknown');
 
       return {
         instanceUrl: instance.instanceUrl,
@@ -321,7 +322,7 @@ export class ServiceNowUnifiedServer {
         }
       };
     } catch (error: any) {
-      console.error('[Auth] Failed to fetch credentials from enterprise portal:', error.message);
+      mcpDebug('[Auth] Failed to fetch credentials from enterprise portal:', error.message);
       return undefined;
     }
   }
@@ -421,7 +422,7 @@ export class ServiceNowUnifiedServer {
                            !isPlaceholder(clientSecret);
 
     if (hasValidEnvVars) {
-      console.error('[Auth] Using credentials from environment variables');
+      mcpDebug('[Auth] Using credentials from environment variables');
       return {
         instanceUrl: instanceUrl!,
         clientId: clientId!,
@@ -440,11 +441,11 @@ export class ServiceNowUnifiedServer {
 
     // STEP 3: No valid credentials found - start in unauthenticated mode
     // Note: Enterprise users will get credentials from portal in initialize()
-    console.error('[Auth] No local ServiceNow credentials found');
-    console.error('[Auth] Checked:');
-    console.error('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
-    console.error('[Auth]   2. snow-code auth.json (see logged paths above)');
-    console.error('[Auth] Will attempt enterprise portal fetch in initialize()...');
+    mcpDebug('[Auth] No local ServiceNow credentials found');
+    mcpDebug('[Auth] Checked:');
+    mcpDebug('[Auth]   1. Environment variables (SERVICENOW_* or SNOW_*)');
+    mcpDebug('[Auth]   2. snow-code auth.json (see logged paths above)');
+    mcpDebug('[Auth] Will attempt enterprise portal fetch in initialize()...');
 
     // Return empty context - may be updated in initialize() if enterprise auth exists
     return {
@@ -494,14 +495,14 @@ export class ServiceNowUnifiedServer {
       const enabledToolIds = sessionId ? await ToolSearch.getEnabledTools(sessionId) : new Set<string>();
 
       // Debug: Log session info and sources
-      console.error(`[Server] ListTools request - sessionId: ${sessionId || 'none'}`);
+      mcpDebug(`[Server] ListTools request - sessionId: ${sessionId || 'none'}`);
       if (!sessionId) {
-        console.error('[Server] ⚠️ No session ID found - all deferred tools will be hidden');
-        console.error('[Server]   Checked sources:');
-        console.error(`[Server]     - JWT payload: ${jwtPayloadForSession?.sessionId || 'none'}`);
-        console.error(`[Server]     - x-session-id header: ${(request as any).headers?.['x-session-id'] || 'none'}`);
-        console.error(`[Server]     - SNOW_SESSION_ID env: ${process.env.SNOW_SESSION_ID || 'none'}`);
-        console.error(`[Server]     - current-session.json: ${ToolSearch.getCurrentSession() || 'none'}`);
+        mcpDebug('[Server] ⚠️ No session ID found - all deferred tools will be hidden');
+        mcpDebug('[Server]   Checked sources:');
+        mcpDebug(`[Server]     - JWT payload: ${jwtPayloadForSession?.sessionId || 'none'}`);
+        mcpDebug(`[Server]     - x-session-id header: ${(request as any).headers?.['x-session-id'] || 'none'}`);
+        mcpDebug(`[Server]     - SNOW_SESSION_ID env: ${process.env.SNOW_SESSION_ID || 'none'}`);
+        mcpDebug(`[Server]     - current-session.json: ${ToolSearch.getCurrentSession() || 'none'}`);
       }
 
       // Domain filtering via SNOW_TOOL_DOMAINS env var
@@ -515,13 +516,13 @@ export class ServiceNowUnifiedServer {
         // Validate requested domains
         const invalidDomains = requestedDomains.filter(d => !availableDomains.includes(d.toLowerCase()));
         if (invalidDomains.length > 0) {
-          console.error(`[Server] ⚠️  Unknown domains in SNOW_TOOL_DOMAINS: ${invalidDomains.join(', ')}`);
-          console.error(`[Server]    Available domains: ${availableDomains.join(', ')}`);
+          mcpDebug(`[Server] ⚠️  Unknown domains in SNOW_TOOL_DOMAINS: ${invalidDomains.join(', ')}`);
+          mcpDebug(`[Server]    Available domains: ${availableDomains.join(', ')}`);
         }
 
         allTools = toolRegistry.getToolDefinitionsByDomains(requestedDomains);
-        console.error(`[Server] Domain filtering enabled: ${requestedDomains.join(', ')}`);
-        console.error(`[Server]   Tools loaded: ${allTools.length} (from ${requestedDomains.length} domains)`);
+        mcpDebug(`[Server] Domain filtering enabled: ${requestedDomains.join(', ')}`);
+        mcpDebug(`[Server]   Tools loaded: ${allTools.length} (from ${requestedDomains.length} domains)`);
       } else {
         allTools = toolRegistry.getToolDefinitions();
       }
@@ -542,22 +543,22 @@ export class ServiceNowUnifiedServer {
         : [];
 
       if (metaToolDefs.length === 0) {
-        console.error('[Server] ⚠️  WARNING: META_TOOLS is empty! tool_search/tool_execute not available');
+        mcpDebug('[Server] ⚠️  WARNING: META_TOOLS is empty! tool_search/tool_execute not available');
       }
 
       // Debug: Check tool index status
       const indexStats = ToolSearch.getStats();
-      console.error(`[Server] Tool index: ${indexStats.total} tools, ${indexStats.deferred} deferred, ${indexStats.immediate} immediate`);
+      mcpDebug(`[Server] Tool index: ${indexStats.total} tools, ${indexStats.deferred} deferred, ${indexStats.immediate} immediate`);
 
       // Check if lazy tools mode is enabled (DEFAULT: true for token efficiency)
       // Set SNOW_LAZY_TOOLS=false to disable and load all tools at startup
       const lazyToolsEnabled = process.env.SNOW_LAZY_TOOLS !== 'false';
-      console.error(`[Server] SNOW_LAZY_TOOLS: ${lazyToolsEnabled ? 'ENABLED (default)' : 'DISABLED'}`);
+      mcpDebug(`[Server] SNOW_LAZY_TOOLS: ${lazyToolsEnabled ? 'ENABLED (default)' : 'DISABLED'}`);
 
       // If tool index is empty, warn - tools may not be filtered correctly
       if (indexStats.total === 0) {
-        console.error('[Server] ⚠️ Tool index is EMPTY - deferred filtering may not work correctly');
-        console.error('[Server]   All tools will be returned (not deferred)');
+        mcpDebug('[Server] ⚠️ Tool index is EMPTY - deferred filtering may not work correctly');
+        mcpDebug('[Server]   All tools will be returned (not deferred)');
       }
 
       // DEFERRED LOADING MODE:
@@ -595,20 +596,20 @@ export class ServiceNowUnifiedServer {
 
       // Debug: If many tools are enabled, log details
       if (enabledToolIds.size > 10) {
-        console.error(`[Server] ⚠️  Many tools enabled (${enabledToolIds.size}) - session may have stale data`);
+        mcpDebug(`[Server] ⚠️  Many tools enabled (${enabledToolIds.size}) - session may have stale data`);
         // Log first 5 enabled tool names
         const first5 = Array.from(enabledToolIds).slice(0, 5);
-        console.error(`[Server]    First 5: ${first5.join(', ')}`);
+        mcpDebug(`[Server]    First 5: ${first5.join(', ')}`);
       }
 
-      console.error(
+      mcpDebug(
         `[Server] Listing tools for role: ${userRole}` +
         (toolDomainsEnv ? ` (domains: ${toolDomainsEnv})` : '')
       );
-      console.error(`[Server]   Meta-tools: ${metaToolDefs.length}`);
-      console.error(`[Server]   Enabled this session: ${enabledToolIds.size}`);
-      console.error(`[Server]   Filtered to return: ${enabledTools.length}`);
-      console.error(`[Server]   Total available: ${totalAvailable} (use tool_search to enable)`);
+      mcpDebug(`[Server]   Meta-tools: ${metaToolDefs.length}`);
+      mcpDebug(`[Server]   Enabled this session: ${enabledToolIds.size}`);
+      mcpDebug(`[Server]   Filtered to return: ${enabledTools.length}`);
+      mcpDebug(`[Server]   Total available: ${totalAvailable} (use tool_search to enable)`);
 
       // Build final tools list
       const toolsToReturn = [
@@ -626,7 +627,7 @@ export class ServiceNowUnifiedServer {
         }))
       ];
 
-      console.error(`[Server] Returning ${toolsToReturn.length} tools total`);
+      mcpDebug(`[Server] Returning ${toolsToReturn.length} tools total`);
 
       return {
         tools: toolsToReturn
@@ -639,9 +640,9 @@ export class ServiceNowUnifiedServer {
 
       // Enhanced logging: show tool name AND key parameters
       const logArgs = this.formatArgsForLogging(args);
-      console.error(`[Server] Executing tool: ${name}`);
+      mcpDebug(`[Server] Executing tool: ${name}`);
       if (logArgs) {
-        console.error(`[Server]   Parameters: ${logArgs}`);
+        mcpDebug(`[Server]   Parameters: ${logArgs}`);
       }
 
       // Extract sessionId from JWT payload or headers for session-based tool enabling
@@ -655,7 +656,7 @@ export class ServiceNowUnifiedServer {
       try {
         // 🆕 Handle meta-tools (tool_search, tool_execute) for lazy loading mode
         if (name === 'tool_search') {
-          console.error('[Server] Executing meta-tool: tool_search');
+          mcpDebug('[Server] Executing meta-tool: tool_search');
           // Pass sessionId to enable session-based tool enabling
           const contextWithSession = { ...this.context, sessionId };
           const result = await tool_search_exec(args as any, contextWithSession);
@@ -665,7 +666,7 @@ export class ServiceNowUnifiedServer {
         }
 
         if (name === 'tool_execute') {
-          console.error('[Server] Executing meta-tool: tool_execute');
+          mcpDebug('[Server] Executing meta-tool: tool_execute');
           // Pass sessionId for potential future use
           const contextWithSession = { ...this.context, sessionId };
           const result = await tool_execute_exec(args as any, contextWithSession);
@@ -725,7 +726,7 @@ export class ServiceNowUnifiedServer {
         };
 
       } catch (error: any) {
-        console.error(`[Server] Tool execution failed: ${name}`, error.message);
+        mcpDebug(`[Server] Tool execution failed: ${name}`, error.message);
 
         // Ensure error is properly classified as SnowFlowError before calling toToolResult()
         const snowFlowError = error instanceof SnowFlowError
@@ -745,7 +746,7 @@ export class ServiceNowUnifiedServer {
     // List available prompts
     this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
       const prompts = this.promptManager.listPrompts();
-      console.error(`[Server] Listing ${prompts.length} prompts`);
+      mcpDebug(`[Server] Listing ${prompts.length} prompts`);
 
       return {
         prompts: prompts.map(prompt => ({
@@ -763,7 +764,7 @@ export class ServiceNowUnifiedServer {
     // Get and execute a specific prompt
     this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      console.error(`[Server] Getting prompt: ${name}`);
+      mcpDebug(`[Server] Getting prompt: ${name}`);
 
       try {
         const prompt = this.promptManager.getPrompt(name);
@@ -788,7 +789,7 @@ export class ServiceNowUnifiedServer {
           }))
         };
       } catch (error: any) {
-        console.error(`[Server] Prompt execution failed: ${name}`, error.message);
+        mcpDebug(`[Server] Prompt execution failed: ${name}`, error.message);
         throw new McpError(
           ErrorCode.InternalError,
           error.message
@@ -798,7 +799,7 @@ export class ServiceNowUnifiedServer {
 
     // Error handler
     this.server.onerror = (error) => {
-      console.error('[Server] MCP Error:', error);
+      mcpDebug('[Server] MCP Error:', error);
     };
   }
 
@@ -919,52 +920,52 @@ export class ServiceNowUnifiedServer {
    * 3. Local auth.json files [already loaded in constructor]
    */
   async initialize(): Promise<void> {
-    console.error('[Server] ServiceNow Unified MCP Server starting...');
-    console.error('[Server] ========== ENVIRONMENT CHECK ==========');
-    console.error(`[Server] SNOW_LAZY_TOOLS = "${process.env.SNOW_LAZY_TOOLS || 'NOT SET'}"`);
-    console.error(`[Server] SNOW_SESSION_ID = "${process.env.SNOW_SESSION_ID || 'NOT SET'}"`);
-    console.error('[Server] ========================================');
+    mcpDebug('[Server] ServiceNow Unified MCP Server starting...');
+    mcpDebug('[Server] ========== ENVIRONMENT CHECK ==========');
+    mcpDebug(`[Server] SNOW_LAZY_TOOLS = "${process.env.SNOW_LAZY_TOOLS || 'NOT SET'}"`);
+    mcpDebug(`[Server] SNOW_SESSION_ID = "${process.env.SNOW_SESSION_ID || 'NOT SET'}"`);
+    mcpDebug('[Server] ========================================');
 
     try {
       // STEP 0: Try enterprise portal fetch FIRST (secure mode - no local secrets!)
       // This takes priority over local credentials if enterprise auth is available
       if (!this.hasValidCredentials() || this.loadEnterpriseAuth()) {
-        console.error('[Server] Checking enterprise portal for credentials...');
+        mcpDebug('[Server] Checking enterprise portal for credentials...');
         const enterpriseContext = await this.loadFromEnterprisePortal();
         if (enterpriseContext) {
           this.context = enterpriseContext;
-          console.error('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
-          console.error('[Server]    No ServiceNow secrets stored locally!');
+          mcpDebug('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
+          mcpDebug('[Server]    No ServiceNow secrets stored locally!');
         } else if (!this.hasValidCredentials()) {
-          console.error('[Server] No credentials available from enterprise portal');
-          console.error('[Server] Falling back to local credentials (if any)...');
+          mcpDebug('[Server] No credentials available from enterprise portal');
+          mcpDebug('[Server] Falling back to local credentials (if any)...');
         }
       }
 
-      console.error('[Server] Instance:', this.context.instanceUrl || 'NOT CONFIGURED');
-      console.error('[Server] Auth Mode:', this.context.enterprise ? 'ENTERPRISE (secure)' : 'LOCAL');
+      mcpDebug('[Server] Instance:', this.context.instanceUrl || 'NOT CONFIGURED');
+      mcpDebug('[Server] Auth Mode:', this.context.enterprise ? 'ENTERPRISE (secure)' : 'LOCAL');
 
       // Initialize tool registry with auto-discovery
-      console.error('[Server] Discovering tools...');
+      mcpDebug('[Server] Discovering tools...');
       const discoveryResult = await toolRegistry.initialize();
 
-      console.error('[Server] Tool discovery complete:');
-      console.error(`  - Domains: ${discoveryResult.domains.length}`);
-      console.error(`  - Tools found: ${discoveryResult.toolsFound}`);
-      console.error(`  - Tools registered: ${discoveryResult.toolsRegistered}`);
-      console.error(`  - Tools failed: ${discoveryResult.toolsFailed}`);
-      console.error(`  - Duration: ${discoveryResult.duration}ms`);
+      mcpDebug('[Server] Tool discovery complete:');
+      mcpDebug(`  - Domains: ${discoveryResult.domains.length}`);
+      mcpDebug(`  - Tools found: ${discoveryResult.toolsFound}`);
+      mcpDebug(`  - Tools registered: ${discoveryResult.toolsRegistered}`);
+      mcpDebug(`  - Tools failed: ${discoveryResult.toolsFailed}`);
+      mcpDebug(`  - Duration: ${discoveryResult.duration}ms`);
 
       if (discoveryResult.toolsFailed > 0) {
-        console.error('[Server] Some tools failed to load:');
+        mcpDebug('[Server] Some tools failed to load:');
         discoveryResult.errors.forEach(err => {
-          console.warn(`  - ${err.filePath}: ${err.error}`);
+          mcpWarn(`  - ${err.filePath}: ${err.error}`);
         });
       }
 
       // Populate ToolSearch index for session-based tool enabling
       // This mirrors the tool index from the original snow-flow implementation
-      console.error('[Server] Building tool search index...');
+      mcpDebug('[Server] Building tool search index...');
       const allTools = toolRegistry.getToolDefinitions();
       const toolIndexEntries = allTools.map(tool => {
         const registeredTool = toolRegistry.getTool(tool.name);
@@ -977,34 +978,34 @@ export class ServiceNowUnifiedServer {
         };
       });
       ToolSearch.registerTools(toolIndexEntries);
-      console.error(`[Server] Tool search index populated with ${toolIndexEntries.length} tools`);
+      mcpDebug(`[Server] Tool search index populated with ${toolIndexEntries.length} tools`);
 
       // Test authentication (only if we have credentials)
       if (this.hasValidCredentials()) {
-        console.error('[Server] Testing authentication...');
+        mcpDebug('[Server] Testing authentication...');
         try {
           await authManager.getAuthenticatedClient(this.context);
-          console.error('[Server] Authentication successful');
+          mcpDebug('[Server] Authentication successful');
         } catch (error: any) {
-          console.error('[Server] Authentication test failed:', error.message);
-          console.error('[Server] Server will start, but tool calls may fail until credentials are valid');
+          mcpDebug('[Server] Authentication test failed:', error.message);
+          mcpDebug('[Server] Server will start, but tool calls may fail until credentials are valid');
         }
       } else {
-        console.error('[Server] ⚠️  No ServiceNow credentials configured!');
-        console.error('[Server] Tools will return authentication errors.');
-        console.error('[Server] To configure:');
-        console.error('[Server]   Enterprise users: snow-code auth login');
-        console.error('[Server]   Free users: Configure environment variables or auth.json');
+        mcpDebug('[Server] ⚠️  No ServiceNow credentials configured!');
+        mcpDebug('[Server] Tools will return authentication errors.');
+        mcpDebug('[Server] To configure:');
+        mcpDebug('[Server]   Enterprise users: snow-code auth login');
+        mcpDebug('[Server]   Free users: Configure environment variables or auth.json');
       }
 
       // Get server statistics
       const stats = toolRegistry.getStatistics();
-      console.error('[Server] Server statistics:');
-      console.error(`  - Total tools: ${stats.totalTools}`);
-      console.error(`  - Total domains: ${stats.totalDomains}`);
-      console.error('  - Tools by domain:');
+      mcpDebug('[Server] Server statistics:');
+      mcpDebug(`  - Total tools: ${stats.totalTools}`);
+      mcpDebug(`  - Total domains: ${stats.totalDomains}`);
+      mcpDebug('  - Tools by domain:');
       Object.entries(stats.toolsByDomain).forEach(([domain, count]) => {
-        console.error(`    - ${domain}: ${count} tools`);
+        mcpDebug(`    - ${domain}: ${count} tools`);
       });
 
       // Show lazy tools mode status (DEFAULT: enabled for token efficiency)
@@ -1012,21 +1013,21 @@ export class ServiceNowUnifiedServer {
       const domainFilterEnabled = !!process.env.SNOW_TOOL_DOMAINS;
 
       if (lazyToolsEnabled) {
-        console.error('[Server] 🚀 LAZY TOOLS MODE ACTIVE (default)');
-        console.error('[Server]    Token usage: ~2k (down from ~71k)');
-        console.error('[Server]    AI uses tool_search + tool_execute to access all tools');
-        console.error('[Server]    Set SNOW_LAZY_TOOLS=false to disable');
+        mcpDebug('[Server] 🚀 LAZY TOOLS MODE ACTIVE (default)');
+        mcpDebug('[Server]    Token usage: ~2k (down from ~71k)');
+        mcpDebug('[Server]    AI uses tool_search + tool_execute to access all tools');
+        mcpDebug('[Server]    Set SNOW_LAZY_TOOLS=false to disable');
       } else if (domainFilterEnabled) {
-        console.error('[Server] 🔧 Domain filtering ACTIVE via SNOW_TOOL_DOMAINS');
+        mcpDebug('[Server] 🔧 Domain filtering ACTIVE via SNOW_TOOL_DOMAINS');
       } else {
-        console.error('[Server] ⚠️  LAZY TOOLS DISABLED - all tools loaded (~71k tokens)');
-        console.error('[Server]    Remove SNOW_LAZY_TOOLS=false to enable lazy loading');
+        mcpDebug('[Server] ⚠️  LAZY TOOLS DISABLED - all tools loaded (~71k tokens)');
+        mcpDebug('[Server]    Remove SNOW_LAZY_TOOLS=false to enable lazy loading');
       }
 
-      console.error('[Server] Initialization complete ✅');
+      mcpDebug('[Server] Initialization complete ✅');
 
     } catch (error: any) {
-      console.error('[Server] Initialization failed:', error.message);
+      mcpDebug('[Server] Initialization failed:', error.message);
       throw error;
     }
   }
@@ -1037,17 +1038,17 @@ export class ServiceNowUnifiedServer {
   async start(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('[Server] Connected via stdio transport');
+    mcpDebug('[Server] Connected via stdio transport');
   }
 
   /**
    * Stop server gracefully
    */
   async stop(): Promise<void> {
-    console.error('[Server] Stopping server...');
+    mcpDebug('[Server] Stopping server...');
     await this.server.close();
     authManager.clearCache();
-    console.error('[Server] Server stopped');
+    mcpDebug('[Server] Server stopped');
   }
 
   /**

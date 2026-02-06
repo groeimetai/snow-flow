@@ -19,6 +19,7 @@ import {
   ToolValidationResult,
   ToolMetadata
 } from './types';
+import { mcpDebug } from './mcp-debug.js';
 
 // Static tool imports for bundled mode
 // These are imported at build time and included in the bundle
@@ -175,7 +176,7 @@ export class ToolRegistry {
    * 3. Static mode correctly handles the *_def and *_exec export patterns
    */
   async initialize(): Promise<ToolDiscoveryResult> {
-    console.error('[ToolRegistry] Initializing with static imports...');
+    mcpDebug('[ToolRegistry] Initializing with static imports...');
 
     const startTime = Date.now();
 
@@ -185,13 +186,13 @@ export class ToolRegistry {
 
     result.duration = Date.now() - startTime;
 
-    console.error('[ToolRegistry] Initialization complete:');
-    console.error(`  - Mode: static (bundled)`);
-    console.error(`  - Domains: ${result.domains.length}`);
-    console.error(`  - Tools found: ${result.toolsFound}`);
-    console.error(`  - Tools registered: ${result.toolsRegistered}`);
-    console.error(`  - Tools failed: ${result.toolsFailed}`);
-    console.error(`  - Duration: ${result.duration}ms`);
+    mcpDebug('[ToolRegistry] Initialization complete:');
+    mcpDebug(`  - Mode: static (bundled)`);
+    mcpDebug(`  - Domains: ${result.domains.length}`);
+    mcpDebug(`  - Tools found: ${result.toolsFound}`);
+    mcpDebug(`  - Tools registered: ${result.toolsRegistered}`);
+    mcpDebug(`  - Tools failed: ${result.toolsFailed}`);
+    mcpDebug(`  - Duration: ${result.duration}ms`);
 
     return result;
   }
@@ -253,7 +254,7 @@ export class ToolRegistry {
       }
     }
 
-    console.error(`[ToolRegistry] Loaded ${result.toolsRegistered} tools from ${result.domains.length} domains (static mode)`);
+    mcpDebug(`[ToolRegistry] Loaded ${result.toolsRegistered} tools from ${result.domains.length} domains (static mode)`);
     return result;
   }
 
@@ -268,7 +269,7 @@ export class ToolRegistry {
         .map(entry => entry.name)
         .filter(name => !name.startsWith('.') && !name.startsWith('_'));
     } catch (error: any) {
-      console.error('[ToolRegistry] Failed to discover domains:', error.message);
+      mcpDebug('[ToolRegistry] Failed to discover domains:', error.message);
       return [];
     }
   }
@@ -317,12 +318,12 @@ export class ToolRegistry {
             filePath: toolPath,
             error: error.message
           });
-          console.error(`[ToolRegistry] Failed to load ${toolPath}:`, error.message);
+          mcpDebug(`[ToolRegistry] Failed to load ${toolPath}:`, error.message);
         }
       }
 
     } catch (error: any) {
-      console.error(`[ToolRegistry] Failed to discover tools in ${domain}:`, error.message);
+      mcpDebug(`[ToolRegistry] Failed to discover tools in ${domain}:`, error.message);
     }
 
     return result;
@@ -369,7 +370,7 @@ export class ToolRegistry {
       };
 
       this.tools.set(definition.name, registeredTool);
-      console.error(`[ToolRegistry] Registered: ${definition.name} (${domain})`);
+      mcpDebug(`[ToolRegistry] Registered: ${definition.name} (${domain})`);
 
     } catch (error: any) {
       throw new Error(`Failed to load tool from ${filePath}: ${error.message}`);
@@ -468,12 +469,12 @@ export class ToolRegistry {
     }
 
     try {
-      console.error(`[ToolRegistry] Executing: ${name}`);
+      mcpDebug(`[ToolRegistry] Executing: ${name}`);
       const result = await tool.executor(args, context);
-      console.error(`[ToolRegistry] Success: ${name}`);
+      mcpDebug(`[ToolRegistry] Success: ${name}`);
       return result;
     } catch (error: any) {
-      console.error(`[ToolRegistry] Failed: ${name}`, error.message);
+      mcpDebug(`[ToolRegistry] Failed: ${name}`, error.message);
       throw error;
     }
   }
@@ -533,9 +534,9 @@ export class ToolRegistry {
     try {
       await fs.mkdir(path.dirname(configPath), { recursive: true });
       await fs.writeFile(configPath, JSON.stringify(metadata, null, 2), 'utf-8');
-      console.error(`[ToolRegistry] Exported ${metadata.length} tool definitions to ${configPath}`);
+      mcpDebug(`[ToolRegistry] Exported ${metadata.length} tool definitions to ${configPath}`);
     } catch (error: any) {
-      console.error('[ToolRegistry] Failed to export tool definitions:', error.message);
+      mcpDebug('[ToolRegistry] Failed to export tool definitions:', error.message);
     }
   }
 
@@ -543,7 +544,7 @@ export class ToolRegistry {
    * Reload tools from disk (for development hot-reload)
    */
   async reload(): Promise<ToolDiscoveryResult> {
-    console.error('[ToolRegistry] Reloading tools...');
+    mcpDebug('[ToolRegistry] Reloading tools...');
     this.tools.clear();
     return await this.initialize();
   }
@@ -553,7 +554,7 @@ export class ToolRegistry {
    */
   clear(): void {
     this.tools.clear();
-    console.error('[ToolRegistry] Cleared all registered tools');
+    mcpDebug('[ToolRegistry] Cleared all registered tools');
   }
 }
 

@@ -18,6 +18,7 @@
 import { ServiceNowUnifiedServer } from './server.js';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { mcpDebug } from '../shared/mcp-debug.js';
 
 /**
  * Main entry point
@@ -47,12 +48,12 @@ async function main() {
       const parentResult = dotenv.config({ path: parentEnvPath });
 
       if (parentResult.error) {
-        console.error('[Main] No .env file found - using environment variables from MCP configuration');
+        mcpDebug('[Main] No .env file found - using environment variables from MCP configuration');
       } else {
-        console.error('[Main] Loaded environment from parent directory:', parentEnvPath);
+        mcpDebug('[Main] Loaded environment from parent directory:', parentEnvPath);
       }
     } else {
-      console.error('[Main] Loaded environment from .env file');
+      mcpDebug('[Main] Loaded environment from .env file');
     }
 
     // 🆕 Restore MCP client env vars (they take priority over .env)
@@ -60,7 +61,7 @@ async function main() {
     for (const [key, value] of Object.entries(mcpEnvVars)) {
       if (value !== undefined) {
         if (process.env[key] !== value) {
-          console.error(`[Main] Restoring MCP config override: ${key}`);
+          mcpDebug(`[Main] Restoring MCP config override: ${key}`);
         }
         process.env[key] = value;
       }
@@ -68,10 +69,10 @@ async function main() {
 
     // Log active configuration mode
     if (process.env.SNOW_LAZY_TOOLS === 'true') {
-      console.error('[Main] SNOW_LAZY_TOOLS=true (lazy loading mode enabled)');
+      mcpDebug('[Main] SNOW_LAZY_TOOLS=true (lazy loading mode enabled)');
     }
     if (process.env.SNOW_TOOL_DOMAINS) {
-      console.error(`[Main] SNOW_TOOL_DOMAINS=${process.env.SNOW_TOOL_DOMAINS}`);
+      mcpDebug(`[Main] SNOW_TOOL_DOMAINS=${process.env.SNOW_TOOL_DOMAINS}`);
     }
 
     // Create server instance
@@ -85,20 +86,20 @@ async function main() {
 
     // Graceful shutdown handlers
     process.on('SIGINT', async () => {
-      console.error('\n[Main] Received SIGINT, shutting down gracefully...');
+      mcpDebug('\n[Main] Received SIGINT, shutting down gracefully...');
       await server.stop();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.error('\n[Main] Received SIGTERM, shutting down gracefully...');
+      mcpDebug('\n[Main] Received SIGTERM, shutting down gracefully...');
       await server.stop();
       process.exit(0);
     });
 
   } catch (error: any) {
-    console.error('[Main] Fatal error:', error.message);
-    console.error(error.stack);
+    mcpDebug('[Main] Fatal error:', error.message);
+    mcpDebug(error.stack);
     process.exit(1);
   }
 }

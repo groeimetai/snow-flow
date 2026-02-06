@@ -12,6 +12,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { proxyToolCall, listEnterpriseTools } from './proxy.js';
 import { proxyLogger } from './logger.js';
+import { mcpDebug } from '../shared/mcp-debug.js';
 
 const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.31';
 
@@ -54,7 +55,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     proxyLogger.log('error', 'Failed to list tools - returning empty list', {
       error: error instanceof Error ? error.message : String(error)
     });
-    console.error(
+    mcpDebug(
       `[Enterprise Proxy] Failed to list tools: ${error instanceof Error ? error.message : String(error)}`
     );
     return { tools: [] };
@@ -124,22 +125,22 @@ async function main() {
     await server.connect(transport);
 
     // Log to stderr (stdout is reserved for MCP protocol)
-    console.error('[Enterprise Proxy] Snow-Flow Enterprise MCP Proxy started');
-    console.error(`[Enterprise Proxy] Version: ${VERSION}`);
-    console.error(
+    mcpDebug('[Enterprise Proxy] Snow-Flow Enterprise MCP Proxy started');
+    mcpDebug(`[Enterprise Proxy] Version: ${VERSION}`);
+    mcpDebug(
       `[Enterprise Proxy] Enterprise URL: ${process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev'}`
     );
-    console.error(
+    mcpDebug(
       `[Enterprise Proxy] License Key: ${process.env.SNOW_LICENSE_KEY ? '✓ Configured' : '✗ Not configured'}`
     );
-    console.error(`[Enterprise Proxy] Logs: ${proxyLogger.getLogPath() || 'stderr only'}`);
+    mcpDebug(`[Enterprise Proxy] Logs: ${proxyLogger.getLogPath() || 'stderr only'}`);
 
     proxyLogger.log('info', 'Enterprise Proxy successfully started and ready for requests');
   } catch (error) {
     proxyLogger.log('error', 'Fatal startup error', {
       error: error instanceof Error ? error.message : String(error)
     });
-    console.error(
+    mcpDebug(
       '[Enterprise Proxy] Fatal error:',
       error instanceof Error ? error.message : String(error)
     );
@@ -149,18 +150,18 @@ async function main() {
 
 // Handle process signals
 process.on('SIGINT', () => {
-  console.error('[Enterprise Proxy] Received SIGINT, shutting down...');
+  mcpDebug('[Enterprise Proxy] Received SIGINT, shutting down...');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.error('[Enterprise Proxy] Received SIGTERM, shutting down...');
+  mcpDebug('[Enterprise Proxy] Received SIGTERM, shutting down...');
   process.exit(0);
 });
 
 // Start server
 main().catch((error) => {
-  console.error(
+  mcpDebug(
     '[Enterprise Proxy] Startup failed:',
     error instanceof Error ? error.message : String(error)
   );

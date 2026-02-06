@@ -3,6 +3,8 @@
  * Sends logs to stderr so they appear in Claude Code console
  */
 
+import { mcpDebug } from './mcp-debug.js';
+
 interface TokenUsage {
   input: number;
   output: number;
@@ -37,7 +39,7 @@ export class MCPLogger {
     };
 
     // Send to stderr so it appears in console
-    console.error(`[${this.name}] ${level}: ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    mcpDebug(`[${this.name}] ${level}: ${message}`, data ? JSON.stringify(data, null, 2) : '');
     
     // Also send structured log for potential parsing
     if (process.send) {
@@ -58,7 +60,7 @@ export class MCPLogger {
       
       // CRITICAL: Stop progress after 60 seconds to prevent infinite loops
       if (duration > 60) {
-        console.error(`⚠️ [${this.name}] Operation exceeded maximum time (60s). Stopping progress indicator.`);
+        mcpDebug(`⚠️ [${this.name}] Operation exceeded maximum time (60s). Stopping progress indicator.`);
         this.stopProgress();
         
         // Force stop the operation by throwing timeout error
@@ -138,7 +140,7 @@ export class MCPLogger {
     const now = Date.now();
     if (now - this.lastProgressTime > 1000) {
       this.lastProgressTime = now;
-      console.error(`⏳ [${this.name}] ${message}`);
+      mcpDebug(`⏳ [${this.name}] ${message}`);
     }
   }
 
@@ -163,7 +165,7 @@ export class MCPLogger {
     
     // Only log token usage in debug mode to avoid spam
     if (process.env.MCP_DEBUG === 'true' && this.tokenUsage.total > 0) {
-      console.error(`📊 [${this.name}] Tokens used: ${this.tokenUsage.total} (in: ${this.tokenUsage.input}, out: ${this.tokenUsage.output})`);
+      mcpDebug(`📊 [${this.name}] Tokens used: ${this.tokenUsage.total} (in: ${this.tokenUsage.input}, out: ${this.tokenUsage.output})`);
     }
   }
 
@@ -196,7 +198,7 @@ export class MCPLogger {
     
     // Only show token report for operations with actual token usage
     if (this.tokenUsage.total > 0 && duration > 1) {
-      console.error(`📊 [${this.name}] ${operation} completed: ${duration}s, ${this.tokenUsage.total} tokens`);
+      mcpDebug(`📊 [${this.name}] ${operation} completed: ${duration}s, ${this.tokenUsage.total} tokens`);
     }
   }
 
@@ -235,7 +237,7 @@ export class MCPLogger {
    */
   public resetTokens() {
     this.tokenUsage = { input: 0, output: 0, total: 0 };
-    console.error(`🔄 [${this.name}] Token counter reset for new operation`);
+    mcpDebug(`🔄 [${this.name}] Token counter reset for new operation`);
   }
 }
 

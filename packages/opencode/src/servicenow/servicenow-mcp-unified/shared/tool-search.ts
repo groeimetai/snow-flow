@@ -14,6 +14,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { mcpDebug } from './mcp-debug.js';
 
 /**
  * Tool index entry - lightweight representation for search
@@ -100,7 +101,7 @@ export function getCurrentSessionId(): string | undefined {
       }
     }
   } catch (e: any) {
-    console.error(`[ToolSearch] Failed to read current session: ${e.message}`);
+    mcpDebug(`[ToolSearch] Failed to read current session: ${e.message}`);
   }
 
   return undefined;
@@ -117,9 +118,9 @@ export function setCurrentSessionId(sessionId: string): void {
       updatedAt: new Date().toISOString()
     }, null, 2);
     fs.writeFileSync(filePath, data, 'utf-8');
-    console.error(`[ToolSearch] Set current session: ${sessionId}`);
+    mcpDebug(`[ToolSearch] Set current session: ${sessionId}`);
   } catch (e: any) {
-    console.error(`[ToolSearch] Failed to set current session: ${e.message}`);
+    mcpDebug(`[ToolSearch] Failed to set current session: ${e.message}`);
   }
 }
 
@@ -141,9 +142,9 @@ async function persistEnabledTools(sessionID: string, tools: Set<string>): Promi
       updatedAt: new Date().toISOString()
     }, null, 2);
     fs.writeFileSync(filePath, data, 'utf-8');
-    console.error(`[ToolSearch] Persisted ${tools.size} enabled tools for session ${sessionID}`);
+    mcpDebug(`[ToolSearch] Persisted ${tools.size} enabled tools for session ${sessionID}`);
   } catch (e: any) {
-    console.error(`[ToolSearch] Failed to persist enabled tools: ${e.message}`);
+    mcpDebug(`[ToolSearch] Failed to persist enabled tools: ${e.message}`);
   }
 }
 
@@ -160,13 +161,13 @@ async function restoreEnabledTools(sessionID: string): Promise<Set<string>> {
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     if (data.tools && Array.isArray(data.tools)) {
       const tools = new Set<string>(data.tools);
-      console.error(`[ToolSearch] Restored ${tools.size} enabled tools for session ${sessionID}`);
+      mcpDebug(`[ToolSearch] Restored ${tools.size} enabled tools for session ${sessionID}`);
       return tools;
     }
   } catch (e: any) {
     // File not found or parse error is expected for new sessions
     if (e.code !== 'ENOENT') {
-      console.error(`[ToolSearch] Failed to restore enabled tools: ${e.message}`);
+      mcpDebug(`[ToolSearch] Failed to restore enabled tools: ${e.message}`);
     }
   }
   return new Set();
@@ -278,7 +279,7 @@ export namespace ToolSearch {
     enabledToolsCache.get(sessionID)!.add(toolID);
     // Persist to disk
     await persistEnabledTools(sessionID, enabledToolsCache.get(sessionID)!);
-    console.error(`[ToolSearch] Enabled tool '${toolID}' for session ${sessionID}`);
+    mcpDebug(`[ToolSearch] Enabled tool '${toolID}' for session ${sessionID}`);
   }
 
   /**
@@ -298,7 +299,7 @@ export namespace ToolSearch {
 
     // Persist once after all additions
     await persistEnabledTools(sessionID, cache);
-    console.error(`[ToolSearch] Enabled ${toolIDs.length} tools for session ${sessionID}`);
+    mcpDebug(`[ToolSearch] Enabled ${toolIDs.length} tools for session ${sessionID}`);
   }
 
   /**
@@ -336,10 +337,10 @@ export namespace ToolSearch {
       const filePath = getSessionFilePath(sessionID);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.error(`[ToolSearch] Cleared session ${sessionID}`);
+        mcpDebug(`[ToolSearch] Cleared session ${sessionID}`);
       }
     } catch (e: any) {
-      console.error(`[ToolSearch] Failed to clear session file: ${e.message}`);
+      mcpDebug(`[ToolSearch] Failed to clear session file: ${e.message}`);
     }
   }
 
