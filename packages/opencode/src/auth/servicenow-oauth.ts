@@ -367,6 +367,55 @@ export interface ServiceNowOAuthOptions {
   clientSecret: string
 }
 
+/**
+ * Detect if running in a remote/headless environment where a browser cannot be opened.
+ * Checks for: GitHub Codespaces, SSH sessions, Docker/containers, Gitpod,
+ * VS Code Remote, WSL, and Linux without DISPLAY.
+ */
+export function isRemoteEnvironment(): boolean {
+  // GitHub Codespaces
+  if (process.env.CODESPACES === "true" || !!process.env.CODESPACE_NAME) {
+    return true
+  }
+
+  // SSH session
+  if (process.env.SSH_CONNECTION || process.env.SSH_CLIENT || process.env.SSH_TTY) {
+    return true
+  }
+
+  // Gitpod
+  if (process.env.GITPOD_WORKSPACE_ID) {
+    return true
+  }
+
+  // VS Code Remote Containers
+  if (process.env.VSCODE_REMOTE_CONTAINERS_SESSION) {
+    return true
+  }
+
+  // WSL
+  if (process.env.WSL_DISTRO_NAME) {
+    return true
+  }
+
+  // Docker / container: check /.dockerenv
+  try {
+    const fs = require("fs")
+    if (fs.existsSync("/.dockerenv")) {
+      return true
+    }
+  } catch {
+    // Ignore filesystem errors
+  }
+
+  // Linux without DISPLAY (no graphical environment)
+  if (process.platform === "linux" && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) {
+    return true
+  }
+
+  return false
+}
+
 export class ServiceNowOAuth {
   private stateParameter?: string
   private codeVerifier?: string
@@ -601,6 +650,98 @@ export class ServiceNowOAuth {
   }
 
   /**
+   * Prepare a headless OAuth flow: generates PKCE, state, and returns the auth URL.
+   * The caller must show this URL to the user, then call exchangeCallbackUrl() with
+   * the callback URL that ServiceNow redirects to.
+   */
+  prepareHeadlessAuth(options: ServiceNowOAuthOptions): {
+    authUrl: string
+    redirectUri: string
+    normalizedInstance: string
+    error?: string
+  } {
+    const normalizedInstance = this.normalizeInstanceUrl(options.instance)
+
+    const secretValidation = this.validateClientSecret(options.clientSecret)
+    if (!secretValidation.valid) {
+      return {
+        authUrl: "",
+        redirectUri: "",
+        normalizedInstance,
+        error: secretValidation.reason,
+      }
+    }
+
+    this.stateParameter = this.generateState()
+    this.generatePKCE()
+
+    const redirectUri = "http://localhost:3005/callback"
+    const authUrl = this.generateAuthUrlWithCallback(normalizedInstance, options.clientId, redirectUri)
+
+    return { authUrl, redirectUri, normalizedInstance }
+  }
+
+  /**
+   * Exchange a callback URL (pasted by the user) for tokens.
+   * Used in headless environments where the localhost callback server can't receive the redirect.
+   */
+  async exchangeCallbackUrl(
+    callbackUrl: string,
+    instance: string,
+    clientId: string,
+    clientSecret: string,
+    redirectUri: string,
+  ): Promise<ServiceNowAuthResult> {
+    try {
+      const { URL } = require("url")
+      const parsedUrl = new URL(callbackUrl.trim())
+
+      const code = parsedUrl.searchParams.get("code")
+      const error = parsedUrl.searchParams.get("error")
+      const state = parsedUrl.searchParams.get("state")
+
+      if (state !== this.stateParameter) {
+        return { success: false, error: "Invalid state parameter - possible CSRF attack" }
+      }
+
+      if (error) {
+        return { success: false, error: `OAuth error: ${error}` }
+      }
+
+      if (!code) {
+        return { success: false, error: "No authorization code found in callback URL" }
+      }
+
+      const tokenResult = await this.exchangeCodeForTokens(
+        instance,
+        clientId,
+        clientSecret,
+        code,
+        redirectUri,
+      )
+
+      if (tokenResult.success && tokenResult.accessToken) {
+        await Auth.set("servicenow", {
+          type: "servicenow-oauth",
+          instance,
+          clientId,
+          clientSecret,
+          accessToken: tokenResult.accessToken,
+          refreshToken: tokenResult.refreshToken,
+          expiresAt: tokenResult.expiresIn ? Date.now() + tokenResult.expiresIn * 1000 : undefined,
+        })
+      }
+
+      return tokenResult
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Invalid callback URL format",
+      }
+    }
+  }
+
+  /**
    * Main authentication flow with localhost callback server
    */
   async authenticate(options: ServiceNowOAuthOptions): Promise<ServiceNowAuthResult> {
@@ -678,67 +819,6 @@ export class ServiceNowOAuth {
   }
 
   /**
-   * Handle authentication in Codespaces environment
-   * With out-of-band flow, ServiceNow displays the authorization code directly
-   */
-  private async handleCodespaceAuth(
-    instance: string,
-    clientId: string,
-    clientSecret: string,
-  ): Promise<ServiceNowAuthResult> {
-    prompts.log.info("📋 After approving in ServiceNow, copy the authorization code displayed")
-    prompts.log.message("ServiceNow will show you an authorization code on the success page.")
-    prompts.log.message("")
-
-    const authCode = (await prompts.text({
-      message: "Paste the authorization code here:",
-      placeholder: "Enter the code from ServiceNow",
-      validate: (value) => {
-        if (!value || value.trim() === "") {
-          return "Authorization code is required"
-        }
-        // Authorization codes are typically alphanumeric, 20-40 chars
-        if (value.trim().length < 10) {
-          return "Authorization code seems too short"
-        }
-        return undefined
-      },
-    })) as string
-
-    if (prompts.isCancel(authCode)) {
-      return {
-        success: false,
-        error: "Authentication cancelled by user",
-      }
-    }
-
-    // Clean the code (remove whitespace)
-    const code = authCode.trim()
-
-    // Exchange code for tokens
-    prompts.log.message("")
-    const spinner = prompts.spinner()
-    spinner.start("Exchanging authorization code for tokens")
-
-    // Use out-of-band redirect_uri for Codespaces
-    const tokenResult = await this.exchangeCodeForTokens(
-      instance,
-      clientId,
-      clientSecret,
-      code,
-      "urn:ietf:wg:oauth:2.0:oob"
-    )
-
-    if (tokenResult.success) {
-      spinner.stop("Authentication successful ✓")
-    } else {
-      spinner.stop("Token exchange failed ✗")
-    }
-
-    return tokenResult
-  }
-
-  /**
    * Generate authorization URL with localhost callback
    */
   private generateAuthUrlWithCallback(instance: string, clientId: string, redirectUri: string): string {
@@ -799,7 +879,7 @@ export class ServiceNowOAuth {
     clientSecret: string,
     redirectUri: string,
   ): Promise<ServiceNowAuthResult> {
-    const inCodespace = this.isCodespace()
+    const inRemoteEnv = isRemoteEnvironment()
 
     return new Promise((resolve) => {
       const { createServer } = require("http")
@@ -891,10 +971,10 @@ export class ServiceNowOAuth {
         prompts.log.info(`Callback server started on http://localhost:${port}/callback`)
         prompts.log.info("Waiting for OAuth callback...")
 
-        // In Codespaces and remote environments, the callback won't work automatically
-        if (inCodespace) {
+        // In remote/headless environments, the callback won't work automatically
+        if (inRemoteEnv) {
           prompts.log.message("")
-          prompts.log.info("🌐 GitHub Codespaces Detected")
+          prompts.log.info("Remote/headless environment detected")
           prompts.log.message("")
           prompts.log.info("After clicking 'Approve' in ServiceNow:")
           prompts.log.message("   1. Your browser will show a 'Can't reach this page' or 404 error")

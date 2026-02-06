@@ -12,6 +12,7 @@ import {
   generateEnterpriseInstructions,
   generateStakeholderDocumentation,
 } from "../../../../servicenow/cli/enterprise-docs-generator.js"
+import { isRemoteEnvironment } from "@/auth/servicenow-oauth"
 
 /**
  * Fetch active integrations from enterprise portal
@@ -270,14 +271,20 @@ function DialogAuthServiceNowOAuth() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"instance" | "clientId" | "secret" | "authenticating">("instance")
+  const [step, setStep] = createSignal<"instance" | "clientId" | "secret" | "authenticating" | "headless-auth" | "callback-paste">("instance")
   const [instance, setInstance] = createSignal("")
   const [clientId, setClientId] = createSignal("")
   const [clientSecret, setClientSecret] = createSignal("")
+  const [headlessAuthUrl, setHeadlessAuthUrl] = createSignal("")
+  const [callbackUrl, setCallbackUrl] = createSignal("")
+
+  // Stored for headless token exchange
+  let headlessOAuthRef: { oauth: any; redirectUri: string; normalizedInstance: string } | null = null
 
   let instanceInput: TextareaRenderable
   let clientIdInput: TextareaRenderable
   let secretInput: TextareaRenderable
+  let callbackUrlInput: TextareaRenderable
 
   // Load existing credentials
   onMount(async () => {
@@ -306,9 +313,52 @@ function DialogAuthServiceNowOAuth() {
       } else if (currentStep === "secret") {
         setStep("clientId")
         setTimeout(() => clientIdInput?.focus(), 10)
+      } else if (currentStep === "headless-auth" || currentStep === "callback-paste") {
+        setStep("secret")
+        setTimeout(() => secretInput?.focus(), 10)
       }
     }
   })
+
+  const startMcpServerAfterAuth = async () => {
+    try {
+      const { MCP } = await import("@/mcp")
+      const { Config } = await import("@/config/config")
+      const { Auth } = await import("@/auth")
+      const snAuth = await Auth.get("servicenow")
+      if (snAuth?.type === "servicenow-oauth") {
+        await MCP.add("servicenow-unified", {
+          type: "local",
+          command: Config.getMcpServerCommand("servicenow-unified"),
+          environment: {
+            SERVICENOW_INSTANCE_URL: snAuth.instance,
+            SERVICENOW_CLIENT_ID: snAuth.clientId,
+            SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
+            ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
+            ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
+          },
+          enabled: true,
+        })
+        toast.show({
+          variant: "info",
+          message: "ServiceNow connected! MCP server is now active.",
+          duration: 5000,
+        })
+      } else {
+        toast.show({
+          variant: "info",
+          message: "ServiceNow connected! MCP server will be available on next restart.",
+          duration: 5000,
+        })
+      }
+    } catch (mcpError) {
+      toast.show({
+        variant: "info",
+        message: "ServiceNow connected! MCP server will be available on next restart.",
+        duration: 5000,
+      })
+    }
+  }
 
   const handleAuthenticate = async () => {
     if (!instance() || !clientId() || !clientSecret()) {
@@ -316,6 +366,45 @@ function DialogAuthServiceNowOAuth() {
         variant: "error",
         message: "Please fill in all fields",
       })
+      return
+    }
+
+    // In headless/remote environments, use the callback URL paste flow
+    if (isRemoteEnvironment()) {
+      try {
+        const { ServiceNowOAuth } = await import("@/auth/servicenow-oauth")
+        const oauth = new ServiceNowOAuth()
+        const prepared = oauth.prepareHeadlessAuth({
+          instance: instance(),
+          clientId: clientId(),
+          clientSecret: clientSecret(),
+        })
+
+        if (prepared.error) {
+          toast.show({ variant: "error", message: prepared.error, duration: 5000 })
+          return
+        }
+
+        headlessOAuthRef = {
+          oauth,
+          redirectUri: prepared.redirectUri,
+          normalizedInstance: prepared.normalizedInstance,
+        }
+        setHeadlessAuthUrl(prepared.authUrl)
+        setStep("headless-auth")
+
+        // Auto-advance to callback paste after a moment
+        setTimeout(() => {
+          setStep("callback-paste")
+          setTimeout(() => callbackUrlInput?.focus(), 10)
+        }, 2000)
+      } catch (e) {
+        toast.show({
+          variant: "error",
+          message: e instanceof Error ? e.message : "Failed to prepare auth",
+          duration: 5000,
+        })
+      }
       return
     }
 
@@ -330,44 +419,7 @@ function DialogAuthServiceNowOAuth() {
       })
 
       if (result.success) {
-        // Add ServiceNow MCP server directly (no restart needed)
-        try {
-          const { MCP } = await import("@/mcp")
-          const { Config } = await import("@/config/config")
-          const { Auth } = await import("@/auth")
-          const snAuth = await Auth.get("servicenow")
-          if (snAuth?.type === "servicenow-oauth") {
-            await MCP.add("servicenow-unified", {
-              type: "local",
-              command: Config.getMcpServerCommand("servicenow-unified"),
-              environment: {
-                SERVICENOW_INSTANCE_URL: snAuth.instance,
-                SERVICENOW_CLIENT_ID: snAuth.clientId,
-                SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
-                ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
-                ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
-              },
-              enabled: true,
-            })
-            toast.show({
-              variant: "info",
-              message: "ServiceNow connected! MCP server is now active.",
-              duration: 5000,
-            })
-          } else {
-            toast.show({
-              variant: "info",
-              message: "ServiceNow connected! MCP server will be available on next restart.",
-              duration: 5000,
-            })
-          }
-        } catch (mcpError) {
-          toast.show({
-            variant: "info",
-            message: "ServiceNow connected! MCP server will be available on next restart.",
-            duration: 5000,
-          })
-        }
+        await startMcpServerAfterAuth()
         dialog.clear()
       } else {
         toast.show({
@@ -386,6 +438,58 @@ function DialogAuthServiceNowOAuth() {
       })
       setStep("secret")
       setTimeout(() => secretInput?.focus(), 10)
+    }
+  }
+
+  const handleCallbackPaste = async () => {
+    const url = callbackUrl().trim()
+    if (!url) {
+      toast.show({ variant: "error", message: "Please paste the callback URL" })
+      return
+    }
+
+    if (!url.includes("/callback")) {
+      toast.show({ variant: "error", message: "URL must contain '/callback'" })
+      return
+    }
+
+    if (!headlessOAuthRef) {
+      toast.show({ variant: "error", message: "OAuth session expired. Please try again." })
+      setStep("secret")
+      setTimeout(() => secretInput?.focus(), 10)
+      return
+    }
+
+    setStep("authenticating")
+    try {
+      const result = await headlessOAuthRef.oauth.exchangeCallbackUrl(
+        url,
+        headlessOAuthRef.normalizedInstance,
+        clientId(),
+        clientSecret(),
+        headlessOAuthRef.redirectUri,
+      )
+
+      if (result.success) {
+        await startMcpServerAfterAuth()
+        dialog.clear()
+      } else {
+        toast.show({
+          variant: "error",
+          message: result.error ?? "Token exchange failed",
+          duration: 5000,
+        })
+        setStep("callback-paste")
+        setTimeout(() => callbackUrlInput?.focus(), 10)
+      }
+    } catch (e) {
+      toast.show({
+        variant: "error",
+        message: e instanceof Error ? e.message : "Token exchange failed",
+        duration: 5000,
+      })
+      setStep("callback-paste")
+      setTimeout(() => callbackUrlInput?.focus(), 10)
     }
   }
 
@@ -467,6 +571,44 @@ function DialogAuthServiceNowOAuth() {
           <text fg={theme.textMuted}>Instance: {instance()}</text>
           <text fg={theme.textMuted}>Client ID: {clientId()}</text>
           <text fg={theme.textMuted}>Press Enter to authenticate</text>
+        </box>
+      </Show>
+
+      <Show when={step() === "headless-auth"}>
+        <box gap={1}>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+            Remote Environment Detected
+          </text>
+          <text fg={theme.text}>Open this URL in your browser to authenticate:</text>
+          <text fg={theme.primary}>{headlessAuthUrl()}</text>
+          <box paddingTop={1}>
+            <text fg={theme.textMuted}>After clicking "Allow" in ServiceNow:</text>
+            <text fg={theme.textMuted}>  1. Your browser will redirect to a localhost URL</text>
+            <text fg={theme.textMuted}>  2. The page may show an error (this is expected)</text>
+            <text fg={theme.textMuted}>  3. Copy the FULL URL from your browser address bar</text>
+          </box>
+        </box>
+      </Show>
+
+      <Show when={step() === "callback-paste"}>
+        <box gap={1}>
+          <text fg={theme.text}>Paste the callback URL from your browser address bar:</text>
+          <textarea
+            ref={(val: TextareaRenderable) => (callbackUrlInput = val)}
+            height={3}
+            initialValue={callbackUrl()}
+            placeholder="http://localhost:3005/callback?code=...&state=..."
+            textColor={theme.text}
+            focusedTextColor={theme.text}
+            cursorColor={theme.text}
+            keyBindings={[{ name: "return", action: "submit" }]}
+            onSubmit={() => {
+              setCallbackUrl(callbackUrlInput.plainText)
+              handleCallbackPaste()
+            }}
+          />
+          <text fg={theme.textMuted}>Instance: {instance()}</text>
+          <text fg={theme.textMuted}>Press Enter to exchange tokens</text>
         </box>
       </Show>
 
@@ -761,18 +903,49 @@ function DialogAuthEnterprise() {
       const data = await response.json()
       setSessionId(data.sessionId)
 
-      // Open browser with verification URL
-      const { spawn } = await import("child_process")
+      // Open browser with verification URL (or show URL in headless)
       const url = data.verificationUrl
-      if (process.platform === "darwin") {
-        spawn("open", [url], { detached: true, stdio: "ignore" })
-      } else if (process.platform === "win32") {
-        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+      if (isRemoteEnvironment()) {
+        toast.show({
+          variant: "info",
+          message: `Open this URL in your browser: ${url}`,
+          duration: 15000,
+        })
       } else {
-        spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+        const { spawn } = await import("child_process")
+        let browserOpened = false
+        try {
+          let proc: any
+          if (process.platform === "darwin") {
+            proc = spawn("open", [url], { detached: true, stdio: "ignore" })
+          } else if (process.platform === "win32") {
+            proc = spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+          } else {
+            proc = spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+          }
+          if (proc && proc.unref) proc.unref()
+          proc.on("error", () => {
+            toast.show({
+              variant: "info",
+              message: `Could not open browser. Open manually: ${url}`,
+              duration: 10000,
+            })
+          })
+          browserOpened = true
+        } catch {
+          // spawn failed entirely
+        }
+        if (browserOpened) {
+          toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+        } else {
+          toast.show({
+            variant: "info",
+            message: `Could not open browser. Open manually: ${url}`,
+            duration: 10000,
+          })
+        }
       }
 
-      toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
       setStep("browser")
 
       // Auto-advance to code input after a moment
@@ -1216,17 +1389,49 @@ function DialogAuthEnterpriseCombined() {
       const data = await response.json()
       setSessionId(data.sessionId)
 
-      const { spawn } = await import("child_process")
+      // Open browser with verification URL (or show URL in headless)
       const url = data.verificationUrl
-      if (process.platform === "darwin") {
-        spawn("open", [url], { detached: true, stdio: "ignore" })
-      } else if (process.platform === "win32") {
-        spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+      if (isRemoteEnvironment()) {
+        toast.show({
+          variant: "info",
+          message: `Open this URL in your browser: ${url}`,
+          duration: 15000,
+        })
       } else {
-        spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+        const { spawn } = await import("child_process")
+        let browserOpened = false
+        try {
+          let proc: any
+          if (process.platform === "darwin") {
+            proc = spawn("open", [url], { detached: true, stdio: "ignore" })
+          } else if (process.platform === "win32") {
+            proc = spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+          } else {
+            proc = spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+          }
+          if (proc && proc.unref) proc.unref()
+          proc.on("error", () => {
+            toast.show({
+              variant: "info",
+              message: `Could not open browser. Open manually: ${url}`,
+              duration: 10000,
+            })
+          })
+          browserOpened = true
+        } catch {
+          // spawn failed entirely
+        }
+        if (browserOpened) {
+          toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+        } else {
+          toast.show({
+            variant: "info",
+            message: `Could not open browser. Open manually: ${url}`,
+            duration: 10000,
+          })
+        }
       }
 
-      toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
       setStep("browser")
 
       setTimeout(() => {
