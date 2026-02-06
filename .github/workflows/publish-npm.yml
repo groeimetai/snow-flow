@@ -100,16 +100,16 @@ jobs:
       - name: Get version
         id: version
         run: |
+          BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
           if [ -n "${{ github.event.inputs.version }}" ]; then
             echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
           elif [[ $GITHUB_REF == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.channel.outputs.channel }}" == "dev" ]]; then
-            BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
             echo "version=${BASE_VERSION}-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
           else
-            BASE_VERSION=$(cat packages/opencode/package.json | grep '"version"' | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
-            echo "version=${BASE_VERSION}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+            # Stable release: use base version from package.json as-is
+            echo "version=${BASE_VERSION}" >> $GITHUB_OUTPUT
           fi
 
       - name: Install dependencies
