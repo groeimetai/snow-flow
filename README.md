@@ -1,10 +1,6 @@
 <p align="center">
   <a href="https://snow-flow.dev">
-    <picture>
-      <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
-      <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="Snow-Flow logo" width="280">
-    </picture>
+    <img src="https://snow-flow.dev/logo.svg" alt="Snow-Flow logo" width="280">
   </a>
 </p>
 
@@ -16,9 +12,9 @@
 
 <p align="center">
   <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=for-the-badge&logo=discord&logoColor=white&label=discord&color=5865F2" /></a>&nbsp;
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=for-the-badge&logo=github&branch=dev&label=build" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/blob/dev/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
+  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish-npm.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish-npm.yml?style=for-the-badge&logo=github&branch=main&label=build" /></a>&nbsp;
+  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
 </p>
 
 <p align="center">
@@ -43,7 +39,7 @@
 
 <p align="center">
   <a href="https://snow-flow.dev">
-    <img src="packages/console/app/src/asset/lander/screenshot.png" alt="Snow-Flow Terminal UI" width="800">
+    <img src="https://snow-flow.dev/snow-flow-tui.png" alt="Snow-Flow Terminal UI" width="800">
   </a>
 </p>
 
@@ -112,7 +108,7 @@ curl -fsSL https://snow-flow.dev/install | bash
 
 ```bash
 # npm / bun / pnpm / yarn
-npm i -g snow-code-ai@latest
+npm i -g snow-flow@latest
 
 # Homebrew (macOS & Linux — recommended, always up to date)
 brew install groeimetai/tap/snow-code

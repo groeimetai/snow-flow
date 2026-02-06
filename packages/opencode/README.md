@@ -1,16 +1,16 @@
 <p align="center">
   <a href="https://snow-flow.dev">
-    <img src="https://raw.githubusercontent.com/groeimetai/snow-flow/dev/packages/console/app/src/asset/logo-ornate-light.svg" alt="Snow-Flow" width="200">
+    <img src="https://snow-flow.dev/logo.svg" alt="Snow-Flow" width="200">
   </a>
 </p>
 
-<h3 align="center">snow-code-ai</h3>
+<h3 align="center">Snow-Flow</h3>
 
 <p align="center">The autonomous ServiceNow development agent.</p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/blob/dev/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>&nbsp;
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
+  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>&nbsp;
   <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=for-the-badge&logo=discord&logoColor=white&label=discord&color=5865F2" /></a>
 </p>
 
@@ -19,7 +19,7 @@
 ## Install
 
 ```bash
-npm i -g snow-code-ai@latest
+npm i -g snow-flow@latest
 ```
 
 <details>
@@ -27,9 +27,9 @@ npm i -g snow-code-ai@latest
 <br>
 
 ```bash
-bun i -g snow-code-ai@latest                              # Bun
-pnpm i -g snow-code-ai@latest                             # pnpm
-yarn global add snow-code-ai@latest                       # Yarn
+bun i -g snow-flow@latest                              # Bun
+pnpm i -g snow-flow@latest                             # pnpm
+yarn global add snow-flow@latest                       # Yarn
 curl -fsSL https://snow-flow.dev/install | bash            # Install script
 brew install groeimetai/tap/snow-code                      # macOS / Linux
 scoop install snow-code                                    # Windows
@@ -197,9 +197,9 @@ Config is loaded from (in priority order):
 |:---------|:-------|
 | 1 | Remote/well-known organization configs |
 | 2 | Global config (`~/.snow-code/`) |
-| 3 | `OPENCODE_CONFIG` env variable |
+| 3 | `SNOW_FLOW_CONFIG` env variable |
 | 4 | Project config (`snow-code.jsonc`) |
-| 5 | `OPENCODE_CONFIG_CONTENT` inline |
+| 5 | `SNOW_FLOW_CONFIG_CONTENT` inline |
 
 <details>
 <summary><b>MCP servers</b></summary>
@@ -254,8 +254,8 @@ Glob patterns, per-agent rulesets, and env file protection included.
 - [Documentation](https://snow-flow.dev/docs) — Full configuration reference and guides
 - [GitHub](https://github.com/groeimetai/snow-flow) — Source code and issues
 - [Discord](https://snow-flow.dev/discord) — Community and support
-- [Contributing](https://github.com/groeimetai/snow-flow/blob/dev/CONTRIBUTING.md) — How to contribute
+- [Contributing](https://github.com/groeimetai/snow-flow/blob/main/CONTRIBUTING.md) — How to contribute
 
 ## License
 
-MIT — see [LICENSE](https://github.com/groeimetai/snow-flow/blob/dev/LICENSE).
+MIT — see [LICENSE](https://github.com/groeimetai/snow-flow/blob/main/LICENSE).
