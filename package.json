@@ -82,7 +82,7 @@
     "type": "git",
     "url": "https://github.com/groeimetai/snow-flow"
   },
-  "license": "MIT",
+  "license": "Elastic-2.0",
   "prettier": {
     "semi": false,
     "printWidth": 120

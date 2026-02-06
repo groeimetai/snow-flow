@@ -89,7 +89,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   meta = {
     description = "The autonomous ServiceNow development agent";
     homepage = "https://snow-flow.dev/";
-    license = lib.licenses.mit;
+    license = lib.licenses.elastic20;
     mainProgram = "snow-code";
     inherit (node_modules.meta) platforms;
   };

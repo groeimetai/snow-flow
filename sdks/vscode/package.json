@@ -8,7 +8,7 @@
     "type": "git",
     "url": "https://github.com/groeimetai/snow-flow"
   },
-  "license": "MIT",
+  "license": "Elastic-2.0",
   "icon": "images/icon.png",
   "galleryBanner": {
     "color": "#000000",
