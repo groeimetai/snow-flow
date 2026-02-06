@@ -10,7 +10,6 @@
 </p>
 <p align="center">AI-kodeagent med åpen kildekode.</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # eller github:groeimetai/snow-flow for nyes
 
 > [!TIP]
 > Fjern versjoner eldre enn 0.1.x før du installerer.
-
-### Desktop-app (BETA)
-
-Snow-Flow er også tilgjengelig som en desktop-app. Last ned direkte fra [releases-siden](https://github.com/groeimetai/snow-flow/releases) eller [snow-flow.dev/download](https://snow-flow.dev/download).
-
-| Plattform             | Nedlasting                            |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm` eller AppImage         |
-
-```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### Installasjonsmappe
 
@@ -130,5 +111,3 @@ Det er veldig likt Claude Code når det gjelder funksjonalitet. Her er de viktig
 - Klient/server-arkitektur. Dette kan for eksempel la Snow-Flow kjøre på maskinen din, mens du styrer den eksternt fra en mobilapp. Det betyr at TUI-frontend'en bare er en av de mulige klientene.
 
 ---
-
-**Bli med i fellesskapet** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)

@@ -10,7 +10,6 @@
 </p>
 <p align="center">Открытый AI-агент для программирования.</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # или github:groeimetai/snow-flow для 
 
 > [!TIP]
 > Перед установкой удалите версии старше 0.1.x.
-
-### Десктопное приложение (BETA)
-
-Snow-Flow также доступен как десктопное приложение. Скачайте его со [страницы релизов](https://github.com/groeimetai/snow-flow/releases) или с [snow-flow.dev/download](https://snow-flow.dev/download).
-
-| Платформа             | Загрузка                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm` или AppImage           |
-
-```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### Каталог установки
 
@@ -130,5 +111,3 @@ XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 - Архитектура клиент/сервер. Например, это позволяет запускать Snow-Flow на вашем компьютере, а управлять им удаленно из мобильного приложения. Это значит, что TUI-фронтенд - лишь один из возможных клиентов.
 
 ---
-
-**Присоединяйтесь к нашему сообществу** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)

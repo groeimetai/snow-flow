@@ -10,7 +10,6 @@
 </p>
 <p align="center">El agente de programación con IA de código abierto.</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # o github:groeimetai/snow-flow para la rama
 
 > [!TIP]
 > Elimina versiones anteriores a 0.1.x antes de instalar.
-
-### App de escritorio (BETA)
-
-Snow-Flow también está disponible como aplicación de escritorio. Descárgala directamente desde la [página de releases](https://github.com/groeimetai/snow-flow/releases) o desde [snow-flow.dev/download](https://snow-flow.dev/download).
-
-| Plataforma            | Descarga                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, o AppImage            |
-
-```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### Directorio de instalación
 
@@ -130,5 +111,3 @@ Es muy similar a Claude Code en cuanto a capacidades. Estas son las diferencias 
 - Arquitectura cliente/servidor. Esto, por ejemplo, permite ejecutar Snow-Flow en tu computadora mientras lo controlas de forma remota desde una app móvil. Esto significa que el frontend TUI es solo uno de los posibles clientes.
 
 ---
-
-**Únete a nuestra comunidad** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)

@@ -10,7 +10,6 @@
 </p>
 <p align="center">Der Open-Source KI-Coding-Agent.</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # oder github:groeimetai/snow-flow für den 
 
 > [!TIP]
 > Entferne Versionen älter als 0.1.x vor der Installation.
-
-### Desktop-App (BETA)
-
-Snow-Flow ist auch als Desktop-Anwendung verfügbar. Lade sie direkt von der [Releases-Seite](https://github.com/groeimetai/snow-flow/releases) oder [snow-flow.dev/download](https://snow-flow.dev/download) herunter.
-
-| Plattform             | Download                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm` oder AppImage          |
-
-```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### Installationsverzeichnis
 
@@ -130,5 +111,3 @@ In Bezug auf die Fähigkeiten ist es Claude Code sehr ähnlich. Hier sind die wi
 - Client/Server-Architektur. Das ermöglicht z.B., Snow-Flow auf deinem Computer laufen zu lassen, während du es von einer mobilen App aus fernsteuerst. Das TUI-Frontend ist nur einer der möglichen Clients.
 
 ---
-
-**Tritt unserer Community bei** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)

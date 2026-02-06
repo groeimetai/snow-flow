@@ -16,7 +16,6 @@
 </p>
 
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=for-the-badge&logo=discord&logoColor=white&label=discord&color=5865F2" /></a>&nbsp;
   <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish-npm.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish-npm.yml?style=for-the-badge&logo=github&branch=main&label=build" /></a>&nbsp;
   <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
@@ -79,7 +78,7 @@ Snow-Flow is an AI-powered, multi-agent development framework built specifically
 <td width="33%" valign="top">
 
 **Terminal-First**<br>
-<sub>Beautiful TUI built with SolidJS + opentui. Also available as desktop app and web interface.</sub>
+<sub>Beautiful TUI built with SolidJS + opentui.</sub>
 
 </td>
 <td width="33%" valign="top">
@@ -91,7 +90,7 @@ Snow-Flow is an AI-powered, multi-agent development framework built specifically
 <td width="33%" valign="top">
 
 **Open Source**<br>
-<sub>MIT licensed. Fully transparent. Community-driven with an active Discord.</sub>
+<sub>MIT licensed. Fully transparent. Community-driven.</sub>
 
 </td>
 </tr>
@@ -378,26 +377,6 @@ Extend with npm packages or local plugins that add tools, auth providers, event 
 
 <br>
 
-## Desktop App <sup>BETA</sup>
-
-Also available as a native desktop application.
-
-| Platform | Download |
-|:---------|:---------|
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel) | `snow-code-desktop-darwin-x64.dmg` |
-| Windows | `snow-code-desktop-windows-x64.exe` |
-| Linux | `.deb`, `.rpm`, or AppImage |
-
-Download from the [releases page](https://github.com/groeimetai/snow-flow/releases) or [snow-flow.dev/download](https://snow-flow.dev/download).
-
-```bash
-brew install --cask snow-code-desktop          # macOS
-scoop bucket add extras; scoop install extras/snow-code-desktop  # Windows
-```
-
-<br>
-
 ## Headless / Server Mode
 
 Run Snow-Flow as a headless API server for CI/CD pipelines, remote control, or web UI access:
@@ -476,7 +455,7 @@ Snow-Flow is purpose-built for ServiceNow:
 - **Provider-agnostic** — Works with 20+ AI providers, not locked to one vendor
 - **Built-in LSP** — Language server support for intelligent code assistance
 - **Terminal-first** — A TUI built by terminal enthusiasts with SolidJS + opentui
-- **Client/server architecture** — Remote control, headless mode, web UI, and desktop app
+- **Client/server architecture** — Remote control, headless mode, and web UI
 - **Plugin ecosystem** — Extend with npm packages or local plugins
 
 </details>
@@ -503,8 +482,6 @@ Yes. Snow-Flow connects to any ServiceNow instance via OAuth2 or basic authentic
 
 <p align="center">
   <b>Join our community</b><br><br>
-  <a href="https://discord.gg/snow-flow"><img alt="Discord" src="https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white" /></a>&nbsp;
-  <a href="https://x.com/snow-flow"><img alt="X" src="https://img.shields.io/badge/X.com-Follow-000000?style=for-the-badge&logo=x&logoColor=white" /></a>&nbsp;
   <a href="https://snow-flow.dev"><img alt="Website" src="https://img.shields.io/badge/Website-snow--flow.dev-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" /></a>
 </p>
 

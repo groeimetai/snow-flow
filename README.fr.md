@@ -10,7 +10,6 @@
 </p>
 <p align="center">L'agent de codage IA open source.</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # ou github:groeimetai/snow-flow pour la bra
 
 > [!TIP]
 > Supprimez les versions antérieures à 0.1.x avant d'installer.
-
-### Application de bureau (BETA)
-
-Snow-Flow est aussi disponible en application de bureau. Téléchargez-la directement depuis la [page des releases](https://github.com/groeimetai/snow-flow/releases) ou [snow-flow.dev/download](https://snow-flow.dev/download).
-
-| Plateforme            | Téléchargement                        |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, ou AppImage           |
-
-```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### Répertoire d'installation
 
@@ -130,5 +111,3 @@ C'est très similaire à Claude Code en termes de capacités. Voici les principa
 - Architecture client/serveur. Cela permet par exemple de faire tourner Snow-Flow sur votre ordinateur tout en le pilotant à distance depuis une application mobile. Cela signifie que la TUI n'est qu'un des clients possibles.
 
 ---
-
-**Rejoignez notre communauté** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)

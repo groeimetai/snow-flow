@@ -10,7 +10,6 @@
 </p>
 <p align="center">오픈 소스 AI 코딩 에이전트.</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # 또는 github:groeimetai/snow-flow 로 최
 
 > [!TIP]
 > 설치 전에 0.1.x 보다 오래된 버전을 제거하세요.
-
-### 데스크톱 앱 (BETA)
-
-Snow-Flow 는 데스크톱 앱으로도 제공됩니다. [releases page](https://github.com/groeimetai/snow-flow/releases) 에서 직접 다운로드하거나 [snow-flow.dev/download](https://snow-flow.dev/download) 를 이용하세요.
-
-| 플랫폼                | 다운로드                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, 또는 AppImage         |
-
-```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### 설치 디렉터리
 
@@ -130,5 +111,3 @@ Snow-Flow 와 관련된 프로젝트를 진행하면서 이름에 "snow-code"(�
 - 클라이언트/서버 아키텍처. 예를 들어 Snow-Flow 를 내 컴퓨터에서 실행하면서 모바일 앱으로 원격 조작할 수 있습니다. 즉, TUI 프런트엔드는 가능한 여러 클라이언트 중 하나일 뿐입니다.
 
 ---
-
-**커뮤니티에 참여하기** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)

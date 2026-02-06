@@ -10,7 +10,6 @@
 </p>
 <p align="center">開源的 AI Coding Agent。</p>
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
   <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
@@ -56,24 +55,6 @@ nix run nixpkgs#snow-code           # 或使用 github:groeimetai/snow-flow 以�
 
 > [!TIP]
 > 安裝前請先移除 0.1.x 以前的舊版本。
-
-### 桌面應用程式 (BETA)
-
-Snow-Flow 也提供桌面版應用程式。您可以直接從 [發佈頁面 (releases page)](https://github.com/groeimetai/snow-flow/releases) 或 [snow-flow.dev/download](https://snow-flow.dev/download) 下載。
-
-| 平台                  | 下載連結                              |
-| --------------------- | ------------------------------------- |
-| macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, 或 AppImage           |
-
-```bash
-# macOS (Homebrew Cask)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
-```
 
 #### 安裝目錄
 
@@ -129,5 +110,3 @@ Snow-Flow 內建了兩種 Agent，您可以使用 `Tab` 鍵快速切換。
 - 客戶端/伺服器架構 (Client/Server Architecture)。這讓 Snow-Flow 能夠在您的電腦上運行的同時，由行動裝置進行遠端操控。這意味著 TUI 前端只是眾多可能的客戶端之一。
 
 ---
-
-**加入我們的社群** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)
