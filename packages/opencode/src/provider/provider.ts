@@ -548,7 +548,38 @@ export namespace Provider {
       }
     },
     "servicenow-llm": async (input) => {
-      const snAuth = await Auth.get("servicenow")
+      let snAuth = await Auth.get("servicenow")
+
+      // If no local ServiceNow auth, try fetching from enterprise portal
+      if (!snAuth) {
+        const entAuth = await Auth.get("enterprise")
+        if (entAuth?.type === "enterprise" && entAuth.token && entAuth.enterpriseUrl) {
+          try {
+            const response = await fetch(`${entAuth.enterpriseUrl}/api/user-credentials/servicenow/default`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${entAuth.token}`,
+                Accept: "application/json",
+              },
+            })
+            if (response.ok) {
+              const data = await response.json()
+              if (data.success && data.instance?.instanceUrl && data.instance?.clientId && data.instance?.clientSecret) {
+                await Auth.set("servicenow", {
+                  type: "servicenow-oauth",
+                  instance: data.instance.instanceUrl,
+                  clientId: data.instance.clientId,
+                  clientSecret: data.instance.clientSecret,
+                })
+                snAuth = await Auth.get("servicenow")
+              }
+            }
+          } catch {
+            // Enterprise portal fetch failed
+          }
+        }
+      }
+
       if (!snAuth) return { autoload: false }
 
       let apiKey: string | undefined
@@ -1049,53 +1080,171 @@ export namespace Provider {
       if (existing) return existing
 
       // ServiceNow LLM: wrap fetch to unwrap MID Server responses and convert to SSE
+      // ServiceNow Scripted REST APIs wrap responses in { "result": ... }
+      // MID Server calls are async via ECC Queue and can take 30-120+ seconds
+      // ServiceNow returns complete JSON but AI SDK expects SSE streaming
       if (model.providerID === "servicenow-llm") {
-        const existingFetch = options["fetch"]
-        options["fetch"] = async (input: any, init?: any) => {
-          const fetchFn = existingFetch ?? fetch
-          const response = await fetchFn(input, init)
+        const midServerTimeout = options["timeout"] ?? 180000
 
-          // Already SSE, no transformation needed
-          const contentType = response.headers.get("content-type") || ""
-          if (contentType.includes("text/event-stream")) {
-            return response
+        options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
+          const { signal, ...rest } = init ?? {}
+
+          // Check if this is a streaming request
+          let isStreamingRequest = false
+          try {
+            if (init?.body) {
+              const bodyStr = typeof init.body === "string" ? init.body : await new Response(init.body).text()
+              const bodyJson = JSON.parse(bodyStr)
+              isStreamingRequest = bodyJson.stream === true
+            }
+          } catch {
+            // Ignore parsing errors
           }
 
-          const body = await response.json()
-
-          // Unwrap ServiceNow { "result": ... } wrapper
-          let unwrapped = body
-          if (body && typeof body === "object" && "result" in body) {
-            unwrapped = body.result
+          // Combine user signal with MID Server timeout
+          const signals: AbortSignal[] = []
+          if (signal) signals.push(signal)
+          if (midServerTimeout !== false) {
+            signals.push(AbortSignal.timeout(midServerTimeout))
           }
+          const combined = signals.length > 1 ? AbortSignal.any(signals) : signals.length === 1 ? signals[0] : undefined
 
-          // Detect response format and convert to OpenAI
-          let content: string
-          let modelName = unwrapped?.model || "servicenow-llm"
-          const usage = unwrapped?.usage
+          log.info("servicenow-llm fetch", {
+            url: typeof input === "string" ? input : input.url,
+            timeout: midServerTimeout,
+            streaming: isStreamingRequest,
+          })
 
-          if (unwrapped?.choices?.[0]?.message?.content) {
-            content = unwrapped.choices[0].message.content
-          } else if (unwrapped?.success === true && typeof unwrapped.response === "string") {
-            content = unwrapped.response
-          } else {
-            content = typeof unwrapped === "string" ? unwrapped : JSON.stringify(unwrapped)
-          }
+          // Make the request to ServiceNow
+          const response = await fetch(input, {
+            ...rest,
+            signal: combined,
+            // @ts-ignore see here: https://github.com/oven-sh/bun/issues/16682
+            timeout: false,
+          })
 
-          // Convert to SSE stream
-          const sseChunks = createSSEStream(content, modelName, usage)
-          const stream = new ReadableStream({
-            start(controller) {
-              for (const chunk of sseChunks) {
-                controller.enqueue(new TextEncoder().encode(chunk))
+          log.info("servicenow-llm response", {
+            status: response.status,
+            statusText: response.statusText,
+          })
+
+          // Clone the response to read the body
+          const cloned = response.clone()
+          try {
+            const text = await cloned.text()
+
+            log.info("servicenow-llm raw body", {
+              length: text.length,
+              preview: text.substring(0, 300),
+            })
+
+            // Try to parse as JSON
+            let body: any
+            try {
+              body = JSON.parse(text)
+            } catch {
+              log.warn("servicenow-llm not JSON, returning original response")
+              return response
+            }
+
+            // Extract content from various response formats
+            let content: string | null = null
+            let modelName = "unknown"
+            let usage: any = null
+
+            // Check for ServiceNow wrapper
+            if (body && typeof body === "object" && "result" in body) {
+              const unwrapped = body.result
+
+              log.info("servicenow-llm unwrapped", {
+                type: typeof unwrapped,
+                keys: unwrapped && typeof unwrapped === "object" ? Object.keys(unwrapped) : [],
+              })
+
+              // OpenAI format inside wrapper
+              if (unwrapped && Array.isArray(unwrapped.choices) && unwrapped.choices[0]?.message?.content) {
+                content = unwrapped.choices[0].message.content
+                modelName = unwrapped.model || modelName
+                usage = unwrapped.usage
+                log.info("servicenow-llm: extracted from OpenAI format in wrapper")
               }
-              controller.close()
-            },
-          })
+              // Custom ServiceNow format
+              else if (unwrapped && unwrapped.success === true && typeof unwrapped.response === "string") {
+                content = unwrapped.response
+                modelName = unwrapped.model || modelName
+                usage = unwrapped.usage
+                log.info("servicenow-llm: extracted from custom format")
+              }
+              // Error response
+              else if (unwrapped && unwrapped.success === false && unwrapped.error) {
+                log.warn("servicenow-llm: ServiceNow error", { error: unwrapped.error })
+                return new Response(
+                  JSON.stringify({ error: { message: unwrapped.error, type: "servicenow_error" } }),
+                  { status: 500, headers: { "content-type": "application/json" } },
+                )
+              }
+            }
+            // Direct OpenAI format (no wrapper)
+            else if (body && Array.isArray(body.choices) && body.choices[0]?.message?.content) {
+              content = body.choices[0].message.content
+              modelName = body.model || modelName
+              usage = body.usage
+              log.info("servicenow-llm: extracted from direct OpenAI format")
+            }
 
-          return new Response(stream, {
-            headers: { "content-type": "text/event-stream" },
-          })
+            // If we extracted content, convert to appropriate format
+            if (content !== null) {
+              log.info("servicenow-llm: content extracted", {
+                contentLength: content.length,
+                model: modelName,
+                isStreaming: isStreamingRequest,
+              })
+
+              if (isStreamingRequest) {
+                // Convert to SSE stream
+                const sseChunks = createSSEStream(content, modelName, usage)
+                const sseBody = sseChunks.join("")
+                log.info("servicenow-llm: returning SSE stream", { sseLength: sseBody.length })
+
+                return new Response(sseBody, {
+                  status: 200,
+                  headers: {
+                    "content-type": "text/event-stream",
+                    "cache-control": "no-cache",
+                    "connection": "keep-alive",
+                  },
+                })
+              } else {
+                // Non-streaming: return OpenAI JSON format
+                const openAIResponse = {
+                  id: `chatcmpl-${Date.now()}`,
+                  object: "chat.completion",
+                  created: Math.floor(Date.now() / 1000),
+                  model: modelName,
+                  choices: [
+                    {
+                      index: 0,
+                      message: { role: "assistant", content },
+                      finish_reason: "stop",
+                    },
+                  ],
+                  usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                }
+                return new Response(JSON.stringify(openAIResponse), {
+                  status: 200,
+                  headers: { "content-type": "application/json" },
+                })
+              }
+            }
+
+            log.warn("servicenow-llm: could not extract content from response", {
+              bodyPreview: JSON.stringify(body).substring(0, 300),
+            })
+          } catch (e) {
+            log.warn("servicenow-llm fetch handler error", { error: String(e) })
+          }
+
+          return response
         }
       }
 
