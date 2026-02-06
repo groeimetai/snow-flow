@@ -355,9 +355,24 @@ export namespace Config {
       }
     }
 
-    // Check for Enterprise credentials (from auth store)
+    // Check for Enterprise credentials → also inject servicenow-unified
+    // The servicenow-unified server fetches ServiceNow credentials from the enterprise portal
+    // at runtime using the JWT token, so no local ServiceNow secrets are needed.
     const entAuth = auth["enterprise"]
     if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token) && entAuth.enterpriseUrl) {
+      if (!result["servicenow-unified"]) {
+        const sessionId = getCurrentSessionId()
+        log.info("auto-configuring servicenow-unified MCP server from enterprise auth (credentials fetched at runtime)")
+        result["servicenow-unified"] = {
+          type: "local",
+          command: getMcpServerCommand("servicenow-unified"),
+          environment: {
+            SNOW_LAZY_TOOLS: "true",
+            ...(sessionId && { SNOW_SESSION_ID: sessionId }),
+          },
+          enabled: true,
+        }
+      }
       if (!result["snow-flow-enterprise"]) {
         log.info("auto-configuring snow-flow-enterprise MCP server from auth store")
         // The enterprise proxy server expects:
@@ -380,25 +395,42 @@ export namespace Config {
 
     // Fallback: Check for Enterprise credentials from ~/.snow-code/enterprise.json
     // This file is created by device auth flow and should be the primary token source
-    if (!result["snow-flow-enterprise"]) {
+    if (!result["snow-flow-enterprise"] || !result["servicenow-unified"]) {
       try {
         const enterpriseJsonPath = path.join(os.homedir(), ".snow-code", "enterprise.json")
         if (existsSync(enterpriseJsonPath)) {
           const content = readFileSync(enterpriseJsonPath, "utf-8")
           const enterpriseData = JSON.parse(content)
           if (enterpriseData.token && enterpriseData.subdomain) {
-            log.info("auto-configuring snow-flow-enterprise MCP server from enterprise.json", {
-              subdomain: enterpriseData.subdomain,
-            })
-            const portalUrl = `https://${enterpriseData.subdomain}.snow-flow.dev`
-            result["snow-flow-enterprise"] = {
-              type: "local",
-              command: getMcpServerCommand("enterprise-proxy"),
-              environment: {
-                SNOW_LICENSE_KEY: enterpriseData.token,
-                SNOW_PORTAL_URL: portalUrl,
-              },
-              enabled: true,
+            if (!result["servicenow-unified"]) {
+              const sessionId = getCurrentSessionId()
+              log.info("auto-configuring servicenow-unified MCP server from enterprise.json (credentials fetched at runtime)", {
+                subdomain: enterpriseData.subdomain,
+              })
+              result["servicenow-unified"] = {
+                type: "local",
+                command: getMcpServerCommand("servicenow-unified"),
+                environment: {
+                  SNOW_LAZY_TOOLS: "true",
+                  ...(sessionId && { SNOW_SESSION_ID: sessionId }),
+                },
+                enabled: true,
+              }
+            }
+            if (!result["snow-flow-enterprise"]) {
+              log.info("auto-configuring snow-flow-enterprise MCP server from enterprise.json", {
+                subdomain: enterpriseData.subdomain,
+              })
+              const portalUrl = `https://${enterpriseData.subdomain}.snow-flow.dev`
+              result["snow-flow-enterprise"] = {
+                type: "local",
+                command: getMcpServerCommand("enterprise-proxy"),
+                environment: {
+                  SNOW_LICENSE_KEY: enterpriseData.token,
+                  SNOW_PORTAL_URL: portalUrl,
+                },
+                enabled: true,
+              }
             }
           }
         }
