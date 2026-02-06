@@ -48,6 +48,12 @@ jobs:
                 continue
               }
 
+              const labels = pr.labels.map(l => l.name)
+              if (labels.includes('upstream-sync')) {
+                core.info(`PR ${pr.number} is an upstream sync PR, skipping`)
+                continue
+              }
+
               stalePrs.push(pr)
             }
 

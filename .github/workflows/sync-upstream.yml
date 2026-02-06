@@ -1,0 +1,222 @@
+name: Sync Upstream (OpenCode)
+
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force sync even if a sync PR already exists"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 7 * * 1" # Every Monday at 07:00 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add upstream remote and fetch
+        run: |
+          git remote add upstream https://github.com/anomalyco/opencode.git || true
+          git fetch upstream dev
+
+      - name: Detect new upstream commits
+        id: detect
+        run: |
+          MERGE_BASE=$(git merge-base HEAD upstream/dev)
+          NEW_COMMITS=$(git rev-list --count "$MERGE_BASE"..upstream/dev)
+          echo "merge_base=$MERGE_BASE" >> "$GITHUB_OUTPUT"
+          echo "new_commits=$NEW_COMMITS" >> "$GITHUB_OUTPUT"
+          echo "Found $NEW_COMMITS new upstream commits since $MERGE_BASE"
+
+      - name: Skip if no new commits
+        if: steps.detect.outputs.new_commits == '0'
+        run: |
+          echo "No new upstream commits found. Nothing to do."
+          exit 0
+
+      - name: Check for existing sync PR
+        if: steps.detect.outputs.new_commits != '0'
+        id: existing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const force = context.payload.inputs?.force === 'true';
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const syncPr = prs.find(pr =>
+              pr.labels.some(l => l.name === 'upstream-sync')
+            );
+
+            if (syncPr && !force) {
+              core.setOutput('exists', 'true');
+              core.setOutput('pr_number', syncPr.number.toString());
+              core.info(`Existing sync PR found: #${syncPr.number}`);
+            } else {
+              core.setOutput('exists', 'false');
+              core.setOutput('pr_number', '');
+            }
+
+      - name: Create sync branch and attempt merge
+        if: steps.detect.outputs.new_commits != '0' && steps.existing.outputs.exists == 'false'
+        id: merge
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          BRANCH="upstream-sync/$DATE"
+          git checkout -b "$BRANCH"
+
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          if git merge upstream/dev --no-edit; then
+            echo "has_conflicts=false" >> "$GITHUB_OUTPUT"
+            echo "Merge succeeded without conflicts"
+          else
+            echo "has_conflicts=true" >> "$GITHUB_OUTPUT"
+            CONFLICTED=$(git diff --name-only --diff-filter=U | head -50)
+            echo "conflicted_files<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$CONFLICTED" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+            git add -A
+            git commit --no-edit -m "chore: upstream sync $DATE (with conflicts)" || true
+            echo "Merge completed with conflicts"
+          fi
+
+          git push origin "$BRANCH"
+
+      - name: Ensure labels exist
+        if: steps.detect.outputs.new_commits != '0' && steps.existing.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+
+            async function ensureLabel(name, color, description) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch {
+                await github.rest.issues.createLabel({ owner, repo, name, color, description });
+                core.info(`Created label: ${name}`);
+              }
+            }
+
+            await ensureLabel('upstream-sync', '0e8a16', 'Upstream sync from anomalyco/opencode');
+            if ('${{ steps.merge.outputs.has_conflicts }}' === 'true') {
+              await ensureLabel('has-conflicts', 'd73a4a', 'Merge has unresolved conflicts');
+            }
+
+      - name: Build commit list and create PR
+        if: steps.detect.outputs.new_commits != '0' && steps.existing.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const mergeBase = '${{ steps.detect.outputs.merge_base }}';
+            const newCommits = parseInt('${{ steps.detect.outputs.new_commits }}');
+            const hasConflicts = '${{ steps.merge.outputs.has_conflicts }}' === 'true';
+            const conflictedFiles = `${{ steps.merge.outputs.conflicted_files }}`;
+            const branch = '${{ steps.merge.outputs.branch }}';
+
+            // Get commit list from upstream
+            const { execSync } = require('child_process');
+            const commitLog = execSync(
+              `git log --oneline --no-merges ${mergeBase}..upstream/dev | head -50`
+            ).toString().trim();
+
+            const diffStats = execSync(
+              `git diff --stat ${mergeBase}..upstream/dev | tail -1`
+            ).toString().trim();
+
+            let body = `## Upstream Sync from anomalyco/opencode\n\n`;
+            body += `**${newCommits} new commit(s)** detected on upstream \`dev\` branch.\n\n`;
+            body += `### Diff Stats\n\`\`\`\n${diffStats}\n\`\`\`\n\n`;
+
+            if (hasConflicts) {
+              body += `### :warning: Merge Conflicts Detected\n\n`;
+              body += `The following files have conflicts that need manual resolution:\n\`\`\`\n${conflictedFiles}\n\`\`\`\n\n`;
+              body += `> **Note:** Conflict markers are present in this branch. Do NOT merge directly.\n\n`;
+            }
+
+            body += `### New Upstream Commits\n`;
+            if (newCommits > 50) {
+              body += `_Showing first 50 of ${newCommits} commits:_\n`;
+            }
+            body += `\`\`\`\n${commitLog}\n\`\`\`\n\n`;
+
+            body += `### Cherry-Pick Workflow\n`;
+            body += `Due to extensive rebranding (opencode -> snow-flow/snow-code), direct merging is not recommended.\n\n`;
+            body += `**To cherry-pick specific commits:**\n`;
+            body += `\`\`\`bash\n`;
+            body += `git fetch upstream dev\n`;
+            body += `git cherry-pick <commit-hash>\n`;
+            body += `# Resolve any conflicts, then:\n`;
+            body += `git cherry-pick --continue\n`;
+            body += `\`\`\`\n\n`;
+            body += `**To review a specific commit:**\n`;
+            body += `\`\`\`bash\n`;
+            body += `git show <commit-hash>\n`;
+            body += `\`\`\`\n`;
+
+            const labels = ['upstream-sync'];
+            if (hasConflicts) labels.push('has-conflicts');
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner,
+              repo,
+              title: `chore: upstream sync ${new Date().toISOString().split('T')[0]}`,
+              head: branch,
+              base: 'main',
+              body
+            });
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number: pr.number,
+              labels
+            });
+
+            core.info(`Created PR #${pr.number}`);
+
+      - name: Update existing sync PR with comment
+        if: steps.detect.outputs.new_commits != '0' && steps.existing.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = parseInt('${{ steps.existing.outputs.pr_number }}');
+            const newCommits = '${{ steps.detect.outputs.new_commits }}';
+            const mergeBase = '${{ steps.detect.outputs.merge_base }}';
+
+            const { execSync } = require('child_process');
+            const commitLog = execSync(
+              `git log --oneline --no-merges ${mergeBase}..upstream/dev | head -20`
+            ).toString().trim();
+
+            const body = `### Upstream Sync Update (${new Date().toISOString().split('T')[0]})\n\n` +
+              `There are now **${newCommits} commit(s)** ahead on upstream \`dev\`.\n\n` +
+              `**Latest upstream commits:**\n\`\`\`\n${commitLog}\n\`\`\`\n\n` +
+              `> Use \`workflow_dispatch\` with \`force: true\` to create a fresh sync PR.`;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body
+            });
+
+            core.info(`Added update comment to PR #${prNumber}`);

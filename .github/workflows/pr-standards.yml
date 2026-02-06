@@ -16,7 +16,8 @@ jobs:
       github.event.pull_request.user.login != 'fwang' &&
       github.event.pull_request.user.login != 'adamdotdevin' &&
       github.event.pull_request.user.login != 'iamdavidhill' &&
-      github.event.pull_request.user.login != 'snow-code-agent[bot]'
+      github.event.pull_request.user.login != 'snow-code-agent[bot]' &&
+      github.event.pull_request.user.login != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
