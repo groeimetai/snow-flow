@@ -37,7 +37,7 @@ import { extractJWTPayload, validatePermission, validateJWTExpiry, filterToolsBy
 import { MCPPromptManager } from '../shared/mcp-prompt-manager.js';
 import { META_TOOLS, tool_search_exec, tool_execute_exec } from './tools/meta/index.js';
 import { ToolSearch } from './shared/tool-search.js';
-import { mcpDebug, mcpWarn } from './shared/mcp-debug.js';
+import { mcpDebug, mcpWarn } from '../shared/mcp-debug.js';
 
 /**
  * ServiceNow Unified MCP Server

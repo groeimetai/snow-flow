@@ -10,7 +10,7 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { mcpDebug } from './mcp-debug.js';
+import { mcpDebug } from '../../shared/mcp-debug.js';
 
 // Cache for auth.json role to avoid repeated file reads
 let cachedAuthRole: UserRole | null = null;

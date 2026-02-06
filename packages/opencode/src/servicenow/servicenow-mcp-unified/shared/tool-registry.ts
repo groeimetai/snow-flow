@@ -19,7 +19,7 @@ import {
   ToolValidationResult,
   ToolMetadata
 } from './types';
-import { mcpDebug } from './mcp-debug.js';
+import { mcpDebug } from '../../shared/mcp-debug.js';
 
 // Static tool imports for bundled mode
 // These are imported at build time and included in the bundle

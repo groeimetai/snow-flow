@@ -16,7 +16,7 @@ import axios, { AxiosInstance } from 'axios';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { ServiceNowContext, OAuthTokenResponse, EnterpriseLicense } from './types';
-import { mcpDebug } from './mcp-debug.js';
+import { mcpDebug } from '../../shared/mcp-debug.js';
 
 // Extended AxiosInstance with ServiceNow helper methods
 export interface ExtendedAxiosInstance extends AxiosInstance {

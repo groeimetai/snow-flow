@@ -15,7 +15,7 @@
 
 import { AxiosError } from 'axios';
 import { RetryConfig, ServiceNowError, ToolResult } from './types';
-import { mcpDebug } from './mcp-debug.js';
+import { mcpDebug } from '../../shared/mcp-debug.js';
 
 /**
  * Error classification
