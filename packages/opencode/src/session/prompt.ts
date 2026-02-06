@@ -21,7 +21,6 @@ import PROMPT_PLAN from "../session/prompt/plan.txt"
 import BUILD_SWITCH from "../session/prompt/build-switch.txt"
 import MAX_STEPS from "../session/prompt/max-steps.txt"
 import { defer } from "../util/defer"
-import { clone } from "remeda"
 import { ToolRegistry } from "../tool/registry"
 import { MCP } from "../mcp"
 import { LSP } from "../lsp"
@@ -273,7 +272,7 @@ export namespace SessionPrompt {
       SessionStatus.set(sessionID, { type: "busy" })
       log.info("loop", { step, sessionID })
       if (abort.aborted) break
-      let msgs = await MessageV2.filterCompacted(MessageV2.stream(sessionID))
+      let msgs = await MessageV2.filterCompactedCached(sessionID)
 
       let lastUser: MessageV2.User | undefined
       let lastAssistant: MessageV2.Assistant | undefined
@@ -573,26 +572,36 @@ export namespace SessionPrompt {
         })
       }
 
-      const sessionMessages = clone(msgs)
-
-      // Ephemerally wrap queued user messages with a reminder to stay on track
-      if (step > 1 && lastFinished) {
-        for (const msg of sessionMessages) {
-          if (msg.info.role !== "user" || msg.info.id <= lastFinished.id) continue
-          for (const part of msg.parts) {
-            if (part.type !== "text" || part.ignored || part.synthetic) continue
-            if (!part.text.trim()) continue
-            part.text = [
-              "<system-reminder>",
-              "The user sent the following message:",
-              part.text,
-              "",
-              "Please address this message and continue with your tasks.",
-              "</system-reminder>",
-            ].join("\n")
+      // Ephemerally wrap queued user messages with a reminder to stay on track.
+      // Uses a targeted shallow clone: only messages/parts that need mutation are copied.
+      const sessionMessages = msgs.map((msg) => {
+        if (
+          step > 1 &&
+          lastFinished &&
+          msg.info.role === "user" &&
+          msg.info.id > lastFinished.id
+        ) {
+          return {
+            info: msg.info,
+            parts: msg.parts.map((part) => {
+              if (part.type !== "text" || part.ignored || part.synthetic) return part
+              if (!part.text.trim()) return part
+              return {
+                ...part,
+                text: [
+                  "<system-reminder>",
+                  "The user sent the following message:",
+                  part.text,
+                  "",
+                  "Please address this message and continue with your tasks.",
+                  "</system-reminder>",
+                ].join("\n"),
+              }
+            }),
           }
         }
-      }
+        return msg
+      })
 
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: sessionMessages })
 
@@ -627,8 +636,12 @@ export namespace SessionPrompt {
       }
       continue
     }
-    SessionCompaction.prune({ sessionID })
-    for await (const item of MessageV2.stream(sessionID)) {
+    const lastUserModel = await lastModel(sessionID)
+    const pruneModel = await Provider.getModel(lastUserModel.providerID, lastUserModel.modelID).catch(() => undefined)
+    SessionCompaction.prune({ sessionID, contextSize: pruneModel?.limit.context })
+    const cachedMsgs = await MessageV2.streamCached(sessionID)
+    for (let i = cachedMsgs.length - 1; i >= 0; i--) {
+      const item = cachedMsgs[i]
       if (item.info.role === "user") continue
       const queued = state()[sessionID]?.callbacks ?? []
       for (const q of queued) {
@@ -1199,10 +1212,15 @@ export namespace SessionPrompt {
     const userMessage = input.messages.findLast((msg) => msg.info.role === "user")
     if (!userMessage) return input.messages
 
+    // Clone the user message to avoid mutating cached data.
+    // Only the specific message that gets synthetic parts pushed is cloned.
+    const clonedUser: MessageV2.WithParts = { info: userMessage.info, parts: [...userMessage.parts] }
+    const replaceUser = () => input.messages.map((m) => (m === userMessage ? clonedUser : m))
+
     // Original logic when experimental plan mode is disabled
     if (!Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE) {
       if (input.agent.name === "plan") {
-        userMessage.parts.push({
+        clonedUser.parts.push({
           id: Identifier.ascending("part"),
           messageID: userMessage.info.id,
           sessionID: userMessage.info.sessionID,
@@ -1213,7 +1231,7 @@ export namespace SessionPrompt {
       }
       const wasPlan = input.messages.some((msg) => msg.info.role === "assistant" && msg.info.agent === "plan")
       if (wasPlan && input.agent.name === "build") {
-        userMessage.parts.push({
+        clonedUser.parts.push({
           id: Identifier.ascending("part"),
           messageID: userMessage.info.id,
           sessionID: userMessage.info.sessionID,
@@ -1222,7 +1240,7 @@ export namespace SessionPrompt {
           synthetic: true,
         })
       }
-      return input.messages
+      return replaceUser()
     }
 
     // New plan mode logic when flag is enabled
@@ -1242,9 +1260,9 @@ export namespace SessionPrompt {
             BUILD_SWITCH + "\n\n" + `A plan file exists at ${plan}. You should execute on the plan defined within it`,
           synthetic: true,
         })
-        userMessage.parts.push(part)
+        clonedUser.parts.push(part)
       }
-      return input.messages
+      return replaceUser()
     }
 
     // Entering plan mode
@@ -1329,10 +1347,10 @@ NOTE: At any point in time through this workflow you should feel free to ask the
 </system-reminder>`,
         synthetic: true,
       })
-      userMessage.parts.push(part)
-      return input.messages
+      clonedUser.parts.push(part)
+      return replaceUser()
     }
-    return input.messages
+    return replaceUser()
   }
 
   export const ShellInput = z.object({

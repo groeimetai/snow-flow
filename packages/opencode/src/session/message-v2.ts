@@ -1,4 +1,5 @@
 import { BusEvent } from "@/bus/bus-event"
+import { Bus } from "@/bus"
 import z from "zod"
 import { NamedError } from "@opencode-ai/util/error"
 import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
@@ -12,6 +13,7 @@ import { STATUS_CODES } from "http"
 import { iife } from "@/util/iife"
 import { type SystemError } from "bun"
 import type { Provider } from "@/provider/provider"
+import { Instance } from "@/project/instance"
 
 export namespace MessageV2 {
   export const OutputLengthError = NamedError.create("MessageOutputLengthError", z.object({}))
@@ -432,6 +434,101 @@ export namespace MessageV2 {
     parts: z.array(Part),
   })
   export type WithParts = z.infer<typeof WithParts>
+
+  // In-memory message cache: avoids re-reading all messages from disk on every loop iteration.
+  // Uses Instance.state for per-instance isolation and Bus events for cache invalidation.
+  const messageCache = Instance.state(
+    () => {
+      const sessions = new Map<string, MessageV2.WithParts[]>()
+
+      const unsubs = [
+        Bus.subscribe(Event.Updated, (event) => {
+          const { info } = event.properties
+          const cached = sessions.get(info.sessionID)
+          if (!cached) return
+          const idx = cached.findIndex((m) => m.info.id === info.id)
+          if (idx !== -1) {
+            cached[idx] = { ...cached[idx], info }
+          } else {
+            cached.push({ info, parts: [] })
+            cached.sort((a, b) => (a.info.id > b.info.id ? 1 : -1))
+          }
+        }),
+        Bus.subscribe(Event.PartUpdated, (event) => {
+          const { part } = event.properties
+          for (const [, msgs] of sessions) {
+            const msg = msgs.find((m) => m.info.id === part.messageID)
+            if (!msg) continue
+            const idx = msg.parts.findIndex((p) => p.id === part.id)
+            if (idx !== -1) msg.parts[idx] = part
+            else {
+              msg.parts.push(part)
+              msg.parts.sort((a, b) => (a.id > b.id ? 1 : -1))
+            }
+            break
+          }
+        }),
+        Bus.subscribe(Event.Removed, (event) => {
+          const { sessionID, messageID } = event.properties
+          const cached = sessions.get(sessionID)
+          if (!cached) return
+          const idx = cached.findIndex((m) => m.info.id === messageID)
+          if (idx !== -1) cached.splice(idx, 1)
+        }),
+        Bus.subscribe(Event.PartRemoved, (event) => {
+          const { messageID, partID } = event.properties
+          for (const [, msgs] of sessions) {
+            const msg = msgs.find((m) => m.info.id === messageID)
+            if (!msg) continue
+            const idx = msg.parts.findIndex((p) => p.id === partID)
+            if (idx !== -1) msg.parts.splice(idx, 1)
+            break
+          }
+        }),
+      ]
+
+      return { sessions, unsubs }
+    },
+    async (state) => {
+      for (const unsub of state.unsubs) unsub()
+      state.sessions.clear()
+    },
+  )
+
+  export async function streamCached(sessionID: string): Promise<WithParts[]> {
+    const { sessions } = messageCache()
+    const existing = sessions.get(sessionID)
+    if (existing) return existing
+
+    // Cold start: load from disk and populate cache
+    const result: WithParts[] = []
+    for await (const msg of stream(sessionID)) {
+      result.push(msg)
+    }
+    result.reverse() // stream yields newest first, we want chronological order
+    sessions.set(sessionID, result)
+    return result
+  }
+
+  export async function filterCompactedCached(sessionID: string): Promise<WithParts[]> {
+    const all = await streamCached(sessionID)
+    const result: WithParts[] = []
+    const completed = new Set<string>()
+    for (let i = all.length - 1; i >= 0; i--) {
+      const msg = all[i]
+      result.push(msg)
+      if (
+        msg.info.role === "user" &&
+        completed.has(msg.info.id) &&
+        msg.parts.some((part) => part.type === "compaction")
+      )
+        break
+      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish)
+        completed.add(msg.info.parentID)
+    }
+    result.reverse()
+    return result
+  }
 
   export function toModelMessages(input: WithParts[], model: Provider.Model): ModelMessage[] {
     const result: UIMessage[] = []

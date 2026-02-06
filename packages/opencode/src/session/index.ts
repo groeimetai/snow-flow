@@ -308,13 +308,9 @@ export namespace Session {
       limit: z.number().optional(),
     }),
     async (input) => {
-      const result = [] as MessageV2.WithParts[]
-      for await (const msg of MessageV2.stream(input.sessionID)) {
-        if (input.limit && result.length >= input.limit) break
-        result.push(msg)
-      }
-      result.reverse()
-      return result
+      const all = await MessageV2.streamCached(input.sessionID)
+      if (input.limit) return all.slice(0, input.limit)
+      return all
     },
   )
 

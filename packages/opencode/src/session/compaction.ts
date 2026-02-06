@@ -38,18 +38,44 @@ export namespace SessionCompaction {
     return count > usable
   }
 
+  export const NEAR_OVERFLOW_RATIO = 0.80
+
+  export async function isNearOverflow(input: { tokens: MessageV2.Assistant["tokens"]; model: Provider.Model }) {
+    const config = await Config.get()
+    if (config.compaction?.auto === false) return false
+    const context = input.model.limit.context
+    if (context === 0) return false
+    const count = input.tokens.input + input.tokens.cache.read + input.tokens.output
+    const output = Math.min(input.model.limit.output, SessionPrompt.OUTPUT_TOKEN_MAX) || SessionPrompt.OUTPUT_TOKEN_MAX
+    const usable = input.model.limit.input || context - output
+    return count > usable * NEAR_OVERFLOW_RATIO
+  }
+
   export const PRUNE_MINIMUM = 20_000
   export const PRUNE_PROTECT = 40_000
 
+  // Scale prune thresholds based on model context size.
+  // For small models (<=32K), thresholds shrink proportionally.
+  // For large models (>=200K), defaults are preserved.
+  function pruneThresholds(contextSize?: number) {
+    if (!contextSize || contextSize === 0) {
+      return { minimum: PRUNE_MINIMUM, protect: PRUNE_PROTECT }
+    }
+    const protect = Math.max(Math.min(Math.round(contextSize * 0.20), PRUNE_PROTECT), 5_000)
+    const minimum = Math.max(Math.min(Math.round(contextSize * 0.10), PRUNE_MINIMUM), 2_500)
+    return { minimum, protect }
+  }
+
   const PRUNE_PROTECTED_TOOLS = ["skill"]
 
-  // goes backwards through parts until there are 40_000 tokens worth of tool
+  // goes backwards through parts until there are `protect` tokens worth of tool
   // calls. then erases output of previous tool calls. idea is to throw away old
   // tool calls that are no longer relevant.
-  export async function prune(input: { sessionID: string }) {
+  export async function prune(input: { sessionID: string; contextSize?: number }) {
     const config = await Config.get()
     if (config.compaction?.prune === false) return
     log.info("pruning")
+    const { minimum, protect } = pruneThresholds(input.contextSize)
     const msgs = await Session.messages({ sessionID: input.sessionID })
     let total = 0
     let pruned = 0
@@ -70,7 +96,7 @@ export namespace SessionCompaction {
             if (part.state.time.compacted) break loop
             const estimate = Token.estimate(part.state.output)
             total += estimate
-            if (total > PRUNE_PROTECT) {
+            if (total > protect) {
               pruned += estimate
               toPrune.push(part)
             }
@@ -78,7 +104,7 @@ export namespace SessionCompaction {
       }
     }
     log.info("found", { pruned, total })
-    if (pruned > PRUNE_MINIMUM) {
+    if (pruned > minimum) {
       for (const part of toPrune) {
         if (part.state.status === "completed") {
           part.state.time.compacted = Date.now()
