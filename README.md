@@ -3,138 +3,510 @@
     <picture>
       <source srcset="packages/console/app/src/asset/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset="packages/console/app/src/asset/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="Snow-Flow logo">
+      <img src="packages/console/app/src/asset/logo-ornate-light.svg" alt="Snow-Flow logo" width="280">
     </picture>
   </a>
 </p>
-<p align="center">The autonomous ServiceNow development agent.</p>
+
+<h3 align="center">The autonomous ServiceNow development agent.</h3>
+
 <p align="center">
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord" /></a>
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
-  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
+  AI-powered &bull; Multi-agent &bull; Multi-provider &bull; 200+ MCP tools
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> |
-  <a href="README.zh.md">简体中文</a> |
-  <a href="README.zht.md">繁體中文</a> |
-  <a href="README.ko.md">한국어</a> |
-  <a href="README.de.md">Deutsch</a> |
-  <a href="README.es.md">Español</a> |
-  <a href="README.fr.md">Français</a> |
-  <a href="README.it.md">Italiano</a> |
-  <a href="README.da.md">Dansk</a> |
-  <a href="README.ja.md">日本語</a> |
-  <a href="README.pl.md">Polski</a> |
-  <a href="README.ru.md">Русский</a> |
-  <a href="README.ar.md">العربية</a> |
-  <a href="README.no.md">Norsk</a> |
+  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=for-the-badge&logo=discord&logoColor=white&label=discord&color=5865F2" /></a>&nbsp;
+  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
+  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=for-the-badge&logo=github&branch=dev&label=build" /></a>&nbsp;
+  <a href="https://github.com/groeimetai/snow-flow/blob/dev/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> &bull;
+  <a href="README.zh.md">简体中文</a> &bull;
+  <a href="README.zht.md">繁體中文</a> &bull;
+  <a href="README.ko.md">한국어</a> &bull;
+  <a href="README.de.md">Deutsch</a> &bull;
+  <a href="README.es.md">Español</a> &bull;
+  <a href="README.fr.md">Français</a> &bull;
+  <a href="README.it.md">Italiano</a> &bull;
+  <a href="README.da.md">Dansk</a> &bull;
+  <a href="README.ja.md">日本語</a> &bull;
+  <a href="README.pl.md">Polski</a> &bull;
+  <a href="README.ru.md">Русский</a> &bull;
+  <a href="README.ar.md">العربية</a> &bull;
+  <a href="README.no.md">Norsk</a> &bull;
   <a href="README.br.md">Português (Brasil)</a>
 </p>
 
-[![Snow-Flow Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://snow-flow.dev)
+<br>
 
----
+<p align="center">
+  <a href="https://snow-flow.dev">
+    <img src="packages/console/app/src/asset/lander/screenshot.png" alt="Snow-Flow Terminal UI" width="800">
+  </a>
+</p>
 
-### Installation
+<br>
+
+Snow-Flow is an AI-powered, multi-agent development framework built specifically for **ServiceNow**. It combines a powerful terminal UI with 200+ ServiceNow MCP tools, 54 bundled domain skills, and support for 20+ AI providers to give you an autonomous coding agent that understands your ServiceNow instance.
+
+<br>
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**ServiceNow-Native**<br>
+<sub>200+ MCP tools and 54 domain skills purpose-built for ServiceNow development, deployment, and automation.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**Any AI Provider**<br>
+<sub>Works with 20+ providers: Anthropic, OpenAI, Google, AWS Bedrock, Azure, Groq, and many more.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**Multi-Agent**<br>
+<sub>Built-in build &amp; plan agents with configurable permissions, custom agents, and subagent orchestration.</sub>
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**Terminal-First**<br>
+<sub>Beautiful TUI built with SolidJS + opentui. Also available as desktop app and web interface.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**MCP Ecosystem**<br>
+<sub>Connect any MCP server via stdio, SSE, or HTTP. Extend with the full MCP ecosystem.</sub>
+
+</td>
+<td width="33%" valign="top">
+
+**Open Source**<br>
+<sub>MIT licensed. Fully transparent. Community-driven with an active Discord.</sub>
+
+</td>
+</tr>
+</table>
+
+<br>
+
+## Getting Started
+
+### Install
 
 ```bash
-# YOLO
 curl -fsSL https://snow-flow.dev/install | bash
+```
 
-# Package managers
-npm i -g snow-code-ai@latest        # or bun/pnpm/yarn
-scoop install snow-code             # Windows
-choco install snow-code             # Windows
-brew install groeimetai/tap/snow-code # macOS and Linux (recommended, always up to date)
-paru -S snow-code-bin               # Arch Linux
+<details>
+<summary><b>More installation methods</b></summary>
+<br>
+
+```bash
+# npm / bun / pnpm / yarn
+npm i -g snow-code-ai@latest
+
+# Homebrew (macOS & Linux — recommended, always up to date)
+brew install groeimetai/tap/snow-code
+
+# Windows
+scoop install snow-code
+choco install snow-code
+
+# Arch Linux
+paru -S snow-code-bin
 ```
 
 > [!TIP]
 > Remove versions older than 0.1.x before installing.
 
-### Desktop App (BETA)
+</details>
 
-Snow-Flow is also available as a desktop application. Download directly from the [releases page](https://github.com/groeimetai/snow-flow/releases) or [snow-flow.dev/download](https://snow-flow.dev/download).
+### Quick Start
 
-| Platform              | Download                              |
-| --------------------- | ------------------------------------- |
+```bash
+snow-code
+```
+
+On first launch, Snow-Flow prompts you to configure an AI provider. You can also pre-configure in `snow-code.jsonc`:
+
+```jsonc
+{
+  "$schema": "https://snow-flow.dev/config.json",
+  "provider": {
+    "anthropic": {},
+    "openai": {}
+  }
+}
+```
+
+<br>
+
+## Supported AI Providers
+
+Snow-Flow is not coupled to any single AI provider. Use whichever model works best for you.
+
+<table>
+<tr>
+<td><b>Anthropic</b></td>
+<td><b>OpenAI</b></td>
+<td><b>Google</b></td>
+<td><b>AWS Bedrock</b></td>
+</tr>
+<tr>
+<td><sub>Claude 4.5/4.6 Opus, Sonnet, Haiku</sub></td>
+<td><sub>GPT-5, GPT-4, o-series reasoning</sub></td>
+<td><sub>Gemini 2.5 Pro, Flash + Vertex AI</sub></td>
+<td><sub>All models, cross-region support</sub></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td><b>Azure</b></td>
+<td><b>GitHub Copilot</b></td>
+<td><b>Mistral</b></td>
+<td><b>Groq</b></td>
+</tr>
+<tr>
+<td><sub>OpenAI + Cognitive Services</sub></td>
+<td><sub>GPT-5 via Copilot enterprise</sub></td>
+<td><sub>Large, Medium, Small</sub></td>
+<td><sub>Ultra-fast inference</sub></td>
+</tr>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr>
+<td><b>xAI</b></td>
+<td><b>OpenRouter</b></td>
+<td><b>GitLab AI</b></td>
+<td><b>+ 10 more</b></td>
+</tr>
+<tr>
+<td><sub>Grok models</sub></td>
+<td><sub>100+ models, single API</sub></td>
+<td><sub>Native GitLab integration</sub></td>
+<td><sub>Cohere, Perplexity, DeepInfra, Cerebras, Together AI, Vercel, ...</sub></td>
+</tr>
+</table>
+
+<br>
+
+## Agents
+
+Switch between agents with `Tab`:
+
+| Agent | Description |
+|:------|:------------|
+| **build** | Default agent with full tool access for development work |
+| **plan** | Read-only agent for analysis and exploration — denies edits, asks before bash |
+| **general** | Subagent for complex multi-step tasks — invoke with `@general` |
+
+Custom agents can be configured in `snow-code.jsonc` with per-agent model selection, permissions, and temperature controls. Learn more about [agents](https://snow-flow.dev/docs/agents).
+
+<br>
+
+## Built-in Tools
+
+19+ tools out of the box:
+
+```
+ File Operations    Shell              Web                 Dev
+ ───────────────    ─────              ───                 ───
+ read               bash (streaming,   webfetch            plan (enter/exit)
+ write              pty support)       websearch           task management
+ edit                                  codesearch          LSP (experimental)
+ glob                                                      skill invocation
+ grep
+ ls
+ apply_patch
+```
+
+<br>
+
+## ServiceNow MCP Integration
+
+The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Operations**
+- Query any table
+- CMDB search
+- User management
+- Operational metrics
+
+</td>
+<td width="33%" valign="top">
+
+**Development**
+- Script Includes
+- Business Rules
+- Client Scripts
+- UI Policies & Actions
+
+</td>
+<td width="33%" valign="top">
+
+**Automation**
+- Flow Designer
+- Scheduled Jobs
+- Approval Workflows
+- Event Management
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+**Deployment**
+- Widget deploy & preview
+- Update Set lifecycle
+- Artifact validation
+- Rollback support
+
+</td>
+<td width="33%" valign="top">
+
+**Security**
+- ACL management
+- Domain Separation
+- Compliance auditing
+- Vulnerability scanning
+
+</td>
+<td width="33%" valign="top">
+
+**Analysis**
+- Reporting & Dashboards
+- KPI management
+- Performance Analytics
+- Data quality checks
+
+</td>
+</tr>
+</table>
+
+Connect to your instance:
+
+```jsonc
+{
+  "mcp": {
+    "servicenow": {
+      "type": "local",
+      "command": ["snow-flow", "mcp", "start"],
+      "environment": {
+        "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
+        "SERVICENOW_CLIENT_ID": "...",
+        "SERVICENOW_CLIENT_SECRET": "..."
+      }
+    }
+  }
+}
+```
+
+<br>
+
+## 54 Bundled Skills
+
+Deep domain knowledge for ServiceNow development, organized by category:
+
+| Category | Skills |
+|:---------|:-------|
+| **Development** | GlideRecord patterns, Script Includes, Business Rules, Client Scripts, UI Builder |
+| **Integration** | REST integration, Integration Hub, Transform Maps, Import/Export |
+| **Automation** | Flow Designer, Approval Workflows, Scheduled Jobs, Change Management |
+| **Security** | ACL patterns, Domain Separation, Instance Security, GRC Compliance |
+| **ITSM** | Incident, Problem, Change, Request, SLA Management |
+| **Platform** | CMDB, Discovery, Performance Analytics, Virtual Agent, Agent Workspace |
+| **Quality** | ATF Testing, Code Review, Widget Coherence, ES5 Compliance |
+
+<br>
+
+## Extend with MCP & Plugins
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**MCP Servers**
+
+Connect any MCP-compatible server via stdio, SSE, or streamable HTTP with OAuth support:
+
+```jsonc
+{
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "custom-tools": {
+      "type": "local",
+      "command": ["node", "./server.js"]
+    }
+  }
+}
+```
+
+</td>
+<td width="50%" valign="top">
+
+**Plugins**
+
+Extend with npm packages or local plugins that add tools, auth providers, event hooks, and config hooks:
+
+```jsonc
+{
+  "plugin": [
+    "my-snow-flow-plugin",
+    "file://./local-plugin"
+  ]
+}
+```
+
+</td>
+</tr>
+</table>
+
+<br>
+
+## Desktop App <sup>BETA</sup>
+
+Also available as a native desktop application.
+
+| Platform | Download |
+|:---------|:---------|
 | macOS (Apple Silicon) | `snow-code-desktop-darwin-aarch64.dmg` |
-| macOS (Intel)         | `snow-code-desktop-darwin-x64.dmg`     |
-| Windows               | `snow-code-desktop-windows-x64.exe`    |
-| Linux                 | `.deb`, `.rpm`, or AppImage           |
+| macOS (Intel) | `snow-code-desktop-darwin-x64.dmg` |
+| Windows | `snow-code-desktop-windows-x64.exe` |
+| Linux | `.deb`, `.rpm`, or AppImage |
+
+Download from the [releases page](https://github.com/groeimetai/snow-flow/releases) or [snow-flow.dev/download](https://snow-flow.dev/download).
 
 ```bash
-# macOS (Homebrew)
-brew install --cask snow-code-desktop
-# Windows (Scoop)
-scoop bucket add extras; scoop install extras/snow-code-desktop
+brew install --cask snow-code-desktop          # macOS
+scoop bucket add extras; scoop install extras/snow-code-desktop  # Windows
 ```
 
-#### Installation Directory
+<br>
 
-The install script respects the following priority order for the installation path:
+## Headless / Server Mode
 
-1. `$SNOW_CODE_INSTALL_DIR` - Custom installation directory
-2. `$XDG_BIN_DIR` - XDG Base Directory Specification compliant path
-3. `$HOME/bin` - Standard user binary directory (if exists or can be created)
-4. `$HOME/.snow-code/bin` - Default fallback
+Run Snow-Flow as a headless API server for CI/CD pipelines, remote control, or web UI access:
 
 ```bash
-# Examples
-SNOW_CODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
+snow-code serve              # Start API server on port 4096
+snow-code serve --port 8080  # Custom port
+snow-code web                # Start server + open web interface
+snow-code attach http://host:4096  # Attach TUI to remote server
 ```
 
-### Agents
+<br>
 
-Snow-Flow includes two built-in agents you can switch between with the `Tab` key.
+## Permission System
 
-- **build** - Default, full access agent for development work
-- **plan** - Read-only agent for analysis and code exploration
-  - Denies file edits by default
-  - Asks permission before running bash commands
-  - Ideal for exploring unfamiliar codebases or planning changes
+Fine-grained control over what agents can do, with glob pattern matching and env file protection by default:
 
-Also, included is a **general** subagent for complex searches and multistep tasks.
-This is used internally and can be invoked using `@general` in messages.
+```jsonc
+{
+  "permission": {
+    "bash": "ask",
+    "write": "allow",
+    "read": "allow",
+    "external_directory": "deny"
+  }
+}
+```
 
-Learn more about [agents](https://snow-flow.dev/docs/agents).
+<details>
+<summary><b>Installation directory priority</b></summary>
+<br>
 
-### Documentation
+The install script respects the following priority order:
 
-For more info on how to configure Snow-Flow [**head over to our docs**](https://snow-flow.dev/docs).
+1. `$SNOW_CODE_INSTALL_DIR` — Custom installation directory
+2. `$XDG_BIN_DIR` — XDG Base Directory Specification compliant path
+3. `$HOME/bin` — Standard user binary directory
+4. `$HOME/.snow-code/bin` — Default fallback
 
-### Contributing
+</details>
 
-If you're interested in contributing to Snow-Flow, please read our [contributing docs](./CONTRIBUTING.md) before submitting a pull request.
+<br>
 
-### Building on Snow-Flow
+## Documentation
 
-If you are working on a project that's related to Snow-Flow and is using "snow-flow" or "snow-code" as a part of its name; for example, "snow-flow-dashboard" or "snow-code-mobile", please add a note to your README to clarify that it is not built by the Snow-Flow team and is not affiliated with us in any way.
+For full configuration reference, provider setup guides, and advanced usage:
 
-### FAQ
+**[snow-flow.dev/docs](https://snow-flow.dev/docs)**
 
-#### What is Snow-Flow?
+<br>
 
-Snow-Flow is an autonomous ServiceNow development agent powered by AI. It helps you:
+## Contributing
 
-- Develop ServiceNow widgets, scripts, and business rules
-- Query and manage ServiceNow tables and records
-- Deploy and validate ServiceNow artifacts
-- Automate repetitive ServiceNow tasks
+We welcome bug fixes, new provider support, LSP/formatter additions, and documentation improvements. Read our [contributing guide](./CONTRIBUTING.md) before submitting a pull request.
 
-#### How is this different from other coding agents?
+<br>
 
-Snow-Flow is specifically designed for ServiceNow development:
+## FAQ
 
-- 100% open source
-- ServiceNow-specific MCP tools and integrations
-- Not coupled to any AI provider - works with Claude, OpenAI, Google or local models
-- Out of the box LSP support
-- A focus on TUI built by terminal enthusiasts
-- A client/server architecture that allows remote control
+<details>
+<summary><b>What is Snow-Flow?</b></summary>
+<br>
+
+Snow-Flow is an autonomous ServiceNow development agent. It connects AI models to your ServiceNow instance through MCP tools, giving you an intelligent assistant that can develop widgets, query tables, deploy artifacts, manage update sets, and automate tasks — all from your terminal.
+
+</details>
+
+<details>
+<summary><b>How is this different from other coding agents?</b></summary>
+<br>
+
+Snow-Flow is purpose-built for ServiceNow:
+
+- **Open source** — MIT licensed, fully transparent
+- **ServiceNow-native** — 200+ MCP tools and 54 domain skills designed for ServiceNow
+- **Provider-agnostic** — Works with 20+ AI providers, not locked to one vendor
+- **Built-in LSP** — Language server support for intelligent code assistance
+- **Terminal-first** — A TUI built by terminal enthusiasts with SolidJS + opentui
+- **Client/server architecture** — Remote control, headless mode, web UI, and desktop app
+- **Plugin ecosystem** — Extend with npm packages or local plugins
+
+</details>
+
+<details>
+<summary><b>Can I use my own AI provider / API key?</b></summary>
+<br>
+
+Yes. Snow-Flow supports 20+ providers out of the box. Configure your preferred provider in `snow-code.jsonc` or through the interactive setup on first launch. You can even switch providers mid-session.
+
+</details>
+
+<details>
+<summary><b>Does this work with my existing ServiceNow instance?</b></summary>
+<br>
+
+Yes. Snow-Flow connects to any ServiceNow instance via OAuth2 or basic authentication. Configure your instance URL and credentials in the MCP server configuration, and Snow-Flow will have access to all 200+ ServiceNow tools.
+
+</details>
+
+<br>
 
 ---
 
-**Join our community** [Discord](https://discord.gg/snow-flow) | [X.com](https://x.com/snow-flow)
+<p align="center">
+  <b>Join our community</b><br><br>
+  <a href="https://discord.gg/snow-flow"><img alt="Discord" src="https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white" /></a>&nbsp;
+  <a href="https://x.com/snow-flow"><img alt="X" src="https://img.shields.io/badge/X.com-Follow-000000?style=for-the-badge&logo=x&logoColor=white" /></a>&nbsp;
+  <a href="https://snow-flow.dev"><img alt="Website" src="https://img.shields.io/badge/Website-snow--flow.dev-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" /></a>
+</p>
+
+<p align="center">
+  If you are building a project that uses "snow-flow" or "snow-code" in its name, please note in your README that it is not built by or affiliated with the Snow-Flow team.
+</p>
