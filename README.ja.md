@@ -10,7 +10,7 @@
 </p>
 <p align="center">オープンソースのAIコーディングエージェント。</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -43,14 +43,14 @@
 curl -fsSL https://snow-flow.dev/install | bash
 
 # パッケージマネージャー
-npm i -g snow-code-ai@latest        # bun/pnpm/yarn でもOK
-scoop install snow-code             # Windows
-choco install snow-code             # Windows
-brew install groeimetai/tap/snow-code # macOS と Linux（推奨。常に最新）
-brew install snow-code              # macOS と Linux（公式 brew formula。更新頻度は低め）
-paru -S snow-code-bin               # Arch Linux
-mise use -g snow-code               # どのOSでも
-nix run nixpkgs#snow-code           # または github:groeimetai/snow-flow で最新 dev ブランチ
+npm i -g snow-flow@latest        # bun/pnpm/yarn でもOK
+scoop install snow-flow             # Windows
+choco install snow-flow             # Windows
+brew install groeimetai/tap/snow-flow # macOS と Linux（推奨。常に最新）
+brew install snow-flow              # macOS と Linux（公式 brew formula。更新頻度は低め）
+paru -S snow-flow-bin               # Arch Linux
+mise use -g snow-flow               # どのOSでも
+nix run nixpkgs#snow-flow           # または github:groeimetai/snow-flow で最新 dev ブランチ
 ```
 
 > [!TIP]
@@ -60,14 +60,14 @@ nix run nixpkgs#snow-code           # または github:groeimetai/snow-flow で�
 
 インストールスクリプトは、インストール先パスを次の優先順位で決定します。
 
-1. `$SNOW_CODE_INSTALL_DIR` - カスタムのインストールディレクトリ
+1. `$SNOW_FLOW_INSTALL_DIR` - カスタムのインストールディレクトリ
 2. `$XDG_BIN_DIR` - XDG Base Directory Specification に準拠したパス
 3. `$HOME/bin` - 標準のユーザー用バイナリディレクトリ（存在する場合、または作成できる場合）
-4. `$HOME/.snow-code/bin` - デフォルトのフォールバック
+4. `$HOME/.snow-flow/bin` - デフォルトのフォールバック
 
 ```bash
 # 例
-SNOW_CODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
+SNOW_FLOW_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 ```
 
@@ -96,7 +96,7 @@ Snow-Flow に貢献したい場合は、Pull Request を送る前に [contributi
 
 ### Snow-Flow の上に構築する
 
-Snow-Flow に関連するプロジェクトで、名前に "snow-code"（例: "snow-code-dashboard" や "snow-code-mobile"）を含める場合は、そのプロジェクトが Snow-Flow チームによって作られたものではなく、いかなる形でも関係がないことを README に明記してください。
+Snow-Flow に関連するプロジェクトで、名前に "snow-flow"（例: "snow-flow-dashboard" や "snow-flow-mobile"）を含める場合は、そのプロジェクトが Snow-Flow チームによって作られたものではなく、いかなる形でも関係がないことを README に明記してください。
 
 ### FAQ
 

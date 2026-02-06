@@ -115,14 +115,14 @@ curl -fsSL https://snow-flow.dev/install | bash
 npm i -g snow-flow@latest
 
 # Homebrew (macOS & Linux — recommended, always up to date)
-brew install groeimetai/tap/snow-code
+brew install groeimetai/tap/snow-flow
 
 # Windows
-scoop install snow-code
-choco install snow-code
+scoop install snow-flow
+choco install snow-flow
 
 # Arch Linux
-paru -S snow-code-bin
+paru -S snow-flow-bin
 ```
 
 > [!TIP]
@@ -133,10 +133,10 @@ paru -S snow-code-bin
 ### Quick Start
 
 ```bash
-snow-code
+snow-flow
 ```
 
-On first launch, Snow-Flow prompts you to configure an AI provider. You can also pre-configure in `snow-code.jsonc`:
+On first launch, Snow-Flow prompts you to configure an AI provider. You can also pre-configure in `snow-flow.jsonc`:
 
 ```jsonc
 {
@@ -207,7 +207,7 @@ Switch between agents with `Tab`:
 | **plan** | Read-only agent for analysis and exploration — denies edits, asks before bash |
 | **general** | Subagent for complex multi-step tasks — invoke with `@general` |
 
-Custom agents can be configured in `snow-code.jsonc` with per-agent model selection, permissions, and temperature controls. Learn more about [agents](https://snow-flow.dev/docs/agents).
+Custom agents can be configured in `snow-flow.jsonc` with per-agent model selection, permissions, and temperature controls. Learn more about [agents](https://snow-flow.dev/docs/agents).
 
 <br>
 
@@ -382,10 +382,10 @@ Extend with npm packages or local plugins that add tools, auth providers, event 
 Run Snow-Flow as a headless API server for CI/CD pipelines, remote control, or web UI access:
 
 ```bash
-snow-code serve              # Start API server on port 4096
-snow-code serve --port 8080  # Custom port
-snow-code web                # Start server + open web interface
-snow-code attach http://host:4096  # Attach TUI to remote server
+snow-flow serve              # Start API server on port 4096
+snow-flow serve --port 8080  # Custom port
+snow-flow web                # Start server + open web interface
+snow-flow attach http://host:4096  # Attach TUI to remote server
 ```
 
 <br>
@@ -411,10 +411,10 @@ Fine-grained control over what agents can do, with glob pattern matching and env
 
 The install script respects the following priority order:
 
-1. `$SNOW_CODE_INSTALL_DIR` — Custom installation directory
+1. `$SNOW_FLOW_INSTALL_DIR` — Custom installation directory
 2. `$XDG_BIN_DIR` — XDG Base Directory Specification compliant path
 3. `$HOME/bin` — Standard user binary directory
-4. `$HOME/.snow-code/bin` — Default fallback
+4. `$HOME/.snow-flow/bin` — Default fallback
 
 </details>
 
@@ -464,7 +464,7 @@ Snow-Flow is purpose-built for ServiceNow:
 <summary><b>Can I use my own AI provider / API key?</b></summary>
 <br>
 
-Yes. Snow-Flow supports 20+ providers out of the box. Configure your preferred provider in `snow-code.jsonc` or through the interactive setup on first launch. You can even switch providers mid-session.
+Yes. Snow-Flow supports 20+ providers out of the box. Configure your preferred provider in `snow-flow.jsonc` or through the interactive setup on first launch. You can even switch providers mid-session.
 
 </details>
 

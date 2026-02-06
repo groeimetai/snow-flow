@@ -10,7 +10,7 @@
 </p>
 <p align="center">وكيل برمجة بالذكاء الاصطناعي مفتوح المصدر.</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -43,14 +43,14 @@
 curl -fsSL https://snow-flow.dev/install | bash
 
 # مديري الحزم
-npm i -g snow-code-ai@latest        # او bun/pnpm/yarn
-scoop install snow-code             # Windows
-choco install snow-code             # Windows
-brew install groeimetai/tap/snow-code # macOS و Linux (موصى به، دائما محدث)
-brew install snow-code              # macOS و Linux (صيغة brew الرسمية، تحديث اقل)
-paru -S snow-code-bin               # Arch Linux
-mise use -g snow-code               # اي نظام
-nix run nixpkgs#snow-code           # او github:groeimetai/snow-flow لاحدث فرع dev
+npm i -g snow-flow@latest        # او bun/pnpm/yarn
+scoop install snow-flow             # Windows
+choco install snow-flow             # Windows
+brew install groeimetai/tap/snow-flow # macOS و Linux (موصى به، دائما محدث)
+brew install snow-flow              # macOS و Linux (صيغة brew الرسمية، تحديث اقل)
+paru -S snow-flow-bin               # Arch Linux
+mise use -g snow-flow               # اي نظام
+nix run nixpkgs#snow-flow           # او github:groeimetai/snow-flow لاحدث فرع dev
 ```
 
 > [!TIP]
@@ -60,14 +60,14 @@ nix run nixpkgs#snow-code           # او github:groeimetai/snow-flow لاحد�
 
 يحترم سكربت التثبيت ترتيب الاولوية التالي لمسار التثبيت:
 
-1. `$SNOW_CODE_INSTALL_DIR` - مجلد تثبيت مخصص
+1. `$SNOW_FLOW_INSTALL_DIR` - مجلد تثبيت مخصص
 2. `$XDG_BIN_DIR` - مسار متوافق مع مواصفات XDG Base Directory
 3. `$HOME/bin` - مجلد الثنائيات القياسي للمستخدم (ان وجد او امكن انشاؤه)
-4. `$HOME/.snow-code/bin` - المسار الافتراضي الاحتياطي
+4. `$HOME/.snow-flow/bin` - المسار الافتراضي الاحتياطي
 
 ```bash
 # امثلة
-SNOW_CODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
+SNOW_FLOW_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 ```
 
@@ -96,7 +96,7 @@ XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 
 ### البناء فوق Snow-Flow
 
-اذا كنت تعمل على مشروع مرتبط بـ Snow-Flow ويستخدم "snow-code" كجزء من اسمه (مثل "snow-code-dashboard" او "snow-code-mobile")، يرجى اضافة ملاحظة في README توضح انه ليس مبنيا بواسطة فريق Snow-Flow ولا يرتبط بنا بأي شكل.
+اذا كنت تعمل على مشروع مرتبط بـ Snow-Flow ويستخدم "snow-flow" كجزء من اسمه (مثل "snow-flow-dashboard" او "snow-flow-mobile")، يرجى اضافة ملاحظة في README توضح انه ليس مبنيا بواسطة فريق Snow-Flow ولا يرتبط بنا بأي شكل.
 
 ### FAQ
 

@@ -10,7 +10,7 @@
 </p>
 <p align="center">오픈 소스 AI 코딩 에이전트.</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -43,14 +43,14 @@
 curl -fsSL https://snow-flow.dev/install | bash
 
 # 패키지 매니저
-npm i -g snow-code-ai@latest        # bun/pnpm/yarn 도 가능
-scoop install snow-code             # Windows
-choco install snow-code             # Windows
-brew install groeimetai/tap/snow-code # macOS 및 Linux (권장, 항상 최신)
-brew install snow-code              # macOS 및 Linux (공식 brew formula, 업데이트 빈도 낮음)
-paru -S snow-code-bin               # Arch Linux
-mise use -g snow-code               # 어떤 OS든
-nix run nixpkgs#snow-code           # 또는 github:groeimetai/snow-flow 로 최신 dev 브랜치
+npm i -g snow-flow@latest        # bun/pnpm/yarn 도 가능
+scoop install snow-flow             # Windows
+choco install snow-flow             # Windows
+brew install groeimetai/tap/snow-flow # macOS 및 Linux (권장, 항상 최신)
+brew install snow-flow              # macOS 및 Linux (공식 brew formula, 업데이트 빈도 낮음)
+paru -S snow-flow-bin               # Arch Linux
+mise use -g snow-flow               # 어떤 OS든
+nix run nixpkgs#snow-flow           # 또는 github:groeimetai/snow-flow 로 최신 dev 브랜치
 ```
 
 > [!TIP]
@@ -60,14 +60,14 @@ nix run nixpkgs#snow-code           # 또는 github:groeimetai/snow-flow 로 최
 
 설치 스크립트는 설치 경로를 다음 우선순위로 결정합니다.
 
-1. `$SNOW_CODE_INSTALL_DIR` - 사용자 지정 설치 디렉터리
+1. `$SNOW_FLOW_INSTALL_DIR` - 사용자 지정 설치 디렉터리
 2. `$XDG_BIN_DIR` - XDG Base Directory Specification 준수 경로
 3. `$HOME/bin` - 표준 사용자 바이너리 디렉터리 (존재하거나 생성 가능할 경우)
-4. `$HOME/.snow-code/bin` - 기본 폴백
+4. `$HOME/.snow-flow/bin` - 기본 폴백
 
 ```bash
 # 예시
-SNOW_CODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
+SNOW_FLOW_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 ```
 
@@ -96,7 +96,7 @@ Snow-Flow 에 기여하고 싶다면, Pull Request 를 제출하기 전에 [cont
 
 ### Snow-Flow 기반으로 만들기
 
-Snow-Flow 와 관련된 프로젝트를 진행하면서 이름에 "snow-code"(예: "snow-code-dashboard" 또는 "snow-code-mobile") 를 포함한다면, README 에 해당 프로젝트가 Snow-Flow 팀이 만든 것이 아니며 어떤 방식으로도 우리와 제휴되어 있지 않다는 점을 명시해 주세요.
+Snow-Flow 와 관련된 프로젝트를 진행하면서 이름에 "snow-flow"(예: "snow-flow-dashboard" 또는 "snow-flow-mobile") 를 포함한다면, README 에 해당 프로젝트가 Snow-Flow 팀이 만든 것이 아니며 어떤 방식으로도 우리와 제휴되어 있지 않다는 점을 명시해 주세요.
 
 ### FAQ
 

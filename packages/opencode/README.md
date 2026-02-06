@@ -15,8 +15,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>&nbsp;
-  <a href="https://snow-flow.dev/discord"><img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=for-the-badge&logo=discord&logoColor=white&label=discord&color=5865F2" /></a>
+  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
 </p>
 
 ---
@@ -36,8 +35,8 @@ bun i -g snow-flow@latest                              # Bun
 pnpm i -g snow-flow@latest                             # pnpm
 yarn global add snow-flow@latest                       # Yarn
 curl -fsSL https://snow-flow.dev/install | bash            # Install script
-brew install groeimetai/tap/snow-code                      # macOS / Linux
-scoop install snow-code                                    # Windows
+brew install groeimetai/tap/snow-flow                      # macOS / Linux
+scoop install snow-flow                                    # Windows
 ```
 
 </details>
@@ -45,12 +44,12 @@ scoop install snow-code                                    # Windows
 ## Quick Start
 
 ```bash
-snow-code
+snow-flow
 ```
 
 That's it. Snow-Flow will prompt you to configure an AI provider on first launch.
 
-Or pre-configure in `snow-code.jsonc`:
+Or pre-configure in `snow-flow.jsonc`:
 
 ```jsonc
 {
@@ -183,15 +182,15 @@ Connect to your ServiceNow instance and access **200+ tools**:
 ## CLI
 
 ```bash
-snow-code                        # Start TUI
-snow-code serve                  # Headless API server (port 4096)
-snow-code web                    # Server + web interface
-snow-code attach <url>           # Attach to remote server
-snow-code auth                   # Configure authentication
-snow-code models                 # List available models
-snow-code stats                  # Usage statistics
-snow-code export                 # Export session data
-snow-code pr                     # Pull request automation
+snow-flow                        # Start TUI
+snow-flow serve                  # Headless API server (port 4096)
+snow-flow web                    # Server + web interface
+snow-flow attach <url>           # Attach to remote server
+snow-flow auth                   # Configure authentication
+snow-flow models                 # List available models
+snow-flow stats                  # Usage statistics
+snow-flow export                 # Export session data
+snow-flow pr                     # Pull request automation
 ```
 
 ## Configuration
@@ -201,9 +200,9 @@ Config is loaded from (in priority order):
 | Priority | Source |
 |:---------|:-------|
 | 1 | Remote/well-known organization configs |
-| 2 | Global config (`~/.snow-code/`) |
+| 2 | Global config (`~/.snow-flow/`) |
 | 3 | `SNOW_FLOW_CONFIG` env variable |
-| 4 | Project config (`snow-code.jsonc`) |
+| 4 | Project config (`snow-flow.jsonc`) |
 | 5 | `SNOW_FLOW_CONFIG_CONTENT` inline |
 
 <details>
@@ -258,7 +257,6 @@ Glob patterns, per-agent rulesets, and env file protection included.
 
 - [Documentation](https://snow-flow.dev/docs) — Full configuration reference and guides
 - [GitHub](https://github.com/groeimetai/snow-flow) — Source code and issues
-- [Discord](https://snow-flow.dev/discord) — Community and support
 - [Contributing](https://github.com/groeimetai/snow-flow/blob/main/CONTRIBUTING.md) — How to contribute
 
 ## License

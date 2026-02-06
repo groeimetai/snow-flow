@@ -10,7 +10,7 @@
 </p>
 <p align="center">開源的 AI Coding Agent。</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -43,14 +43,14 @@
 curl -fsSL https://snow-flow.dev/install | bash
 
 # 套件管理員
-npm i -g snow-code-ai@latest        # 也可使用 bun/pnpm/yarn
-scoop install snow-code             # Windows
-choco install snow-code             # Windows
-brew install groeimetai/tap/snow-code # macOS 與 Linux（推薦，始終保持最新）
-brew install snow-code              # macOS 與 Linux（官方 brew formula，更新頻率較低）
-paru -S snow-code-bin               # Arch Linux
-mise use -g snow-code               # 任何作業系統
-nix run nixpkgs#snow-code           # 或使用 github:groeimetai/snow-flow 以取得最新開發分支
+npm i -g snow-flow@latest        # 也可使用 bun/pnpm/yarn
+scoop install snow-flow             # Windows
+choco install snow-flow             # Windows
+brew install groeimetai/tap/snow-flow # macOS 與 Linux（推薦，始終保持最新）
+brew install snow-flow              # macOS 與 Linux（官方 brew formula，更新頻率較低）
+paru -S snow-flow-bin               # Arch Linux
+mise use -g snow-flow               # 任何作業系統
+nix run nixpkgs#snow-flow           # 或使用 github:groeimetai/snow-flow 以取得最新開發分支
 ```
 
 > [!TIP]
@@ -60,14 +60,14 @@ nix run nixpkgs#snow-code           # 或使用 github:groeimetai/snow-flow 以�
 
 安裝腳本會依據以下優先順序決定安裝路徑：
 
-1. `$SNOW_CODE_INSTALL_DIR` - 自定義安裝目錄
+1. `$SNOW_FLOW_INSTALL_DIR` - 自定義安裝目錄
 2. `$XDG_BIN_DIR` - 符合 XDG 基礎目錄規範的路徑
 3. `$HOME/bin` - 標準使用者執行檔目錄 (若存在或可建立)
-4. `$HOME/.snow-code/bin` - 預設備用路徑
+4. `$HOME/.snow-flow/bin` - 預設備用路徑
 
 ```bash
 # 範例
-SNOW_CODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
+SNOW_FLOW_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 ```
 
@@ -95,7 +95,7 @@ Snow-Flow 內建了兩種 Agent，您可以使用 `Tab` 鍵快速切換。
 
 ### 基於 Snow-Flow 進行開發
 
-如果您正在開發與 Snow-Flow 相關的專案，並在名稱中使用了 "snow-code"（例如 "snow-code-dashboard" 或 "snow-code-mobile"），請在您的 README 中加入聲明，說明該專案並非由 Snow-Flow 團隊開發，且與我們沒有任何隸屬關係。
+如果您正在開發與 Snow-Flow 相關的專案，並在名稱中使用了 "snow-flow"（例如 "snow-flow-dashboard" 或 "snow-flow-mobile"），請在您的 README 中加入聲明，說明該專案並非由 Snow-Flow 團隊開發，且與我們沒有任何隸屬關係。
 
 ### 常見問題 (FAQ)
 

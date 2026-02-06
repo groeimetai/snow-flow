@@ -10,7 +10,7 @@
 </p>
 <p align="center">L'agente di coding AI open source.</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-code-ai"><img alt="npm" src="https://img.shields.io/npm/v/snow-code-ai?style=flat-square" /></a>
+  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square" /></a>
   <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
@@ -43,14 +43,14 @@
 curl -fsSL https://snow-flow.dev/install | bash
 
 # Package manager
-npm i -g snow-code-ai@latest        # oppure bun/pnpm/yarn
-scoop install snow-code             # Windows
-choco install snow-code             # Windows
-brew install groeimetai/tap/snow-code # macOS e Linux (consigliato, sempre aggiornato)
-brew install snow-code              # macOS e Linux (formula brew ufficiale, aggiornata meno spesso)
-paru -S snow-code-bin               # Arch Linux
-mise use -g snow-code               # Qualsiasi OS
-nix run nixpkgs#snow-code           # oppure github:groeimetai/snow-flow per l’ultima branch di sviluppo
+npm i -g snow-flow@latest        # oppure bun/pnpm/yarn
+scoop install snow-flow             # Windows
+choco install snow-flow             # Windows
+brew install groeimetai/tap/snow-flow # macOS e Linux (consigliato, sempre aggiornato)
+brew install snow-flow              # macOS e Linux (formula brew ufficiale, aggiornata meno spesso)
+paru -S snow-flow-bin               # Arch Linux
+mise use -g snow-flow               # Qualsiasi OS
+nix run nixpkgs#snow-flow           # oppure github:groeimetai/snow-flow per l’ultima branch di sviluppo
 ```
 
 > [!TIP]
@@ -60,14 +60,14 @@ nix run nixpkgs#snow-code           # oppure github:groeimetai/snow-flow per l�
 
 Lo script di installazione rispetta il seguente ordine di priorità per il percorso di installazione:
 
-1. `$SNOW_CODE_INSTALL_DIR` – Directory di installazione personalizzata
+1. `$SNOW_FLOW_INSTALL_DIR` – Directory di installazione personalizzata
 2. `$XDG_BIN_DIR` – Percorso conforme alla XDG Base Directory Specification
 3. `$HOME/bin` – Directory binaria standard dell’utente (se esiste o può essere creata)
-4. `$HOME/.snow-code/bin` – Fallback predefinito
+4. `$HOME/.snow-flow/bin` – Fallback predefinito
 
 ```bash
 # Esempi
-SNOW_CODE_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
+SNOW_FLOW_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
 XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
 ```
 
@@ -96,7 +96,7 @@ Se sei interessato a contribuire a Snow-Flow, leggi la nostra [guida alla contri
 
 ### Costruire su Snow-Flow
 
-Se stai lavorando a un progetto correlato a Snow-Flow e che utilizza “opencode” come parte del nome (ad esempio “snow-code-dashboard” o “snow-code-mobile”), aggiungi una nota nel tuo README per chiarire che non è sviluppato dal team Snow-Flow e che non è affiliato in alcun modo con noi.
+Se stai lavorando a un progetto correlato a Snow-Flow e che utilizza "snow-flow" come parte del nome (ad esempio “snow-flow-dashboard” o “snow-flow-mobile”), aggiungi una nota nel tuo README per chiarire che non è sviluppato dal team Snow-Flow e che non è affiliato in alcun modo con noi.
 
 ### FAQ
 
