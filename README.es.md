@@ -32,7 +32,7 @@
   <a href="README.br.md">Português (Brasil)</a>
 </p>
 
-[![Snow-Flow Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://snow-flow.dev)
+[![Snow-Flow Terminal UI](snow-flow-tui.png)](https://snow-flow.dev)
 
 ---
 
