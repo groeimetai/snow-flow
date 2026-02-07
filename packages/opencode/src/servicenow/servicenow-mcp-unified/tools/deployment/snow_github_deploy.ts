@@ -19,7 +19,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
-import { proxyToolCall } from '../../enterprise-proxy/proxy.js';
+import { proxyToolCall } from '../../../enterprise-proxy/proxy.js';
 import {
   ARTIFACT_TABLE_MAP,
   ARTIFACT_IDENTIFIER_FIELD,
