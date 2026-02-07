@@ -15,116 +15,12 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { existsSync } from 'fs';
-
-// ==================== ARTIFACT TYPE MAPPING ====================
-const ARTIFACT_TABLE_MAP: Record<string, string> = {
-  sp_widget: 'sp_widget',
-  widget: 'sp_widget',
-  sp_page: 'sp_page',
-  page: 'sp_page',
-  sys_ux_page: 'sys_ux_page',
-  uib_page: 'sys_ux_page',
-  script_include: 'sys_script_include',
-  business_rule: 'sys_script',
-  client_script: 'sys_script_client',
-  ui_policy: 'sys_ui_policy',
-  ui_action: 'sys_ui_action',
-  rest_message: 'sys_rest_message',
-  scheduled_job: 'sysauto_script',
-  transform_map: 'sys_transform_map',
-  fix_script: 'sys_script_fix',
-  table: 'sys_db_object',
-  field: 'sys_dictionary',
-  flow: 'sys_hub_flow',
-  application: 'sys_app'
-};
-
-const ARTIFACT_IDENTIFIER_FIELD: Record<string, string> = {
-  sp_widget: 'id',
-  sp_page: 'id',
-  sys_ux_page: 'name',
-  sys_script_include: 'name',
-  sys_script: 'name',
-  sys_script_client: 'name',
-  sys_ui_policy: 'short_description',
-  sys_ui_action: 'name',
-  sys_rest_message: 'name',
-  sysauto_script: 'name',
-  sys_transform_map: 'name',
-  sys_script_fix: 'name',
-  sys_db_object: 'name',
-  sys_dictionary: 'element',
-  sys_hub_flow: 'name',
-  sys_app: 'name'
-};
-
-// ==================== FILE MAPPINGS FOR IMPORT (artifact_directory) ====================
-const FILE_MAPPINGS: Record<string, Record<string, string[]>> = {
-  sp_widget: {
-    template: ['template.html', 'index.html', 'widget.html'],
-    script: ['server.js', 'server-script.js', 'script.js'],
-    client_script: ['client.js', 'client-script.js', 'controller.js'],
-    css: ['style.css', 'styles.css', 'widget.css'],
-    option_schema: ['options.json', 'option_schema.json', 'schema.json']
-  },
-  sys_script: {  // business_rule
-    script: ['script.js', 'index.js', 'main.js'],
-    condition: ['condition.js', 'condition.txt']
-  },
-  sys_script_include: {
-    script: ['script.js', 'index.js', 'main.js', '{name}.js']
-  },
-  sys_script_client: {
-    script: ['script.js', 'client.js', 'index.js']
-  },
-  sp_page: {
-    // SP pages don't have script content
-  },
-  sys_ux_page: {
-    // UIB pages don't have script content in same way
-  },
-  sys_ui_action: {
-    script: ['script.js', 'action.js', 'index.js'],
-    condition: ['condition.js']
-  },
-  sysauto_script: {  // scheduled_job
-    script: ['script.js', 'job.js', 'index.js']
-  },
-  sys_script_fix: {
-    script: ['script.js', 'fix.js', 'index.js']
-  }
-};
-
-// ==================== FILE MAPPINGS FOR EXPORT ====================
-const EXPORT_FILE_MAPPINGS: Record<string, Record<string, string>> = {
-  sp_widget: {
-    template: 'template.html',
-    script: 'server.js',
-    client_script: 'client.js',
-    css: 'style.css',
-    option_schema: 'options.json'
-  },
-  sys_script: {  // business_rule
-    script: 'script.js',
-    condition: 'condition.js'
-  },
-  sys_script_include: {
-    script: 'script.js'
-  },
-  sys_script_client: {
-    script: 'script.js'
-  },
-  sys_ui_action: {
-    script: 'script.js',
-    condition: 'condition.js'
-  },
-  sysauto_script: {
-    script: 'script.js'
-  },
-  sys_script_fix: {
-    script: 'script.js'
-  }
-};
+import {
+  ARTIFACT_TABLE_MAP,
+  ARTIFACT_IDENTIFIER_FIELD,
+  FILE_MAPPINGS,
+  EXPORT_FILE_MAPPINGS,
+} from './shared/artifact-constants.js';
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_artifact_manage',
@@ -212,31 +108,31 @@ export const toolDefinition: MCPToolDefinition = {
       },
       description: {
         type: 'string',
-        description: '[create] Artifact description'
+        description: '[create/update] Artifact description'
       },
       template: {
         type: 'string',
-        description: '[create] HTML template (for widgets/pages)'
+        description: '[create/update] HTML template (for widgets/pages)'
       },
       server_script: {
         type: 'string',
-        description: '[create] Server-side script (ES5 only!)'
+        description: '[create/update] Server-side script (ES5 only!)'
       },
       client_script: {
         type: 'string',
-        description: '[create] Client-side script'
+        description: '[create/update] Client-side script'
       },
       css: {
         type: 'string',
-        description: '[create] CSS stylesheet (for widgets)'
+        description: '[create/update] CSS stylesheet (for widgets)'
       },
       option_schema: {
         type: 'string',
-        description: '[create] Option schema JSON (for widgets)'
+        description: '[create/update] Option schema JSON (for widgets)'
       },
       script: {
         type: 'string',
-        description: '[create] Script content (for script includes, business rules, etc.)'
+        description: '[create/update] Script content (for script includes, business rules, etc.)'
       },
       api_name: {
         type: 'string',
@@ -1094,8 +990,17 @@ async function executeUpdate(args: any, context: ServiceNowContext, tableName: s
     return createErrorResult(fileResolution.error);
   }
 
-  // Merge: config values (highest priority) > file-based content
-  const mergedConfig = { ...fileResolution.resolvedFields, ...config };
+  // Extract inline params from args (same fields supported by create)
+  const inlineParams: Record<string, any> = {};
+  const inlineFieldKeys = ['script', 'template', 'server_script', 'client_script', 'css', 'option_schema', 'description', 'active'];
+  for (const key of inlineFieldKeys) {
+    if (args[key] !== undefined) {
+      inlineParams[key] = args[key];
+    }
+  }
+
+  // Merge priority: config (highest) > inline params > _file params > artifact_directory (lowest)
+  const mergedConfig = { ...fileResolution.resolvedFields, ...inlineParams, ...config };
 
   if (Object.keys(mergedConfig).length === 0) {
     return createErrorResult('No update content provided. Use config object and/or file parameters (script_file, template_file, artifact_directory, etc.)');
