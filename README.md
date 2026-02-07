@@ -43,7 +43,7 @@
 
 <p align="center">
   <a href="https://snow-flow.dev">
-    <img src="https://snow-flow.dev/snow-flow-tui.png" alt="Snow-Flow Terminal UI" width="800">
+    <img src="snow-flow-tui.png" alt="Snow-Flow Terminal UI" width="800">
   </a>
 </p>
 
