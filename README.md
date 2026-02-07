@@ -17,8 +17,8 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish-npm.yml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish-npm.yml?style=for-the-badge&logo=github&branch=main&label=build" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
+  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/typecheck.yml"><img alt="Typecheck" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/typecheck.yml?style=for-the-badge&logo=typescript&logoColor=white&branch=main&label=typecheck" /></a>&nbsp;
+  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Elastic--2.0-blue?style=for-the-badge" /></a>
 </p>
 
 <p align="center">
