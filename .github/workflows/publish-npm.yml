@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*'
     branches:
-      - '**'
+      - main
   workflow_dispatch:
     inputs:
       version:
@@ -108,8 +108,14 @@ jobs:
           elif [[ "${{ steps.channel.outputs.channel }}" == "dev" ]]; then
             echo "version=${BASE_VERSION}-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
           else
-            # Stable release: use base version from package.json as-is
-            echo "version=${BASE_VERSION}" >> $GITHUB_OUTPUT
+            # Stable release: auto-increment patch from latest published npm version
+            LATEST=$(npm view snow-flow version 2>/dev/null || echo "$BASE_VERSION")
+            MAJOR=$(echo "$LATEST" | cut -d. -f1)
+            MINOR=$(echo "$LATEST" | cut -d. -f2)
+            PATCH=$(echo "$LATEST" | cut -d. -f3)
+            NEW_PATCH=$((PATCH + 1))
+            echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
+            echo "📦 Auto-bumped: ${LATEST} → ${MAJOR}.${MINOR}.${NEW_PATCH}"
           fi
 
       - name: Install dependencies
@@ -300,6 +306,21 @@ jobs:
           else
             npm publish --access public --tag "$NPM_TAG" --provenance
           fi
+
+      - name: Update version in repo
+        if: steps.channel.outputs.channel == 'stable'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.email "bot@snow-flow.dev"
+          git config user.name "snow-flow-bot"
+          git checkout ${{ github.ref_name }}
+          # Update version in the source package.json
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" packages/opencode/package.json
+          git add packages/opencode/package.json
+          git diff --cached --quiet || git commit -m "chore: bump version to ${VERSION} [skip ci]"
+          git push origin ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Platform binaries are distributed via GitHub releases
       # Users can download from: https://github.com/groeimetai/snow-flow/releases
