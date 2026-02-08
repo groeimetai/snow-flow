@@ -131,6 +131,31 @@ This file contains instructions for AI agents working in this codebase.
   }
 }
 
+/**
+ * Try to open a URL in the user's browser.
+ * Works in Codespaces (VS Code intercepts xdg-open), SSH with X forwarding, and local.
+ */
+async function tryOpenBrowser(url: string): Promise<boolean> {
+  const { spawn } = await import("child_process")
+  return new Promise((resolve) => {
+    try {
+      let proc: ReturnType<typeof spawn>
+      if (process.platform === "darwin") {
+        proc = spawn("open", [url], { detached: true, stdio: "ignore" })
+      } else if (process.platform === "win32") {
+        proc = spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
+      } else {
+        proc = spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+      }
+      if (proc.unref) proc.unref()
+      proc.on("error", () => resolve(false))
+      resolve(true)
+    } catch {
+      resolve(false)
+    }
+  })
+}
+
 type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined" | "servicenow-llm"
 
 interface AuthCredentials {
@@ -416,10 +441,12 @@ function DialogAuthServiceNowOAuth() {
           normalizedInstance: prepared.normalizedInstance,
         }
         setHeadlessAuthUrl(prepared.authUrl)
-        Clipboard.copy(prepared.authUrl).then(
-          () => toast.show({ variant: "info", message: "Auth URL copied to clipboard!", duration: 5000 }),
-          () => {},
-        )
+        tryOpenBrowser(prepared.authUrl).then((opened) => {
+          if (opened) {
+            toast.show({ variant: "info", message: "Browser opened! Authorize and paste the callback URL below.", duration: 5000 })
+          }
+        })
+        Clipboard.copy(prepared.authUrl).catch(() => {})
         setStep("callback-paste")
         setTimeout(() => callbackUrlInput?.focus(), 10)
       } catch (e) {
@@ -939,47 +966,17 @@ function DialogAuthEnterprise() {
       const data = await response.json()
       setSessionId(data.sessionId)
 
-      // Open browser with verification URL (or show URL in headless)
+      // Open browser with verification URL (works in Codespaces via xdg-open)
       const url = data.verificationUrl
-      if (isRemoteEnvironment()) {
+      const opened = await tryOpenBrowser(url)
+      if (opened) {
+        toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+      } else {
         toast.show({
           variant: "info",
-          message: `Open this URL in your browser: ${url}`,
-          duration: 15000,
+          message: `Could not open browser. Open manually: ${url}`,
+          duration: 10000,
         })
-      } else {
-        const { spawn } = await import("child_process")
-        let browserOpened = false
-        try {
-          let proc: any
-          if (process.platform === "darwin") {
-            proc = spawn("open", [url], { detached: true, stdio: "ignore" })
-          } else if (process.platform === "win32") {
-            proc = spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
-          } else {
-            proc = spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
-          }
-          if (proc && proc.unref) proc.unref()
-          proc.on("error", () => {
-            toast.show({
-              variant: "info",
-              message: `Could not open browser. Open manually: ${url}`,
-              duration: 10000,
-            })
-          })
-          browserOpened = true
-        } catch {
-          // spawn failed entirely
-        }
-        if (browserOpened) {
-          toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
-        } else {
-          toast.show({
-            variant: "info",
-            message: `Could not open browser. Open manually: ${url}`,
-            duration: 10000,
-          })
-        }
       }
 
       setStep("browser")
@@ -1425,47 +1422,17 @@ function DialogAuthEnterpriseCombined() {
       const data = await response.json()
       setSessionId(data.sessionId)
 
-      // Open browser with verification URL (or show URL in headless)
+      // Open browser with verification URL (works in Codespaces via xdg-open)
       const url = data.verificationUrl
-      if (isRemoteEnvironment()) {
+      const opened = await tryOpenBrowser(url)
+      if (opened) {
+        toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+      } else {
         toast.show({
           variant: "info",
-          message: `Open this URL in your browser: ${url}`,
-          duration: 15000,
+          message: `Could not open browser. Open manually: ${url}`,
+          duration: 10000,
         })
-      } else {
-        const { spawn } = await import("child_process")
-        let browserOpened = false
-        try {
-          let proc: any
-          if (process.platform === "darwin") {
-            proc = spawn("open", [url], { detached: true, stdio: "ignore" })
-          } else if (process.platform === "win32") {
-            proc = spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
-          } else {
-            proc = spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
-          }
-          if (proc && proc.unref) proc.unref()
-          proc.on("error", () => {
-            toast.show({
-              variant: "info",
-              message: `Could not open browser. Open manually: ${url}`,
-              duration: 10000,
-            })
-          })
-          browserOpened = true
-        } catch {
-          // spawn failed entirely
-        }
-        if (browserOpened) {
-          toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
-        } else {
-          toast.show({
-            variant: "info",
-            message: `Could not open browser. Open manually: ${url}`,
-            duration: 10000,
-          })
-        }
       }
 
       setStep("browser")
