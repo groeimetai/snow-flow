@@ -295,7 +295,7 @@ function DialogAuthServiceNowOAuth() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"instance" | "clientId" | "secret" | "authenticating" | "headless-auth" | "callback-paste">("instance")
+  const [step, setStep] = createSignal<"instance" | "clientId" | "secret" | "authenticating" | "callback-paste">("instance")
   const [instance, setInstance] = createSignal("")
   const [clientId, setClientId] = createSignal("")
   const [clientSecret, setClientSecret] = createSignal("")
@@ -337,7 +337,7 @@ function DialogAuthServiceNowOAuth() {
       } else if (currentStep === "secret") {
         setStep("clientId")
         setTimeout(() => clientIdInput?.focus(), 10)
-      } else if (currentStep === "headless-auth" || currentStep === "callback-paste") {
+      } else if (currentStep === "callback-paste") {
         setStep("secret")
         setTimeout(() => secretInput?.focus(), 10)
       }
@@ -415,13 +415,8 @@ function DialogAuthServiceNowOAuth() {
           normalizedInstance: prepared.normalizedInstance,
         }
         setHeadlessAuthUrl(prepared.authUrl)
-        setStep("headless-auth")
-
-        // Auto-advance to callback paste after a moment
-        setTimeout(() => {
-          setStep("callback-paste")
-          setTimeout(() => callbackUrlInput?.focus(), 10)
-        }, 2000)
+        setStep("callback-paste")
+        setTimeout(() => callbackUrlInput?.focus(), 10)
       } catch (e) {
         toast.show({
           variant: "error",
@@ -598,24 +593,21 @@ function DialogAuthServiceNowOAuth() {
         </box>
       </Show>
 
-      <Show when={step() === "headless-auth"}>
-        <box gap={1}>
-          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
-            Remote Environment Detected
-          </text>
-          <text fg={theme.text}>Open this URL in your browser to authenticate:</text>
-          <text fg={theme.primary}>{headlessAuthUrl()}</text>
-          <box paddingTop={1}>
-            <text fg={theme.textMuted}>After clicking "Allow" in ServiceNow:</text>
-            <text fg={theme.textMuted}>  1. Your browser will redirect to a localhost URL</text>
-            <text fg={theme.textMuted}>  2. The page may show an error (this is expected)</text>
-            <text fg={theme.textMuted}>  3. Copy the FULL URL from your browser address bar</text>
-          </box>
-        </box>
-      </Show>
-
       <Show when={step() === "callback-paste"}>
         <box gap={1}>
+          <Show when={headlessAuthUrl()}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Remote Environment Detected
+            </text>
+            <text fg={theme.text}>Open this URL in your browser to authenticate:</text>
+            <text fg={theme.primary}>{headlessAuthUrl()}</text>
+            <box paddingTop={1}>
+              <text fg={theme.textMuted}>After clicking "Allow" in ServiceNow:</text>
+              <text fg={theme.textMuted}>  1. Your browser will redirect to a localhost URL</text>
+              <text fg={theme.textMuted}>  2. The page may show an error (this is expected)</text>
+              <text fg={theme.textMuted}>  3. Copy the FULL URL from your browser address bar</text>
+            </box>
+          </Show>
           <text fg={theme.text}>Paste the callback URL from your browser address bar:</text>
           <textarea
             ref={(val: TextareaRenderable) => (callbackUrlInput = val)}
