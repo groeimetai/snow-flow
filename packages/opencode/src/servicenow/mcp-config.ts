@@ -5,7 +5,7 @@
  * when ServiceNow credentials are available in the auth store.
  */
 
-import type { Config } from "../config/config"
+import { Config } from "../config/config"
 
 /**
  * Get the default ServiceNow MCP server configuration
@@ -40,10 +40,7 @@ export function getServiceNowMcpConfig(options?: {
 
   return {
     type: "local",
-    command: [
-      "node",
-      "node_modules/@groeimetai/snow-flow-ts/dist/servicenow/servicenow-mcp-unified/index.js",
-    ],
+    command: Config.getMcpServerCommand("servicenow-unified"),
     environment,
     enabled: true,
   }
@@ -119,10 +116,7 @@ export async function getServiceNowMcpConfigFromAuth(): Promise<Config.Mcp | nul
       // For basic auth, we use different env vars
       return {
         type: "local",
-        command: [
-          "node",
-          "node_modules/@groeimetai/snow-flow-ts/dist/servicenow/servicenow-mcp-unified/index.js",
-        ],
+        command: Config.getMcpServerCommand("servicenow-unified"),
         environment: {
           SERVICENOW_INSTANCE_URL: snAuth.instance,
           SERVICENOW_USERNAME: snAuth.username,
@@ -152,7 +146,7 @@ export const SERVICENOW_MCP_CONFIG_EXAMPLE = `
   "mcp": {
     "servicenow-unified": {
       "type": "local",
-      "command": ["node", "node_modules/@groeimetai/snow-flow-ts/dist/servicenow/servicenow-mcp-unified/index.js"],
+      "command": ["bun", "run", "node_modules/snow-flow/mcp/servicenow-unified.js"],
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "your-oauth-client-id",

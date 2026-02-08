@@ -10,6 +10,8 @@
  * They are automatically injected when credentials are present in the auth store.
  */
 
+import { Config } from "../config/config"
+
 // Auth - these are in the main auth module
 export { ServiceNowOAuth } from "../auth/servicenow-oauth"
 export type { ServiceNowAuthResult, ServiceNowOAuthOptions } from "../auth/servicenow-oauth"
@@ -33,7 +35,7 @@ export {
  *   "mcp": {
  *     "servicenow-unified": {
  *       "type": "local",
- *       "command": ["node", "node_modules/@groeimetai/snow-flow-ts/dist/servicenow/servicenow-mcp-unified/index.js"],
+ *       "command": ["bun", "run", "node_modules/snow-flow/mcp/servicenow-unified.js"],
  *       "environment": {
  *         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
  *         "SERVICENOW_CLIENT_ID": "your-client-id",
@@ -46,10 +48,7 @@ export {
 export function getDefaultServiceNowMcpConfig() {
   return {
     type: "local" as const,
-    command: [
-      "node",
-      "node_modules/@groeimetai/snow-flow-ts/dist/servicenow/servicenow-mcp-unified/index.js",
-    ],
+    command: Config.getMcpServerCommand("servicenow-unified"),
     environment: {
       SERVICENOW_INSTANCE_URL: process.env.SERVICENOW_INSTANCE_URL ?? "",
       SERVICENOW_CLIENT_ID: process.env.SERVICENOW_CLIENT_ID ?? "",

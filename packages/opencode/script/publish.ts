@@ -54,11 +54,12 @@ for (const tag of tags) {
 
 if (!Script.preview) {
   // Create archives for GitHub release
+  // Include both bin/ and mcp/ directories so postinstall gets the MCP server files
   for (const key of Object.keys(binaries)) {
     if (key.includes("linux")) {
-      await $`tar -czf ../../${key}.tar.gz *`.cwd(`dist/${key}/bin`)
+      await $`tar -czf ../${key}.tar.gz bin mcp`.cwd(`dist/${key}`)
     } else {
-      await $`zip -r ../../${key}.zip *`.cwd(`dist/${key}/bin`)
+      await $`zip -r ../${key}.zip bin mcp`.cwd(`dist/${key}`)
     }
   }
 
