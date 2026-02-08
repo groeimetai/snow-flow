@@ -20,13 +20,44 @@ const pkgDir = path.join(__dirname, '..');
 const binaryName = platform === 'windows' ? 'snow-code.exe' : 'snow-code';
 const binaryPath = path.join(pkgDir, 'bin', binaryName);
 
+// Verify the binary matches the current platform by checking magic bytes
+function binaryMatchesPlatform(filePath) {
+  try {
+    var fd = fs.openSync(filePath, 'r');
+    var buf = Buffer.alloc(4);
+    fs.readSync(fd, buf, 0, 4, 0);
+    fs.closeSync(fd);
+    var magic = buf.toString('hex');
+
+    if (platform === 'darwin') {
+      // Mach-O: cffaedfe (64-bit LE), feedfacf (64-bit BE), cafebabe (universal/fat)
+      return magic === 'cffaedfe' || magic === 'feedfacf' || magic === 'cafebabe';
+    }
+    if (platform === 'linux') {
+      // ELF: 7f454c46
+      return magic === '7f454c46';
+    }
+    if (platform === 'windows') {
+      // PE/MZ: 4d5a
+      return magic.startsWith('4d5a');
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Check if file exists AND is a real binary (not just a launcher script)
 // Launcher scripts are small (~2KB), actual binaries are 20MB+
+// Also verify the binary is for the current platform (not a leftover from CI)
 if (fs.existsSync(binaryPath)) {
   var stats = fs.statSync(binaryPath);
-  if (stats.size > 100000) { // > 100KB means it's a real binary
+  if (stats.size > 100000 && binaryMatchesPlatform(binaryPath)) {
     console.log('snow-code: Binary already exists');
     process.exit(0);
+  }
+  if (stats.size > 100000) {
+    console.log('snow-code: Binary exists but is for wrong platform, re-downloading...');
   }
 }
 

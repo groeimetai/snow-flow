@@ -295,6 +295,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Restore bin launcher (prevent shipping CI platform binary)
+        run: |
+          cd packages/opencode
+          git checkout -- bin/snow-code
+          echo "Restored launcher script:"
+          wc -c bin/snow-code
+
       - name: Publish main package to npm (OIDC)
         run: |
           cd packages/opencode
