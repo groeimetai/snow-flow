@@ -292,7 +292,7 @@ export namespace Config {
         log.info("found bundled MCP server", { serverName, path: bundledPath })
         const rt = runtime()
         log.info("using runtime for MCP server", { runtime: rt })
-        return [rt, "run", bundledPath]
+        return rt === "bun" ? [rt, "run", bundledPath] : [rt, bundledPath]
       }
     }
 
@@ -316,7 +316,8 @@ export namespace Config {
       })
     }
 
-    return [runtime(), "run", serverPath]
+    const rt = runtime()
+    return rt === "bun" ? [rt, "run", serverPath] : [rt, serverPath]
   }
 
   /**
