@@ -1,5 +1,14 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="512" height="512" fill="#FDFCFC"/>
-<path d="M320 224V352H192V224H320Z" fill="#E6E5E6"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M384 416H128V96H384V416ZM320 160H192V352H320V160Z" fill="#17181C"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" fill="#FDFCFC"/>
+  <defs>
+    <linearGradient id="mountain" x1="256" y1="128" x2="256" y2="352" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0A1628"/>
+      <stop offset="100%" stop-color="#00D9FF"/>
+    </linearGradient>
+  </defs>
+  <path d="M96 368 L192 144 L256 240 L320 144 L416 368 Z"
+        fill="url(#mountain)"
+        stroke="#00B8D9"
+        stroke-width="6"
+        stroke-linejoin="round"/>
 </svg>
