@@ -58,6 +58,11 @@ export interface EnterpriseToolListResponse {
   tools: EnterpriseTool[];
 }
 
+export interface EnterpriseToolCacheConfig {
+  cacheTtlMs: number;
+  maxCacheSize: number;
+}
+
 export interface LicenseValidationResponse {
   valid: boolean;
   error?: string;

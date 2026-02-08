@@ -12,8 +12,11 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { proxyToolCall, listEnterpriseTools } from './proxy.js';
 import { mcpDebug } from '../shared/mcp-debug.js';
+import { fetchAndCacheTools, buildEnterpriseToolIndex, ToolSearch, getCurrentSessionId } from './tool-cache.js';
+import { ENTERPRISE_META_TOOLS, executeToolSearch, executeToolExecute } from './meta-tools.js';
 
 const VERSION = process.env.SNOW_FLOW_VERSION || '8.30.31';
+const LAZY_TOOLS_ENABLED = process.env.SNOW_ENTERPRISE_LAZY_TOOLS !== 'false';
 
 /**
  * Create MCP Server
@@ -33,6 +36,7 @@ const server = new Server(
 /**
  * Handle tools/list request
  * Returns list of available enterprise tools from license server
+ * In lazy mode: returns only meta-tools + session-enabled tools
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   mcpDebug('[Enterprise Proxy] Received tools/list request from MCP client');
@@ -40,8 +44,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   try {
     const tools = await listEnterpriseTools();
 
-    mcpDebug(`[Enterprise Proxy] Returning ${tools.length} tools to MCP client`);
+    mcpDebug(`[Enterprise Proxy] Fetched ${tools.length} tools from license server`);
 
+    if (LAZY_TOOLS_ENABLED) {
+      // Build search index from fetched tools
+      buildEnterpriseToolIndex(tools);
+
+      // Collect session-enabled tools to include alongside meta-tools
+      const sessionId = getCurrentSessionId();
+      const enabledTools: { name: string; description: string; inputSchema: any }[] = [];
+      if (sessionId) {
+        const enabledSet = await ToolSearch.getEnabledTools(sessionId);
+        for (const toolId of enabledSet) {
+          const found = tools.find((t) => t.name === toolId);
+          if (found) {
+            enabledTools.push({
+              name: found.name,
+              description: found.description || `Enterprise tool: ${found.name}`,
+              inputSchema: found.inputSchema,
+            });
+          }
+        }
+      }
+
+      mcpDebug(`[Enterprise Proxy] Lazy mode: returning ${ENTERPRISE_META_TOOLS.length} meta-tools + ${enabledTools.length} enabled tools`);
+      return {
+        tools: [...ENTERPRISE_META_TOOLS, ...enabledTools],
+      };
+    }
+
+    mcpDebug(`[Enterprise Proxy] Returning ${tools.length} tools to MCP client`);
     return {
       tools: tools.map((tool) => ({
         name: tool.name,
@@ -50,13 +82,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       })),
     };
   } catch (error) {
-    // Return empty list on error (allows MCP server to start even if enterprise server is down)
-    mcpDebug('[Enterprise Proxy] Failed to list tools - returning empty list', {
+    mcpDebug('[Enterprise Proxy] Failed to list tools', {
       error: error instanceof Error ? error.message : String(error)
     });
-    mcpDebug(
-      `[Enterprise Proxy] Failed to list tools: ${error instanceof Error ? error.message : String(error)}`
-    );
+
+    if (LAZY_TOOLS_ENABLED) {
+      // In lazy mode, always return meta-tools so search remains available
+      mcpDebug('[Enterprise Proxy] Returning meta-tools only due to backend error');
+      return { tools: [...ENTERPRISE_META_TOOLS] };
+    }
+
+    mcpDebug('[Enterprise Proxy] Returning empty tools list due to backend error');
     return { tools: [] };
   }
 });
@@ -64,6 +100,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 /**
  * Handle tools/call request
  * Proxies tool call to enterprise license server via HTTPS
+ * In lazy mode: routes meta-tool calls and enforces tool enabling
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
@@ -71,6 +108,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   mcpDebug(`[Enterprise Proxy] Received tool call: ${name}`, {
     arguments: args
   });
+
+  // Route meta-tool calls in lazy mode
+  if (LAZY_TOOLS_ENABLED) {
+    if (name === 'enterprise_tool_search') {
+      return executeToolSearch((args || {}) as Record<string, unknown>);
+    }
+    if (name === 'enterprise_tool_execute') {
+      return executeToolExecute((args || {}) as Record<string, unknown>);
+    }
+
+    // For direct tool calls in lazy mode, check if tool is enabled
+    const sessionId = getCurrentSessionId();
+    if (sessionId) {
+      const canExecute = await ToolSearch.canExecuteTool(sessionId, name);
+      if (!canExecute) {
+        mcpDebug(`[Enterprise Proxy] Tool ${name} not enabled for session ${sessionId}`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Tool "${name}" is not enabled. Use enterprise_tool_search to find and enable it first.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  }
 
   try {
     const result = await proxyToolCall(name, args || {});
@@ -100,7 +165,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: 'text',
-          text: `❌ Enterprise tool error: ${errorMessage}`,
+          text: `Enterprise tool error: ${errorMessage}`,
         },
       ],
       isError: true,

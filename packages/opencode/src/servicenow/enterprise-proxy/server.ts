@@ -39,9 +39,12 @@ import path from 'path';
 import os from 'os';
 import { listEnterpriseTools, proxyToolCall } from './proxy.js';
 import { mcpDebug } from '../shared/mcp-debug.js';
+import { fetchAndCacheTools, buildEnterpriseToolIndex, ToolSearch, getCurrentSessionId } from './tool-cache.js';
+import { ENTERPRISE_META_TOOLS, executeToolSearch, executeToolExecute } from './meta-tools.js';
 
 // Configuration from environment variables
 const LICENSE_SERVER_URL = process.env.SNOW_ENTERPRISE_URL || 'https://enterprise.snow-flow.dev';
+const LAZY_TOOLS_ENABLED = process.env.SNOW_ENTERPRISE_LAZY_TOOLS !== 'false';
 
 /**
  * Check if a valid token source exists
@@ -155,11 +158,40 @@ class EnterpriseProxyServer {
 
         mcpDebug(`[Proxy] ✓ ${this.availableTools.length} tools available`);
 
+        if (LAZY_TOOLS_ENABLED) {
+          // Build search index from fetched tools
+          buildEnterpriseToolIndex(tools);
+
+          // Collect session-enabled tools to include alongside meta-tools
+          const sessionId = getCurrentSessionId();
+          const enabledTools: Tool[] = [];
+          if (sessionId) {
+            const enabledSet = await ToolSearch.getEnabledTools(sessionId);
+            for (const toolId of enabledSet) {
+              const found = this.availableTools.find(t => t.name === toolId);
+              if (found) enabledTools.push(found);
+            }
+          }
+
+          mcpDebug(`[Proxy] Lazy mode: returning ${ENTERPRISE_META_TOOLS.length} meta-tools + ${enabledTools.length} enabled tools`);
+          return {
+            tools: [...ENTERPRISE_META_TOOLS, ...enabledTools]
+          };
+        }
+
         return {
           tools: this.availableTools
         };
       } catch (error: any) {
         mcpDebug('[Proxy] ✗ Failed to fetch tools:', error.message);
+
+        if (LAZY_TOOLS_ENABLED) {
+          // In lazy mode, always return meta-tools so search remains available
+          mcpDebug('[Proxy] Returning meta-tools only due to backend error');
+          return {
+            tools: [...ENTERPRISE_META_TOOLS]
+          };
+        }
 
         // Return empty tools list instead of crashing - allows graceful degradation
         mcpDebug('[Proxy] Returning empty tools list due to backend error');
@@ -173,6 +205,34 @@ class EnterpriseProxyServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       var toolName = request.params.name;
       var toolArgs = request.params.arguments || {};
+
+      // Route meta-tool calls in lazy mode
+      if (LAZY_TOOLS_ENABLED) {
+        if (toolName === 'enterprise_tool_search') {
+          return executeToolSearch(toolArgs as Record<string, unknown>);
+        }
+        if (toolName === 'enterprise_tool_execute') {
+          return executeToolExecute(toolArgs as Record<string, unknown>);
+        }
+
+        // For direct tool calls in lazy mode, check if tool is enabled
+        const sessionId = getCurrentSessionId();
+        if (sessionId) {
+          const canExecute = await ToolSearch.canExecuteTool(sessionId, toolName);
+          if (!canExecute) {
+            mcpDebug(`[Proxy] Tool ${toolName} not enabled for session ${sessionId}`);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Tool "${toolName}" is not enabled. Use enterprise_tool_search to find and enable it first.`
+                }
+              ],
+              isError: true
+            };
+          }
+        }
+      }
 
       try {
         mcpDebug(`[Proxy] Executing tool: ${toolName}`);
