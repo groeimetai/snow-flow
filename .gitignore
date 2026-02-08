@@ -22,6 +22,9 @@ target
 .scripts
 .direnv/
 
+# Build artifacts
+packages/opencode/mcp/
+
 # Local dev files
 opencode-dev
 logs/
