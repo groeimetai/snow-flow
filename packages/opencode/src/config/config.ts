@@ -26,6 +26,7 @@ import { BunProc } from "@/bun"
 import { Installation } from "@/installation"
 import { ConfigMarkdown } from "./markdown"
 import { existsSync } from "fs"
+import { execSync } from "child_process"
 import { Bus } from "@/bus"
 import { GlobalBus } from "@/bus/global"
 import { Event } from "../server/event"
@@ -208,6 +209,26 @@ export namespace Config {
   })
 
   /**
+   * Detect the best available JS runtime command.
+   * Prefers bun if available, falls back to node.
+   */
+  function getRuntime(): string {
+    try {
+      execSync("bun --version", { stdio: "ignore" })
+      return "bun"
+    } catch {
+      return "node"
+    }
+  }
+
+  let _cachedRuntime: string | undefined
+
+  function runtime(): string {
+    if (_cachedRuntime === undefined) _cachedRuntime = getRuntime()
+    return _cachedRuntime
+  }
+
+  /**
    * Get the MCP server command based on whether we're running bundled or in development
    */
   export function getMcpServerCommand(serverName: "servicenow-unified" | "enterprise-proxy"): string[] {
@@ -269,9 +290,9 @@ export namespace Config {
       log.info("checking bundled path", { bundledPath, exists })
       if (exists) {
         log.info("found bundled MCP server", { serverName, path: bundledPath })
-        // Use bun for bundled JS - it works with both bun-targeted and node-targeted builds
-        // Node.js doesn't support import.meta.require used in bun-targeted builds
-        return ["bun", "run", bundledPath]
+        const rt = runtime()
+        log.info("using runtime for MCP server", { runtime: rt })
+        return [rt, "run", bundledPath]
       }
     }
 
@@ -295,7 +316,7 @@ export namespace Config {
       })
     }
 
-    return ["bun", "run", serverPath]
+    return [runtime(), "run", serverPath]
   }
 
   /**
