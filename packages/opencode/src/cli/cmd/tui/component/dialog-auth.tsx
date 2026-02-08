@@ -604,8 +604,23 @@ function DialogAuthServiceNowOAuth() {
             <text fg={theme.primary} attributes={TextAttributes.BOLD}>
               Remote Environment Detected
             </text>
-            <text fg={theme.text}>Open this URL in your browser to authenticate (copied to clipboard):</text>
+            <text fg={theme.text}>Open this URL in your browser to authenticate:</text>
             <text fg={theme.primary}>{headlessAuthUrl()}</text>
+            <box flexDirection="row" gap={2} paddingTop={1}>
+              <box
+                paddingLeft={2}
+                paddingRight={2}
+                backgroundColor={theme.primary}
+                onMouseUp={() => {
+                  Clipboard.copy(headlessAuthUrl()).then(
+                    () => toast.show({ variant: "success", message: "URL copied to clipboard!", duration: 3000 }),
+                    () => toast.show({ variant: "error", message: "Failed to copy URL", duration: 3000 }),
+                  )
+                }}
+              >
+                <text fg={theme.selectedListItemText} attributes={TextAttributes.BOLD}>[ Copy URL ]</text>
+              </box>
+            </box>
             <box paddingTop={1}>
               <text fg={theme.textMuted}>After clicking "Allow" in ServiceNow:</text>
               <text fg={theme.textMuted}>  1. Your browser will redirect to a localhost URL</text>
