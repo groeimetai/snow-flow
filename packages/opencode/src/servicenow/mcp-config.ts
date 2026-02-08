@@ -146,7 +146,7 @@ export const SERVICENOW_MCP_CONFIG_EXAMPLE = `
   "mcp": {
     "servicenow-unified": {
       "type": "local",
-      "command": ["bun", "run", "node_modules/snow-flow/mcp/servicenow-unified.js"],
+      "command": ["node", "node_modules/snow-flow/mcp/servicenow-unified.js"],
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "your-oauth-client-id",

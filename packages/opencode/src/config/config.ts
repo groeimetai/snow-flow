@@ -269,9 +269,9 @@ export namespace Config {
       log.info("checking bundled path", { bundledPath, exists })
       if (exists) {
         log.info("found bundled MCP server", { serverName, path: bundledPath })
-        // Use bun for bundled JS - it works with both bun-targeted and node-targeted builds
-        // Node.js doesn't support import.meta.require used in bun-targeted builds
-        return ["bun", "run", bundledPath]
+        // Bundled MCP servers are built with target: "node", so use node as the runtime.
+        // This ensures it works on systems where bun is not installed.
+        return ["node", bundledPath]
       }
     }
 
