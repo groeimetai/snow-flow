@@ -12,6 +12,7 @@ import type { ProviderAuthAuthorization } from "@opencode-ai/sdk/v2"
 import { DialogModel } from "./dialog-model"
 import { useKeyboard } from "@opentui/solid"
 import { Clipboard } from "@tui/util/clipboard"
+import { tryOpenBrowser } from "@tui/util/browser"
 import { useToast } from "../ui/toast"
 
 const PROVIDER_PRIORITY: Record<string, number> = {
@@ -126,15 +127,27 @@ function AutoMethod(props: AutoMethodProps) {
   const toast = useToast()
 
   useKeyboard((evt) => {
-    if (evt.name === "c" && !evt.ctrl && !evt.meta) {
-      const code = props.authorization.instructions.match(/[A-Z0-9]{4}-[A-Z0-9]{4,5}/)?.[0] ?? props.authorization.url
-      Clipboard.copy(code)
-        .then(() => toast.show({ message: "Copied to clipboard", variant: "info" }))
+    if (evt.ctrl || evt.meta) return
+    if (evt.name === "c") {
+      Clipboard.copy(props.authorization.url)
+        .then(() => toast.show({ message: "Copied URL to clipboard", variant: "info" }))
         .catch(toast.error)
+    }
+    if (evt.name === "o") {
+      tryOpenBrowser(props.authorization.url).then((opened) => {
+        toast.show({
+          variant: opened ? "info" : "error",
+          message: opened ? "Browser opened!" : "Could not open browser",
+          duration: 3000,
+        })
+      })
     }
   })
 
   onMount(async () => {
+    tryOpenBrowser(props.authorization.url).catch(() => {})
+    Clipboard.copy(props.authorization.url).catch(() => {})
+
     const result = await sdk.client.provider.oauth.callback({
       providerID: props.providerID,
       method: props.index,
@@ -161,9 +174,12 @@ function AutoMethod(props: AutoMethodProps) {
         <text fg={theme.textMuted}>{props.authorization.instructions}</text>
       </box>
       <text fg={theme.textMuted}>Waiting for authorization...</text>
-      <text fg={theme.text}>
-        c <span style={{ fg: theme.textMuted }}>copy</span>
-      </text>
+      <box flexDirection="row" gap={1}>
+        <text fg={theme.text}>o</text>
+        <text fg={theme.textMuted}>open</text>
+        <text fg={theme.text}> c</text>
+        <text fg={theme.textMuted}>copy</text>
+      </box>
     </box>
   )
 }
@@ -179,7 +195,31 @@ function CodeMethod(props: CodeMethodProps) {
   const sdk = useSDK()
   const sync = useSync()
   const dialog = useDialog()
+  const toast = useToast()
   const [error, setError] = createSignal(false)
+
+  useKeyboard((evt) => {
+    if (evt.ctrl || evt.meta) return
+    if (evt.name === "o") {
+      tryOpenBrowser(props.authorization.url).then((opened) => {
+        toast.show({
+          variant: opened ? "info" : "error",
+          message: opened ? "Browser opened!" : "Could not open browser",
+          duration: 3000,
+        })
+      })
+    }
+    if (evt.name === "c") {
+      Clipboard.copy(props.authorization.url)
+        .then(() => toast.show({ message: "Copied URL to clipboard", variant: "info" }))
+        .catch(toast.error)
+    }
+  })
+
+  onMount(() => {
+    tryOpenBrowser(props.authorization.url).catch(() => {})
+    Clipboard.copy(props.authorization.url).catch(() => {})
+  })
 
   return (
     <DialogPrompt
@@ -206,6 +246,12 @@ function CodeMethod(props: CodeMethodProps) {
           <Show when={error()}>
             <text fg={theme.error}>Invalid code</text>
           </Show>
+          <box flexDirection="row" gap={1}>
+            <text fg={theme.text}>o</text>
+            <text fg={theme.textMuted}>open</text>
+            <text fg={theme.text}> c</text>
+            <text fg={theme.textMuted}>copy</text>
+          </box>
         </box>
       )}
     />
