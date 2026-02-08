@@ -938,10 +938,11 @@ function DialogAuthEnterprise() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"subdomain" | "browser" | "code" | "verifying">("subdomain")
+  const [step, setStep] = createSignal<"subdomain" | "code" | "verifying">("subdomain")
   const [subdomain, setSubdomain] = createSignal("")
   const [sessionId, setSessionId] = createSignal("")
   const [authCode, setAuthCode] = createSignal("")
+  const [verificationUrl, setVerificationUrl] = createSignal("")
 
   let subdomainInput: TextareaRenderable
   let codeInput: TextareaRenderable
@@ -969,7 +970,7 @@ function DialogAuthEnterprise() {
       const currentStep = step()
       if (currentStep === "subdomain") {
         dialog.replace(() => <DialogAuth />)
-      } else if (currentStep === "browser" || currentStep === "code") {
+      } else if (currentStep === "code") {
         setStep("subdomain")
         setSessionId("")
         setAuthCode("")
@@ -1020,24 +1021,16 @@ function DialogAuthEnterprise() {
 
       // Open browser with verification URL (works in Codespaces via xdg-open)
       const url = data.verificationUrl
-      const opened = await tryOpenBrowser(url)
-      if (opened) {
-        toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
-      } else {
-        toast.show({
-          variant: "info",
-          message: `Could not open browser. Open manually: ${url}`,
-          duration: 10000,
-        })
-      }
+      setVerificationUrl(url)
+      tryOpenBrowser(url).then((opened) => {
+        if (opened) {
+          toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+        }
+      })
+      Clipboard.copy(url).catch(() => {})
 
-      setStep("browser")
-
-      // Auto-advance to code input after a moment
-      setTimeout(() => {
-        setStep("code")
-        setTimeout(() => codeInput?.focus(), 10)
-      }, 2000)
+      setStep("code")
+      setTimeout(() => codeInput?.focus(), 10)
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Failed to start auth" })
     }
@@ -1256,22 +1249,21 @@ function DialogAuthEnterprise() {
         </box>
       </Show>
 
-      <Show when={step() === "browser"}>
-        <box gap={1}>
-          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
-            Opening browser for verification...
-          </text>
-          <text fg={theme.textMuted}>URL: https://{subdomain()}.snow-flow.dev/device/authorize</text>
-          <box paddingTop={1}>
-            <text fg={theme.text}>After logging in on the portal:</text>
-            <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
-            <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
-          </box>
-        </box>
-      </Show>
-
       <Show when={step() === "code"}>
         <box gap={1}>
+          <Show when={verificationUrl()}>
+            <text fg={theme.primary} attributes={TextAttributes.BOLD}>
+              Verify in your browser
+            </text>
+            <text fg={theme.text}>Open this URL to authorize this device:</text>
+            <text fg={theme.primary}>{verificationUrl()}</text>
+            <box paddingTop={1}>
+              <text fg={theme.text}>After logging in on the portal:</text>
+              <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
+              <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
+              <text fg={theme.textMuted}>  3. Paste it below and press Enter</text>
+            </box>
+          </Show>
           <text fg={theme.textMuted}>Enter the authorization code from the portal</text>
           <textarea
             ref={(val: TextareaRenderable) => (codeInput = val)}
@@ -1318,7 +1310,6 @@ function DialogAuthEnterpriseCombined() {
 
   type CombinedStep =
     | "subdomain"
-    | "browser"
     | "code"
     | "verifying-enterprise"
     | "checking-portal-sn"
@@ -1334,6 +1325,7 @@ function DialogAuthEnterpriseCombined() {
   const [subdomain, setSubdomain] = createSignal("")
   const [sessionId, setSessionId] = createSignal("")
   const [authCode, setAuthCode] = createSignal("")
+  const [verificationUrl, setVerificationUrl] = createSignal("")
   const [enterpriseData, setEnterpriseData] = createSignal<{
     token?: string
     user?: { username?: string; email?: string; role?: string }
@@ -1401,7 +1393,7 @@ function DialogAuthEnterpriseCombined() {
     if (evt.name === "escape") {
       if (currentStep === "subdomain") {
         dialog.replace(() => <DialogAuth />)
-      } else if (currentStep === "browser" || currentStep === "code") {
+      } else if (currentStep === "code") {
         setStep("subdomain")
         setSessionId("")
         setAuthCode("")
@@ -1476,23 +1468,16 @@ function DialogAuthEnterpriseCombined() {
 
       // Open browser with verification URL (works in Codespaces via xdg-open)
       const url = data.verificationUrl
-      const opened = await tryOpenBrowser(url)
-      if (opened) {
-        toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
-      } else {
-        toast.show({
-          variant: "info",
-          message: `Could not open browser. Open manually: ${url}`,
-          duration: 10000,
-        })
-      }
+      setVerificationUrl(url)
+      tryOpenBrowser(url).then((opened) => {
+        if (opened) {
+          toast.show({ variant: "info", message: "Browser opened for verification", duration: 3000 })
+        }
+      })
+      Clipboard.copy(url).catch(() => {})
 
-      setStep("browser")
-
-      setTimeout(() => {
-        setStep("code")
-        setTimeout(() => codeInput?.focus(), 10)
-      }, 2000)
+      setStep("code")
+      setTimeout(() => codeInput?.focus(), 10)
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Failed to start auth" })
     }
@@ -1915,28 +1900,22 @@ function DialogAuthEnterpriseCombined() {
         </box>
       </Show>
 
-      {/* Step 2: Browser opening */}
-      <Show when={step() === "browser"}>
-        <box gap={1}>
-          <text fg={theme.primary} attributes={TextAttributes.BOLD}>
-            Step 1 of 2: Enterprise Portal
-          </text>
-          <text fg={theme.text}>Opening browser for verification...</text>
-          <text fg={theme.textMuted}>URL: https://{subdomain()}.snow-flow.dev/device/authorize</text>
-          <box paddingTop={1}>
-            <text fg={theme.text}>After logging in on the portal:</text>
-            <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
-            <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
-          </box>
-        </box>
-      </Show>
-
-      {/* Step 3: Enter auth code */}
+      {/* Step 2: Verify in browser + enter auth code */}
       <Show when={step() === "code"}>
         <box gap={1}>
           <text fg={theme.primary} attributes={TextAttributes.BOLD}>
             Step 1 of 2: Enterprise Portal
           </text>
+          <Show when={verificationUrl()}>
+            <text fg={theme.text}>Open this URL to authorize this device:</text>
+            <text fg={theme.primary}>{verificationUrl()}</text>
+            <box paddingTop={1}>
+              <text fg={theme.text}>After logging in on the portal:</text>
+              <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
+              <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
+              <text fg={theme.textMuted}>  3. Paste it below and press Enter</text>
+            </box>
+          </Show>
           <text fg={theme.textMuted}>Enter the authorization code from the portal</text>
           <textarea
             ref={(val: TextareaRenderable) => (codeInput = val)}
