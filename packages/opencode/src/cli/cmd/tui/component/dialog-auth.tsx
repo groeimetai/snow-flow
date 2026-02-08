@@ -133,27 +133,37 @@ This file contains instructions for AI agents working in this codebase.
 
 /**
  * Try to open a URL in the user's browser.
- * Works in Codespaces (VS Code intercepts xdg-open), SSH with X forwarding, and local.
+ * Tries multiple strategies:
+ *  1. $BROWSER env var (set by Codespaces / Gitpod / custom setups)
+ *  2. Platform-native: open (macOS), cmd /c start (Windows), xdg-open (Linux)
  */
 async function tryOpenBrowser(url: string): Promise<boolean> {
   const { spawn } = await import("child_process")
-  return new Promise((resolve) => {
-    try {
-      let proc: ReturnType<typeof spawn>
-      if (process.platform === "darwin") {
-        proc = spawn("open", [url], { detached: true, stdio: "ignore" })
-      } else if (process.platform === "win32") {
-        proc = spawn("cmd", ["/c", "start", url], { detached: true, stdio: "ignore" })
-      } else {
-        proc = spawn("xdg-open", [url], { detached: true, stdio: "ignore" })
+
+  const trySpawn = (cmd: string, args: string[]): Promise<boolean> =>
+    new Promise((resolve) => {
+      try {
+        const proc = spawn(cmd, args, { detached: true, stdio: "ignore" })
+        if (proc.unref) proc.unref()
+        proc.on("error", () => resolve(false))
+        // Give the process a moment to fail, then assume success
+        setTimeout(() => resolve(true), 200)
+      } catch {
+        resolve(false)
       }
-      if (proc.unref) proc.unref()
-      proc.on("error", () => resolve(false))
-      resolve(true)
-    } catch {
-      resolve(false)
-    }
-  })
+    })
+
+  // 1. Try $BROWSER env var (Codespaces, Gitpod, etc.)
+  const browserEnv = process.env.BROWSER
+  if (browserEnv) {
+    const opened = await trySpawn(browserEnv, [url])
+    if (opened) return true
+  }
+
+  // 2. Platform-native
+  if (process.platform === "darwin") return trySpawn("open", [url])
+  if (process.platform === "win32") return trySpawn("cmd", ["/c", "start", url])
+  return trySpawn("xdg-open", [url])
 }
 
 type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined" | "servicenow-llm"
@@ -366,6 +376,24 @@ function DialogAuthServiceNowOAuth() {
       } else if (currentStep === "callback-paste") {
         setStep("secret")
         setTimeout(() => secretInput?.focus(), 10)
+      }
+    }
+    // Keyboard shortcuts for headless auth step
+    if (step() === "callback-paste" && headlessAuthUrl()) {
+      if (evt.name === "o") {
+        tryOpenBrowser(headlessAuthUrl()).then((opened) => {
+          toast.show({
+            variant: opened ? "success" : "error",
+            message: opened ? "Browser opened!" : "Could not open browser",
+            duration: 3000,
+          })
+        })
+      }
+      if (evt.name === "c") {
+        Clipboard.copy(headlessAuthUrl()).then(
+          () => toast.show({ variant: "success", message: "URL copied to clipboard!", duration: 3000 }),
+          () => toast.show({ variant: "error", message: "Failed to copy", duration: 3000 }),
+        )
       }
     }
   })
@@ -639,13 +667,29 @@ function DialogAuthServiceNowOAuth() {
                 paddingRight={2}
                 backgroundColor={theme.primary}
                 onMouseUp={() => {
+                  tryOpenBrowser(headlessAuthUrl()).then((opened) => {
+                    toast.show({
+                      variant: opened ? "success" : "error",
+                      message: opened ? "Browser opened!" : "Could not open browser",
+                      duration: 3000,
+                    })
+                  })
+                }}
+              >
+                <text fg={theme.selectedListItemText} attributes={TextAttributes.BOLD}>[ Open in Browser ]</text>
+              </box>
+              <box
+                paddingLeft={2}
+                paddingRight={2}
+                backgroundColor={theme.backgroundElement}
+                onMouseUp={() => {
                   Clipboard.copy(headlessAuthUrl()).then(
-                    () => toast.show({ variant: "success", message: "URL copied to clipboard!", duration: 3000 }),
-                    () => toast.show({ variant: "error", message: "Failed to copy URL", duration: 3000 }),
+                    () => toast.show({ variant: "success", message: "URL copied!", duration: 3000 }),
+                    () => toast.show({ variant: "error", message: "Failed to copy", duration: 3000 }),
                   )
                 }}
               >
-                <text fg={theme.selectedListItemText} attributes={TextAttributes.BOLD}>[ Copy URL ]</text>
+                <text fg={theme.text} attributes={TextAttributes.BOLD}>[ Copy URL ]</text>
               </box>
             </box>
             <box paddingTop={1}>
@@ -653,6 +697,14 @@ function DialogAuthServiceNowOAuth() {
               <text fg={theme.textMuted}>  1. Your browser will redirect to a localhost URL</text>
               <text fg={theme.textMuted}>  2. The page may show an error (this is expected)</text>
               <text fg={theme.textMuted}>  3. Copy the FULL URL from your browser address bar</text>
+            </box>
+            <box flexDirection="row" gap={1}>
+              <text fg={theme.text}>o</text>
+              <text fg={theme.textMuted}>open</text>
+              <text fg={theme.text}>  c</text>
+              <text fg={theme.textMuted}>copy</text>
+              <text fg={theme.text}>  esc</text>
+              <text fg={theme.textMuted}>back</text>
             </box>
           </Show>
           <text fg={theme.text}>Paste the callback URL from your browser address bar:</text>
