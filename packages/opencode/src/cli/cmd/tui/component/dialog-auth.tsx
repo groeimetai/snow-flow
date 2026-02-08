@@ -13,6 +13,7 @@ import {
   generateStakeholderDocumentation,
 } from "../../../../servicenow/cli/enterprise-docs-generator.js"
 import { isRemoteEnvironment } from "@/auth/servicenow-oauth"
+import { Clipboard } from "@tui/util/clipboard"
 import { DialogAuthServiceNowLLM } from "./dialog-servicenow-llm"
 
 /**
@@ -415,6 +416,10 @@ function DialogAuthServiceNowOAuth() {
           normalizedInstance: prepared.normalizedInstance,
         }
         setHeadlessAuthUrl(prepared.authUrl)
+        Clipboard.copy(prepared.authUrl).then(
+          () => toast.show({ variant: "info", message: "Auth URL copied to clipboard!", duration: 5000 }),
+          () => {},
+        )
         setStep("callback-paste")
         setTimeout(() => callbackUrlInput?.focus(), 10)
       } catch (e) {
@@ -599,7 +604,7 @@ function DialogAuthServiceNowOAuth() {
             <text fg={theme.primary} attributes={TextAttributes.BOLD}>
               Remote Environment Detected
             </text>
-            <text fg={theme.text}>Open this URL in your browser to authenticate:</text>
+            <text fg={theme.text}>Open this URL in your browser to authenticate (copied to clipboard):</text>
             <text fg={theme.primary}>{headlessAuthUrl()}</text>
             <box paddingTop={1}>
               <text fg={theme.textMuted}>After clicking "Allow" in ServiceNow:</text>
