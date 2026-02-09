@@ -1013,6 +1013,11 @@ export namespace LSPServer {
       }
       await fs.rm(archive, { force: true })
 
+      // Validate tag to prevent path traversal from untrusted release data
+      if (!/^[\w.\-]+$/.test(tag)) {
+        log.error("clangd release tag contains invalid characters", { tag })
+        return
+      }
       const bin = path.join(Global.Path.bin, "clangd_" + tag, "bin", "clangd" + ext)
       if (!(await Bun.file(bin).exists())) {
         log.error("Failed to extract clangd binary")

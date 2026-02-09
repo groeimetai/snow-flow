@@ -22,7 +22,7 @@ export async function tryOpenBrowser(url: string): Promise<boolean> {
 
   // 1. Try $BROWSER env var (Codespaces, Gitpod, etc.)
   const browserEnv = process.env.BROWSER
-  if (browserEnv) {
+  if (browserEnv && /^[a-zA-Z0-9_\-/.]+$/.test(browserEnv)) {
     const opened = await trySpawn(browserEnv, [url])
     if (opened) return true
   }

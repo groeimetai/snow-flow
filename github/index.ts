@@ -458,10 +458,20 @@ async function getUserPrompt() {
     const start = m.index
 
     if (!url) continue
-    const filename = path.basename(url)
+
+    // Validate URL is a safe GitHub user-attachments URL
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+    } catch {
+      continue
+    }
+    if (parsed.origin !== "https://github.com" || !parsed.pathname.startsWith("/user-attachments/")) continue
+
+    const filename = path.basename(parsed.pathname)
 
     // Download image
-    const res = await fetch(url, {
+    const res = await fetch(parsed.href, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/vnd.github.v3+json",

@@ -366,7 +366,9 @@ export function registerAuthCommands(program: Command) {
         fixSnowCodeBinaryPermissions();
 
         // Call SnowCode auth login for LLM providers and ServiceNow OAuth
-        execSync(`${snowcodeCommand} auth login`, { stdio: 'inherit' });
+        // Use execFileSync to avoid shell injection from snowcodeCommand path
+        const { execFileSync } = require('child_process');
+        execFileSync(snowcodeCommand, ['auth', 'login'], { stdio: 'inherit' });
 
         // Post-processing: Ensure auth.json is in correct location
         await ensureCorrectAuthLocation();

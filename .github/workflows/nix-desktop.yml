@@ -20,6 +20,9 @@ on:
       - ".github/workflows/nix-desktop.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-desktop:
     strategy:

@@ -769,8 +769,13 @@ function DialogAuthServiceNowBasic() {
       if (!normalizedInstance.startsWith("http://") && !normalizedInstance.startsWith("https://")) {
         normalizedInstance = `https://${normalizedInstance}`
       }
-      if (!normalizedInstance.includes(".service-now.com") && !normalizedInstance.includes("localhost")) {
-        normalizedInstance = `https://${normalizedInstance}.service-now.com`
+      try {
+        const host = new URL(normalizedInstance).hostname
+        if (!host.endsWith(".service-now.com") && host !== "localhost") {
+          normalizedInstance = `https://${instance().replace(/\/+$/, "")}.service-now.com`
+        }
+      } catch {
+        normalizedInstance = `https://${instance().replace(/\/+$/, "")}.service-now.com`
       }
 
       await Auth.set("servicenow", {
@@ -1722,8 +1727,13 @@ function DialogAuthEnterpriseCombined() {
       if (!normalizedInstance.startsWith("http://") && !normalizedInstance.startsWith("https://")) {
         normalizedInstance = `https://${normalizedInstance}`
       }
-      if (!normalizedInstance.includes(".service-now.com") && !normalizedInstance.includes("localhost")) {
-        normalizedInstance = `https://${normalizedInstance}.service-now.com`
+      try {
+        const host = new URL(normalizedInstance).hostname
+        if (!host.endsWith(".service-now.com") && host !== "localhost") {
+          normalizedInstance = `https://${snInstance().replace(/\/+$/, "")}.service-now.com`
+        }
+      } catch {
+        normalizedInstance = `https://${snInstance().replace(/\/+$/, "")}.service-now.com`
       }
 
       await Auth.set("servicenow", {
