@@ -2,11 +2,10 @@
  * snow_manage_flow - Complete Flow Designer lifecycle management
  *
  * Create, list, get, update, activate, deactivate, delete and publish
- * Flow Designer flows and subflows via Table API with background script fallback.
+ * Flow Designer flows and subflows via Table API.
  *
  * ServiceNow does NOT expose a public Flow Designer creation API.
- * This tool uses the Table API (sys_hub_flow) with a GlideRecord fallback
- * when the caller lacks direct table write permissions (403).
+ * This tool uses the Table API (sys_hub_flow) to manage flows directly.
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
@@ -223,7 +222,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var inputsArg = args.inputs || [];
         var outputsArg = args.outputs || [];
         var shouldActivate = args.activate !== false;
-        var usedBackgroundScript = false;
 
         // Build flow_definition JSON
         var flowDefinition: any = {
@@ -282,51 +280,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           latest_snapshot: JSON.stringify(flowDefinition)
         };
 
-        // 1. Create flow record via Table API (with 403 fallback)
-        var flowResponse: any;
-        try {
-          flowResponse = await client.post('/api/now/table/sys_hub_flow', flowData);
-        } catch (tableError: any) {
-          if (tableError.response?.status === 403) {
-            usedBackgroundScript = true;
-            var createScript = [
-              "var gr = new GlideRecord('sys_hub_flow');",
-              "gr.initialize();",
-              "gr.name = " + JSON.stringify(flowName) + ";",
-              "gr.description = " + JSON.stringify(flowDescription) + ";",
-              "gr.active = " + shouldActivate + ";",
-              "gr.internal_name = " + JSON.stringify(sanitizeInternalName(flowName)) + ";",
-              "gr.category = " + JSON.stringify(flowCategory) + ";",
-              "gr.run_as = " + JSON.stringify(flowRunAs) + ";",
-              "gr.status = " + JSON.stringify(shouldActivate ? 'published' : 'draft') + ";",
-              "gr.validated = true;",
-              "gr.type = " + JSON.stringify(isSubflow ? 'subflow' : 'flow') + ";",
-              "gr.flow_definition = " + JSON.stringify(JSON.stringify(flowDefinition)) + ";",
-              "gr.latest_snapshot = " + JSON.stringify(JSON.stringify(flowDefinition)) + ";",
-              "var sysId = gr.insert();",
-              "if (sysId) {",
-              "  gs.print(JSON.stringify({ sys_id: sysId, name: gr.name.toString() }));",
-              "} else {",
-              "  gs.error('Failed to create flow');",
-              "}"
-            ].join('\n');
-
-            var scriptResp = await client.post('/api/now/table/sys_script_execution', {
-              script: createScript,
-              description: 'Create Flow: ' + flowName
-            });
-
-            var scriptOutput = scriptResp.data.result?.output || '';
-            var scriptMatch = scriptOutput.match(/\{[^}]+\}/);
-            if (scriptMatch) {
-              flowResponse = { data: { result: JSON.parse(scriptMatch[0]) } };
-            } else {
-              throw new Error('Failed to create flow via background script. Output: ' + scriptOutput);
-            }
-          } else {
-            throw tableError;
-          }
-        }
+        // 1. Create flow record via Table API
+        var flowResponse = await client.post('/api/now/table/sys_hub_flow', flowData);
 
         var createdFlow = flowResponse.data.result;
         var flowSysId = createdFlow.sys_id;
@@ -449,20 +404,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           }
         }
 
-        // 5. Activate if needed (and not already active from creation)
-        if (shouldActivate && usedBackgroundScript) {
-          try {
-            await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
-              active: true,
-              status: 'published',
-              validated: true
-            });
-          } catch (activateError) {
-            // Best-effort
-          }
-        }
-
-        // 6. Best-effort snapshot
+        // 5. Best-effort snapshot
         try {
           await client.post('/api/sn_flow_designer/flow/snapshot', {
             flow_id: flowSysId
@@ -478,7 +420,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           .field('Type', isSubflow ? 'Subflow' : 'Flow')
           .field('Category', flowCategory)
           .field('Status', shouldActivate ? 'Published (active)' : 'Draft')
-          .field('Method', usedBackgroundScript ? 'Background script' : 'Table API');
+          .field('Method', 'Table API');
 
         if (!isSubflow && triggerType !== 'manual') {
           createSummary.field('Trigger', triggerType + (triggerCreated ? ' (created)' : ' (best-effort)'));
@@ -493,7 +435,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         return createSuccessResult({
           created: true,
-          method: usedBackgroundScript ? 'background_script' : 'table_api',
+          method: 'table_api',
           flow: {
             sys_id: flowSysId,
             name: flowName,
