@@ -247,23 +247,23 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
 
   _bootstrapPromise = (async () => {
     try {
-      // 3. Check if API already exists on instance
+      // 3. Check if API already exists on instance (query by api_id, more reliable than name)
       var checkResp = await client.get('/api/now/table/sys_ws_definition', {
         params: {
-          sysparm_query: 'name=' + FLOW_FACTORY_API_NAME,
-          sysparm_fields: 'sys_id,namespace.name',
+          sysparm_query: 'api_id=' + FLOW_FACTORY_API_ID,
+          sysparm_fields: 'sys_id,api_id,namespace',
           sysparm_limit: 1
         }
       });
 
       if (checkResp.data.result && checkResp.data.result.length > 0) {
         var existing = checkResp.data.result[0];
-        var ns = (existing['namespace.name'] || existing.namespace?.display_value || FLOW_FACTORY_NAMESPACE);
+        var ns = resolveNamespaceFromRecord(existing);
         _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
         return { namespace: ns, apiSysId: existing.sys_id };
       }
 
-      // 4. Deploy the Scripted REST API
+      // 4. Deploy the Scripted REST API (do NOT set namespace — let ServiceNow assign it)
       var apiResp = await client.post('/api/now/table/sys_ws_definition', {
         name: FLOW_FACTORY_API_NAME,
         api_id: FLOW_FACTORY_API_ID,
@@ -271,8 +271,7 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
         short_description: 'Bootstrapped by Snow-Flow MCP for reliable Flow Designer creation via GlideRecord',
         is_versioned: false,
         enforce_acl: 'no',
-        requires_authentication: true,
-        namespace: FLOW_FACTORY_NAMESPACE
+        requires_authentication: true
       });
 
       var apiSysId = apiResp.data.result?.sys_id;
@@ -299,19 +298,11 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
         throw new Error('Failed to create Scripted REST operation: ' + (opError.message || opError));
       }
 
-      // Resolve actual namespace — may differ from requested
+      // 6. Read back the actual namespace ServiceNow assigned
       var nsResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
-        params: { sysparm_fields: 'sys_id,namespace' }
+        params: { sysparm_fields: 'sys_id,api_id,namespace', sysparm_display_value: 'all' }
       });
-      var resolvedNs = FLOW_FACTORY_NAMESPACE;
-      if (nsResp.data.result?.namespace) {
-        var nsVal = nsResp.data.result.namespace;
-        if (typeof nsVal === 'object' && nsVal.display_value) {
-          resolvedNs = nsVal.display_value;
-        } else if (typeof nsVal === 'string' && nsVal.length > 0) {
-          resolvedNs = nsVal;
-        }
-      }
+      var resolvedNs = resolveNamespaceFromRecord(nsResp.data.result || {});
 
       _flowFactoryCache = { apiSysId: apiSysId, namespace: resolvedNs, timestamp: Date.now() };
       return { namespace: resolvedNs, apiSysId: apiSysId };
@@ -322,6 +313,29 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
   })();
 
   return _bootstrapPromise;
+}
+
+/**
+ * Extract the URL namespace from a sys_ws_definition record.
+ * The namespace field can be a string, a reference object, or empty.
+ * For global scope APIs the namespace is typically the instance company prefix or 'now'.
+ */
+function resolveNamespaceFromRecord(record: any): string {
+  var ns = record.namespace;
+  if (!ns) return FLOW_FACTORY_NAMESPACE;
+
+  // display_value / value pair (sysparm_display_value=all)
+  if (typeof ns === 'object') {
+    // display_value is the scope name like "Global" or "x_snflw" — use value for sys_id, display_value for name
+    var dv = ns.display_value || '';
+    // If display_value looks like a scope namespace (x_something, sn_something, now, global), use it
+    if (dv && dv !== 'Global' && dv !== 'global') return dv;
+    // For Global scope, fall through to default
+  }
+  if (typeof ns === 'string' && ns.length > 0 && ns.length < 100) {
+    return ns;
+  }
+  return FLOW_FACTORY_NAMESPACE;
 }
 
 /**
@@ -668,6 +682,34 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           var flowResponse = await client.post('/api/now/table/sys_hub_flow', flowData);
           var createdFlow = flowResponse.data.result;
           flowSysId = createdFlow.sys_id;
+
+          // Create sys_hub_flow_version via Table API (critical for Flow Designer UI)
+          try {
+            var versionData: any = {
+              flow: flowSysId,
+              name: '1.0',
+              version: '1.0',
+              state: shouldActivate ? 'published' : 'draft',
+              active: true,
+              flow_definition: JSON.stringify(flowDefinition)
+            };
+            var versionResp = await client.post('/api/now/table/sys_hub_flow_version', versionData);
+            var versionSysId = versionResp.data.result?.sys_id;
+            if (versionSysId) {
+              versionCreated = true;
+              // Link flow to its version
+              try {
+                await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
+                  latest_version: versionSysId
+                });
+              } catch (linkError) {
+                // Version exists but link failed — still better than no version
+                factoryWarnings.push('Version created but latest_version link failed');
+              }
+            }
+          } catch (verError: any) {
+            factoryWarnings.push('sys_hub_flow_version creation failed: ' + (verError.message || verError));
+          }
 
           // Create trigger instance (non-manual flows only)
           if (!isSubflow && triggerType !== 'manual') {
