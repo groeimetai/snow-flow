@@ -45,8 +45,67 @@ var _bootstrapPromise: Promise<{ namespace: string; apiSysId: string }> | null =
  * This runs server-side on ServiceNow and triggers all Business Rules,
  * unlike direct Table API inserts which skip sys_hub_flow_version creation.
  */
+/**
+ * Discover script — GET /discover endpoint.
+ * Probes which sn_fd APIs, methods and fields are available on this instance.
+ */
+var FLOW_FACTORY_DISCOVER_SCRIPT = [
+  '(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {',
+  '  var r = {',
+  '    build_tag: gs.getProperty("glide.buildtag") || "unknown",',
+  '    build_name: gs.getProperty("glide.buildname") || "unknown",',
+  '    apis: {}, methods: {}, fields: {}',
+  '  };',
+  '  try { r.apis.sn_fd = typeof sn_fd !== "undefined" ? "available" : "unavailable"; } catch(e) { r.apis.sn_fd = "unavailable"; }',
+  '  var apiNames = ["FlowDesigner","FlowAPI","FlowPublisher","FlowCompiler"];',
+  '  for (var i = 0; i < apiNames.length; i++) {',
+  '    try {',
+  '      if (typeof sn_fd !== "undefined") { r.apis[apiNames[i]] = typeof sn_fd[apiNames[i]]; }',
+  '      else { r.apis[apiNames[i]] = "no_sn_fd"; }',
+  '    } catch(e) { r.apis[apiNames[i]] = "error:" + e; }',
+  '  }',
+  '  var globalNames = ["GlideFlowDesigner","FlowDesignerInternalAPI","FlowDesignerAPI"];',
+  '  for (var g = 0; g < globalNames.length; g++) {',
+  '    try {',
+  '      var gv = this[globalNames[g]];',
+  '      r.apis[globalNames[g]] = gv ? typeof gv : "undefined";',
+  '    } catch(e) { r.apis[globalNames[g]] = "error:" + e; }',
+  '  }',
+  '  try {',
+  '    if (typeof sn_fd !== "undefined" && sn_fd.FlowDesigner) {',
+  '      var fd = sn_fd.FlowDesigner;',
+  '      var mns = ["createFlow","publishFlow","activateFlow","compileFlow","createDraftFlow","getFlow"];',
+  '      for (var m = 0; m < mns.length; m++) { r.methods[mns[m]] = typeof fd[mns[m]]; }',
+  '    }',
+  '  } catch(e) { r.methods._error = e + ""; }',
+  '  try {',
+  '    var gr = new GlideRecord("sys_hub_flow_version");',
+  '    var fns = ["compiled_definition","compile_state","is_current","published_flow","flow_definition"];',
+  '    for (var f = 0; f < fns.length; f++) { r.fields[fns[f]] = gr.isValidField(fns[f]); }',
+  '  } catch(e) { r.fields._error = e + ""; }',
+  '  try {',
+  '    var br = new GlideRecord("sys_script");',
+  '    br.addQuery("collection","sys_hub_flow"); br.addQuery("active",true); br.query();',
+  '    r.flow_br_count = br.getRowCount();',
+  '    var brv = new GlideRecord("sys_script");',
+  '    brv.addQuery("collection","sys_hub_flow_version"); brv.addQuery("active",true); brv.query();',
+  '    r.version_br_count = brv.getRowCount();',
+  '  } catch(e) { r.br_error = e + ""; }',
+  '  response.setStatus(200);',
+  '  response.setBody(r);',
+  '})(request, response);'
+].join('\n');
+
+/**
+ * Create script — POST /create endpoint.
+ * Three-tier approach:
+ *   Tier 1: sn_fd.FlowDesigner API (handles everything internally)
+ *   Tier 2: GlideRecord INSERT as draft → UPDATE to published (triggers compilation BRs)
+ *   Tier 3: Raw GlideRecord INSERT (last resort, may not register with engine)
+ */
 var FLOW_FACTORY_SCRIPT = [
   '(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {',
+  // ── Body parsing (3-method cascade) ──
   '  var body = null;',
   '  var parseLog = [];',
   '  try {',
@@ -69,7 +128,7 @@ var FLOW_FACTORY_SCRIPT = [
   '    response.setBody({ success: false, error: "No parseable body", parseLog: parseLog, bodyType: typeof request.body });',
   '    return;',
   '  }',
-  '  var result = { success: false, steps: {}, parseLog: parseLog };',
+  '  var result = { success: false, steps: {}, tier_used: null, parseLog: parseLog };',
   '',
   '  try {',
   '    var flowName = body.name || "Unnamed Flow";',
@@ -84,170 +143,201 @@ var FLOW_FACTORY_SCRIPT = [
   '    var activities = body.activities || [];',
   '    var inputs = body.inputs || [];',
   '    var outputs = body.outputs || [];',
+  '    var flowDef = body.flow_definition;',
+  '    var flowDefStr = flowDef ? (typeof flowDef === "string" ? flowDef : JSON.stringify(flowDef)) : "";',
+  '    var intName = flowName.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");',
   '',
-  '    // Step 1: Create sys_hub_flow via GlideRecord (triggers all BRs)',
-  '    var flow = new GlideRecord("sys_hub_flow");',
-  '    flow.initialize();',
-  '    flow.setValue("name", flowName);',
-  '    flow.setValue("description", flowDesc);',
-  '    flow.setValue("internal_name", flowName.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, ""));',
-  '    flow.setValue("category", flowCategory);',
-  '    flow.setValue("run_as", runAs);',
-  '    flow.setValue("active", shouldActivate);',
-  '    flow.setValue("status", shouldActivate ? "published" : "draft");',
-  '    flow.setValue("validated", true);',
-  '    flow.setValue("type", isSubflow ? "subflow" : "flow");',
+  '    var flowSysId = null;',
+  '    var verSysId = null;',
   '',
-  '    if (body.flow_definition) {',
-  '      flow.setValue("flow_definition", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
-  '      flow.setValue("latest_snapshot", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
-  '    }',
-  '',
-  '    var flowSysId = flow.insert();',
-  '    if (!flowSysId) {',
-  '      result.error = "Failed to insert sys_hub_flow record";',
-  '      response.setStatus(500);',
-  '      response.setBody(result);',
-  '      return;',
-  '    }',
-  '    result.steps.flow = { success: true, sys_id: flowSysId + "" };',
-  '',
-  '    // Step 2: Create sys_hub_flow_version (this is what Table API misses!)',
+  // ── TIER 1: sn_fd.FlowDesigner API ──
   '    try {',
-  '      var ver = new GlideRecord("sys_hub_flow_version");',
-  '      ver.initialize();',
-  '      ver.setValue("flow", flowSysId);',
-  '      ver.setValue("name", "1.0");',
-  '      ver.setValue("version", "1.0");',
-  '      ver.setValue("state", shouldActivate ? "published" : "draft");',
-  '      ver.setValue("active", true);',
-  '      ver.setValue("compile_state", "compiled");',
-  '      ver.setValue("is_current", true);',
-  '      if (shouldActivate) ver.setValue("published_flow", flowSysId);',
-  '      if (body.flow_definition) {',
-  '        ver.setValue("flow_definition", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
-  '      }',
-  '      var verSysId = ver.insert();',
-  '      if (verSysId) {',
-  '        result.steps.version = { success: true, sys_id: verSysId + "" };',
-  '        // Update flow to point to latest version',
-  '        var flowUpd = new GlideRecord("sys_hub_flow");',
-  '        if (flowUpd.get(flowSysId)) {',
-  '          flowUpd.setValue("latest_version", verSysId);',
-  '          flowUpd.update();',
-  '        }',
-  '      } else {',
-  '        result.steps.version = { success: false, error: "Insert returned empty sys_id" };',
-  '      }',
-  '    } catch (verErr) {',
-  '      result.steps.version = { success: false, error: verErr.getMessage ? verErr.getMessage() : verErr + "" };',
-  '    }',
-  '',
-  '    // Step 3: Create trigger instance (non-manual, non-subflow only)',
-  '    if (!isSubflow && triggerType !== "manual") {',
-  '      try {',
-  '        var triggerMap = {',
-  '          "record_created": "sn_fd.trigger.record_created",',
-  '          "record_updated": "sn_fd.trigger.record_updated",',
-  '          "scheduled": "sn_fd.trigger.scheduled"',
-  '        };',
-  '        var triggerIntName = triggerMap[triggerType] || "";',
-  '        if (triggerIntName) {',
-  '          var trigDef = new GlideRecord("sys_hub_action_type_definition");',
-  '          trigDef.addQuery("internal_name", triggerIntName);',
-  '          trigDef.query();',
-  '          if (trigDef.next()) {',
-  '            var trigInst = new GlideRecord("sys_hub_trigger_instance");',
-  '            trigInst.initialize();',
-  '            trigInst.setValue("flow", flowSysId);',
-  '            trigInst.setValue("action_type", trigDef.getUniqueValue());',
-  '            trigInst.setValue("name", triggerType);',
-  '            trigInst.setValue("order", 0);',
-  '            trigInst.setValue("active", true);',
-  '            if (triggerTable) trigInst.setValue("table", triggerTable);',
-  '            if (triggerCondition) trigInst.setValue("condition", triggerCondition);',
-  '            var trigSysId = trigInst.insert();',
-  '            result.steps.trigger = { success: !!trigSysId, sys_id: trigSysId + "" };',
-  '          } else {',
-  '            result.steps.trigger = { success: false, error: "Trigger type definition not found: " + triggerIntName };',
+  '      if (typeof sn_fd !== "undefined" && sn_fd.FlowDesigner && typeof sn_fd.FlowDesigner.createFlow === "function") {',
+  '        var fdResult = sn_fd.FlowDesigner.createFlow({ name: flowName, description: flowDesc, type: isSubflow ? "subflow" : "flow", category: flowCategory, run_as: runAs });',
+  '        if (fdResult) {',
+  '          flowSysId = (typeof fdResult === "object" ? fdResult.sys_id || fdResult.getValue("sys_id") : fdResult) + "";',
+  '          result.tier_used = "sn_fd_api";',
+  '          result.steps.tier1 = { success: true, api: "sn_fd.FlowDesigner.createFlow" };',
+  '          if (shouldActivate && typeof sn_fd.FlowDesigner.publishFlow === "function") {',
+  '            try { sn_fd.FlowDesigner.publishFlow(flowSysId); result.steps.tier1_publish = { success: true }; }',
+  '            catch(pe) { result.steps.tier1_publish = { success: false, error: pe + "" }; }',
   '          }',
   '        }',
-  '      } catch (trigErr) {',
-  '        result.steps.trigger = { success: false, error: trigErr.getMessage ? trigErr.getMessage() : trigErr + "" };',
   '      }',
-  '    }',
+  '    } catch(t1e) { result.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + "" }; }',
   '',
-  '    // Step 4: Create action instances',
-  '    var actionsCreated = 0;',
-  '    for (var ai = 0; ai < activities.length; ai++) {',
+  // ── TIER 2: GlideRecord INSERT as draft → UPDATE to published ──
+  '    if (!flowSysId) {',
   '      try {',
-  '        var act = activities[ai];',
-  '        var actTypeName = act.type || "script";',
-  '        var actDef = new GlideRecord("sys_hub_action_type_definition");',
-  '        actDef.addQuery("internal_name", "CONTAINS", actTypeName);',
-  '        actDef.addOrCondition("name", "CONTAINS", actTypeName);',
-  '        actDef.query();',
-  '        var actInst = new GlideRecord("sys_hub_action_instance");',
-  '        actInst.initialize();',
-  '        actInst.setValue("flow", flowSysId);',
-  '        actInst.setValue("name", act.name || ("Action " + (ai + 1)));',
-  '        actInst.setValue("order", (ai + 1) * 100);',
-  '        actInst.setValue("active", true);',
-  '        if (actDef.next()) {',
-  '          actInst.setValue("action_type", actDef.getUniqueValue());',
+  '        var flow = new GlideRecord("sys_hub_flow");',
+  '        flow.initialize();',
+  '        flow.setValue("name", flowName);',
+  '        flow.setValue("description", flowDesc);',
+  '        flow.setValue("internal_name", intName);',
+  '        flow.setValue("category", flowCategory);',
+  '        flow.setValue("run_as", runAs);',
+  '        flow.setValue("active", false);',
+  '        flow.setValue("status", "draft");',
+  '        flow.setValue("validated", true);',
+  '        flow.setValue("type", isSubflow ? "subflow" : "flow");',
+  '        if (flowDefStr) { flow.setValue("flow_definition", flowDefStr); flow.setValue("latest_snapshot", flowDefStr); }',
+  '        flowSysId = flow.insert();',
+  '        result.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + "", as_draft: true };',
+  '',
+  '        if (flowSysId) {',
+  '          var ver = new GlideRecord("sys_hub_flow_version");',
+  '          ver.initialize();',
+  '          ver.setValue("flow", flowSysId);',
+  '          ver.setValue("name", "1.0");',
+  '          ver.setValue("version", "1.0");',
+  '          ver.setValue("state", "draft");',
+  '          ver.setValue("active", true);',
+  '          ver.setValue("compile_state", "draft");',
+  '          ver.setValue("is_current", true);',
+  '          if (flowDefStr) ver.setValue("flow_definition", flowDefStr);',
+  '          verSysId = ver.insert();',
+  '          result.steps.version_insert = { success: !!verSysId, sys_id: verSysId + "", as_draft: true };',
+  '',
+  '          if (verSysId) {',
+  '            var linkUpd = new GlideRecord("sys_hub_flow");',
+  '            if (linkUpd.get(flowSysId)) { linkUpd.setValue("latest_version", verSysId); linkUpd.update(); }',
+  '          }',
+  '',
+  '          if (shouldActivate) {',
+  '            var flowPub = new GlideRecord("sys_hub_flow");',
+  '            if (flowPub.get(flowSysId)) {',
+  '              flowPub.setValue("status", "published");',
+  '              flowPub.setValue("active", true);',
+  '              flowPub.update();',
+  '              result.steps.flow_publish_update = { success: true };',
+  '            }',
+  '            if (verSysId) {',
+  '              var verPub = new GlideRecord("sys_hub_flow_version");',
+  '              if (verPub.get(verSysId)) {',
+  '                verPub.setValue("state", "published");',
+  '                verPub.setValue("compile_state", "compiled");',
+  '                verPub.setValue("published_flow", flowSysId);',
+  '                verPub.update();',
+  '                result.steps.version_publish_update = { success: true };',
+  '              }',
+  '            }',
+  '          }',
+  '          result.tier_used = "gliderecord_draft_then_publish";',
+  '          result.success = true;',
   '        }',
-  '        if (actInst.insert()) actionsCreated++;',
-  '      } catch (actErr) {',
-  '        // Best-effort per action',
-  '      }',
+  '      } catch(t2e) { result.steps.tier2 = { success: false, error: t2e.getMessage ? t2e.getMessage() : t2e + "" }; }',
   '    }',
-  '    result.steps.actions = { success: true, created: actionsCreated, requested: activities.length };',
   '',
-  '    // Step 5: Create flow variables (subflows)',
-  '    var varsCreated = 0;',
-  '    if (isSubflow) {',
-  '      for (var vi = 0; vi < inputs.length; vi++) {',
-  '        try {',
-  '          var inp = inputs[vi];',
-  '          var fv = new GlideRecord("sys_hub_flow_variable");',
-  '          fv.initialize();',
-  '          fv.setValue("flow", flowSysId);',
-  '          fv.setValue("name", inp.name);',
-  '          fv.setValue("label", inp.label || inp.name);',
-  '          fv.setValue("type", inp.type || "string");',
-  '          fv.setValue("mandatory", inp.mandatory || false);',
-  '          fv.setValue("default_value", inp.default_value || "");',
-  '          fv.setValue("variable_type", "input");',
-  '          if (fv.insert()) varsCreated++;',
-  '        } catch (vErr) { /* best-effort */ }',
-  '      }',
-  '      for (var vo = 0; vo < outputs.length; vo++) {',
-  '        try {',
-  '          var out = outputs[vo];',
-  '          var ov = new GlideRecord("sys_hub_flow_variable");',
-  '          ov.initialize();',
-  '          ov.setValue("flow", flowSysId);',
-  '          ov.setValue("name", out.name);',
-  '          ov.setValue("label", out.label || out.name);',
-  '          ov.setValue("type", out.type || "string");',
-  '          ov.setValue("variable_type", "output");',
-  '          if (ov.insert()) varsCreated++;',
-  '        } catch (vErr) { /* best-effort */ }',
-  '      }',
+  // ── TIER 3: Raw GlideRecord INSERT (last resort) ──
+  '    if (!flowSysId) {',
+  '      try {',
+  '        var rawFlow = new GlideRecord("sys_hub_flow");',
+  '        rawFlow.initialize();',
+  '        rawFlow.setValue("name", flowName);',
+  '        rawFlow.setValue("description", flowDesc);',
+  '        rawFlow.setValue("internal_name", intName);',
+  '        rawFlow.setValue("category", flowCategory);',
+  '        rawFlow.setValue("run_as", runAs);',
+  '        rawFlow.setValue("active", shouldActivate);',
+  '        rawFlow.setValue("status", shouldActivate ? "published" : "draft");',
+  '        rawFlow.setValue("validated", true);',
+  '        rawFlow.setValue("type", isSubflow ? "subflow" : "flow");',
+  '        if (flowDefStr) { rawFlow.setValue("flow_definition", flowDefStr); rawFlow.setValue("latest_snapshot", flowDefStr); }',
+  '        flowSysId = rawFlow.insert();',
+  '        if (flowSysId) {',
+  '          var rawVer = new GlideRecord("sys_hub_flow_version");',
+  '          rawVer.initialize();',
+  '          rawVer.setValue("flow", flowSysId);',
+  '          rawVer.setValue("name", "1.0"); rawVer.setValue("version", "1.0");',
+  '          rawVer.setValue("state", shouldActivate ? "published" : "draft");',
+  '          rawVer.setValue("active", true); rawVer.setValue("compile_state", "compiled");',
+  '          rawVer.setValue("is_current", true);',
+  '          if (shouldActivate) rawVer.setValue("published_flow", flowSysId);',
+  '          if (flowDefStr) rawVer.setValue("flow_definition", flowDefStr);',
+  '          verSysId = rawVer.insert();',
+  '          if (verSysId) {',
+  '            var rawLink = new GlideRecord("sys_hub_flow");',
+  '            if (rawLink.get(flowSysId)) { rawLink.setValue("latest_version", verSysId); rawLink.update(); }',
+  '          }',
+  '          result.tier_used = "gliderecord_raw";',
+  '          result.success = true;',
+  '        }',
+  '      } catch(t3e) { result.steps.tier3 = { success: false, error: t3e.getMessage ? t3e.getMessage() : t3e + "" }; }',
   '    }',
-  '    result.steps.variables = { success: true, created: varsCreated };',
   '',
-  '    result.success = true;',
-  '    result.flow_sys_id = flowSysId + "";',
-  '    result.version_created = !!(result.steps.version && result.steps.version.success);',
-  '    response.setStatus(201);',
+  // ── Common: trigger, actions, variables ──
+  '    if (flowSysId) {',
+  '      result.flow_sys_id = flowSysId + "";',
+  '      result.version_sys_id = verSysId ? verSysId + "" : null;',
+  '      result.version_created = !!verSysId;',
+  '',
+  '      if (!isSubflow && triggerType !== "manual") {',
+  '        try {',
+  '          var triggerMap = { "record_created": "sn_fd.trigger.record_created", "record_updated": "sn_fd.trigger.record_updated", "scheduled": "sn_fd.trigger.scheduled" };',
+  '          var trigIntName = triggerMap[triggerType] || "";',
+  '          if (trigIntName) {',
+  '            var trigDef = new GlideRecord("sys_hub_action_type_definition");',
+  '            trigDef.addQuery("internal_name", trigIntName); trigDef.query();',
+  '            if (trigDef.next()) {',
+  '              var trigInst = new GlideRecord("sys_hub_trigger_instance");',
+  '              trigInst.initialize();',
+  '              trigInst.setValue("flow", flowSysId); trigInst.setValue("action_type", trigDef.getUniqueValue());',
+  '              trigInst.setValue("name", triggerType); trigInst.setValue("order", 0); trigInst.setValue("active", true);',
+  '              if (triggerTable) trigInst.setValue("table", triggerTable);',
+  '              if (triggerCondition) trigInst.setValue("condition", triggerCondition);',
+  '              var trigSysId = trigInst.insert();',
+  '              result.steps.trigger = { success: !!trigSysId, sys_id: trigSysId + "" };',
+  '            } else { result.steps.trigger = { success: false, error: "Trigger def not found: " + trigIntName }; }',
+  '          }',
+  '        } catch(te) { result.steps.trigger = { success: false, error: te.getMessage ? te.getMessage() : te + "" }; }',
+  '      }',
+  '',
+  '      var actionsCreated = 0;',
+  '      for (var ai = 0; ai < activities.length; ai++) {',
+  '        try {',
+  '          var act = activities[ai];',
+  '          var actDef = new GlideRecord("sys_hub_action_type_definition");',
+  '          actDef.addQuery("internal_name", "CONTAINS", act.type || "script");',
+  '          actDef.addOrCondition("name", "CONTAINS", act.type || "script"); actDef.query();',
+  '          var actInst = new GlideRecord("sys_hub_action_instance");',
+  '          actInst.initialize();',
+  '          actInst.setValue("flow", flowSysId); actInst.setValue("name", act.name || "Action " + (ai + 1));',
+  '          actInst.setValue("order", (ai + 1) * 100); actInst.setValue("active", true);',
+  '          if (actDef.next()) actInst.setValue("action_type", actDef.getUniqueValue());',
+  '          if (actInst.insert()) actionsCreated++;',
+  '        } catch(ae) {}',
+  '      }',
+  '      result.steps.actions = { success: true, created: actionsCreated, requested: activities.length };',
+  '',
+  '      var varsCreated = 0;',
+  '      if (isSubflow) {',
+  '        for (var vi = 0; vi < inputs.length; vi++) {',
+  '          try { var inp = inputs[vi]; var fv = new GlideRecord("sys_hub_flow_variable"); fv.initialize();',
+  '            fv.setValue("flow",flowSysId); fv.setValue("name",inp.name); fv.setValue("label",inp.label||inp.name);',
+  '            fv.setValue("type",inp.type||"string"); fv.setValue("mandatory",inp.mandatory||false);',
+  '            fv.setValue("default_value",inp.default_value||""); fv.setValue("variable_type","input");',
+  '            if (fv.insert()) varsCreated++;',
+  '          } catch(ve) {}',
+  '        }',
+  '        for (var vo = 0; vo < outputs.length; vo++) {',
+  '          try { var out = outputs[vo]; var ov = new GlideRecord("sys_hub_flow_variable"); ov.initialize();',
+  '            ov.setValue("flow",flowSysId); ov.setValue("name",out.name); ov.setValue("label",out.label||out.name);',
+  '            ov.setValue("type",out.type||"string"); ov.setValue("variable_type","output");',
+  '            if (ov.insert()) varsCreated++;',
+  '          } catch(ve) {}',
+  '        }',
+  '      }',
+  '      result.steps.variables = { success: true, created: varsCreated };',
+  '    }',
+  '',
+  '    if (result.success) response.setStatus(201);',
+  '    else response.setStatus(500);',
   '',
   '  } catch (e) {',
   '    result.success = false;',
   '    result.error = e.getMessage ? e.getMessage() : e + "";',
   '    response.setStatus(500);',
   '  }',
-  '',
   '  response.setBody(result);',
   '})(request, response);'
 ].join('\n');
@@ -398,7 +488,7 @@ async function ensureFlowFactoryAPI(
           name: 'create',
           active: true,
           relative_path: '/create',
-          short_description: 'Create a flow or subflow with GlideRecord (triggers all BRs + version record)',
+          short_description: 'Create a flow/subflow via 3-tier approach: sn_fd API → draft+publish → raw GlideRecord',
           operation_script: FLOW_FACTORY_SCRIPT,
           requires_authentication: true,
           enforce_acl: 'false'
@@ -407,6 +497,23 @@ async function ensureFlowFactoryAPI(
         // Cleanup the API definition if operation creation fails
         try { await client.delete('/api/now/table/sys_ws_definition/' + apiSysId); } catch (_) {}
         throw new Error('Failed to create Scripted REST operation: ' + (opError.message || opError));
+      }
+
+      // 5b. Deploy the GET /discover resource (API capability probing)
+      try {
+        await client.post('/api/now/table/sys_ws_operation', {
+          web_service_definition: apiSysId,
+          http_method: 'GET',
+          name: 'discover',
+          active: true,
+          relative_path: '/discover',
+          short_description: 'Probe available sn_fd APIs, methods and fields for this ServiceNow instance',
+          operation_script: FLOW_FACTORY_DISCOVER_SCRIPT,
+          requires_authentication: true,
+          enforce_acl: 'false'
+        });
+      } catch (_) {
+        // Non-fatal: create endpoint is more important than discover
       }
 
       // 6. Probe to discover the namespace ServiceNow assigned
@@ -431,6 +538,29 @@ async function ensureFlowFactoryAPI(
  */
 function invalidateFlowFactoryCache(): void {
   _flowFactoryCache = null;
+  _discoveryCache = null;
+}
+
+/**
+ * Call the /discover endpoint on the Flow Factory API to learn which
+ * sn_fd APIs and methods are available on the target ServiceNow instance.
+ * Results are cached alongside the factory cache.
+ */
+var _discoveryCache: any = null;
+
+async function discoverInstanceCapabilities(
+  client: any,
+  namespace: string
+): Promise<any> {
+  if (_discoveryCache) return _discoveryCache;
+  try {
+    var discoverEndpoint = '/api/' + namespace + '/' + FLOW_FACTORY_API_ID + '/discover';
+    var resp = await client.get(discoverEndpoint);
+    _discoveryCache = resp.data?.result || resp.data || null;
+    return _discoveryCache;
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -780,6 +910,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           diagnostics.factory_bootstrap = 'success';
           diagnostics.factory_namespace = factory.namespace;
 
+          // Call /discover to learn what sn_fd APIs exist on this instance
+          var discovery = await discoverInstanceCapabilities(client, factory.namespace);
+          if (discovery) {
+            diagnostics.instance_build = discovery.build_tag || discovery.build_name || 'unknown';
+            diagnostics.available_apis = discovery.apis || {};
+            diagnostics.available_methods = discovery.methods || {};
+          }
+
           var factoryPayload = {
             name: flowName,
             description: flowDescription,
@@ -818,12 +956,15 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
           var factoryResult = factoryResp.data?.result || factoryResp.data;
           if (factoryResult && factoryResult.success && factoryResult.flow_sys_id) {
+            var tierUsed = factoryResult.tier_used || 'unknown';
             diagnostics.factory_call = 'success';
+            diagnostics.factory_tier = tierUsed;
+            diagnostics.factory_steps = factoryResult.steps || {};
             flowSysId = factoryResult.flow_sys_id;
             usedMethod = 'scripted_rest_api';
             versionCreated = !!factoryResult.version_created;
             diagnostics.version_created = versionCreated;
-            diagnostics.version_method = 'factory';
+            diagnostics.version_method = 'factory (' + tierUsed + ')';
             diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow'];
 
             // Extract step details
@@ -1138,9 +1279,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         // Diagnostics section
         createSummary.blank().line('Diagnostics:');
+        if (diagnostics.instance_build) {
+          createSummary.indented('Instance build: ' + diagnostics.instance_build);
+        }
         createSummary.indented('Factory bootstrap: ' + (diagnostics.factory_bootstrap || 'not attempted'));
         createSummary.indented('Factory namespace: ' + (diagnostics.factory_namespace || 'n/a'));
         createSummary.indented('Factory call: ' + (diagnostics.factory_call || 'not attempted'));
+        if (diagnostics.factory_tier) {
+          createSummary.indented('Factory tier used: ' + diagnostics.factory_tier);
+        }
+        if (diagnostics.available_apis && Object.keys(diagnostics.available_apis).length > 0) {
+          var apiStr = Object.keys(diagnostics.available_apis).map(function (k: string) { return k + '=' + diagnostics.available_apis[k]; }).join(', ');
+          createSummary.indented('Available APIs: ' + apiStr);
+        }
         createSummary.indented('Table API used: ' + diagnostics.table_api_used);
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
         if (diagnostics.engine_registration) {
@@ -1536,5 +1687,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '4.0.0';
+export const version = '5.0.0';
 export const author = 'Snow-Flow Team';
