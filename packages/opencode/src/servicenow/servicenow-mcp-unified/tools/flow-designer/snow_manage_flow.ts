@@ -47,15 +47,29 @@ var _bootstrapPromise: Promise<{ namespace: string; apiSysId: string }> | null =
  */
 var FLOW_FACTORY_SCRIPT = [
   '(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {',
-  '  var body;',
-  '  try { body = JSON.parse(request.body.dataString); }',
-  '  catch(e) { body = request.body.data; }',
+  '  var body = null;',
+  '  var parseLog = [];',
+  '  try {',
+  '    var ds = request.body.dataString;',
+  '    if (ds) { body = JSON.parse(ds + ""); parseLog.push("dataString:ok"); }',
+  '  } catch(e1) { parseLog.push("dataString:" + e1); }',
+  '  if (!body) {',
+  '    try {',
+  '      var d = request.body.data;',
+  '      if (d && typeof d === "object") { body = d; parseLog.push("data:ok"); }',
+  '      else if (d) { body = JSON.parse(d + ""); parseLog.push("data-parse:ok"); }',
+  '    } catch(e2) { parseLog.push("data:" + e2); }',
+  '  }',
+  '  if (!body) {',
+  '    try { body = JSON.parse(request.body + ""); parseLog.push("body-direct:ok"); }',
+  '    catch(e3) { parseLog.push("body-direct:" + e3); }',
+  '  }',
   '  if (!body || typeof body !== "object") {',
   '    response.setStatus(400);',
-  '    response.setBody({ success: false, error: "Invalid request body: " + typeof body });',
+  '    response.setBody({ success: false, error: "No parseable body", parseLog: parseLog, bodyType: typeof request.body });',
   '    return;',
   '  }',
-  '  var result = { success: false, steps: {} };',
+  '  var result = { success: false, steps: {}, parseLog: parseLog };',
   '',
   '  try {',
   '    var flowName = body.name || "Unnamed Flow";',
@@ -420,6 +434,88 @@ function invalidateFlowFactoryCache(): void {
 }
 
 /**
+ * After creating a flow (via any method), try to register it with the
+ * Flow Designer engine by calling its built-in compile / publish / activate
+ * REST endpoints.  Without this step the flow record exists in the DB but
+ * Flow Designer cannot open it ("Your flow cannot be found").
+ *
+ * Tries multiple known endpoint patterns because the namespace/path changed
+ * across ServiceNow releases.  Returns diagnostics on which attempts were
+ * made and what succeeded.
+ */
+async function registerFlowWithEngine(
+  client: any,
+  flowSysId: string,
+  shouldActivate: boolean
+): Promise<{ success: boolean; method: string; attempts: string[] }> {
+  var attempts: string[] = [];
+
+  // Helper: try a POST and classify the result
+  async function tryPost(label: string, url: string, body?: any): Promise<boolean> {
+    try {
+      await client.post(url, body || {});
+      attempts.push(label + ': success');
+      return true;
+    } catch (e: any) {
+      var s = e.response?.status || 'err';
+      attempts.push(label + ': ' + s);
+      return false;
+    }
+  }
+
+  // ── Strategy 1: Publish via Flow Designer REST API ───────────────
+  // This is the closest equivalent to clicking "Publish" in the UI.
+  var publishPaths = [
+    '/api/sn_fd/flow/' + flowSysId + '/publish',
+    '/api/sn_fd/designer/flow/' + flowSysId + '/publish',
+    '/api/sn_flow_designer/flow/' + flowSysId + '/publish',
+  ];
+  for (var pi = 0; pi < publishPaths.length; pi++) {
+    if (await tryPost('publish[' + pi + ']', publishPaths[pi])) {
+      return { success: true, method: 'publish', attempts: attempts };
+    }
+  }
+
+  // ── Strategy 2: Activate (registers the flow with the engine) ────
+  if (shouldActivate) {
+    var activatePaths = [
+      '/api/sn_fd/flow/' + flowSysId + '/activate',
+      '/api/sn_fd/designer/flow/' + flowSysId + '/activate',
+      '/api/sn_flow_designer/flow/' + flowSysId + '/activate',
+    ];
+    for (var ai = 0; ai < activatePaths.length; ai++) {
+      if (await tryPost('activate[' + ai + ']', activatePaths[ai])) {
+        return { success: true, method: 'activate', attempts: attempts };
+      }
+    }
+  }
+
+  // ── Strategy 3: Checkout + checkin (triggers internal compilation) ─
+  var checkoutPaths = [
+    '/api/sn_fd/flow/' + flowSysId + '/checkout',
+    '/api/sn_fd/designer/flow/' + flowSysId + '/checkout',
+  ];
+  for (var ci = 0; ci < checkoutPaths.length; ci++) {
+    if (await tryPost('checkout[' + ci + ']', checkoutPaths[ci])) {
+      var checkinPath = checkoutPaths[ci].replace('/checkout', '/checkin');
+      await tryPost('checkin[' + ci + ']', checkinPath);
+      return { success: true, method: 'checkout+checkin', attempts: attempts };
+    }
+  }
+
+  // ── Strategy 4: Snapshot (already existed — triggers version snapshot) ─
+  if (await tryPost('snapshot', '/api/sn_flow_designer/flow/snapshot', { flow_id: flowSysId })) {
+    return { success: true, method: 'snapshot', attempts: attempts };
+  }
+  // Try alternate snapshot path
+  if (await tryPost('snapshot-alt', '/api/sn_fd/flow/' + flowSysId + '/snapshot')) {
+    return { success: true, method: 'snapshot-alt', attempts: attempts };
+  }
+
+  return { success: false, method: 'none', attempts: attempts };
+}
+
+/**
  * Resolve a flow name to its sys_id. If the value is already a 32-char hex
  * string it is returned as-is.
  */
@@ -675,7 +771,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           version_created: false,
           version_method: null,
           version_fields_set: [] as string[],
-          snapshot_result: null,
+          engine_registration: null,
           post_verify: null
         };
 
@@ -919,12 +1015,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             }
           }
 
-          // Best-effort snapshot
-          try {
-            await client.post('/api/sn_flow_designer/flow/snapshot', { flow_id: flowSysId });
-            diagnostics.snapshot_result = 'success';
-          } catch (snapError: any) {
-            diagnostics.snapshot_result = 'error: ' + (snapError.response?.status || snapError.message || 'unknown');
+        }
+
+        // ── Register flow with Flow Designer engine ─────────────────
+        // This is the KEY step: without it, records exist but Flow Designer
+        // shows "Your flow cannot be found" because the engine hasn't compiled it.
+        if (flowSysId) {
+          var engineResult = await registerFlowWithEngine(client, flowSysId, shouldActivate);
+          diagnostics.engine_registration = {
+            success: engineResult.success,
+            method: engineResult.method,
+            attempts: engineResult.attempts
+          };
+          if (!engineResult.success) {
+            factoryWarnings.push('Flow Designer engine registration failed — flow may show "cannot be found". Attempts: ' + engineResult.attempts.join(', '));
           }
         }
 
@@ -1039,7 +1143,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         createSummary.indented('Factory call: ' + (diagnostics.factory_call || 'not attempted'));
         createSummary.indented('Table API used: ' + diagnostics.table_api_used);
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
-        createSummary.indented('Snapshot: ' + (diagnostics.snapshot_result || 'n/a'));
+        if (diagnostics.engine_registration) {
+          createSummary.indented('Engine registration: ' + (diagnostics.engine_registration.success ? diagnostics.engine_registration.method : 'FAILED'));
+          if (diagnostics.engine_registration.attempts) {
+            for (var ea = 0; ea < diagnostics.engine_registration.attempts.length; ea++) {
+              createSummary.indented('  ' + diagnostics.engine_registration.attempts[ea]);
+            }
+          }
+        }
         if (diagnostics.post_verify) {
           if (diagnostics.post_verify.error) {
             createSummary.indented('Post-verify: error — ' + diagnostics.post_verify.error);
@@ -1425,5 +1536,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '3.0.0';
+export const version = '4.0.0';
 export const author = 'Snow-Flow Team';
