@@ -35,7 +35,6 @@ function isSysId(value: string): boolean {
 
 var FLOW_FACTORY_API_NAME = 'Snow-Flow Flow Factory';
 var FLOW_FACTORY_API_ID = 'flow_factory';
-var FLOW_FACTORY_NAMESPACE = 'x_snflw';
 var FLOW_FACTORY_CACHE_TTL = 300000; // 5 minutes
 
 var _flowFactoryCache: { apiSysId: string; namespace: string; timestamp: number } | null = null;
@@ -48,7 +47,14 @@ var _bootstrapPromise: Promise<{ namespace: string; apiSysId: string }> | null =
  */
 var FLOW_FACTORY_SCRIPT = [
   '(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {',
-  '  var body = request.body.data;',
+  '  var body;',
+  '  try { body = JSON.parse(request.body.dataString); }',
+  '  catch(e) { body = request.body.data; }',
+  '  if (!body || typeof body !== "object") {',
+  '    response.setStatus(400);',
+  '    response.setBody({ success: false, error: "Invalid request body: " + typeof body });',
+  '    return;',
+  '  }',
   '  var result = { success: false, steps: {} };',
   '',
   '  try {',
@@ -101,6 +107,9 @@ var FLOW_FACTORY_SCRIPT = [
   '      ver.setValue("version", "1.0");',
   '      ver.setValue("state", shouldActivate ? "published" : "draft");',
   '      ver.setValue("active", true);',
+  '      ver.setValue("compile_state", "compiled");',
+  '      ver.setValue("is_current", true);',
+  '      if (shouldActivate) ver.setValue("published_flow", flowSysId);',
   '      if (body.flow_definition) {',
   '        ver.setValue("flow_definition", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
   '      }',
@@ -230,11 +239,96 @@ var FLOW_FACTORY_SCRIPT = [
 ].join('\n');
 
 /**
+ * Probe the ServiceNow instance to discover the correct URL namespace for
+ * the Flow Factory Scripted REST API. Sends GET requests to candidate
+ * namespaces — a 405 (Method Not Allowed) or 401/403 confirms the namespace
+ * exists, while 404 means wrong namespace.
+ */
+async function probeFlowFactoryNamespace(
+  client: any,
+  apiSysId: string,
+  instanceUrl: string
+): Promise<string | null> {
+  // Build candidate list from multiple sources
+  var candidates: string[] = [];
+
+  // 1. Read back the record's namespace field
+  try {
+    var nsResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
+      params: { sysparm_fields: 'sys_id,api_id,namespace', sysparm_display_value: 'all' }
+    });
+    var record = nsResp.data.result || {};
+    var ns = record.namespace;
+    if (ns) {
+      if (typeof ns === 'object') {
+        var dv = ns.display_value || '';
+        var val = ns.value || '';
+        if (dv && /^(x_|sn_)/.test(dv)) candidates.push(dv);
+        if (val && /^(x_|sn_)/.test(val)) candidates.push(val);
+      } else if (typeof ns === 'string' && ns.length > 0 && ns !== 'Global' && ns !== 'global') {
+        candidates.push(ns);
+      }
+    }
+  } catch (_) {}
+
+  // 2. Company code from sys_properties
+  try {
+    var compResp = await client.get('/api/now/table/sys_properties', {
+      params: {
+        sysparm_query: 'name=glide.appcreator.company.code',
+        sysparm_fields: 'value',
+        sysparm_limit: 1
+      }
+    });
+    var companyCode = compResp.data.result?.[0]?.value;
+    if (companyCode) candidates.push(companyCode);
+  } catch (_) {}
+
+  // 3. Instance subdomain (e.g. "dev351277" from "https://dev351277.service-now.com")
+  try {
+    var match = instanceUrl.match(/https?:\/\/([^.]+)\./);
+    if (match && match[1]) candidates.push(match[1]);
+  } catch (_) {}
+
+  // 4. Fixed fallbacks
+  candidates.push('now', 'global');
+
+  // Deduplicate
+  var seen: Record<string, boolean> = {};
+  var unique: string[] = [];
+  for (var i = 0; i < candidates.length; i++) {
+    if (!seen[candidates[i]]) {
+      seen[candidates[i]] = true;
+      unique.push(candidates[i]);
+    }
+  }
+
+  // 5. Probe each candidate — GET on a POST-only endpoint
+  for (var j = 0; j < unique.length; j++) {
+    try {
+      await client.get('/api/' + unique[j] + '/' + FLOW_FACTORY_API_ID + '/create');
+      return unique[j]; // 200 = endpoint exists (unlikely but valid)
+    } catch (probeError: any) {
+      var status = probeError.response?.status;
+      if (status === 405 || status === 401 || status === 403) {
+        return unique[j]; // Namespace correct — method or auth rejected
+      }
+      // 404 = wrong namespace, try next
+    }
+  }
+
+  return null; // No namespace matched — factory unreachable
+}
+
+/**
  * Ensure the Flow Factory Scripted REST API exists on the ServiceNow instance.
  * Idempotent — checks cache first, then instance, deploys only if missing.
- * Uses a concurrency lock to prevent duplicate bootstrap calls.
+ * Uses namespace probing (HTTP GET) instead of record field parsing.
  */
-async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; apiSysId: string }> {
+async function ensureFlowFactoryAPI(
+  client: any,
+  instanceUrl: string
+): Promise<{ namespace: string; apiSysId: string }> {
   // 1. Check in-memory cache
   if (_flowFactoryCache && (Date.now() - _flowFactoryCache.timestamp) < FLOW_FACTORY_CACHE_TTL) {
     return { namespace: _flowFactoryCache.namespace, apiSysId: _flowFactoryCache.apiSysId };
@@ -258,7 +352,10 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
 
       if (checkResp.data.result && checkResp.data.result.length > 0) {
         var existing = checkResp.data.result[0];
-        var ns = resolveNamespaceFromRecord(existing);
+        var ns = await probeFlowFactoryNamespace(client, existing.sys_id, instanceUrl);
+        if (!ns) {
+          throw new Error('Flow Factory API exists (sys_id=' + existing.sys_id + ') but namespace could not be resolved via HTTP probing');
+        }
         _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
         return { namespace: ns, apiSysId: existing.sys_id };
       }
@@ -270,7 +367,7 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
         active: true,
         short_description: 'Bootstrapped by Snow-Flow MCP for reliable Flow Designer creation via GlideRecord',
         is_versioned: false,
-        enforce_acl: 'no',
+        enforce_acl: 'false',
         requires_authentication: true
       });
 
@@ -290,7 +387,7 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
           short_description: 'Create a flow or subflow with GlideRecord (triggers all BRs + version record)',
           operation_script: FLOW_FACTORY_SCRIPT,
           requires_authentication: true,
-          enforce_acl: 'no'
+          enforce_acl: 'false'
         });
       } catch (opError: any) {
         // Cleanup the API definition if operation creation fails
@@ -298,11 +395,11 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
         throw new Error('Failed to create Scripted REST operation: ' + (opError.message || opError));
       }
 
-      // 6. Read back the actual namespace ServiceNow assigned
-      var nsResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
-        params: { sysparm_fields: 'sys_id,api_id,namespace', sysparm_display_value: 'all' }
-      });
-      var resolvedNs = resolveNamespaceFromRecord(nsResp.data.result || {});
+      // 6. Probe to discover the namespace ServiceNow assigned
+      var resolvedNs = await probeFlowFactoryNamespace(client, apiSysId, instanceUrl);
+      if (!resolvedNs) {
+        throw new Error('Flow Factory API created (sys_id=' + apiSysId + ') but namespace could not be resolved via HTTP probing');
+      }
 
       _flowFactoryCache = { apiSysId: apiSysId, namespace: resolvedNs, timestamp: Date.now() };
       return { namespace: resolvedNs, apiSysId: apiSysId };
@@ -313,29 +410,6 @@ async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; a
   })();
 
   return _bootstrapPromise;
-}
-
-/**
- * Extract the URL namespace from a sys_ws_definition record.
- * The namespace field can be a string, a reference object, or empty.
- * For global scope APIs the namespace is typically the instance company prefix or 'now'.
- */
-function resolveNamespaceFromRecord(record: any): string {
-  var ns = record.namespace;
-  if (!ns) return FLOW_FACTORY_NAMESPACE;
-
-  // display_value / value pair (sysparm_display_value=all)
-  if (typeof ns === 'object') {
-    // display_value is the scope name like "Global" or "x_snflw" — use value for sys_id, display_value for name
-    var dv = ns.display_value || '';
-    // If display_value looks like a scope namespace (x_something, sn_something, now, global), use it
-    if (dv && dv !== 'Global' && dv !== 'global') return dv;
-    // For Global scope, fall through to default
-  }
-  if (typeof ns === 'string' && ns.length > 0 && ns.length < 100) {
-    return ns;
-  }
-  return FLOW_FACTORY_NAMESPACE;
 }
 
 /**
@@ -592,8 +666,23 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var actionsCreated = 0;
         var varsCreated = 0;
 
+        // Diagnostics: track every step for debugging "flow cannot be found" issues
+        var diagnostics: any = {
+          factory_bootstrap: null,
+          factory_namespace: null,
+          factory_call: null,
+          table_api_used: false,
+          version_created: false,
+          version_method: null,
+          version_fields_set: [] as string[],
+          snapshot_result: null,
+          post_verify: null
+        };
+
         try {
-          var factory = await ensureFlowFactoryAPI(client);
+          var factory = await ensureFlowFactoryAPI(client, context.instanceUrl);
+          diagnostics.factory_bootstrap = 'success';
+          diagnostics.factory_namespace = factory.namespace;
 
           var factoryPayload = {
             name: flowName,
@@ -622,7 +711,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             // 404 = API was deleted externally → invalidate cache, retry once
             if (callError.response?.status === 404) {
               invalidateFlowFactoryCache();
-              var retryFactory = await ensureFlowFactoryAPI(client);
+              var retryFactory = await ensureFlowFactoryAPI(client, context.instanceUrl);
+              diagnostics.factory_namespace = retryFactory.namespace;
               var retryEndpoint = '/api/' + retryFactory.namespace + '/' + FLOW_FACTORY_API_ID + '/create';
               factoryResp = await client.post(retryEndpoint, factoryPayload);
             } else {
@@ -632,9 +722,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
           var factoryResult = factoryResp.data?.result || factoryResp.data;
           if (factoryResult && factoryResult.success && factoryResult.flow_sys_id) {
+            diagnostics.factory_call = 'success';
             flowSysId = factoryResult.flow_sys_id;
             usedMethod = 'scripted_rest_api';
             versionCreated = !!factoryResult.version_created;
+            diagnostics.version_created = versionCreated;
+            diagnostics.version_method = 'factory';
+            diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow'];
 
             // Extract step details
             var steps = factoryResult.steps || {};
@@ -657,14 +751,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         } catch (factoryError: any) {
           // Flow Factory unavailable — fall through to Table API
           var statusCode = factoryError.response?.status;
+          var factoryErrMsg = statusCode
+            ? 'HTTP ' + statusCode + ': ' + (factoryError.response?.data?.error?.message || factoryError.message || 'unknown')
+            : (factoryError.message || 'unknown');
+          diagnostics.factory_bootstrap = diagnostics.factory_bootstrap || ('error: ' + factoryErrMsg);
+          diagnostics.factory_call = diagnostics.factory_call || ('error: ' + factoryErrMsg);
           if (statusCode !== 403) {
-            // Log non-permission errors as warnings (403 = silently skip)
-            factoryWarnings.push('Flow Factory unavailable (' + (statusCode || factoryError.message || 'unknown') + '), using Table API fallback');
+            factoryWarnings.push('Flow Factory unavailable (' + factoryErrMsg + '), using Table API fallback');
           }
         }
 
         // ── Table API fallback (existing logic) ─────────────────────
         if (!flowSysId) {
+          diagnostics.table_api_used = true;
           var flowData: any = {
             name: flowName,
             description: flowDescription,
@@ -691,12 +790,18 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               version: '1.0',
               state: shouldActivate ? 'published' : 'draft',
               active: true,
+              compile_state: 'compiled',
+              is_current: true,
               flow_definition: JSON.stringify(flowDefinition)
             };
+            if (shouldActivate) versionData.published_flow = flowSysId;
             var versionResp = await client.post('/api/now/table/sys_hub_flow_version', versionData);
             var versionSysId = versionResp.data.result?.sys_id;
             if (versionSysId) {
               versionCreated = true;
+              diagnostics.version_created = true;
+              diagnostics.version_method = 'table_api';
+              diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow'];
               // Link flow to its version
               try {
                 await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
@@ -817,7 +922,77 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           // Best-effort snapshot
           try {
             await client.post('/api/sn_flow_designer/flow/snapshot', { flow_id: flowSysId });
-          } catch (snapError) { /* may not exist */ }
+            diagnostics.snapshot_result = 'success';
+          } catch (snapError: any) {
+            diagnostics.snapshot_result = 'error: ' + (snapError.response?.status || snapError.message || 'unknown');
+          }
+        }
+
+        // ── Post-creation verification ─────────────────────────────
+        if (flowSysId) {
+          try {
+            var verifyResp = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
+              params: { sysparm_fields: 'sys_id,name,latest_version' }
+            });
+            var verifyFlow = verifyResp.data.result;
+            var hasLatestVersion = !!(verifyFlow && verifyFlow.latest_version);
+
+            // Check if version record exists
+            var verCheckResp = await client.get('/api/now/table/sys_hub_flow_version', {
+              params: {
+                sysparm_query: 'flow=' + flowSysId,
+                sysparm_fields: 'sys_id,name,state,compile_state,is_current',
+                sysparm_limit: 1
+              }
+            });
+            var verRecords = verCheckResp.data.result || [];
+            var hasVersionRecord = verRecords.length > 0;
+
+            diagnostics.post_verify = {
+              flow_exists: true,
+              has_latest_version_ref: hasLatestVersion,
+              version_record_exists: hasVersionRecord,
+              version_details: hasVersionRecord ? {
+                sys_id: verRecords[0].sys_id,
+                state: verRecords[0].state,
+                compile_state: verRecords[0].compile_state,
+                is_current: verRecords[0].is_current
+              } : null
+            };
+
+            // If version record is missing, retry creation
+            if (!hasVersionRecord && !versionCreated) {
+              try {
+                var retryVersionData: any = {
+                  flow: flowSysId,
+                  name: '1.0',
+                  version: '1.0',
+                  state: shouldActivate ? 'published' : 'draft',
+                  active: true,
+                  compile_state: 'compiled',
+                  is_current: true,
+                  flow_definition: JSON.stringify(flowDefinition)
+                };
+                if (shouldActivate) retryVersionData.published_flow = flowSysId;
+
+                var retryVerResp = await client.post('/api/now/table/sys_hub_flow_version', retryVersionData);
+                var retryVerSysId = retryVerResp.data.result?.sys_id;
+                if (retryVerSysId) {
+                  versionCreated = true;
+                  diagnostics.version_created = true;
+                  diagnostics.version_method = (diagnostics.version_method || 'table_api') + ' (retry)';
+                  try {
+                    await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, { latest_version: retryVerSysId });
+                  } catch (_) {}
+                  factoryWarnings.push('Version record was missing — created via post-verify retry');
+                }
+              } catch (retryErr: any) {
+                factoryWarnings.push('Post-verify version retry failed: ' + (retryErr.message || retryErr));
+              }
+            }
+          } catch (verifyErr: any) {
+            diagnostics.post_verify = { error: verifyErr.message || 'verification failed' };
+          }
         }
 
         // ── Build summary ───────────────────────────────────────────
@@ -833,8 +1008,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           .field('Status', shouldActivate ? 'Published (active)' : 'Draft')
           .field('Method', methodLabel);
 
+        if (diagnostics.factory_namespace) {
+          createSummary.field('Namespace', diagnostics.factory_namespace);
+        }
+
         if (versionCreated) {
-          createSummary.field('Version', 'v1.0 created');
+          createSummary.field('Version', 'v1.0 created' + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
+        } else {
+          createSummary.warning('Version record NOT created — flow may show "cannot be found" in Flow Designer');
         }
 
         if (!isSubflow && triggerType !== 'manual') {
@@ -849,6 +1030,24 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         for (var wi = 0; wi < factoryWarnings.length; wi++) {
           createSummary.warning(factoryWarnings[wi]);
+        }
+
+        // Diagnostics section
+        createSummary.blank().line('Diagnostics:');
+        createSummary.indented('Factory bootstrap: ' + (diagnostics.factory_bootstrap || 'not attempted'));
+        createSummary.indented('Factory namespace: ' + (diagnostics.factory_namespace || 'n/a'));
+        createSummary.indented('Factory call: ' + (diagnostics.factory_call || 'not attempted'));
+        createSummary.indented('Table API used: ' + diagnostics.table_api_used);
+        createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
+        createSummary.indented('Snapshot: ' + (diagnostics.snapshot_result || 'n/a'));
+        if (diagnostics.post_verify) {
+          if (diagnostics.post_verify.error) {
+            createSummary.indented('Post-verify: error — ' + diagnostics.post_verify.error);
+          } else {
+            createSummary.indented('Post-verify: flow=' + diagnostics.post_verify.flow_exists +
+              ', version_record=' + diagnostics.post_verify.version_record_exists +
+              ', latest_version_ref=' + diagnostics.post_verify.has_latest_version_ref);
+          }
         }
 
         return createSuccessResult({
@@ -872,7 +1071,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           activities_created: actionsCreated,
           activities_requested: activitiesArg.length,
           variables_created: varsCreated,
-          warnings: factoryWarnings.length > 0 ? factoryWarnings : undefined
+          warnings: factoryWarnings.length > 0 ? factoryWarnings : undefined,
+          diagnostics: diagnostics
         }, {}, createSummary.build());
       }
 
@@ -1225,5 +1425,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '2.0.0';
+export const version = '3.0.0';
 export const author = 'Snow-Flow Team';
