@@ -337,4 +337,44 @@ export namespace PortalSync {
       }
     }
   }
+
+  /**
+   * AI provider credential from enterprise portal (decrypted, in-memory only)
+   */
+  export interface AiProviderCredential {
+    providerType: string
+    apiKey: string
+    endpointUrl?: string | null
+    isDefault?: boolean
+    config?: Record<string, unknown> | null
+  }
+
+  /**
+   * Fetch AI provider credentials from Enterprise Portal.
+   * Credentials are kept in-memory only — never written to disk.
+   *
+   * @param portalUrl - Enterprise portal base URL
+   * @param token - JWT token from enterprise auth
+   * @returns Decrypted AI provider credentials
+   */
+  export async function fetchAiProvidersFromPortal(
+    portalUrl: string,
+    token: string,
+  ): Promise<{ success: boolean; providers?: AiProviderCredential[]; error?: string }> {
+    try {
+      const response = await fetch(`${portalUrl}/api/chat/providers/for-cli`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(10000),
+      })
+      if (!response.ok) return { success: false, error: `HTTP ${response.status}` }
+      const data = (await response.json()) as { providers?: AiProviderCredential[] }
+      return { success: true, providers: data.providers ?? [] }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  }
 }

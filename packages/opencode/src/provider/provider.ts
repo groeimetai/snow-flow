@@ -9,6 +9,7 @@ import { Plugin } from "../plugin"
 import { ModelsDev } from "./models"
 import { NamedError } from "@opencode-ai/util/error"
 import { Auth } from "../auth"
+import { PortalSync } from "../auth/portal-sync"
 import { Env } from "../env"
 import { Instance } from "../project/instance"
 import { Flag } from "../flag/flag"
@@ -999,6 +1000,28 @@ export namespace Provider {
       if (provider.name) partial.name = provider.name
       if (provider.options) partial.options = provider.options
       mergeProvider(providerID, partial)
+    }
+
+    // load enterprise AI provider credentials (in-memory only, never stored locally)
+    const entAuth = await Auth.get("enterprise")
+    if (entAuth?.type === "enterprise" && entAuth.token && entAuth.enterpriseUrl) {
+      try {
+        const result = await PortalSync.fetchAiProvidersFromPortal(entAuth.enterpriseUrl, entAuth.token)
+        if (result.success && result.providers) {
+          for (const p of result.providers) {
+            if (!p.apiKey || !p.providerType) continue
+            // Only fill in if provider has no key yet (enterprise = lowest priority)
+            if (providers[p.providerType]?.key) continue
+            mergeProvider(p.providerType, {
+              source: "api",
+              key: p.apiKey,
+              ...(p.endpointUrl ? { options: { baseURL: p.endpointUrl } } : {}),
+            })
+          }
+        }
+      } catch {
+        // Silent failure — enterprise providers unavailable, local config works as-is
+      }
     }
 
     for (const [providerID, provider] of Object.entries(providers)) {
