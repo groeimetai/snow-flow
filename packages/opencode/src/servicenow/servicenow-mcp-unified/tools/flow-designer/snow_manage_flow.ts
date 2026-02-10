@@ -2,10 +2,14 @@
  * snow_manage_flow - Complete Flow Designer lifecycle management
  *
  * Create, list, get, update, activate, deactivate, delete and publish
- * Flow Designer flows and subflows via Table API.
+ * Flow Designer flows and subflows.
  *
- * ServiceNow does NOT expose a public Flow Designer creation API.
- * This tool uses the Table API (sys_hub_flow) to manage flows directly.
+ * For create/create_subflow: uses a bootstrapped Scripted REST API
+ * ("Flow Factory") that runs GlideRecord server-side, ensuring
+ * sys_hub_flow_version records are created and all Business Rules fire.
+ * Falls back to Table API if the factory is unavailable.
+ *
+ * All other actions (list, get, update, activate, etc.) use the Table API.
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
@@ -25,6 +29,306 @@ function sanitizeInternalName(name: string): string {
 
 function isSysId(value: string): boolean {
   return /^[a-f0-9]{32}$/.test(value);
+}
+
+// ── Flow Factory (Scripted REST API bootstrap) ──────────────────────
+
+var FLOW_FACTORY_API_NAME = 'Snow-Flow Flow Factory';
+var FLOW_FACTORY_API_ID = 'flow_factory';
+var FLOW_FACTORY_NAMESPACE = 'x_snflw';
+var FLOW_FACTORY_CACHE_TTL = 300000; // 5 minutes
+
+var _flowFactoryCache: { apiSysId: string; namespace: string; timestamp: number } | null = null;
+var _bootstrapPromise: Promise<{ namespace: string; apiSysId: string }> | null = null;
+
+/**
+ * ES5 GlideRecord script deployed as a Scripted REST API resource.
+ * This runs server-side on ServiceNow and triggers all Business Rules,
+ * unlike direct Table API inserts which skip sys_hub_flow_version creation.
+ */
+var FLOW_FACTORY_SCRIPT = [
+  '(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {',
+  '  var body = request.body.data;',
+  '  var result = { success: false, steps: {} };',
+  '',
+  '  try {',
+  '    var flowName = body.name || "Unnamed Flow";',
+  '    var isSubflow = body.type === "subflow";',
+  '    var flowDesc = body.description || flowName;',
+  '    var flowCategory = body.category || "custom";',
+  '    var runAs = body.run_as || "user";',
+  '    var shouldActivate = body.activate !== false;',
+  '    var triggerType = body.trigger_type || "manual";',
+  '    var triggerTable = body.trigger_table || "";',
+  '    var triggerCondition = body.trigger_condition || "";',
+  '    var activities = body.activities || [];',
+  '    var inputs = body.inputs || [];',
+  '    var outputs = body.outputs || [];',
+  '',
+  '    // Step 1: Create sys_hub_flow via GlideRecord (triggers all BRs)',
+  '    var flow = new GlideRecord("sys_hub_flow");',
+  '    flow.initialize();',
+  '    flow.setValue("name", flowName);',
+  '    flow.setValue("description", flowDesc);',
+  '    flow.setValue("internal_name", flowName.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, ""));',
+  '    flow.setValue("category", flowCategory);',
+  '    flow.setValue("run_as", runAs);',
+  '    flow.setValue("active", shouldActivate);',
+  '    flow.setValue("status", shouldActivate ? "published" : "draft");',
+  '    flow.setValue("validated", true);',
+  '    flow.setValue("type", isSubflow ? "subflow" : "flow");',
+  '',
+  '    if (body.flow_definition) {',
+  '      flow.setValue("flow_definition", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
+  '      flow.setValue("latest_snapshot", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
+  '    }',
+  '',
+  '    var flowSysId = flow.insert();',
+  '    if (!flowSysId) {',
+  '      result.error = "Failed to insert sys_hub_flow record";',
+  '      response.setStatus(500);',
+  '      response.setBody(result);',
+  '      return;',
+  '    }',
+  '    result.steps.flow = { success: true, sys_id: flowSysId + "" };',
+  '',
+  '    // Step 2: Create sys_hub_flow_version (this is what Table API misses!)',
+  '    try {',
+  '      var ver = new GlideRecord("sys_hub_flow_version");',
+  '      ver.initialize();',
+  '      ver.setValue("flow", flowSysId);',
+  '      ver.setValue("name", "1.0");',
+  '      ver.setValue("version", "1.0");',
+  '      ver.setValue("state", shouldActivate ? "published" : "draft");',
+  '      ver.setValue("active", true);',
+  '      if (body.flow_definition) {',
+  '        ver.setValue("flow_definition", typeof body.flow_definition === "string" ? body.flow_definition : JSON.stringify(body.flow_definition));',
+  '      }',
+  '      var verSysId = ver.insert();',
+  '      if (verSysId) {',
+  '        result.steps.version = { success: true, sys_id: verSysId + "" };',
+  '        // Update flow to point to latest version',
+  '        var flowUpd = new GlideRecord("sys_hub_flow");',
+  '        if (flowUpd.get(flowSysId)) {',
+  '          flowUpd.setValue("latest_version", verSysId);',
+  '          flowUpd.update();',
+  '        }',
+  '      } else {',
+  '        result.steps.version = { success: false, error: "Insert returned empty sys_id" };',
+  '      }',
+  '    } catch (verErr) {',
+  '      result.steps.version = { success: false, error: verErr.getMessage ? verErr.getMessage() : verErr + "" };',
+  '    }',
+  '',
+  '    // Step 3: Create trigger instance (non-manual, non-subflow only)',
+  '    if (!isSubflow && triggerType !== "manual") {',
+  '      try {',
+  '        var triggerMap = {',
+  '          "record_created": "sn_fd.trigger.record_created",',
+  '          "record_updated": "sn_fd.trigger.record_updated",',
+  '          "scheduled": "sn_fd.trigger.scheduled"',
+  '        };',
+  '        var triggerIntName = triggerMap[triggerType] || "";',
+  '        if (triggerIntName) {',
+  '          var trigDef = new GlideRecord("sys_hub_action_type_definition");',
+  '          trigDef.addQuery("internal_name", triggerIntName);',
+  '          trigDef.query();',
+  '          if (trigDef.next()) {',
+  '            var trigInst = new GlideRecord("sys_hub_trigger_instance");',
+  '            trigInst.initialize();',
+  '            trigInst.setValue("flow", flowSysId);',
+  '            trigInst.setValue("action_type", trigDef.getUniqueValue());',
+  '            trigInst.setValue("name", triggerType);',
+  '            trigInst.setValue("order", 0);',
+  '            trigInst.setValue("active", true);',
+  '            if (triggerTable) trigInst.setValue("table", triggerTable);',
+  '            if (triggerCondition) trigInst.setValue("condition", triggerCondition);',
+  '            var trigSysId = trigInst.insert();',
+  '            result.steps.trigger = { success: !!trigSysId, sys_id: trigSysId + "" };',
+  '          } else {',
+  '            result.steps.trigger = { success: false, error: "Trigger type definition not found: " + triggerIntName };',
+  '          }',
+  '        }',
+  '      } catch (trigErr) {',
+  '        result.steps.trigger = { success: false, error: trigErr.getMessage ? trigErr.getMessage() : trigErr + "" };',
+  '      }',
+  '    }',
+  '',
+  '    // Step 4: Create action instances',
+  '    var actionsCreated = 0;',
+  '    for (var ai = 0; ai < activities.length; ai++) {',
+  '      try {',
+  '        var act = activities[ai];',
+  '        var actTypeName = act.type || "script";',
+  '        var actDef = new GlideRecord("sys_hub_action_type_definition");',
+  '        actDef.addQuery("internal_name", "CONTAINS", actTypeName);',
+  '        actDef.addOrCondition("name", "CONTAINS", actTypeName);',
+  '        actDef.query();',
+  '        var actInst = new GlideRecord("sys_hub_action_instance");',
+  '        actInst.initialize();',
+  '        actInst.setValue("flow", flowSysId);',
+  '        actInst.setValue("name", act.name || ("Action " + (ai + 1)));',
+  '        actInst.setValue("order", (ai + 1) * 100);',
+  '        actInst.setValue("active", true);',
+  '        if (actDef.next()) {',
+  '          actInst.setValue("action_type", actDef.getUniqueValue());',
+  '        }',
+  '        if (actInst.insert()) actionsCreated++;',
+  '      } catch (actErr) {',
+  '        // Best-effort per action',
+  '      }',
+  '    }',
+  '    result.steps.actions = { success: true, created: actionsCreated, requested: activities.length };',
+  '',
+  '    // Step 5: Create flow variables (subflows)',
+  '    var varsCreated = 0;',
+  '    if (isSubflow) {',
+  '      for (var vi = 0; vi < inputs.length; vi++) {',
+  '        try {',
+  '          var inp = inputs[vi];',
+  '          var fv = new GlideRecord("sys_hub_flow_variable");',
+  '          fv.initialize();',
+  '          fv.setValue("flow", flowSysId);',
+  '          fv.setValue("name", inp.name);',
+  '          fv.setValue("label", inp.label || inp.name);',
+  '          fv.setValue("type", inp.type || "string");',
+  '          fv.setValue("mandatory", inp.mandatory || false);',
+  '          fv.setValue("default_value", inp.default_value || "");',
+  '          fv.setValue("variable_type", "input");',
+  '          if (fv.insert()) varsCreated++;',
+  '        } catch (vErr) { /* best-effort */ }',
+  '      }',
+  '      for (var vo = 0; vo < outputs.length; vo++) {',
+  '        try {',
+  '          var out = outputs[vo];',
+  '          var ov = new GlideRecord("sys_hub_flow_variable");',
+  '          ov.initialize();',
+  '          ov.setValue("flow", flowSysId);',
+  '          ov.setValue("name", out.name);',
+  '          ov.setValue("label", out.label || out.name);',
+  '          ov.setValue("type", out.type || "string");',
+  '          ov.setValue("variable_type", "output");',
+  '          if (ov.insert()) varsCreated++;',
+  '        } catch (vErr) { /* best-effort */ }',
+  '      }',
+  '    }',
+  '    result.steps.variables = { success: true, created: varsCreated };',
+  '',
+  '    result.success = true;',
+  '    result.flow_sys_id = flowSysId + "";',
+  '    result.version_created = !!(result.steps.version && result.steps.version.success);',
+  '    response.setStatus(201);',
+  '',
+  '  } catch (e) {',
+  '    result.success = false;',
+  '    result.error = e.getMessage ? e.getMessage() : e + "";',
+  '    response.setStatus(500);',
+  '  }',
+  '',
+  '  response.setBody(result);',
+  '})(request, response);'
+].join('\n');
+
+/**
+ * Ensure the Flow Factory Scripted REST API exists on the ServiceNow instance.
+ * Idempotent — checks cache first, then instance, deploys only if missing.
+ * Uses a concurrency lock to prevent duplicate bootstrap calls.
+ */
+async function ensureFlowFactoryAPI(client: any): Promise<{ namespace: string; apiSysId: string }> {
+  // 1. Check in-memory cache
+  if (_flowFactoryCache && (Date.now() - _flowFactoryCache.timestamp) < FLOW_FACTORY_CACHE_TTL) {
+    return { namespace: _flowFactoryCache.namespace, apiSysId: _flowFactoryCache.apiSysId };
+  }
+
+  // 2. Concurrency lock — reuse in-flight bootstrap
+  if (_bootstrapPromise) {
+    return _bootstrapPromise;
+  }
+
+  _bootstrapPromise = (async () => {
+    try {
+      // 3. Check if API already exists on instance
+      var checkResp = await client.get('/api/now/table/sys_ws_definition', {
+        params: {
+          sysparm_query: 'name=' + FLOW_FACTORY_API_NAME,
+          sysparm_fields: 'sys_id,namespace.name',
+          sysparm_limit: 1
+        }
+      });
+
+      if (checkResp.data.result && checkResp.data.result.length > 0) {
+        var existing = checkResp.data.result[0];
+        var ns = (existing['namespace.name'] || existing.namespace?.display_value || FLOW_FACTORY_NAMESPACE);
+        _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
+        return { namespace: ns, apiSysId: existing.sys_id };
+      }
+
+      // 4. Deploy the Scripted REST API
+      var apiResp = await client.post('/api/now/table/sys_ws_definition', {
+        name: FLOW_FACTORY_API_NAME,
+        api_id: FLOW_FACTORY_API_ID,
+        active: true,
+        short_description: 'Bootstrapped by Snow-Flow MCP for reliable Flow Designer creation via GlideRecord',
+        is_versioned: false,
+        enforce_acl: 'no',
+        requires_authentication: true,
+        namespace: FLOW_FACTORY_NAMESPACE
+      });
+
+      var apiSysId = apiResp.data.result?.sys_id;
+      if (!apiSysId) {
+        throw new Error('Failed to create Scripted REST API definition — no sys_id returned');
+      }
+
+      // 5. Deploy the POST /create resource
+      try {
+        await client.post('/api/now/table/sys_ws_operation', {
+          web_service_definition: apiSysId,
+          http_method: 'POST',
+          name: 'create',
+          active: true,
+          relative_path: '/create',
+          short_description: 'Create a flow or subflow with GlideRecord (triggers all BRs + version record)',
+          operation_script: FLOW_FACTORY_SCRIPT,
+          requires_authentication: true,
+          enforce_acl: 'no'
+        });
+      } catch (opError: any) {
+        // Cleanup the API definition if operation creation fails
+        try { await client.delete('/api/now/table/sys_ws_definition/' + apiSysId); } catch (_) {}
+        throw new Error('Failed to create Scripted REST operation: ' + (opError.message || opError));
+      }
+
+      // Resolve actual namespace — may differ from requested
+      var nsResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
+        params: { sysparm_fields: 'sys_id,namespace' }
+      });
+      var resolvedNs = FLOW_FACTORY_NAMESPACE;
+      if (nsResp.data.result?.namespace) {
+        var nsVal = nsResp.data.result.namespace;
+        if (typeof nsVal === 'object' && nsVal.display_value) {
+          resolvedNs = nsVal.display_value;
+        } else if (typeof nsVal === 'string' && nsVal.length > 0) {
+          resolvedNs = nsVal;
+        }
+      }
+
+      _flowFactoryCache = { apiSysId: apiSysId, namespace: resolvedNs, timestamp: Date.now() };
+      return { namespace: resolvedNs, apiSysId: apiSysId };
+
+    } finally {
+      _bootstrapPromise = null;
+    }
+  })();
+
+  return _bootstrapPromise;
+}
+
+/**
+ * Invalidate the Flow Factory cache (e.g. on 404 when API was deleted externally).
+ */
+function invalidateFlowFactoryCache(): void {
+  _flowFactoryCache = null;
 }
 
 /**
@@ -202,7 +506,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     switch (action) {
 
       // ────────────────────────────────────────────────────────────────
-      // CREATE
+      // CREATE  (Scripted REST API → Table API fallback)
       // ────────────────────────────────────────────────────────────────
       case 'create':
       case 'create_subflow': {
@@ -223,7 +527,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var outputsArg = args.outputs || [];
         var shouldActivate = args.activate !== false;
 
-        // Build flow_definition JSON
+        // Build flow_definition JSON (shared by both methods)
         var flowDefinition: any = {
           name: flowName,
           description: flowDescription,
@@ -261,166 +565,235 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           version: '1.0'
         };
 
-        // Remove trigger block for subflows
         if (isSubflow) {
           delete flowDefinition.trigger;
         }
 
-        var flowData: any = {
-          name: flowName,
-          description: flowDescription,
-          active: shouldActivate,
-          internal_name: sanitizeInternalName(flowName),
-          category: flowCategory,
-          run_as: flowRunAs,
-          status: shouldActivate ? 'published' : 'draft',
-          validated: true,
-          type: isSubflow ? 'subflow' : 'flow',
-          flow_definition: JSON.stringify(flowDefinition),
-          latest_snapshot: JSON.stringify(flowDefinition)
-        };
-
-        // 1. Create flow record via Table API
-        var flowResponse = await client.post('/api/now/table/sys_hub_flow', flowData);
-
-        var createdFlow = flowResponse.data.result;
-        var flowSysId = createdFlow.sys_id;
-
-        // 2. Create trigger instance (non-manual flows only)
+        // ── Try Scripted REST API (Flow Factory) first ──────────────
+        var flowSysId: string | null = null;
+        var usedMethod = 'table_api';
+        var versionCreated = false;
+        var factoryWarnings: string[] = [];
         var triggerCreated = false;
-        if (!isSubflow && triggerType !== 'manual') {
-          try {
-            // Lookup trigger action type
-            var triggerTypeLookup: Record<string, string> = {
-              'record_created': 'sn_fd.trigger.record_created',
-              'record_updated': 'sn_fd.trigger.record_updated',
-              'scheduled': 'sn_fd.trigger.scheduled'
-            };
-            var triggerInternalName = triggerTypeLookup[triggerType] || '';
+        var actionsCreated = 0;
+        var varsCreated = 0;
 
-            if (triggerInternalName) {
-              var triggerDefResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+        try {
+          var factory = await ensureFlowFactoryAPI(client);
+
+          var factoryPayload = {
+            name: flowName,
+            description: flowDescription,
+            type: isSubflow ? 'subflow' : 'flow',
+            category: flowCategory,
+            run_as: flowRunAs,
+            activate: shouldActivate,
+            trigger_type: triggerType,
+            trigger_table: flowTable,
+            trigger_condition: triggerCondition,
+            activities: activitiesArg.map(function (act: any, idx: number) {
+              return { name: act.name, type: act.type || 'script', inputs: act.inputs || {}, order: (idx + 1) * 100 };
+            }),
+            inputs: inputsArg,
+            outputs: outputsArg,
+            flow_definition: flowDefinition
+          };
+
+          var factoryEndpoint = '/api/' + factory.namespace + '/' + FLOW_FACTORY_API_ID + '/create';
+          var factoryResp: any;
+
+          try {
+            factoryResp = await client.post(factoryEndpoint, factoryPayload);
+          } catch (callError: any) {
+            // 404 = API was deleted externally → invalidate cache, retry once
+            if (callError.response?.status === 404) {
+              invalidateFlowFactoryCache();
+              var retryFactory = await ensureFlowFactoryAPI(client);
+              var retryEndpoint = '/api/' + retryFactory.namespace + '/' + FLOW_FACTORY_API_ID + '/create';
+              factoryResp = await client.post(retryEndpoint, factoryPayload);
+            } else {
+              throw callError;
+            }
+          }
+
+          var factoryResult = factoryResp.data?.result || factoryResp.data;
+          if (factoryResult && factoryResult.success && factoryResult.flow_sys_id) {
+            flowSysId = factoryResult.flow_sys_id;
+            usedMethod = 'scripted_rest_api';
+            versionCreated = !!factoryResult.version_created;
+
+            // Extract step details
+            var steps = factoryResult.steps || {};
+            if (steps.trigger) {
+              triggerCreated = !!steps.trigger.success;
+              if (!steps.trigger.success && steps.trigger.error) {
+                factoryWarnings.push('Trigger: ' + steps.trigger.error);
+              }
+            }
+            if (steps.actions) {
+              actionsCreated = steps.actions.created || 0;
+            }
+            if (steps.variables) {
+              varsCreated = steps.variables.created || 0;
+            }
+            if (steps.version && !steps.version.success) {
+              factoryWarnings.push('Version record: ' + (steps.version.error || 'creation failed'));
+            }
+          }
+        } catch (factoryError: any) {
+          // Flow Factory unavailable — fall through to Table API
+          var statusCode = factoryError.response?.status;
+          if (statusCode !== 403) {
+            // Log non-permission errors as warnings (403 = silently skip)
+            factoryWarnings.push('Flow Factory unavailable (' + (statusCode || factoryError.message || 'unknown') + '), using Table API fallback');
+          }
+        }
+
+        // ── Table API fallback (existing logic) ─────────────────────
+        if (!flowSysId) {
+          var flowData: any = {
+            name: flowName,
+            description: flowDescription,
+            active: shouldActivate,
+            internal_name: sanitizeInternalName(flowName),
+            category: flowCategory,
+            run_as: flowRunAs,
+            status: shouldActivate ? 'published' : 'draft',
+            validated: true,
+            type: isSubflow ? 'subflow' : 'flow',
+            flow_definition: JSON.stringify(flowDefinition),
+            latest_snapshot: JSON.stringify(flowDefinition)
+          };
+
+          var flowResponse = await client.post('/api/now/table/sys_hub_flow', flowData);
+          var createdFlow = flowResponse.data.result;
+          flowSysId = createdFlow.sys_id;
+
+          // Create trigger instance (non-manual flows only)
+          if (!isSubflow && triggerType !== 'manual') {
+            try {
+              var triggerTypeLookup: Record<string, string> = {
+                'record_created': 'sn_fd.trigger.record_created',
+                'record_updated': 'sn_fd.trigger.record_updated',
+                'scheduled': 'sn_fd.trigger.scheduled'
+              };
+              var triggerInternalName = triggerTypeLookup[triggerType] || '';
+
+              if (triggerInternalName) {
+                var triggerDefResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+                  params: {
+                    sysparm_query: 'internal_name=' + triggerInternalName,
+                    sysparm_fields: 'sys_id',
+                    sysparm_limit: 1
+                  }
+                });
+
+                var triggerDefId = triggerDefResp.data.result?.[0]?.sys_id;
+                if (triggerDefId) {
+                  var triggerData: any = {
+                    flow: flowSysId,
+                    action_type: triggerDefId,
+                    name: triggerType,
+                    order: 0,
+                    active: true
+                  };
+                  if (flowTable) triggerData.table = flowTable;
+                  if (triggerCondition) triggerData.condition = triggerCondition;
+
+                  await client.post('/api/now/table/sys_hub_trigger_instance', triggerData);
+                  triggerCreated = true;
+                }
+              }
+            } catch (triggerError) {
+              // Best-effort
+            }
+          }
+
+          // Create action instances
+          for (var ai = 0; ai < activitiesArg.length; ai++) {
+            var activity = activitiesArg[ai];
+            try {
+              var actionTypeName = activity.type || 'script';
+              var actionTypeQuery = 'internal_nameLIKE' + actionTypeName + '^ORnameLIKE' + actionTypeName;
+
+              var actionDefResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
                 params: {
-                  sysparm_query: 'internal_name=' + triggerInternalName,
-                  sysparm_fields: 'sys_id',
+                  sysparm_query: actionTypeQuery,
+                  sysparm_fields: 'sys_id,name,internal_name',
                   sysparm_limit: 1
                 }
               });
 
-              var triggerDefId = triggerDefResp.data.result?.[0]?.sys_id;
-              if (triggerDefId) {
-                var triggerData: any = {
+              var actionDefId = actionDefResp.data.result?.[0]?.sys_id;
+              var instanceData: any = {
+                flow: flowSysId,
+                name: activity.name,
+                order: (ai + 1) * 100,
+                active: true
+              };
+              if (actionDefId) instanceData.action_type = actionDefId;
+
+              await client.post('/api/now/table/sys_hub_action_instance', instanceData);
+              actionsCreated++;
+            } catch (actError) {
+              // Best-effort
+            }
+          }
+
+          // Create flow variables (subflows)
+          if (isSubflow) {
+            for (var vi = 0; vi < inputsArg.length; vi++) {
+              var inp = inputsArg[vi];
+              try {
+                await client.post('/api/now/table/sys_hub_flow_variable', {
                   flow: flowSysId,
-                  action_type: triggerDefId,
-                  name: triggerType,
-                  order: 0,
-                  active: true
-                };
-                if (flowTable) {
-                  triggerData.table = flowTable;
-                }
-                if (triggerCondition) {
-                  triggerData.condition = triggerCondition;
-                }
-
-                await client.post('/api/now/table/sys_hub_trigger_instance', triggerData);
-                triggerCreated = true;
-              }
+                  name: inp.name,
+                  label: inp.label || inp.name,
+                  type: inp.type || 'string',
+                  mandatory: inp.mandatory || false,
+                  default_value: inp.default_value || '',
+                  variable_type: 'input'
+                });
+                varsCreated++;
+              } catch (varError) { /* best-effort */ }
             }
-          } catch (triggerError) {
-            // Trigger creation is best-effort
+            for (var vo = 0; vo < outputsArg.length; vo++) {
+              var out = outputsArg[vo];
+              try {
+                await client.post('/api/now/table/sys_hub_flow_variable', {
+                  flow: flowSysId,
+                  name: out.name,
+                  label: out.label || out.name,
+                  type: out.type || 'string',
+                  variable_type: 'output'
+                });
+                varsCreated++;
+              } catch (varError) { /* best-effort */ }
+            }
           }
-        }
 
-        // 3. Create action instances
-        var actionsCreated = 0;
-        for (var ai = 0; ai < activitiesArg.length; ai++) {
-          var activity = activitiesArg[ai];
+          // Best-effort snapshot
           try {
-            // Lookup action type definition
-            var actionTypeName = activity.type || 'script';
-            var actionTypeQuery = 'internal_nameLIKE' + actionTypeName + '^ORnameLIKE' + actionTypeName;
-
-            var actionDefResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
-              params: {
-                sysparm_query: actionTypeQuery,
-                sysparm_fields: 'sys_id,name,internal_name',
-                sysparm_limit: 1
-              }
-            });
-
-            var actionDefId = actionDefResp.data.result?.[0]?.sys_id;
-            var instanceData: any = {
-              flow: flowSysId,
-              name: activity.name,
-              order: (ai + 1) * 100,
-              active: true
-            };
-            if (actionDefId) {
-              instanceData.action_type = actionDefId;
-            }
-
-            await client.post('/api/now/table/sys_hub_action_instance', instanceData);
-            actionsCreated++;
-          } catch (actError) {
-            // Action creation is best-effort
-          }
+            await client.post('/api/sn_flow_designer/flow/snapshot', { flow_id: flowSysId });
+          } catch (snapError) { /* may not exist */ }
         }
 
-        // 4. Create flow variables (for subflows with inputs/outputs)
-        var varsCreated = 0;
-        if (isSubflow) {
-          for (var vi = 0; vi < inputsArg.length; vi++) {
-            var inp = inputsArg[vi];
-            try {
-              await client.post('/api/now/table/sys_hub_flow_variable', {
-                flow: flowSysId,
-                name: inp.name,
-                label: inp.label || inp.name,
-                type: inp.type || 'string',
-                mandatory: inp.mandatory || false,
-                default_value: inp.default_value || '',
-                variable_type: 'input'
-              });
-              varsCreated++;
-            } catch (varError) {
-              // Best-effort
-            }
-          }
-          for (var vo = 0; vo < outputsArg.length; vo++) {
-            var out = outputsArg[vo];
-            try {
-              await client.post('/api/now/table/sys_hub_flow_variable', {
-                flow: flowSysId,
-                name: out.name,
-                label: out.label || out.name,
-                type: out.type || 'string',
-                variable_type: 'output'
-              });
-              varsCreated++;
-            } catch (varError) {
-              // Best-effort
-            }
-          }
-        }
+        // ── Build summary ───────────────────────────────────────────
+        var methodLabel = usedMethod === 'scripted_rest_api'
+          ? 'Scripted REST API (GlideRecord)'
+          : 'Table API' + (factoryWarnings.length > 0 ? ' (fallback)' : '');
 
-        // 5. Best-effort snapshot
-        try {
-          await client.post('/api/sn_flow_designer/flow/snapshot', {
-            flow_id: flowSysId
-          });
-        } catch (snapError) {
-          // Snapshot API may not exist in all instances
-        }
-
-        // Build summary
         var createSummary = summary()
           .success('Created ' + (isSubflow ? 'subflow' : 'flow') + ': ' + flowName)
-          .field('sys_id', flowSysId)
+          .field('sys_id', flowSysId!)
           .field('Type', isSubflow ? 'Subflow' : 'Flow')
           .field('Category', flowCategory)
           .field('Status', shouldActivate ? 'Published (active)' : 'Draft')
-          .field('Method', 'Table API');
+          .field('Method', methodLabel);
+
+        if (versionCreated) {
+          createSummary.field('Version', 'v1.0 created');
+        }
 
         if (!isSubflow && triggerType !== 'manual') {
           createSummary.field('Trigger', triggerType + (triggerCreated ? ' (created)' : ' (best-effort)'));
@@ -432,10 +805,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (varsCreated > 0) {
           createSummary.field('Variables', varsCreated + ' created');
         }
+        for (var wi = 0; wi < factoryWarnings.length; wi++) {
+          createSummary.warning(factoryWarnings[wi]);
+        }
 
         return createSuccessResult({
           created: true,
-          method: 'table_api',
+          method: usedMethod,
+          version_created: versionCreated,
           flow: {
             sys_id: flowSysId,
             name: flowName,
@@ -452,7 +829,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           } : null,
           activities_created: actionsCreated,
           activities_requested: activitiesArg.length,
-          variables_created: varsCreated
+          variables_created: varsCreated,
+          warnings: factoryWarnings.length > 0 ? factoryWarnings : undefined
         }, {}, createSummary.build());
       }
 
@@ -805,5 +1183,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '1.0.0';
+export const version = '2.0.0';
 export const author = 'Snow-Flow Team';
