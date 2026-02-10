@@ -407,17 +407,32 @@ async function probeFlowFactoryNamespace(
     }
   }
 
-  // 5. Probe each candidate — GET on a POST-only endpoint
+  // 5. Probe each candidate — GET the /discover endpoint (a real GET handler)
+  //    If /discover doesn't exist yet, fall back to /create (expects 405)
   for (var j = 0; j < unique.length; j++) {
+    // Try /discover first (GET endpoint, returns 200 when namespace is correct)
+    try {
+      var discoverResp = await client.get('/api/' + unique[j] + '/' + FLOW_FACTORY_API_ID + '/discover');
+      if (discoverResp.status === 200 || discoverResp.data) {
+        return unique[j]; // Namespace confirmed via /discover
+      }
+    } catch (discoverErr: any) {
+      var ds = discoverErr.response?.status;
+      if (ds === 401 || ds === 403) {
+        return unique[j]; // Namespace correct but auth issue
+      }
+      // 404 = wrong namespace OR /discover not deployed yet, try /create
+    }
+    // Fallback: try /create (POST-only, expect 405 for correct namespace)
     try {
       await client.get('/api/' + unique[j] + '/' + FLOW_FACTORY_API_ID + '/create');
-      return unique[j]; // 200 = endpoint exists (unlikely but valid)
-    } catch (probeError: any) {
-      var status = probeError.response?.status;
-      if (status === 405 || status === 401 || status === 403) {
+      return unique[j]; // 200 = unexpected but valid
+    } catch (createErr: any) {
+      var cs = createErr.response?.status;
+      if (cs === 405 || cs === 401 || cs === 403) {
         return unique[j]; // Namespace correct — method or auth rejected
       }
-      // 404 = wrong namespace, try next
+      // 404 = wrong namespace, try next candidate
     }
   }
 
