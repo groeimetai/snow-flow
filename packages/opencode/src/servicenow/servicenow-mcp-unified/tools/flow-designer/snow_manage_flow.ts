@@ -59,6 +59,12 @@ async function createFlowViaScheduledJob(
     category: string;
     runAs: string;
     shouldActivate: boolean;
+    triggerType?: string;
+    triggerTable?: string;
+    triggerCondition?: string;
+    activities?: Array<{ name: string; type?: string; inputs?: any }>;
+    inputs?: Array<{ name: string; label?: string; type?: string; mandatory?: boolean; default_value?: string }>;
+    outputs?: Array<{ name: string; label?: string; type?: string }>;
   }
 ): Promise<{
   success: boolean;
@@ -85,6 +91,15 @@ async function createFlowViaScheduledJob(
     "    var flowCat = '" + escForScript(params.category) + "';",
     "    var runAs = '" + escForScript(params.runAs) + "';",
     "    var activate = " + (params.shouldActivate ? "true" : "false") + ";",
+    "    var trigType = '" + escForScript(params.triggerType || 'manual') + "';",
+    "    var trigTable = '" + escForScript(params.triggerTable || '') + "';",
+    "    var trigCondition = '" + escForScript(params.triggerCondition || '') + "';",
+    "    var activitiesJson = '" + escForScript(JSON.stringify(params.activities || [])) + "';",
+    "    var inputsJson = '" + escForScript(JSON.stringify(params.inputs || [])) + "';",
+    "    var outputsJson = '" + escForScript(JSON.stringify(params.outputs || [])) + "';",
+    "    var activities = []; try { activities = JSON.parse(activitiesJson); } catch(e) {}",
+    "    var inputs = []; try { inputs = JSON.parse(inputsJson); } catch(e) {}",
+    "    var outputs = []; try { outputs = JSON.parse(outputsJson); } catch(e) {}",
     "    var flowSysId = null;",
     "    var verSysId = null;",
     "",
@@ -139,6 +154,68 @@ async function createFlowViaScheduledJob(
     "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
     "        }",
     "      } catch(t2e) { r.steps.tier2 = { success: false, error: t2e.getMessage ? t2e.getMessage() : t2e + '' }; }",
+    "    }",
+    "",
+    // ── Trigger, action, variable creation (runs for any tier) ──
+    "    if (flowSysId) {",
+    // Trigger
+    "      if (!isSubflow && trigType !== 'manual') {",
+    "        try {",
+    "          var triggerMap = { 'record_created': 'sn_fd.trigger.record_created', 'record_updated': 'sn_fd.trigger.record_updated', 'scheduled': 'sn_fd.trigger.scheduled' };",
+    "          var trigIntName = triggerMap[trigType] || '';",
+    "          if (trigIntName) {",
+    "            var trigDef = new GlideRecord('sys_hub_action_type_definition');",
+    "            trigDef.addQuery('internal_name', trigIntName); trigDef.query();",
+    "            if (trigDef.next()) {",
+    "              var trigInst = new GlideRecord('sys_hub_trigger_instance');",
+    "              trigInst.initialize();",
+    "              trigInst.setValue('flow', flowSysId); trigInst.setValue('action_type', trigDef.getUniqueValue());",
+    "              trigInst.setValue('name', trigType); trigInst.setValue('order', 0); trigInst.setValue('active', true);",
+    "              if (trigTable) trigInst.setValue('table', trigTable);",
+    "              if (trigCondition) trigInst.setValue('condition', trigCondition);",
+    "              var trigId = trigInst.insert();",
+    "              r.steps.trigger = { success: !!trigId, sys_id: trigId + '' };",
+    "            } else { r.steps.trigger = { success: false, error: 'Trigger def not found: ' + trigIntName }; }",
+    "          }",
+    "        } catch(te) { r.steps.trigger = { success: false, error: te.getMessage ? te.getMessage() : te + '' }; }",
+    "      }",
+    // Actions
+    "      var actionsCreated = 0;",
+    "      for (var ai = 0; ai < activities.length; ai++) {",
+    "        try {",
+    "          var act = activities[ai];",
+    "          var actDef = new GlideRecord('sys_hub_action_type_definition');",
+    "          actDef.addQuery('internal_name', 'CONTAINS', act.type || 'script');",
+    "          actDef.addOrCondition('name', 'CONTAINS', act.type || 'script'); actDef.query();",
+    "          var actInst = new GlideRecord('sys_hub_action_instance');",
+    "          actInst.initialize();",
+    "          actInst.setValue('flow', flowSysId); actInst.setValue('name', act.name || 'Action ' + (ai + 1));",
+    "          actInst.setValue('order', (ai + 1) * 100); actInst.setValue('active', true);",
+    "          if (actDef.next()) actInst.setValue('action_type', actDef.getUniqueValue());",
+    "          if (actInst.insert()) actionsCreated++;",
+    "        } catch(ae) {}",
+    "      }",
+    "      r.steps.actions = { success: true, created: actionsCreated, requested: activities.length };",
+    // Variables (subflows)
+    "      var varsCreated = 0;",
+    "      if (isSubflow) {",
+    "        for (var vi = 0; vi < inputs.length; vi++) {",
+    "          try { var inp = inputs[vi]; var fv = new GlideRecord('sys_hub_flow_variable'); fv.initialize();",
+    "            fv.setValue('flow', flowSysId); fv.setValue('name', inp.name); fv.setValue('label', inp.label || inp.name);",
+    "            fv.setValue('type', inp.type || 'string'); fv.setValue('mandatory', inp.mandatory || false);",
+    "            fv.setValue('default_value', inp.default_value || ''); fv.setValue('variable_type', 'input');",
+    "            if (fv.insert()) varsCreated++;",
+    "          } catch(ve) {}",
+    "        }",
+    "        for (var vo = 0; vo < outputs.length; vo++) {",
+    "          try { var ot = outputs[vo]; var ov = new GlideRecord('sys_hub_flow_variable'); ov.initialize();",
+    "            ov.setValue('flow', flowSysId); ov.setValue('name', ot.name); ov.setValue('label', ot.label || ot.name);",
+    "            ov.setValue('type', ot.type || 'string'); ov.setValue('variable_type', 'output');",
+    "            if (ov.insert()) varsCreated++;",
+    "          } catch(ve) {}",
+    "        }",
+    "      }",
+    "      r.steps.variables = { success: true, created: varsCreated };",
     "    }",
     "",
     "    r.flow_sys_id = flowSysId ? flowSysId + '' : null;",
@@ -1284,7 +1361,15 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               isSubflow: isSubflow,
               category: flowCategory,
               runAs: flowRunAs,
-              shouldActivate: shouldActivate
+              shouldActivate: shouldActivate,
+              triggerType: triggerType,
+              triggerTable: flowTable,
+              triggerCondition: triggerCondition,
+              activities: activitiesArg.map(function (act: any, idx: number) {
+                return { name: act.name, type: act.type || 'script', inputs: act.inputs || {} };
+              }),
+              inputs: inputsArg,
+              outputs: outputsArg
             });
             diagnostics.scheduled_job = {
               success: scheduledResult.success,
@@ -1301,6 +1386,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               diagnostics.version_created = versionCreated;
               diagnostics.version_method = 'scheduled_job';
               diagnostics.latest_version_auto_set = scheduledResult.latestVersionSet;
+              // Extract trigger/action/variable results from scheduled job
+              if (scheduledResult.steps?.trigger) {
+                triggerCreated = !!scheduledResult.steps.trigger.success;
+                if (!scheduledResult.steps.trigger.success && scheduledResult.steps.trigger.error) {
+                  factoryWarnings.push('Trigger: ' + scheduledResult.steps.trigger.error);
+                }
+              }
+              if (scheduledResult.steps?.actions) {
+                actionsCreated = scheduledResult.steps.actions.created || 0;
+              }
+              if (scheduledResult.steps?.variables) {
+                varsCreated = scheduledResult.steps.variables.created || 0;
+              }
             }
           } catch (schedErr: any) {
             diagnostics.scheduled_job = { error: schedErr.message || 'unknown' };
