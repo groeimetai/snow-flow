@@ -343,39 +343,53 @@ var FLOW_FACTORY_SCRIPT = [
 ].join('\n');
 
 /**
- * Probe the ServiceNow instance to discover the correct URL namespace for
- * the Flow Factory Scripted REST API. Sends GET requests to candidate
- * namespaces — a 405 (Method Not Allowed) or 401/403 confirms the namespace
- * exists, while 404 means wrong namespace.
+ * Resolve the REST API namespace for a sys_ws_definition record.
+ * Uses dot-walking to read the scope string from the related sys_scope record,
+ * which is deterministic and doesn't depend on endpoint registration timing.
+ * Falls back to HTTP probing if dot-walking fails.
  */
-async function probeFlowFactoryNamespace(
+async function resolveFactoryNamespace(
   client: any,
   apiSysId: string,
   instanceUrl: string
 ): Promise<string | null> {
-  // Build candidate list from multiple sources
-  var candidates: string[] = [];
+  // ── Strategy 1: Dot-walk to sys_scope.scope (deterministic) ──
+  try {
+    var dotWalkResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
+      params: {
+        sysparm_fields: 'namespace,namespace.scope',
+        sysparm_display_value: 'false'
+      }
+    });
+    var scopeStr = dotWalkResp.data.result?.['namespace.scope'];
+    if (scopeStr && typeof scopeStr === 'string' && scopeStr.length > 0) {
+      return scopeStr;
+    }
+  } catch (_) {}
 
-  // 1. Read back the record's namespace field
+  // ── Strategy 2: Read namespace field with display_value=all ──
   try {
     var nsResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
-      params: { sysparm_fields: 'sys_id,api_id,namespace', sysparm_display_value: 'all' }
+      params: { sysparm_fields: 'namespace', sysparm_display_value: 'all' }
     });
-    var record = nsResp.data.result || {};
-    var ns = record.namespace;
+    var ns = nsResp.data.result?.namespace;
     if (ns) {
+      // If it's a reference object, extract useful values
       if (typeof ns === 'object') {
         var dv = ns.display_value || '';
         var val = ns.value || '';
-        if (dv && /^(x_|sn_)/.test(dv)) candidates.push(dv);
-        if (val && /^(x_|sn_)/.test(val)) candidates.push(val);
-      } else if (typeof ns === 'string' && ns.length > 0 && ns !== 'Global' && ns !== 'global') {
-        candidates.push(ns);
+        // display_value might be the scope string itself (e.g. "global", "x_snflw")
+        if (dv && dv !== 'Global') return dv;
+        // If display_value is "Global", the scope string is typically "global"
+        if (dv === 'Global') return 'global';
+        if (val && val.length > 0) return val;
+      } else if (typeof ns === 'string' && ns.length > 0) {
+        return ns === 'Global' ? 'global' : ns;
       }
     }
   } catch (_) {}
 
-  // 2. Company code from sys_properties
+  // ── Strategy 3: Company code from sys_properties ──
   try {
     var compResp = await client.get('/api/now/table/sys_properties', {
       params: {
@@ -385,64 +399,41 @@ async function probeFlowFactoryNamespace(
       }
     });
     var companyCode = compResp.data.result?.[0]?.value;
-    if (companyCode) candidates.push(companyCode);
+    if (companyCode) return companyCode;
   } catch (_) {}
 
-  // 3. Instance subdomain (e.g. "dev351277" from "https://dev351277.service-now.com")
+  // ── Strategy 4: HTTP probing as last resort ──
+  var probeCandidates = ['global', 'now'];
   try {
     var match = instanceUrl.match(/https?:\/\/([^.]+)\./);
-    if (match && match[1]) candidates.push(match[1]);
+    if (match && match[1]) probeCandidates.push(match[1]);
   } catch (_) {}
 
-  // 4. Fixed fallbacks
-  candidates.push('now', 'global');
-
-  // Deduplicate
-  var seen: Record<string, boolean> = {};
-  var unique: string[] = [];
-  for (var i = 0; i < candidates.length; i++) {
-    if (!seen[candidates[i]]) {
-      seen[candidates[i]] = true;
-      unique.push(candidates[i]);
+  for (var j = 0; j < probeCandidates.length; j++) {
+    try {
+      var probeResp = await client.get('/api/' + probeCandidates[j] + '/' + FLOW_FACTORY_API_ID + '/discover');
+      if (probeResp.status === 200 || probeResp.data) return probeCandidates[j];
+    } catch (probeErr: any) {
+      var ps = probeErr.response?.status;
+      if (ps === 401 || ps === 403 || ps === 405) return probeCandidates[j];
     }
   }
 
-  // 5. Probe each candidate — GET the /discover endpoint (a real GET handler)
-  //    If /discover doesn't exist yet, fall back to /create (expects 405)
-  for (var j = 0; j < unique.length; j++) {
-    // Try /discover first (GET endpoint, returns 200 when namespace is correct)
-    try {
-      var discoverResp = await client.get('/api/' + unique[j] + '/' + FLOW_FACTORY_API_ID + '/discover');
-      if (discoverResp.status === 200 || discoverResp.data) {
-        return unique[j]; // Namespace confirmed via /discover
-      }
-    } catch (discoverErr: any) {
-      var ds = discoverErr.response?.status;
-      if (ds === 401 || ds === 403) {
-        return unique[j]; // Namespace correct but auth issue
-      }
-      // 404 = wrong namespace OR /discover not deployed yet, try /create
-    }
-    // Fallback: try /create (POST-only, expect 405 for correct namespace)
-    try {
-      await client.get('/api/' + unique[j] + '/' + FLOW_FACTORY_API_ID + '/create');
-      return unique[j]; // 200 = unexpected but valid
-    } catch (createErr: any) {
-      var cs = createErr.response?.status;
-      if (cs === 405 || cs === 401 || cs === 403) {
-        return unique[j]; // Namespace correct — method or auth rejected
-      }
-      // 404 = wrong namespace, try next candidate
-    }
-  }
-
-  return null; // No namespace matched — factory unreachable
+  return null;
 }
 
 /**
  * Ensure the Flow Factory Scripted REST API exists on the ServiceNow instance.
  * Idempotent — checks cache first, then instance, deploys only if missing.
- * Uses namespace probing (HTTP GET) instead of record field parsing.
+ *
+ * Namespace resolution strategy:
+ *   1. Dot-walk to sys_scope.scope from the API record (deterministic, no HTTP probing)
+ *   2. Read namespace field with display_value=all (fallback)
+ *   3. Company code from sys_properties (fallback)
+ *   4. HTTP probing to /discover and /create endpoints (last resort)
+ *
+ * Stale API detection: if the API exists but has no /discover endpoint
+ * (created by an older tool version), it is deleted and redeployed.
  */
 async function ensureFlowFactoryAPI(
   client: any,
@@ -460,7 +451,7 @@ async function ensureFlowFactoryAPI(
 
   _bootstrapPromise = (async () => {
     try {
-      // 3. Check if API already exists on instance (query by api_id, more reliable than name)
+      // 3. Check if API already exists on instance
       var checkResp = await client.get('/api/now/table/sys_ws_definition', {
         params: {
           sysparm_query: 'api_id=' + FLOW_FACTORY_API_ID,
@@ -471,21 +462,36 @@ async function ensureFlowFactoryAPI(
 
       if (checkResp.data.result && checkResp.data.result.length > 0) {
         var existing = checkResp.data.result[0];
-        var ns = await probeFlowFactoryNamespace(client, existing.sys_id, instanceUrl);
-        if (!ns) {
-          // Namespace can't be resolved — the API is stale (e.g. created by an older version
-          // without the /discover endpoint, or ServiceNow REST framework hasn't registered it).
-          // Delete and redeploy with current v5 scripts.
+        var ns = await resolveFactoryNamespace(client, existing.sys_id, instanceUrl);
+
+        if (ns) {
+          // Verify the API has v5 endpoints (check /discover exists)
+          var hasDiscover = false;
           try {
-            await client.delete('/api/now/table/sys_ws_definition/' + existing.sys_id);
-          } catch (_) {
-            // If delete fails, try to continue anyway — deployment step will error if API ID conflicts
+            var verifyResp = await client.get('/api/' + ns + '/' + FLOW_FACTORY_API_ID + '/discover');
+            hasDiscover = verifyResp.status === 200 || !!verifyResp.data;
+          } catch (verifyErr: any) {
+            var vs = verifyErr.response?.status;
+            // 401/403 = endpoint exists but auth issue; 405 = exists but wrong method
+            hasDiscover = vs === 401 || vs === 403 || vs === 405;
           }
-          // Fall through to step 4 (deploy fresh)
-        } else {
-          _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
-          return { namespace: ns, apiSysId: existing.sys_id };
+
+          if (hasDiscover) {
+            _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
+            return { namespace: ns, apiSysId: existing.sys_id };
+          }
+          // /discover missing → stale API from older version, fall through to delete
         }
+
+        // Delete stale API and redeploy with current scripts
+        invalidateFlowFactoryCache();
+        try {
+          await client.delete('/api/now/table/sys_ws_definition/' + existing.sys_id);
+        } catch (_) {
+          // If delete fails, try deployment anyway — will error on duplicate api_id
+        }
+        // Brief pause to let ServiceNow finalize the delete
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       // 4. Deploy the Scripted REST API (do NOT set namespace — let ServiceNow assign it)
@@ -504,7 +510,7 @@ async function ensureFlowFactoryAPI(
         throw new Error('Failed to create Scripted REST API definition — no sys_id returned');
       }
 
-      // 5. Deploy the POST /create resource
+      // 5a. Deploy the POST /create resource
       try {
         await client.post('/api/now/table/sys_ws_operation', {
           web_service_definition: apiSysId,
@@ -540,18 +546,25 @@ async function ensureFlowFactoryAPI(
         // Non-fatal: create endpoint is more important than discover
       }
 
-      // 6. Wait for ServiceNow REST framework to register the new endpoints
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // 6. Resolve namespace — read directly from the record (deterministic)
+      var resolvedNs = await resolveFactoryNamespace(client, apiSysId, instanceUrl);
 
-      // 7. Probe to discover the namespace ServiceNow assigned
-      var resolvedNs = await probeFlowFactoryNamespace(client, apiSysId, instanceUrl);
+      // 7. If direct resolution failed, wait for REST framework and retry
       if (!resolvedNs) {
-        // Retry once after extra delay — some instances are slow to register
         await new Promise(resolve => setTimeout(resolve, 3000));
-        resolvedNs = await probeFlowFactoryNamespace(client, apiSysId, instanceUrl);
+        resolvedNs = await resolveFactoryNamespace(client, apiSysId, instanceUrl);
       }
       if (!resolvedNs) {
-        throw new Error('Flow Factory API created (sys_id=' + apiSysId + ') but namespace could not be resolved via HTTP probing after 6s delay');
+        // Last resort: try 'global' (most common for PDI instances)
+        try {
+          var globalTest = await client.get('/api/global/' + FLOW_FACTORY_API_ID + '/discover');
+          if (globalTest.status === 200 || globalTest.data) resolvedNs = 'global';
+        } catch (gtErr: any) {
+          if (gtErr.response?.status === 401 || gtErr.response?.status === 403) resolvedNs = 'global';
+        }
+      }
+      if (!resolvedNs) {
+        throw new Error('Flow Factory deployed (sys_id=' + apiSysId + ') but namespace could not be resolved. This may indicate a ServiceNow scope/permissions issue.');
       }
 
       _flowFactoryCache = { apiSysId: apiSysId, namespace: resolvedNs, timestamp: Date.now() };
