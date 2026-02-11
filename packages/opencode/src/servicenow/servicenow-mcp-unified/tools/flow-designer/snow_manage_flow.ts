@@ -1102,34 +1102,72 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           flowSysId = createdFlow.sys_id;
 
           // Create sys_hub_flow_version via Table API (critical for Flow Designer UI)
+          // Strategy: INSERT as draft → UPDATE to published/compiled
+          // The UPDATE triggers Business Rules that compile the flow and set latest_version
           try {
-            var versionData: any = {
+            // Step 1: INSERT version as DRAFT (minimal fields)
+            var versionInsertData: any = {
               flow: flowSysId,
               name: '1.0',
               version: '1.0',
-              state: shouldActivate ? 'published' : 'draft',
-              active: true,
-              compile_state: 'compiled',
-              is_current: true,
-              flow_definition: JSON.stringify(flowDefinition)
+              state: 'draft',
+              active: false,
+              compile_state: 'draft',
+              is_current: false,
+              internal_name: sanitizeInternalName(flowName) + '_v1_0'
             };
-            if (shouldActivate) versionData.published_flow = flowSysId;
-            var versionResp = await client.post('/api/now/table/sys_hub_flow_version', versionData);
+            var versionResp = await client.post('/api/now/table/sys_hub_flow_version', versionInsertData);
             var versionSysId = versionResp.data.result?.sys_id;
+
             if (versionSysId) {
+              // Step 2: UPDATE version → triggers compilation Business Rules
+              var versionUpdateData: any = {
+                state: shouldActivate ? 'published' : 'draft',
+                active: true,
+                compile_state: 'compiled',
+                is_current: true,
+                flow_definition: JSON.stringify(flowDefinition)
+              };
+              if (shouldActivate) versionUpdateData.published_flow = flowSysId;
+              try {
+                await client.patch('/api/now/table/sys_hub_flow_version/' + versionSysId, versionUpdateData);
+              } catch (updateErr: any) {
+                diagnostics.version_update_error = updateErr.message || 'unknown';
+              }
+
               versionCreated = true;
               diagnostics.version_created = true;
-              diagnostics.version_method = 'table_api';
-              diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow'];
-              // Link flow to its version
+              diagnostics.version_method = 'table_api (draft→update)';
+              diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow', 'internal_name'];
+
+              // Step 3: Check if BRs auto-set latest_version on the flow
+              await new Promise(resolve => setTimeout(resolve, 1000));
               try {
-                await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
-                  latest_version: versionSysId
+                var flowCheck = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
+                  params: { sysparm_fields: 'latest_version', sysparm_display_value: 'false' }
                 });
-              } catch (linkError) {
-                // Version exists but link failed — still better than no version
-                factoryWarnings.push('Version created but latest_version link failed');
-              }
+                var autoLinked = !!(flowCheck.data.result?.latest_version);
+                diagnostics.latest_version_auto_set = autoLinked;
+
+                // Step 4: If BRs didn't set it, explicitly PATCH + verify
+                if (!autoLinked) {
+                  try {
+                    var linkResp = await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
+                      latest_version: versionSysId,
+                      latest_published_version: shouldActivate ? versionSysId : undefined
+                    });
+                    diagnostics.latest_version_patch_status = linkResp.status;
+                    // Immediate readback
+                    var readback = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
+                      params: { sysparm_fields: 'latest_version', sysparm_display_value: 'false' }
+                    });
+                    diagnostics.latest_version_after_patch = readback.data.result?.latest_version || 'null';
+                  } catch (linkError: any) {
+                    diagnostics.latest_version_patch_error = linkError.message || 'unknown';
+                    factoryWarnings.push('latest_version link failed: ' + (linkError.message || linkError));
+                  }
+                }
+              } catch (_) {}
             }
           } catch (verError: any) {
             factoryWarnings.push('sys_hub_flow_version creation failed: ' + (verError.message || verError));
@@ -1259,16 +1297,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (flowSysId) {
           try {
             var verifyResp = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
-              params: { sysparm_fields: 'sys_id,name,latest_version' }
+              params: {
+                sysparm_fields: 'sys_id,name,latest_version,latest_published_version,internal_name',
+                sysparm_display_value: 'false'
+              }
             });
             var verifyFlow = verifyResp.data.result;
-            var hasLatestVersion = !!(verifyFlow && verifyFlow.latest_version);
+            var latestVersionVal = verifyFlow?.latest_version || null;
+            var hasLatestVersion = !!latestVersionVal;
 
-            // Check if version record exists
+            // Check version record details
             var verCheckResp = await client.get('/api/now/table/sys_hub_flow_version', {
               params: {
                 sysparm_query: 'flow=' + flowSysId,
-                sysparm_fields: 'sys_id,name,state,compile_state,is_current',
+                sysparm_fields: 'sys_id,name,state,compile_state,is_current,active,internal_name',
                 sysparm_limit: 1
               }
             });
@@ -1277,44 +1319,35 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
             diagnostics.post_verify = {
               flow_exists: true,
+              flow_internal_name: verifyFlow?.internal_name || 'not set',
+              latest_version_value: latestVersionVal || 'null',
+              latest_published_version: verifyFlow?.latest_published_version || 'null',
               has_latest_version_ref: hasLatestVersion,
               version_record_exists: hasVersionRecord,
               version_details: hasVersionRecord ? {
                 sys_id: verRecords[0].sys_id,
                 state: verRecords[0].state,
                 compile_state: verRecords[0].compile_state,
-                is_current: verRecords[0].is_current
+                is_current: verRecords[0].is_current,
+                active: verRecords[0].active,
+                internal_name: verRecords[0].internal_name || 'not set'
               } : null
             };
 
-            // If version record is missing, retry creation
-            if (!hasVersionRecord && !versionCreated) {
+            // If latest_version still not set and version exists, try one more time
+            if (!hasLatestVersion && hasVersionRecord) {
               try {
-                var retryVersionData: any = {
-                  flow: flowSysId,
-                  name: '1.0',
-                  version: '1.0',
-                  state: shouldActivate ? 'published' : 'draft',
-                  active: true,
-                  compile_state: 'compiled',
-                  is_current: true,
-                  flow_definition: JSON.stringify(flowDefinition)
-                };
-                if (shouldActivate) retryVersionData.published_flow = flowSysId;
-
-                var retryVerResp = await client.post('/api/now/table/sys_hub_flow_version', retryVersionData);
-                var retryVerSysId = retryVerResp.data.result?.sys_id;
-                if (retryVerSysId) {
-                  versionCreated = true;
-                  diagnostics.version_created = true;
-                  diagnostics.version_method = (diagnostics.version_method || 'table_api') + ' (retry)';
-                  try {
-                    await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, { latest_version: retryVerSysId });
-                  } catch (_) {}
-                  factoryWarnings.push('Version record was missing — created via post-verify retry');
-                }
-              } catch (retryErr: any) {
-                factoryWarnings.push('Post-verify version retry failed: ' + (retryErr.message || retryErr));
+                await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
+                  latest_version: verRecords[0].sys_id,
+                  latest_published_version: shouldActivate ? verRecords[0].sys_id : undefined
+                });
+                // Readback
+                var finalCheck = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
+                  params: { sysparm_fields: 'latest_version', sysparm_display_value: 'false' }
+                });
+                diagnostics.post_verify.latest_version_final = finalCheck.data.result?.latest_version || 'still null';
+              } catch (finalLinkErr: any) {
+                diagnostics.post_verify.latest_version_final_error = finalLinkErr.message || 'unknown';
               }
             }
           } catch (verifyErr: any) {
