@@ -27,6 +27,10 @@ import open from "open"
 export namespace MCP {
   const log = Log.create({ service: "mcp" })
   const DEFAULT_TIMEOUT = 30_000
+  const LAZY_TOOL_THRESHOLD = 10
+
+  // Cache of full tool definitions per MCP server for client-side lazy loading
+  const lazyToolCache = new Map<string, { tools: MCPToolDef[]; client: MCPClient }>()
 
   export const Resource = z
     .object({
@@ -112,6 +116,18 @@ export namespace MCP {
   function registerNotificationHandlers(client: MCPClient, serverName: string) {
     client.setNotificationHandler(ToolListChangedNotificationSchema, async () => {
       log.info("tools list changed notification received", { server: serverName })
+      // Refresh lazy tool cache if this server uses lazy loading
+      const cached = lazyToolCache.get(serverName)
+      if (cached) {
+        const refreshed = await client.listTools().catch((e) => {
+          log.error("failed to refresh lazy tool cache", { server: serverName, error: e.message })
+          return undefined
+        })
+        if (refreshed) {
+          lazyToolCache.set(serverName, { tools: refreshed.tools, client })
+          log.info("lazy tool cache refreshed", { server: serverName, toolCount: refreshed.tools.length })
+        }
+      }
       Bus.publish(ToolsChanged, { server: serverName })
     })
   }
@@ -142,6 +158,107 @@ export namespace MCP {
             resetTimeoutOnProgress: true,
             timeout,
           },
+        )
+      },
+    })
+  }
+
+  // Create a client-side tool_search meta-tool for lazy loading
+  function createClientToolSearch(serverName: string): Tool {
+    return dynamicTool({
+      description:
+        `Search for available tools on the "${serverName}" MCP server. ` +
+        "Use this to discover tools by keyword before executing them. " +
+        "Returns matching tool names, descriptions, and input schemas.",
+      inputSchema: jsonSchema({
+        type: "object" as const,
+        properties: {
+          query: {
+            type: "string" as const,
+            description: "Search query to match against tool names and descriptions",
+          },
+          limit: {
+            type: "number" as const,
+            description: "Maximum number of results to return (default: 10)",
+          },
+        },
+        required: ["query"],
+        additionalProperties: false,
+      }),
+      execute: async (args: unknown) => {
+        const { query, limit = 10 } = args as { query: string; limit?: number }
+        const cached = lazyToolCache.get(serverName)
+        if (!cached) return { content: [{ type: "text", text: "No tools cached for this server" }] }
+
+        const lowerQuery = query.toLowerCase()
+        const keywords = lowerQuery.split(/\s+/)
+        const matches = cached.tools
+          .map((tool) => {
+            const name = (tool.name ?? "").toLowerCase()
+            const desc = (tool.description ?? "").toLowerCase()
+            const text = name + " " + desc
+            const score = keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0)
+            return { tool, score }
+          })
+          .filter((m) => m.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit)
+
+        const results = matches.map((m) => ({
+          name: m.tool.name,
+          description: m.tool.description ?? "",
+          inputSchema: m.tool.inputSchema,
+        }))
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+        }
+      },
+    })
+  }
+
+  // Create a client-side tool_execute meta-tool for lazy loading
+  function createClientToolExecute(serverName: string, timeout?: number): Tool {
+    return dynamicTool({
+      description:
+        `Execute a tool on the "${serverName}" MCP server by name. ` +
+        "Use tool_search first to find the right tool and its required arguments.",
+      inputSchema: jsonSchema({
+        type: "object" as const,
+        properties: {
+          tool: {
+            type: "string" as const,
+            description: "The exact name of the tool to execute",
+          },
+          args: {
+            type: "object" as const,
+            description: "Arguments to pass to the tool",
+            additionalProperties: true,
+          },
+        },
+        required: ["tool"],
+        additionalProperties: false,
+      }),
+      execute: async (input: unknown) => {
+        const { tool: toolName, args = {} } = input as { tool: string; args?: Record<string, unknown> }
+        const cached = lazyToolCache.get(serverName)
+        if (!cached) return { content: [{ type: "text", text: "No tools cached for this server" }] }
+
+        const toolDef = cached.tools.find((t) => t.name === toolName)
+        if (!toolDef)
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Tool "${toolName}" not found. Use tool_search to find available tools.`,
+              },
+            ],
+          }
+
+        return cached.client.callTool(
+          { name: toolName, arguments: args },
+          CallToolResultSchema,
+          { resetTimeoutOnProgress: true, timeout },
         )
       },
     })
@@ -671,8 +788,38 @@ export namespace MCP {
       const mcpConfig = config[clientName]
       const entry = isMcpConfigured(mcpConfig) ? mcpConfig : undefined
       const timeout = entry?.timeout ?? defaultTimeout
+      const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")
+
+      // Client-side lazy loading: if server returns too many tools, consolidate into meta-tools
+      if (toolsResult.tools.length > LAZY_TOOL_THRESHOLD) {
+        // Check if server already provides tool_search/tool_execute
+        const hasServerSearch = toolsResult.tools.some((t) => t.name === "tool_search")
+        const hasServerExecute = toolsResult.tools.some((t) => t.name === "tool_execute")
+
+        if (hasServerSearch && hasServerExecute) {
+          // Server has its own meta-tools — only include those two
+          for (const mcpTool of toolsResult.tools) {
+            if (mcpTool.name === "tool_search" || mcpTool.name === "tool_execute") {
+              const sanitizedToolName = mcpTool.name.replace(/[^a-zA-Z0-9_-]/g, "_")
+              result[sanitizedClientName + "_" + sanitizedToolName] = await convertMcpTool(mcpTool, client, timeout)
+            }
+          }
+        } else {
+          // Create client-side meta-tools
+          lazyToolCache.set(clientName, { tools: toolsResult.tools, client })
+          result[sanitizedClientName + "_tool_search"] = createClientToolSearch(clientName)
+          result[sanitizedClientName + "_tool_execute"] = createClientToolExecute(clientName, timeout)
+        }
+
+        log.info("lazy loading enabled for MCP server", {
+          server: clientName,
+          toolCount: toolsResult.tools.length,
+          serverSideMeta: hasServerSearch && hasServerExecute,
+        })
+        continue
+      }
+
       for (const mcpTool of toolsResult.tools) {
-        const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")
         const sanitizedToolName = mcpTool.name.replace(/[^a-zA-Z0-9_-]/g, "_")
         result[sanitizedClientName + "_" + sanitizedToolName] = await convertMcpTool(mcpTool, client, timeout)
       }
