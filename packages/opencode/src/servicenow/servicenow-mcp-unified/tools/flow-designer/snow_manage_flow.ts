@@ -165,24 +165,45 @@ async function createFlowViaScheduledJob(
     "",
     // ── Trigger, action, variable creation (runs for any tier) ──
     "    if (flowSysId) {",
-    // Trigger
+    // Trigger — search broadly for trigger definition (internal_name varies per instance)
     "      if (!isSubflow && trigType !== 'manual') {",
     "        try {",
-    "          var triggerMap = { 'record_created': 'sn_fd.trigger.record_created', 'record_updated': 'sn_fd.trigger.record_updated', 'scheduled': 'sn_fd.trigger.scheduled' };",
-    "          var trigIntName = triggerMap[trigType] || '';",
-    "          if (trigIntName) {",
-    "            var trigDef = new GlideRecord('sys_hub_action_type_definition');",
-    "            trigDef.addQuery('internal_name', trigIntName); trigDef.query();",
-    "            if (trigDef.next()) {",
-    "              var trigInst = new GlideRecord('sys_hub_trigger_instance');",
-    "              trigInst.initialize();",
-    "              trigInst.setValue('flow', flowSysId); trigInst.setValue('action_type', trigDef.getUniqueValue());",
-    "              trigInst.setValue('name', trigType); trigInst.setValue('order', 0); trigInst.setValue('active', true);",
-    "              if (trigTable) trigInst.setValue('table', trigTable);",
-    "              if (trigCondition) trigInst.setValue('condition', trigCondition);",
-    "              var trigId = trigInst.insert();",
-    "              r.steps.trigger = { success: !!trigId, sys_id: trigId + '' };",
-    "            } else { r.steps.trigger = { success: false, error: 'Trigger def not found: ' + trigIntName }; }",
+    "          var trigSearchTerms = {",
+    "            'record_created': ['record_created', 'record_insert', 'created'],",
+    "            'record_updated': ['record_updated', 'record_update', 'updated'],",
+    "            'scheduled': ['scheduled', 'timer', 'schedule']",
+    "          };",
+    "          var terms = trigSearchTerms[trigType] || [trigType];",
+    "          var trigDef = null;",
+    "          var trigDefId = null;",
+    "          var trigSearchLog = [];",
+    "          for (var ts = 0; ts < terms.length; ts++) {",
+    "            var tg = new GlideRecord('sys_hub_action_type_definition');",
+    "            tg.addQuery('internal_name', 'CONTAINS', terms[ts]);",
+    "            tg.addQuery('type', 'trigger');",
+    "            tg.setLimit(1); tg.query();",
+    "            if (tg.next()) { trigDef = tg; trigDefId = tg.getUniqueValue(); trigSearchLog.push(terms[ts] + ':found'); break; }",
+    "            trigSearchLog.push(terms[ts] + ':not_found');",
+    "          }",
+    "          if (!trigDefId) {",
+    "            var tg2 = new GlideRecord('sys_hub_action_type_definition');",
+    "            tg2.addQuery('name', 'CONTAINS', trigType.replace('_', ' '));",
+    "            tg2.addQuery('type', 'trigger');",
+    "            tg2.setLimit(1); tg2.query();",
+    "            if (tg2.next()) { trigDef = tg2; trigDefId = tg2.getUniqueValue(); trigSearchLog.push('name_search:found'); }",
+    "            else { trigSearchLog.push('name_search:not_found'); }",
+    "          }",
+    "          if (trigDefId) {",
+    "            var trigInst = new GlideRecord('sys_hub_trigger_instance');",
+    "            trigInst.initialize();",
+    "            trigInst.setValue('flow', flowSysId); trigInst.setValue('action_type', trigDefId);",
+    "            trigInst.setValue('name', trigType); trigInst.setValue('order', 0); trigInst.setValue('active', true);",
+    "            if (trigTable) trigInst.setValue('table', trigTable);",
+    "            if (trigCondition) trigInst.setValue('condition', trigCondition);",
+    "            var trigId = trigInst.insert();",
+    "            r.steps.trigger = { success: !!trigId, sys_id: trigId + '', def_name: trigDef.getValue('name'), search: trigSearchLog };",
+    "          } else {",
+    "            r.steps.trigger = { success: false, error: 'No trigger def found', search: trigSearchLog };",
     "          }",
     "        } catch(te) { r.steps.trigger = { success: false, error: te.getMessage ? te.getMessage() : te + '' }; }",
     "      }",
@@ -224,39 +245,28 @@ async function createFlowViaScheduledJob(
     "      }",
     "      r.steps.variables = { success: true, created: varsCreated };",
     "",
-    // ── Engine registration (server-side sn_fd APIs) ──
-    "      r.steps.engine = { apis_found: [] };",
+    // ── Engine probe (discovery only — do NOT call publish/compile) ──
+    // Previous versions called FlowAPI.publish() which caused StackOverflowError
+    // and corrupted the flow. Now we only probe which APIs exist for diagnostics.
+    // The flow is left as a clean draft; user publishes via Flow Designer UI.
+    "      r.steps.engine = { apis_found: [], mode: 'probe_only' };",
     "      try {",
     "        if (typeof sn_fd !== 'undefined') {",
     "          r.steps.engine.sn_fd = 'available';",
-    "          if (sn_fd.FlowDesigner) {",
-    "            r.steps.engine.apis_found.push('FlowDesigner');",
-    "            if (typeof sn_fd.FlowDesigner.publishFlow === 'function') {",
-    "              try {",
-    "                sn_fd.FlowDesigner.publishFlow(flowSysId);",
-    "                r.steps.engine.publish = 'success';",
-    "              } catch(pe) { r.steps.engine.publish = pe.getMessage ? pe.getMessage() : pe + ''; }",
-    "            }",
-    "          }",
-    "          if (sn_fd.FlowCompiler) {",
-    "            r.steps.engine.apis_found.push('FlowCompiler');",
-    "            if (typeof sn_fd.FlowCompiler.compile === 'function') {",
-    "              try {",
-    "                sn_fd.FlowCompiler.compile(flowSysId);",
-    "                r.steps.engine.compile = 'success';",
-    "              } catch(ce) { r.steps.engine.compile = ce.getMessage ? ce.getMessage() : ce + ''; }",
-    "            }",
-    "          }",
-    "          var otherApis = ['FlowAPI', 'FlowPublisher'];",
-    "          for (var oa = 0; oa < otherApis.length; oa++) {",
-    "            if (sn_fd[otherApis[oa]]) {",
-    "              r.steps.engine.apis_found.push(otherApis[oa]);",
-    "              var apiObj = sn_fd[otherApis[oa]];",
-    "              if (typeof apiObj.publish === 'function') {",
-    "                try { apiObj.publish(flowSysId); r.steps.engine[otherApis[oa] + '_publish'] = 'success'; }",
-    "                catch(e) { r.steps.engine[otherApis[oa] + '_publish'] = e + ''; }",
+    "          var probeNames = ['FlowDesigner', 'FlowCompiler', 'FlowAPI', 'FlowPublisher'];",
+    "          for (var pn = 0; pn < probeNames.length; pn++) {",
+    "            try {",
+    "              if (sn_fd[probeNames[pn]]) {",
+    "                r.steps.engine.apis_found.push(probeNames[pn]);",
+    "                var methods = [];",
+    "                var pObj = sn_fd[probeNames[pn]];",
+    "                var checkMethods = ['createFlow','publishFlow','activateFlow','compileFlow','compile','publish','getFlow'];",
+    "                for (var cm = 0; cm < checkMethods.length; cm++) {",
+    "                  if (typeof pObj[checkMethods[cm]] === 'function') methods.push(checkMethods[cm]);",
+    "                }",
+    "                if (methods.length > 0) r.steps.engine[probeNames[pn] + '_methods'] = methods;",
     "              }",
-    "            }",
+    "            } catch(e) {}",
     "          }",
     "        } else {",
     "          r.steps.engine.sn_fd = 'unavailable';",
@@ -1466,39 +1476,53 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           }
 
           // Create trigger instance (non-manual flows only)
+          // Search broadly — internal_name varies across ServiceNow instances
           if (!isSubflow && triggerType !== 'manual') {
             try {
-              var triggerTypeLookup: Record<string, string> = {
-                'record_created': 'sn_fd.trigger.record_created',
-                'record_updated': 'sn_fd.trigger.record_updated',
-                'scheduled': 'sn_fd.trigger.scheduled'
+              var trigSearchTerms: Record<string, string[]> = {
+                'record_created': ['record_created', 'record_insert', 'created'],
+                'record_updated': ['record_updated', 'record_update', 'updated'],
+                'scheduled': ['scheduled', 'timer', 'schedule']
               };
-              var triggerInternalName = triggerTypeLookup[triggerType] || '';
+              var searchTerms = trigSearchTerms[triggerType] || [triggerType];
+              var triggerDefId: string | null = null;
 
-              if (triggerInternalName) {
+              for (var tsi = 0; tsi < searchTerms.length && !triggerDefId; tsi++) {
                 var triggerDefResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
                   params: {
-                    sysparm_query: 'internal_name=' + triggerInternalName,
+                    sysparm_query: 'internal_nameLIKE' + searchTerms[tsi] + '^type=trigger',
                     sysparm_fields: 'sys_id',
                     sysparm_limit: 1
                   }
                 });
+                triggerDefId = triggerDefResp.data.result?.[0]?.sys_id || null;
+              }
 
-                var triggerDefId = triggerDefResp.data.result?.[0]?.sys_id;
-                if (triggerDefId) {
-                  var triggerData: any = {
-                    flow: flowSysId,
-                    action_type: triggerDefId,
-                    name: triggerType,
-                    order: 0,
-                    active: true
-                  };
-                  if (flowTable) triggerData.table = flowTable;
-                  if (triggerCondition) triggerData.condition = triggerCondition;
+              // Fallback: search by display name
+              if (!triggerDefId) {
+                var trigNameResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+                  params: {
+                    sysparm_query: 'nameLIKE' + triggerType.replace(/_/g, ' ') + '^type=trigger',
+                    sysparm_fields: 'sys_id',
+                    sysparm_limit: 1
+                  }
+                });
+                triggerDefId = trigNameResp.data.result?.[0]?.sys_id || null;
+              }
 
-                  await client.post('/api/now/table/sys_hub_trigger_instance', triggerData);
-                  triggerCreated = true;
-                }
+              if (triggerDefId) {
+                var triggerData: any = {
+                  flow: flowSysId,
+                  action_type: triggerDefId,
+                  name: triggerType,
+                  order: 0,
+                  active: true
+                };
+                if (flowTable) triggerData.table = flowTable;
+                if (triggerCondition) triggerData.condition = triggerCondition;
+
+                await client.post('/api/now/table/sys_hub_trigger_instance', triggerData);
+                triggerCreated = true;
               }
             } catch (triggerError) {
               // Best-effort
