@@ -31,6 +31,198 @@ function isSysId(value: string): boolean {
   return /^[a-f0-9]{32}$/.test(value);
 }
 
+/** Escape a string for safe embedding in ES5 single-quoted script */
+function escForScript(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+}
+
+/**
+ * Create a flow via a ServiceNow Scheduled Job (sysauto_script).
+ *
+ * This executes server-side GlideRecord code that CAN set computed fields
+ * like `latest_version`, which the Table API silently ignores.
+ *
+ * Strategy:
+ *   1. Create a sys_properties record to receive the result
+ *   2. Create a sysauto_script record (run_type=once, run_start=now)
+ *   3. Poll the property every 2s for up to 30s
+ *   4. Clean up both records
+ *   5. Return the result (flow sys_id, version sys_id, tier used)
+ */
+async function createFlowViaScheduledJob(
+  client: any,
+  params: {
+    name: string;
+    description: string;
+    internalName: string;
+    isSubflow: boolean;
+    category: string;
+    runAs: string;
+    shouldActivate: boolean;
+  }
+): Promise<{
+  success: boolean;
+  flowSysId?: string;
+  versionSysId?: string;
+  tierUsed?: string;
+  latestVersionSet?: boolean;
+  latestVersionValue?: string;
+  steps?: any;
+  error?: string;
+}> {
+  var resultPropName = 'snow_flow.factory_result.' + Date.now();
+
+  // Build the server-side ES5 script
+  var script = [
+    "(function() {",
+    "  var PROP = '" + escForScript(resultPropName) + "';",
+    "  var r = { success: false, steps: {}, tier_used: null };",
+    "  try {",
+    "    var flowName = '" + escForScript(params.name) + "';",
+    "    var flowDesc = '" + escForScript(params.description) + "';",
+    "    var intName = '" + escForScript(params.internalName) + "';",
+    "    var isSubflow = " + (params.isSubflow ? "true" : "false") + ";",
+    "    var flowCat = '" + escForScript(params.category) + "';",
+    "    var runAs = '" + escForScript(params.runAs) + "';",
+    "    var activate = " + (params.shouldActivate ? "true" : "false") + ";",
+    "    var flowSysId = null;",
+    "    var verSysId = null;",
+    "",
+    "    try {",
+    "      if (typeof sn_fd !== 'undefined' && sn_fd.FlowDesigner && typeof sn_fd.FlowDesigner.createFlow === 'function') {",
+    "        var fdR = sn_fd.FlowDesigner.createFlow({ name: flowName, description: flowDesc, type: isSubflow ? 'subflow' : 'flow', category: flowCat, run_as: runAs });",
+    "        if (fdR) {",
+    "          flowSysId = (typeof fdR === 'object' ? (fdR.sys_id || (fdR.getValue ? fdR.getValue('sys_id') : null)) : fdR) + '';",
+    "          r.tier_used = 'sn_fd_api';",
+    "          r.success = true;",
+    "          r.steps.tier1 = { success: true };",
+    "          if (activate && typeof sn_fd.FlowDesigner.publishFlow === 'function') {",
+    "            try { sn_fd.FlowDesigner.publishFlow(flowSysId); r.steps.publish = { success: true }; }",
+    "            catch(pe) { r.steps.publish = { success: false, error: pe + '' }; }",
+    "          }",
+    "        }",
+    "      }",
+    "    } catch(t1e) { r.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + '' }; }",
+    "",
+    "    if (!flowSysId) {",
+    "      try {",
+    "        var f = new GlideRecord('sys_hub_flow');",
+    "        f.initialize();",
+    "        f.setValue('name', flowName); f.setValue('description', flowDesc);",
+    "        f.setValue('internal_name', intName); f.setValue('category', flowCat);",
+    "        f.setValue('run_as', runAs); f.setValue('active', false);",
+    "        f.setValue('status', 'draft'); f.setValue('validated', true);",
+    "        f.setValue('type', isSubflow ? 'subflow' : 'flow');",
+    "        flowSysId = f.insert();",
+    "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '' };",
+    "        if (flowSysId) {",
+    "          var v = new GlideRecord('sys_hub_flow_version');",
+    "          v.initialize();",
+    "          v.setValue('flow', flowSysId); v.setValue('name', '1.0');",
+    "          v.setValue('version', '1.0'); v.setValue('state', 'draft');",
+    "          v.setValue('active', true); v.setValue('compile_state', 'draft');",
+    "          v.setValue('is_current', true);",
+    "          verSysId = v.insert();",
+    "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
+    "          if (verSysId) {",
+    "            var lk = new GlideRecord('sys_hub_flow');",
+    "            if (lk.get(flowSysId)) { lk.setValue('latest_version', verSysId); lk.update(); }",
+    "          }",
+    "          if (activate) {",
+    "            var fp = new GlideRecord('sys_hub_flow');",
+    "            if (fp.get(flowSysId)) { fp.setValue('status', 'published'); fp.setValue('active', true); fp.update(); }",
+    "            if (verSysId) {",
+    "              var vp = new GlideRecord('sys_hub_flow_version');",
+    "              if (vp.get(verSysId)) { vp.setValue('state', 'published'); vp.setValue('compile_state', 'compiled'); vp.setValue('published_flow', flowSysId); vp.update(); }",
+    "            }",
+    "          }",
+    "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
+    "        }",
+    "      } catch(t2e) { r.steps.tier2 = { success: false, error: t2e.getMessage ? t2e.getMessage() : t2e + '' }; }",
+    "    }",
+    "",
+    "    r.flow_sys_id = flowSysId ? flowSysId + '' : null;",
+    "    r.version_sys_id = verSysId ? verSysId + '' : null;",
+    "    if (flowSysId) {",
+    "      var cf = new GlideRecord('sys_hub_flow');",
+    "      if (cf.get(flowSysId)) {",
+    "        r.latest_version_set = !cf.latest_version.nil();",
+    "        r.latest_version_value = cf.getValue('latest_version') + '';",
+    "      }",
+    "    }",
+    "  } catch(e) { r.success = false; r.error = e.getMessage ? e.getMessage() : e + ''; }",
+    "  gs.setProperty(PROP, JSON.stringify(r));",
+    "})();"
+  ].join('\n');
+
+  try {
+    // 1. Create result property
+    await client.post('/api/now/table/sys_properties', {
+      name: resultPropName,
+      value: 'pending',
+      type: 'string',
+      description: 'Snow-Flow temp result (auto-cleanup)'
+    });
+
+    // 2. Create scheduled job (run immediately)
+    var runStart = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    var jobResp = await client.post('/api/now/table/sysauto_script', {
+      name: 'Snow-Flow Flow Factory (auto-cleanup)',
+      script: script,
+      run_type: 'once',
+      run_start: runStart,
+      active: true
+    });
+    var jobSysId = jobResp.data.result?.sys_id;
+
+    // 3. Poll for result (15 attempts * 2s = 30s max)
+    for (var i = 0; i < 15; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      var propResp = await client.get('/api/now/table/sys_properties', {
+        params: {
+          sysparm_query: 'name=' + resultPropName,
+          sysparm_fields: 'sys_id,value',
+          sysparm_limit: 1
+        }
+      });
+      var propRecord = propResp.data.result?.[0];
+      var propValue = propRecord?.value;
+      if (propValue && propValue !== 'pending') {
+        // Got result — clean up
+        try { if (propRecord?.sys_id) await client.delete('/api/now/table/sys_properties/' + propRecord.sys_id); } catch (_) {}
+        try { if (jobSysId) await client.delete('/api/now/table/sysauto_script/' + jobSysId); } catch (_) {}
+        try {
+          var parsed = JSON.parse(propValue);
+          return {
+            success: parsed.success,
+            flowSysId: parsed.flow_sys_id,
+            versionSysId: parsed.version_sys_id,
+            tierUsed: parsed.tier_used,
+            latestVersionSet: parsed.latest_version_set,
+            latestVersionValue: parsed.latest_version_value,
+            steps: parsed.steps,
+            error: parsed.error
+          };
+        } catch (_) {
+          return { success: false, error: 'Invalid JSON from scheduled job: ' + propValue.substring(0, 200) };
+        }
+      }
+    }
+
+    // Timeout — clean up
+    try {
+      var cleanProp = await client.get('/api/now/table/sys_properties', {
+        params: { sysparm_query: 'name=' + resultPropName, sysparm_fields: 'sys_id', sysparm_limit: 1 }
+      });
+      if (cleanProp.data.result?.[0]?.sys_id) await client.delete('/api/now/table/sys_properties/' + cleanProp.data.result[0].sys_id);
+    } catch (_) {}
+    try { if (jobSysId) await client.delete('/api/now/table/sysauto_script/' + jobSysId); } catch (_) {}
+    return { success: false, error: 'Scheduled job timed out after 30s — scheduler may be slow on this instance' };
+  } catch (e: any) {
+    return { success: false, error: 'Scheduled job setup failed: ' + (e.message || e) };
+  }
+}
+
 // ── Flow Factory (Scripted REST API bootstrap) ──────────────────────
 
 var FLOW_FACTORY_API_NAME = 'Snow-Flow Flow Factory';
@@ -1080,7 +1272,43 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           }
         }
 
-        // ── Table API fallback (existing logic) ─────────────────────
+        // ── Scheduled Job fallback (server-side GlideRecord) ────────
+        // This runs inside ServiceNow as a system job, so it CAN set
+        // computed fields like latest_version that Table API cannot.
+        if (!flowSysId) {
+          try {
+            var scheduledResult = await createFlowViaScheduledJob(client, {
+              name: flowName,
+              description: flowDescription,
+              internalName: sanitizeInternalName(flowName),
+              isSubflow: isSubflow,
+              category: flowCategory,
+              runAs: flowRunAs,
+              shouldActivate: shouldActivate
+            });
+            diagnostics.scheduled_job = {
+              success: scheduledResult.success,
+              tierUsed: scheduledResult.tierUsed,
+              latestVersionSet: scheduledResult.latestVersionSet,
+              latestVersionValue: scheduledResult.latestVersionValue,
+              steps: scheduledResult.steps,
+              error: scheduledResult.error
+            };
+            if (scheduledResult.success && scheduledResult.flowSysId) {
+              flowSysId = scheduledResult.flowSysId;
+              usedMethod = 'scheduled_job (' + (scheduledResult.tierUsed || 'unknown') + ')';
+              versionCreated = !!scheduledResult.versionSysId;
+              diagnostics.version_created = versionCreated;
+              diagnostics.version_method = 'scheduled_job';
+              diagnostics.latest_version_auto_set = scheduledResult.latestVersionSet;
+            }
+          } catch (schedErr: any) {
+            diagnostics.scheduled_job = { error: schedErr.message || 'unknown' };
+            factoryWarnings.push('Scheduled job fallback failed: ' + (schedErr.message || schedErr));
+          }
+        }
+
+        // ── Table API fallback (last resort) ─────────────────────────
         if (!flowSysId) {
           diagnostics.table_api_used = true;
           var flowData: any = {
@@ -1356,9 +1584,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         // ── Build summary ───────────────────────────────────────────
-        var methodLabel = usedMethod === 'scripted_rest_api'
-          ? 'Scripted REST API (GlideRecord)'
-          : 'Table API' + (factoryWarnings.length > 0 ? ' (fallback)' : '');
+        var methodLabel = usedMethod.startsWith('scheduled_job')
+          ? 'Scheduled Job (server-side GlideRecord)'
+          : usedMethod === 'scripted_rest_api'
+            ? 'Scripted REST API (GlideRecord)'
+            : 'Table API' + (factoryWarnings.length > 0 ? ' (fallback)' : '');
 
         var createSummary = summary()
           .success('Created ' + (isSubflow ? 'subflow' : 'flow') + ': ' + flowName)
