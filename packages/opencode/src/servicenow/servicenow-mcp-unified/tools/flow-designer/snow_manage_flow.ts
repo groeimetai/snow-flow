@@ -344,52 +344,57 @@ var FLOW_FACTORY_SCRIPT = [
 
 /**
  * Resolve the REST API namespace for a sys_ws_definition record.
- * Uses dot-walking to read the scope string from the related sys_scope record,
- * which is deterministic and doesn't depend on endpoint registration timing.
- * Falls back to HTTP probing if dot-walking fails.
+ *
+ * Collects namespace candidates from multiple sources, then VERIFIES each
+ * one via HTTP before accepting it. This prevents returning invalid values
+ * like scope sys_ids or numeric identifiers that aren't valid URL namespaces.
+ *
+ * Verification: GET /api/{candidate}/{api_id}/discover
+ *   - 200 = correct namespace, /discover endpoint works
+ *   - 401/403 = correct namespace, auth issue
+ *   - 405 = correct namespace, wrong HTTP method (endpoint exists)
+ *   - 400/404 = wrong namespace or API not registered yet
  */
 async function resolveFactoryNamespace(
   client: any,
   apiSysId: string,
   instanceUrl: string
 ): Promise<string | null> {
-  // ── Strategy 1: Dot-walk to sys_scope.scope (deterministic) ──
+  // ── Collect namespace candidates (ordered by likelihood) ──
+  var candidates: string[] = [];
+
+  // Most common for PDI / global scope custom APIs
+  candidates.push('global');
+
+  // Dot-walk to sys_scope.scope
   try {
     var dotWalkResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
       params: {
-        sysparm_fields: 'namespace,namespace.scope',
+        sysparm_fields: 'namespace.scope',
         sysparm_display_value: 'false'
       }
     });
     var scopeStr = dotWalkResp.data.result?.['namespace.scope'];
-    if (scopeStr && typeof scopeStr === 'string' && scopeStr.length > 0) {
-      return scopeStr;
+    if (scopeStr && typeof scopeStr === 'string' && scopeStr.length > 1) {
+      candidates.push(scopeStr);
     }
   } catch (_) {}
 
-  // ── Strategy 2: Read namespace field with display_value=all ──
+  // Read namespace display_value (might be scope string itself)
   try {
     var nsResp = await client.get('/api/now/table/sys_ws_definition/' + apiSysId, {
-      params: { sysparm_fields: 'namespace', sysparm_display_value: 'all' }
+      params: { sysparm_fields: 'namespace', sysparm_display_value: 'true' }
     });
-    var ns = nsResp.data.result?.namespace;
-    if (ns) {
-      // If it's a reference object, extract useful values
-      if (typeof ns === 'object') {
-        var dv = ns.display_value || '';
-        var val = ns.value || '';
-        // display_value might be the scope string itself (e.g. "global", "x_snflw")
-        if (dv && dv !== 'Global') return dv;
-        // If display_value is "Global", the scope string is typically "global"
-        if (dv === 'Global') return 'global';
-        if (val && val.length > 0) return val;
-      } else if (typeof ns === 'string' && ns.length > 0) {
-        return ns === 'Global' ? 'global' : ns;
-      }
+    var nsDisplay = nsResp.data.result?.namespace;
+    if (typeof nsDisplay === 'string' && nsDisplay.length > 1) {
+      candidates.push(nsDisplay === 'Global' ? 'global' : nsDisplay);
     }
   } catch (_) {}
 
-  // ── Strategy 3: Company code from sys_properties ──
+  // OOB namespace
+  candidates.push('now');
+
+  // Company code from sys_properties
   try {
     var compResp = await client.get('/api/now/table/sys_properties', {
       params: {
@@ -399,27 +404,65 @@ async function resolveFactoryNamespace(
       }
     });
     var companyCode = compResp.data.result?.[0]?.value;
-    if (companyCode) return companyCode;
+    if (companyCode) candidates.push(companyCode);
   } catch (_) {}
 
-  // ── Strategy 4: HTTP probing as last resort ──
-  var probeCandidates = ['global', 'now'];
+  // Instance subdomain (e.g. "dev354059")
   try {
     var match = instanceUrl.match(/https?:\/\/([^.]+)\./);
-    if (match && match[1]) probeCandidates.push(match[1]);
+    if (match && match[1]) candidates.push(match[1]);
   } catch (_) {}
 
-  for (var j = 0; j < probeCandidates.length; j++) {
-    try {
-      var probeResp = await client.get('/api/' + probeCandidates[j] + '/' + FLOW_FACTORY_API_ID + '/discover');
-      if (probeResp.status === 200 || probeResp.data) return probeCandidates[j];
-    } catch (probeErr: any) {
-      var ps = probeErr.response?.status;
-      if (ps === 401 || ps === 403 || ps === 405) return probeCandidates[j];
+  // ── Deduplicate ──
+  var seen: Record<string, boolean> = {};
+  var unique: string[] = [];
+  for (var i = 0; i < candidates.length; i++) {
+    var lower = candidates[i].toLowerCase();
+    if (!seen[lower]) {
+      seen[lower] = true;
+      unique.push(lower);
     }
   }
 
-  return null;
+  // ── Verify each candidate via HTTP ──
+  for (var j = 0; j < unique.length; j++) {
+    var ns = unique[j];
+    // Check 1: GET /discover (v5 endpoint, returns 200 with discovery data)
+    try {
+      var discoverResp = await client.get('/api/' + ns + '/' + FLOW_FACTORY_API_ID + '/discover');
+      if (discoverResp.status === 200 || discoverResp.data) return ns;
+    } catch (discoverErr: any) {
+      var ds = discoverErr.response?.status;
+      if (ds === 401 || ds === 403 || ds === 405) return ns;
+      // 400/404 = wrong namespace or not registered yet
+    }
+    // Check 2: GET /create (POST-only, expect 405 for correct namespace)
+    try {
+      await client.get('/api/' + ns + '/' + FLOW_FACTORY_API_ID + '/create');
+      return ns; // 200 = unexpected but valid
+    } catch (createErr: any) {
+      var cs = createErr.response?.status;
+      if (cs === 405 || cs === 401 || cs === 403) return ns;
+      // 400/404 = wrong namespace (ServiceNow may return 400 instead of 405)
+    }
+    // Check 3: POST /create with empty body — distinguishes "wrong namespace" from
+    // "correct namespace but script validation error". Wrong namespace returns
+    // 400 with "Requested URI does not represent any resource". Our script returns
+    // a different error body (e.g. {success:false, error:"..."}).
+    try {
+      await client.post('/api/' + ns + '/' + FLOW_FACTORY_API_ID + '/create', {});
+      return ns; // Unexpected success, namespace confirmed
+    } catch (postErr: any) {
+      var pe = postErr.response;
+      if (!pe) continue;
+      if (pe.status === 401 || pe.status === 403) return ns;
+      // Check error body — "Requested URI" = wrong namespace, anything else = our script
+      var errStr = JSON.stringify(pe.data || '');
+      if (!errStr.includes('Requested URI')) return ns;
+    }
+  }
+
+  return null; // No candidate verified — API may not be registered yet
 }
 
 /**
@@ -546,25 +589,19 @@ async function ensureFlowFactoryAPI(
         // Non-fatal: create endpoint is more important than discover
       }
 
-      // 6. Resolve namespace — read directly from the record (deterministic)
+      // 6. Wait for ServiceNow REST framework to register endpoints
+      await new Promise(resolve => setTimeout(resolve, 4000));
+
+      // 7. Resolve namespace via HTTP-verified probing
       var resolvedNs = await resolveFactoryNamespace(client, apiSysId, instanceUrl);
 
-      // 7. If direct resolution failed, wait for REST framework and retry
+      // 8. If resolution failed, wait longer and retry (some instances are slow)
       if (!resolvedNs) {
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
         resolvedNs = await resolveFactoryNamespace(client, apiSysId, instanceUrl);
       }
       if (!resolvedNs) {
-        // Last resort: try 'global' (most common for PDI instances)
-        try {
-          var globalTest = await client.get('/api/global/' + FLOW_FACTORY_API_ID + '/discover');
-          if (globalTest.status === 200 || globalTest.data) resolvedNs = 'global';
-        } catch (gtErr: any) {
-          if (gtErr.response?.status === 401 || gtErr.response?.status === 403) resolvedNs = 'global';
-        }
-      }
-      if (!resolvedNs) {
-        throw new Error('Flow Factory deployed (sys_id=' + apiSysId + ') but namespace could not be resolved. This may indicate a ServiceNow scope/permissions issue.');
+        throw new Error('Flow Factory deployed (sys_id=' + apiSysId + ') but no namespace candidate could be verified via HTTP after 9s. Candidates tried: global, dot-walk scope, display_value, now, company code, subdomain.');
       }
 
       _flowFactoryCache = { apiSysId: apiSysId, namespace: resolvedNs, timestamp: Date.now() };
