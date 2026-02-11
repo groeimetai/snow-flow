@@ -4,10 +4,10 @@
  * Create, list, get, update, activate, deactivate, delete and publish
  * Flow Designer flows and subflows.
  *
- * For create/create_subflow: uses a bootstrapped Scripted REST API
- * ("Flow Factory") that runs GlideRecord server-side, ensuring
- * sys_hub_flow_version records are created and all Business Rules fire.
- * Falls back to Table API if the factory is unavailable.
+ * For create/create_subflow: uses a Scheduled Job (sysauto_script) that
+ * runs GlideRecord server-side, ensuring sys_hub_flow_version records are
+ * created, flow_definition is set, and sn_fd engine registration is
+ * attempted. Falls back to Table API if the scheduled job fails.
  *
  * All other actions (list, get, update, activate, etc.) use the Table API.
  */
@@ -65,6 +65,7 @@ async function createFlowViaScheduledJob(
     activities?: Array<{ name: string; type?: string; inputs?: any }>;
     inputs?: Array<{ name: string; label?: string; type?: string; mandatory?: boolean; default_value?: string }>;
     outputs?: Array<{ name: string; label?: string; type?: string }>;
+    flowDefinition?: any;
   }
 ): Promise<{
   success: boolean;
@@ -77,6 +78,7 @@ async function createFlowViaScheduledJob(
   error?: string;
 }> {
   var resultPropName = 'snow_flow.factory_result.' + Date.now();
+  var flowDefStr = params.flowDefinition ? JSON.stringify(params.flowDefinition) : '';
 
   // Build the server-side ES5 script
   var script = [
@@ -94,6 +96,7 @@ async function createFlowViaScheduledJob(
     "    var trigType = '" + escForScript(params.triggerType || 'manual') + "';",
     "    var trigTable = '" + escForScript(params.triggerTable || '') + "';",
     "    var trigCondition = '" + escForScript(params.triggerCondition || '') + "';",
+    "    var flowDefStr = '" + escForScript(flowDefStr) + "';",
     "    var activitiesJson = '" + escForScript(JSON.stringify(params.activities || [])) + "';",
     "    var inputsJson = '" + escForScript(JSON.stringify(params.inputs || [])) + "';",
     "    var outputsJson = '" + escForScript(JSON.stringify(params.outputs || [])) + "';",
@@ -103,6 +106,7 @@ async function createFlowViaScheduledJob(
     "    var flowSysId = null;",
     "    var verSysId = null;",
     "",
+    // ── TIER 1: sn_fd.FlowDesigner API ──
     "    try {",
     "      if (typeof sn_fd !== 'undefined' && sn_fd.FlowDesigner && typeof sn_fd.FlowDesigner.createFlow === 'function') {",
     "        var fdR = sn_fd.FlowDesigner.createFlow({ name: flowName, description: flowDesc, type: isSubflow ? 'subflow' : 'flow', category: flowCat, run_as: runAs });",
@@ -119,6 +123,7 @@ async function createFlowViaScheduledJob(
     "      }",
     "    } catch(t1e) { r.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + '' }; }",
     "",
+    // ── TIER 2: GlideRecord with flow_definition ──
     "    if (!flowSysId) {",
     "      try {",
     "        var f = new GlideRecord('sys_hub_flow');",
@@ -128,6 +133,7 @@ async function createFlowViaScheduledJob(
     "        f.setValue('run_as', runAs); f.setValue('active', false);",
     "        f.setValue('status', 'draft'); f.setValue('validated', true);",
     "        f.setValue('type', isSubflow ? 'subflow' : 'flow');",
+    "        if (flowDefStr) { f.setValue('flow_definition', flowDefStr); f.setValue('latest_snapshot', flowDefStr); }",
     "        flowSysId = f.insert();",
     "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '' };",
     "        if (flowSysId) {",
@@ -137,6 +143,7 @@ async function createFlowViaScheduledJob(
     "          v.setValue('version', '1.0'); v.setValue('state', 'draft');",
     "          v.setValue('active', true); v.setValue('compile_state', 'draft');",
     "          v.setValue('is_current', true);",
+    "          if (flowDefStr) v.setValue('flow_definition', flowDefStr);",
     "          verSysId = v.insert();",
     "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
     "          if (verSysId) {",
@@ -216,10 +223,57 @@ async function createFlowViaScheduledJob(
     "        }",
     "      }",
     "      r.steps.variables = { success: true, created: varsCreated };",
+    "",
+    // ── Engine registration (server-side sn_fd APIs) ──
+    "      r.steps.engine = { apis_found: [] };",
+    "      try {",
+    "        if (typeof sn_fd !== 'undefined') {",
+    "          r.steps.engine.sn_fd = 'available';",
+    "          if (sn_fd.FlowDesigner) {",
+    "            r.steps.engine.apis_found.push('FlowDesigner');",
+    "            if (typeof sn_fd.FlowDesigner.publishFlow === 'function') {",
+    "              try {",
+    "                sn_fd.FlowDesigner.publishFlow(flowSysId);",
+    "                r.steps.engine.publish = 'success';",
+    "              } catch(pe) { r.steps.engine.publish = pe.getMessage ? pe.getMessage() : pe + ''; }",
+    "            }",
+    "          }",
+    "          if (sn_fd.FlowCompiler) {",
+    "            r.steps.engine.apis_found.push('FlowCompiler');",
+    "            if (typeof sn_fd.FlowCompiler.compile === 'function') {",
+    "              try {",
+    "                sn_fd.FlowCompiler.compile(flowSysId);",
+    "                r.steps.engine.compile = 'success';",
+    "              } catch(ce) { r.steps.engine.compile = ce.getMessage ? ce.getMessage() : ce + ''; }",
+    "            }",
+    "          }",
+    "          var otherApis = ['FlowAPI', 'FlowPublisher'];",
+    "          for (var oa = 0; oa < otherApis.length; oa++) {",
+    "            if (sn_fd[otherApis[oa]]) {",
+    "              r.steps.engine.apis_found.push(otherApis[oa]);",
+    "              var apiObj = sn_fd[otherApis[oa]];",
+    "              if (typeof apiObj.publish === 'function') {",
+    "                try { apiObj.publish(flowSysId); r.steps.engine[otherApis[oa] + '_publish'] = 'success'; }",
+    "                catch(e) { r.steps.engine[otherApis[oa] + '_publish'] = e + ''; }",
+    "              }",
+    "            }",
+    "          }",
+    "        } else {",
+    "          r.steps.engine.sn_fd = 'unavailable';",
+    "        }",
+    "        try {",
+    "          if (typeof GlideFlowDesigner !== 'undefined') {",
+    "            r.steps.engine.apis_found.push('GlideFlowDesigner');",
+    "          }",
+    "        } catch(e) {}",
+    "      } catch(engineErr) {",
+    "        r.steps.engine.error = engineErr.getMessage ? engineErr.getMessage() : engineErr + '';",
+    "      }",
     "    }",
     "",
     "    r.flow_sys_id = flowSysId ? flowSysId + '' : null;",
     "    r.version_sys_id = verSysId ? verSysId + '' : null;",
+    // ── Post-engine check: re-read latest_version ──
     "    if (flowSysId) {",
     "      var cf = new GlideRecord('sys_hub_flow');",
     "      if (cf.get(flowSysId)) {",
@@ -252,9 +306,10 @@ async function createFlowViaScheduledJob(
     });
     var jobSysId = jobResp.data.result?.sys_id;
 
-    // 3. Poll for result (15 attempts * 2s = 30s max)
+    // 3. Poll for result (adaptive: 5×1s + 5×2s + 5×3s = 30s max)
     for (var i = 0; i < 15; i++) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      var delay = i < 5 ? 1000 : i < 10 ? 2000 : 3000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       var propResp = await client.get('/api/now/table/sys_properties', {
         params: {
           sysparm_query: 'name=' + resultPropName,
@@ -1234,7 +1289,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           delete flowDefinition.trigger;
         }
 
-        // ── Try Scripted REST API (Flow Factory) first ──────────────
+        // ── Pipeline: Scheduled Job (primary) → Table API (fallback) ──
         var flowSysId: string | null = null;
         var usedMethod = 'table_api';
         var versionCreated = false;
@@ -1245,7 +1300,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         // Diagnostics: track every step for debugging "flow cannot be found" issues
         var diagnostics: any = {
-          factory_bootstrap: null,
+          factory_bootstrap: 'skipped (direct scheduled job)',
           factory_namespace: null,
           factory_call: null,
           table_api_used: false,
@@ -1256,154 +1311,65 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           post_verify: null
         };
 
+        // ── Scheduled Job (primary — server-side GlideRecord) ───────
+        // This runs inside ServiceNow as a system job, so it CAN set
+        // computed fields like latest_version that Table API cannot.
+        // Also attempts sn_fd engine registration server-side.
         try {
-          var factory = await ensureFlowFactoryAPI(client, context.instanceUrl);
-          diagnostics.factory_bootstrap = 'success';
-          diagnostics.factory_namespace = factory.namespace;
-
-          // Call /discover to learn what sn_fd APIs exist on this instance
-          var discovery = await discoverInstanceCapabilities(client, factory.namespace);
-          if (discovery) {
-            diagnostics.instance_build = discovery.build_tag || discovery.build_name || 'unknown';
-            diagnostics.available_apis = discovery.apis || {};
-            diagnostics.available_methods = discovery.methods || {};
-          }
-
-          var factoryPayload = {
+          var scheduledResult = await createFlowViaScheduledJob(client, {
             name: flowName,
             description: flowDescription,
-            type: isSubflow ? 'subflow' : 'flow',
+            internalName: sanitizeInternalName(flowName),
+            isSubflow: isSubflow,
             category: flowCategory,
-            run_as: flowRunAs,
-            activate: shouldActivate,
-            trigger_type: triggerType,
-            trigger_table: flowTable,
-            trigger_condition: triggerCondition,
+            runAs: flowRunAs,
+            shouldActivate: shouldActivate,
+            triggerType: triggerType,
+            triggerTable: flowTable,
+            triggerCondition: triggerCondition,
             activities: activitiesArg.map(function (act: any, idx: number) {
-              return { name: act.name, type: act.type || 'script', inputs: act.inputs || {}, order: (idx + 1) * 100 };
+              return { name: act.name, type: act.type || 'script', inputs: act.inputs || {} };
             }),
             inputs: inputsArg,
             outputs: outputsArg,
-            flow_definition: flowDefinition
+            flowDefinition: flowDefinition
+          });
+          diagnostics.scheduled_job = {
+            success: scheduledResult.success,
+            tierUsed: scheduledResult.tierUsed,
+            latestVersionSet: scheduledResult.latestVersionSet,
+            latestVersionValue: scheduledResult.latestVersionValue,
+            steps: scheduledResult.steps,
+            error: scheduledResult.error
           };
-
-          var factoryEndpoint = '/api/' + factory.namespace + '/' + FLOW_FACTORY_API_ID + '/create';
-          var factoryResp: any;
-
-          try {
-            factoryResp = await client.post(factoryEndpoint, factoryPayload);
-          } catch (callError: any) {
-            // 404 = API was deleted externally → invalidate cache, retry once
-            if (callError.response?.status === 404) {
-              invalidateFlowFactoryCache();
-              var retryFactory = await ensureFlowFactoryAPI(client, context.instanceUrl);
-              diagnostics.factory_namespace = retryFactory.namespace;
-              var retryEndpoint = '/api/' + retryFactory.namespace + '/' + FLOW_FACTORY_API_ID + '/create';
-              factoryResp = await client.post(retryEndpoint, factoryPayload);
-            } else {
-              throw callError;
-            }
-          }
-
-          var factoryResult = factoryResp.data?.result || factoryResp.data;
-          if (factoryResult && factoryResult.success && factoryResult.flow_sys_id) {
-            var tierUsed = factoryResult.tier_used || 'unknown';
-            diagnostics.factory_call = 'success';
-            diagnostics.factory_tier = tierUsed;
-            diagnostics.factory_steps = factoryResult.steps || {};
-            flowSysId = factoryResult.flow_sys_id;
-            usedMethod = 'scripted_rest_api';
-            versionCreated = !!factoryResult.version_created;
+          if (scheduledResult.success && scheduledResult.flowSysId) {
+            flowSysId = scheduledResult.flowSysId;
+            usedMethod = 'scheduled_job (' + (scheduledResult.tierUsed || 'unknown') + ')';
+            versionCreated = !!scheduledResult.versionSysId;
             diagnostics.version_created = versionCreated;
-            diagnostics.version_method = 'factory (' + tierUsed + ')';
-            diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow'];
-
-            // Extract step details
-            var steps = factoryResult.steps || {};
-            if (steps.trigger) {
-              triggerCreated = !!steps.trigger.success;
-              if (!steps.trigger.success && steps.trigger.error) {
-                factoryWarnings.push('Trigger: ' + steps.trigger.error);
+            diagnostics.version_method = 'scheduled_job';
+            diagnostics.latest_version_auto_set = scheduledResult.latestVersionSet;
+            // Extract engine registration results from scheduled job
+            if (scheduledResult.steps?.engine) {
+              diagnostics.engine_registration = scheduledResult.steps.engine;
+            }
+            // Extract trigger/action/variable results from scheduled job
+            if (scheduledResult.steps?.trigger) {
+              triggerCreated = !!scheduledResult.steps.trigger.success;
+              if (!scheduledResult.steps.trigger.success && scheduledResult.steps.trigger.error) {
+                factoryWarnings.push('Trigger: ' + scheduledResult.steps.trigger.error);
               }
             }
-            if (steps.actions) {
-              actionsCreated = steps.actions.created || 0;
+            if (scheduledResult.steps?.actions) {
+              actionsCreated = scheduledResult.steps.actions.created || 0;
             }
-            if (steps.variables) {
-              varsCreated = steps.variables.created || 0;
-            }
-            if (steps.version && !steps.version.success) {
-              factoryWarnings.push('Version record: ' + (steps.version.error || 'creation failed'));
+            if (scheduledResult.steps?.variables) {
+              varsCreated = scheduledResult.steps.variables.created || 0;
             }
           }
-        } catch (factoryError: any) {
-          // Flow Factory unavailable — fall through to Table API
-          var statusCode = factoryError.response?.status;
-          var factoryErrMsg = statusCode
-            ? 'HTTP ' + statusCode + ': ' + (factoryError.response?.data?.error?.message || factoryError.message || 'unknown')
-            : (factoryError.message || 'unknown');
-          diagnostics.factory_bootstrap = diagnostics.factory_bootstrap || ('error: ' + factoryErrMsg);
-          diagnostics.factory_call = diagnostics.factory_call || ('error: ' + factoryErrMsg);
-          if (statusCode !== 403) {
-            factoryWarnings.push('Flow Factory unavailable (' + factoryErrMsg + '), using Table API fallback');
-          }
-        }
-
-        // ── Scheduled Job fallback (server-side GlideRecord) ────────
-        // This runs inside ServiceNow as a system job, so it CAN set
-        // computed fields like latest_version that Table API cannot.
-        if (!flowSysId) {
-          try {
-            var scheduledResult = await createFlowViaScheduledJob(client, {
-              name: flowName,
-              description: flowDescription,
-              internalName: sanitizeInternalName(flowName),
-              isSubflow: isSubflow,
-              category: flowCategory,
-              runAs: flowRunAs,
-              shouldActivate: shouldActivate,
-              triggerType: triggerType,
-              triggerTable: flowTable,
-              triggerCondition: triggerCondition,
-              activities: activitiesArg.map(function (act: any, idx: number) {
-                return { name: act.name, type: act.type || 'script', inputs: act.inputs || {} };
-              }),
-              inputs: inputsArg,
-              outputs: outputsArg
-            });
-            diagnostics.scheduled_job = {
-              success: scheduledResult.success,
-              tierUsed: scheduledResult.tierUsed,
-              latestVersionSet: scheduledResult.latestVersionSet,
-              latestVersionValue: scheduledResult.latestVersionValue,
-              steps: scheduledResult.steps,
-              error: scheduledResult.error
-            };
-            if (scheduledResult.success && scheduledResult.flowSysId) {
-              flowSysId = scheduledResult.flowSysId;
-              usedMethod = 'scheduled_job (' + (scheduledResult.tierUsed || 'unknown') + ')';
-              versionCreated = !!scheduledResult.versionSysId;
-              diagnostics.version_created = versionCreated;
-              diagnostics.version_method = 'scheduled_job';
-              diagnostics.latest_version_auto_set = scheduledResult.latestVersionSet;
-              // Extract trigger/action/variable results from scheduled job
-              if (scheduledResult.steps?.trigger) {
-                triggerCreated = !!scheduledResult.steps.trigger.success;
-                if (!scheduledResult.steps.trigger.success && scheduledResult.steps.trigger.error) {
-                  factoryWarnings.push('Trigger: ' + scheduledResult.steps.trigger.error);
-                }
-              }
-              if (scheduledResult.steps?.actions) {
-                actionsCreated = scheduledResult.steps.actions.created || 0;
-              }
-              if (scheduledResult.steps?.variables) {
-                varsCreated = scheduledResult.steps.variables.created || 0;
-              }
-            }
-          } catch (schedErr: any) {
-            diagnostics.scheduled_job = { error: schedErr.message || 'unknown' };
-            factoryWarnings.push('Scheduled job fallback failed: ' + (schedErr.message || schedErr));
-          }
+        } catch (schedErr: any) {
+          diagnostics.scheduled_job = { error: schedErr.message || 'unknown' };
+          factoryWarnings.push('Scheduled job failed: ' + (schedErr.message || schedErr));
         }
 
         // ── Table API fallback (last resort) ─────────────────────────
@@ -1604,10 +1570,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         }
 
-        // ── Register flow with Flow Designer engine ─────────────────
-        // This is the KEY step: without it, records exist but Flow Designer
-        // shows "Your flow cannot be found" because the engine hasn't compiled it.
-        if (flowSysId) {
+        // ── Register flow with Flow Designer engine (Table API only) ──
+        // For scheduled job path, engine registration is done server-side
+        // inside the job script (via sn_fd APIs). Only call the external
+        // REST-based registration for the Table API fallback path.
+        if (flowSysId && usedMethod.startsWith('table_api')) {
           var engineResult = await registerFlowWithEngine(client, flowSysId, shouldActivate);
           diagnostics.engine_registration = {
             success: engineResult.success,
@@ -1722,28 +1689,37 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         // Diagnostics section
         createSummary.blank().line('Diagnostics:');
-        if (diagnostics.instance_build) {
-          createSummary.indented('Instance build: ' + diagnostics.instance_build);
-        }
-        createSummary.indented('Factory bootstrap: ' + (diagnostics.factory_bootstrap || 'not attempted'));
-        createSummary.indented('Factory namespace: ' + (diagnostics.factory_namespace || 'n/a'));
-        createSummary.indented('Factory call: ' + (diagnostics.factory_call || 'not attempted'));
-        if (diagnostics.factory_tier) {
-          createSummary.indented('Factory tier used: ' + diagnostics.factory_tier);
-        }
-        if (diagnostics.available_apis && Object.keys(diagnostics.available_apis).length > 0) {
-          var apiStr = Object.keys(diagnostics.available_apis).map(function (k: string) { return k + '=' + diagnostics.available_apis[k]; }).join(', ');
-          createSummary.indented('Available APIs: ' + apiStr);
+        if (diagnostics.scheduled_job) {
+          var sj = diagnostics.scheduled_job;
+          createSummary.indented('Scheduled job: ' + (sj.success ? 'success' : 'failed') + (sj.tierUsed ? ' (' + sj.tierUsed + ')' : ''));
+          if (sj.error) createSummary.indented('  Error: ' + sj.error);
         }
         createSummary.indented('Table API used: ' + diagnostics.table_api_used);
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
         if (diagnostics.engine_registration) {
-          createSummary.indented('Engine registration: ' + (diagnostics.engine_registration.success ? diagnostics.engine_registration.method : 'FAILED'));
-          if (diagnostics.engine_registration.attempts) {
-            for (var ea = 0; ea < diagnostics.engine_registration.attempts.length; ea++) {
-              createSummary.indented('  ' + diagnostics.engine_registration.attempts[ea]);
+          var eng = diagnostics.engine_registration;
+          if (eng.sn_fd) {
+            // Server-side engine registration (from scheduled job)
+            var engineLabel = 'sn_fd=' + eng.sn_fd;
+            if (eng.apis_found && eng.apis_found.length > 0) {
+              engineLabel += ', APIs=[' + eng.apis_found.join(', ') + ']';
+            }
+            if (eng.publish) engineLabel += ', publishFlow=' + eng.publish;
+            if (eng.compile) engineLabel += ', compile=' + eng.compile;
+            if (eng.error) engineLabel += ', error=' + eng.error;
+            createSummary.indented('Engine (server-side): ' + engineLabel);
+          } else if (eng.success !== undefined) {
+            // REST-based engine registration (Table API path)
+            createSummary.indented('Engine registration: ' + (eng.success ? eng.method : 'FAILED'));
+            if (eng.attempts) {
+              for (var ea = 0; ea < eng.attempts.length; ea++) {
+                createSummary.indented('  ' + eng.attempts[ea]);
+              }
             }
           }
+        }
+        if (diagnostics.latest_version_auto_set !== undefined) {
+          createSummary.indented('latest_version: ' + (diagnostics.latest_version_auto_set ? 'set' : 'null'));
         }
         if (diagnostics.post_verify) {
           if (diagnostics.post_verify.error) {
