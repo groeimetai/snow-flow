@@ -473,10 +473,19 @@ async function ensureFlowFactoryAPI(
         var existing = checkResp.data.result[0];
         var ns = await probeFlowFactoryNamespace(client, existing.sys_id, instanceUrl);
         if (!ns) {
-          throw new Error('Flow Factory API exists (sys_id=' + existing.sys_id + ') but namespace could not be resolved via HTTP probing');
+          // Namespace can't be resolved — the API is stale (e.g. created by an older version
+          // without the /discover endpoint, or ServiceNow REST framework hasn't registered it).
+          // Delete and redeploy with current v5 scripts.
+          try {
+            await client.delete('/api/now/table/sys_ws_definition/' + existing.sys_id);
+          } catch (_) {
+            // If delete fails, try to continue anyway — deployment step will error if API ID conflicts
+          }
+          // Fall through to step 4 (deploy fresh)
+        } else {
+          _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
+          return { namespace: ns, apiSysId: existing.sys_id };
         }
-        _flowFactoryCache = { apiSysId: existing.sys_id, namespace: ns, timestamp: Date.now() };
-        return { namespace: ns, apiSysId: existing.sys_id };
       }
 
       // 4. Deploy the Scripted REST API (do NOT set namespace — let ServiceNow assign it)
@@ -531,10 +540,18 @@ async function ensureFlowFactoryAPI(
         // Non-fatal: create endpoint is more important than discover
       }
 
-      // 6. Probe to discover the namespace ServiceNow assigned
+      // 6. Wait for ServiceNow REST framework to register the new endpoints
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // 7. Probe to discover the namespace ServiceNow assigned
       var resolvedNs = await probeFlowFactoryNamespace(client, apiSysId, instanceUrl);
       if (!resolvedNs) {
-        throw new Error('Flow Factory API created (sys_id=' + apiSysId + ') but namespace could not be resolved via HTTP probing');
+        // Retry once after extra delay — some instances are slow to register
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        resolvedNs = await probeFlowFactoryNamespace(client, apiSysId, instanceUrl);
+      }
+      if (!resolvedNs) {
+        throw new Error('Flow Factory API created (sys_id=' + apiSysId + ') but namespace could not be resolved via HTTP probing after 6s delay');
       }
 
       _flowFactoryCache = { apiSysId: apiSysId, namespace: resolvedNs, timestamp: Date.now() };
