@@ -4,10 +4,10 @@
  * Create, list, get, update, activate, deactivate, delete and publish
  * Flow Designer flows and subflows.
  *
- * For create/create_subflow: uses a Scheduled Job (sysauto_script) that
- * runs GlideRecord server-side, ensuring sys_hub_flow_version records are
- * created, flow_definition is set, and sn_fd engine registration is
- * attempted. Falls back to Table API if the scheduled job fails.
+ * For create/create_subflow: uses the ProcessFlow REST API
+ * (/api/now/processflow/flow) — the same endpoint the Flow Designer UI
+ * uses. This creates engine-registered flows that can be opened in Flow
+ * Designer without "corrupted flow" errors. Falls back to Table API.
  *
  * All other actions (list, get, update, activate, etc.) use the Table API.
  */
@@ -34,6 +34,94 @@ function isSysId(value: string): boolean {
 /** Escape a string for safe embedding in ES5 single-quoted script */
 function escForScript(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '');
+}
+
+/**
+ * Create a flow via the ProcessFlow REST API — the same endpoint the Flow Designer UI uses.
+ *
+ * Uses /api/now/processflow/flow to create engine-registered flows, then
+ * /api/now/processflow/versioning/create_version for versioning.
+ *
+ * This is the only method that produces flows openable in Flow Designer
+ * without "corrupted flow" errors, because it sets:
+ *   - flowEngineVersion
+ *   - label_cache / attributes
+ *   - flowCatalogVariableModelId
+ *   - proper internal_name
+ */
+async function createFlowViaProcessFlowAPI(
+  client: any,
+  params: {
+    name: string;
+    description: string;
+    isSubflow: boolean;
+    runAs: string;
+    shouldActivate: boolean;
+  }
+): Promise<{
+  success: boolean;
+  flowSysId?: string;
+  versionCreated?: boolean;
+  flowData?: any;
+  error?: string;
+}> {
+  try {
+    // Step 1: Create flow via ProcessFlow API (same as Flow Designer UI)
+    var flowResp = await client.post(
+      '/api/now/processflow/flow',
+      {
+        access: 'public',
+        description: params.description || '',
+        flowPriority: 'MEDIUM',
+        name: params.name,
+        protection: '',
+        runAs: params.runAs || 'user',
+        runWithRoles: { value: '', displayValue: '' },
+        scope: 'global',
+        scopeDisplayName: '',
+        scopeName: '',
+        security: { can_read: true, can_write: true },
+        status: 'draft',
+        type: params.isSubflow ? 'subflow' : 'flow',
+        userHasRolesAssignedToFlow: true,
+        active: false,
+        deleted: false
+      },
+      {
+        params: {
+          param_only_properties: 'true',
+          sysparm_transaction_scope: 'global'
+        }
+      }
+    );
+
+    var flowResult = flowResp.data?.result?.data;
+    if (!flowResult?.id) {
+      var errDetail = flowResp.data?.result?.errorMessage || 'no flow id returned';
+      return { success: false, error: 'ProcessFlow API: ' + errDetail };
+    }
+
+    var flowSysId = flowResult.id;
+
+    // Step 2: Create version via ProcessFlow versioning API
+    var versionCreated = false;
+    try {
+      await client.post(
+        '/api/now/processflow/versioning/create_version',
+        { item_sys_id: flowSysId, type: 'Autosave', annotation: '', favorite: false },
+        { params: { sysparm_transaction_scope: 'global' } }
+      );
+      versionCreated = true;
+    } catch (_) {
+      // Non-fatal: flow was created, version creation is best-effort
+    }
+
+    return { success: true, flowSysId, versionCreated, flowData: flowResult };
+  } catch (e: any) {
+    var msg = e.message || '';
+    try { msg += ' — ' + JSON.stringify(e.response?.data || '').substring(0, 200); } catch (_) {}
+    return { success: false, error: 'ProcessFlow API: ' + msg };
+  }
 }
 
 /**
@@ -1405,7 +1493,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     switch (action) {
 
       // ────────────────────────────────────────────────────────────────
-      // CREATE  (Scripted REST API → Table API fallback)
+      // CREATE  (ProcessFlow API → Table API fallback)
       // ────────────────────────────────────────────────────────────────
       case 'create':
       case 'create_subflow': {
@@ -1468,7 +1556,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           delete flowDefinition.trigger;
         }
 
-        // ── Pipeline: Scheduled Job (primary) → Table API (fallback) ──
+        // ── Pipeline: ProcessFlow API (primary) → Table API (fallback) ──
         var flowSysId: string | null = null;
         var usedMethod = 'table_api';
         var versionCreated = false;
@@ -1477,81 +1565,118 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var actionsCreated = 0;
         var varsCreated = 0;
 
-        // Diagnostics: track every step for debugging "flow cannot be found" issues
+        // Diagnostics
         var diagnostics: any = {
+          processflow_api: null,
           table_api_used: false,
           version_created: false,
           version_method: null,
           post_verify: null
         };
 
-        // ── Scheduled Job (primary — server-side GlideRecord) ───────
-        // This runs inside ServiceNow as a system job, so it CAN set
-        // computed fields like latest_version that Table API cannot.
-        // Also attempts sn_fd engine registration server-side.
+        // ── ProcessFlow API (primary — same REST endpoint as Flow Designer UI) ──
+        // Uses /api/now/processflow/flow to create engine-registered flows,
+        // then /api/now/processflow/versioning/create_version for versioning.
         try {
-          var scheduledResult = await createFlowViaScheduledJob(client, {
+          var pfResult = await createFlowViaProcessFlowAPI(client, {
             name: flowName,
             description: flowDescription,
-            internalName: sanitizeInternalName(flowName),
             isSubflow: isSubflow,
-            category: flowCategory,
             runAs: flowRunAs,
-            shouldActivate: shouldActivate,
-            triggerType: triggerType,
-            triggerTable: flowTable,
-            triggerCondition: triggerCondition,
-            activities: activitiesArg.map(function (act: any, idx: number) {
-              return { name: act.name, type: act.type || 'script', inputs: act.inputs || {} };
-            }),
-            inputs: inputsArg,
-            outputs: outputsArg,
-            flowDefinition: flowDefinition
+            shouldActivate: shouldActivate
           });
-          diagnostics.scheduled_job = {
-            success: scheduledResult.success,
-            tierUsed: scheduledResult.tierUsed,
-            latestVersionSet: scheduledResult.latestVersionSet,
-            latestVersionValue: scheduledResult.latestVersionValue,
-            steps: scheduledResult.steps,
-            error: scheduledResult.error
+          diagnostics.processflow_api = {
+            success: pfResult.success,
+            versionCreated: pfResult.versionCreated,
+            error: pfResult.error
           };
-          if (scheduledResult.success && scheduledResult.flowSysId) {
-            flowSysId = scheduledResult.flowSysId;
-            usedMethod = 'scheduled_job (' + (scheduledResult.tierUsed || 'unknown') + ')';
-            versionCreated = !!scheduledResult.versionSysId;
+          if (pfResult.success && pfResult.flowSysId) {
+            flowSysId = pfResult.flowSysId;
+            usedMethod = 'processflow_api';
+            versionCreated = !!pfResult.versionCreated;
             diagnostics.version_created = versionCreated;
-            diagnostics.version_method = 'scheduled_job';
-            diagnostics.latest_version_auto_set = scheduledResult.latestVersionSet;
-            // Extract engine registration results from scheduled job
-            if (scheduledResult.steps?.engine) {
-              diagnostics.engine_registration = scheduledResult.steps.engine;
-            }
-            // Extract trigger/action/variable results from scheduled job
-            if (scheduledResult.steps?.trigger) {
-              triggerCreated = !!scheduledResult.steps.trigger.success;
-              if (!scheduledResult.steps.trigger.success && scheduledResult.steps.trigger.error) {
-                factoryWarnings.push('Trigger: ' + scheduledResult.steps.trigger.error);
-              }
-            }
-            if (scheduledResult.steps?.actions) {
-              actionsCreated = scheduledResult.steps.actions.created || 0;
-            }
-            if (scheduledResult.steps?.variables) {
-              varsCreated = scheduledResult.steps.variables.created || 0;
-            }
+            diagnostics.version_method = 'processflow_api';
           }
-        } catch (schedErr: any) {
-          diagnostics.scheduled_job = { error: schedErr.message || 'unknown' };
-          factoryWarnings.push('Scheduled job failed: ' + (schedErr.message || schedErr));
+        } catch (pfErr: any) {
+          diagnostics.processflow_api = { error: pfErr.message || 'unknown' };
+          factoryWarnings.push('ProcessFlow API failed: ' + (pfErr.message || pfErr));
         }
 
-        // BR compile + engine REST registration skipped:
-        // - BR: FlowDesigner unavailable in all contexts, FlowAPI.compile returns error,
-        //   all Script Includes (FlowDesignerScriptable etc.) don't exist on PDI instances
-        // - REST: all sn_fd endpoints return 400 "Requested URI does not represent any resource"
-        // Both add ~20s combined and provide zero value. Flow records are functional
-        // (listable, queryable, deletable) but cannot be opened in Flow Designer UI.
+        // ── Triggers, actions, variables for ProcessFlow-created flows ──
+        // ProcessFlow API creates empty flows; add components via Table API
+        if (flowSysId && usedMethod === 'processflow_api') {
+          if (!isSubflow && triggerType !== 'manual') {
+            try {
+              var pfTrigDefId: string | null = null;
+              var pfExactNames: Record<string, string[]> = {
+                'record_created': ['sn_fd.trigger.record_created', 'global.sn_fd.trigger.record_created'],
+                'record_updated': ['sn_fd.trigger.record_updated', 'global.sn_fd.trigger.record_updated'],
+                'scheduled': ['sn_fd.trigger.scheduled', 'global.sn_fd.trigger.scheduled']
+              };
+              var pfCands = pfExactNames[triggerType] || [];
+              for (var pfi = 0; pfi < pfCands.length && !pfTrigDefId; pfi++) {
+                var pfExResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+                  params: { sysparm_query: 'internal_name=' + pfCands[pfi], sysparm_fields: 'sys_id', sysparm_limit: 1 }
+                });
+                pfTrigDefId = pfExResp.data.result?.[0]?.sys_id || null;
+              }
+              if (!pfTrigDefId) {
+                var pfPfxResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+                  params: { sysparm_query: 'internal_nameSTARTSWITHsn_fd.trigger', sysparm_fields: 'sys_id,internal_name', sysparm_limit: 10 }
+                });
+                var pfPfxResults = pfPfxResp.data.result || [];
+                for (var pfpi = 0; pfpi < pfPfxResults.length && !pfTrigDefId; pfpi++) {
+                  if ((pfPfxResults[pfpi].internal_name || '').indexOf(triggerType.replace('record_', '')) > -1) {
+                    pfTrigDefId = pfPfxResults[pfpi].sys_id;
+                  }
+                }
+              }
+              var pfTrigData: any = { flow: flowSysId, name: triggerType, order: 0, active: true };
+              if (pfTrigDefId) pfTrigData.action_type = pfTrigDefId;
+              if (flowTable) pfTrigData.table = flowTable;
+              if (triggerCondition) pfTrigData.condition = triggerCondition;
+              await client.post('/api/now/table/sys_hub_trigger_instance', pfTrigData);
+              triggerCreated = true;
+            } catch (_) { /* best-effort */ }
+          }
+          for (var pfai = 0; pfai < activitiesArg.length; pfai++) {
+            try {
+              var pfAct = activitiesArg[pfai];
+              var pfActQ = 'internal_nameLIKE' + (pfAct.type || 'script') + '^ORnameLIKE' + (pfAct.type || 'script');
+              var pfActDefResp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+                params: { sysparm_query: pfActQ, sysparm_fields: 'sys_id', sysparm_limit: 1 }
+              });
+              var pfActDef = pfActDefResp.data.result?.[0]?.sys_id;
+              var pfInstData: any = { flow: flowSysId, name: pfAct.name, order: (pfai + 1) * 100, active: true };
+              if (pfActDef) pfInstData.action_type = pfActDef;
+              await client.post('/api/now/table/sys_hub_action_instance', pfInstData);
+              actionsCreated++;
+            } catch (_) { /* best-effort */ }
+          }
+          if (isSubflow) {
+            for (var pfvi = 0; pfvi < inputsArg.length; pfvi++) {
+              try {
+                var pfInp = inputsArg[pfvi];
+                await client.post('/api/now/table/sys_hub_flow_variable', {
+                  flow: flowSysId, name: pfInp.name, label: pfInp.label || pfInp.name,
+                  type: pfInp.type || 'string', mandatory: pfInp.mandatory || false,
+                  default_value: pfInp.default_value || '', variable_type: 'input'
+                });
+                varsCreated++;
+              } catch (_) {}
+            }
+            for (var pfvo = 0; pfvo < outputsArg.length; pfvo++) {
+              try {
+                var pfOut = outputsArg[pfvo];
+                await client.post('/api/now/table/sys_hub_flow_variable', {
+                  flow: flowSysId, name: pfOut.name, label: pfOut.label || pfOut.name,
+                  type: pfOut.type || 'string', variable_type: 'output'
+                });
+                varsCreated++;
+              } catch (_) {}
+            }
+          }
+        }
 
         // ── Table API fallback (last resort) ─────────────────────────
         if (!flowSysId) {
@@ -1815,11 +1940,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         // ── Build summary ───────────────────────────────────────────
-        var methodLabel = usedMethod.startsWith('scheduled_job')
-          ? 'Scheduled Job (server-side GlideRecord)'
-          : usedMethod === 'scripted_rest_api'
-            ? 'Scripted REST API (GlideRecord)'
-            : 'Table API' + (factoryWarnings.length > 0 ? ' (fallback)' : '');
+        var methodLabel = usedMethod === 'processflow_api'
+          ? 'ProcessFlow API (Flow Designer engine)'
+          : 'Table API' + (factoryWarnings.length > 0 ? ' (fallback)' : '');
 
         var createSummary = summary()
           .success('Created ' + (isSubflow ? 'subflow' : 'flow') + ': ' + flowName)
@@ -1855,17 +1978,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         // Diagnostics section
         createSummary.blank().line('Diagnostics:');
-        if (diagnostics.scheduled_job) {
-          var sj = diagnostics.scheduled_job;
-          createSummary.indented('Scheduled job: ' + (sj.success ? 'success' : 'failed') + (sj.tierUsed ? ' (' + sj.tierUsed + ')' : ''));
-          if (sj.error) createSummary.indented('  Error: ' + sj.error);
+        if (diagnostics.processflow_api) {
+          var pf = diagnostics.processflow_api;
+          createSummary.indented('ProcessFlow API: ' + (pf.success ? 'success' : 'failed') + (pf.versionCreated ? ' (version created)' : ''));
+          if (pf.error) createSummary.indented('  Error: ' + pf.error);
         }
-        createSummary.indented('Table API used: ' + diagnostics.table_api_used);
+        createSummary.indented('Table API fallback used: ' + diagnostics.table_api_used);
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
-        createSummary.indented('Engine compile: skipped (not available on this instance — FlowDesigner unavailable, REST 400s, no Script Includes)');
-        if (diagnostics.latest_version_auto_set !== undefined) {
-          createSummary.indented('latest_version: ' + (diagnostics.latest_version_auto_set ? 'set' : 'null'));
-        }
         if (diagnostics.post_verify) {
           if (diagnostics.post_verify.error) {
             createSummary.indented('Post-verify: error — ' + diagnostics.post_verify.error);
@@ -2251,5 +2370,5 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   }
 }
 
-export const version = '5.0.0';
+export const version = '6.0.0';
 export const author = 'Snow-Flow Team';
