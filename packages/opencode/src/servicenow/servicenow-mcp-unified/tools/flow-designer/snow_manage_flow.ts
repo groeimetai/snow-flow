@@ -1634,11 +1634,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         }
 
-        // ── Register flow with Flow Designer engine (Table API only) ──
-        // For scheduled job path, engine registration is done server-side
-        // inside the job script (via sn_fd APIs). Only call the external
-        // REST-based registration for the Table API fallback path.
-        if (flowSysId && usedMethod.startsWith('table_api')) {
+        // ── Register flow with Flow Designer engine ──
+        // Call the REST API (publish/activate/checkout+checkin/snapshot) to
+        // trigger engine compilation and set latest_version (computed field
+        // that cannot be set via GlideRecord or Table API PATCH).
+        if (flowSysId) {
           var engineResult = await registerFlowWithEngine(client, flowSysId, shouldActivate);
           diagnostics.engine_registration = {
             success: engineResult.success,
