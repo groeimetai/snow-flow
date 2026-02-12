@@ -124,9 +124,11 @@ async function createFlowViaScheduledJob(
     "    } catch(t1e) { r.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + '' }; }",
     "",
     // ── TIER 2: GlideRecord ──
-    // Set flow_definition + latest_snapshot on flow record.
-    // Set flow_definition on version record.
-    // Force-set latest_version with setWorkflow(false) to bypass BRs.
+    // Reference flow analysis shows:
+    //   - flow_definition on flow record = null (working flows don't have it)
+    //   - latest_snapshot = 32-char sys_id (reference, NOT JSON!)
+    //   - latest_version = null (normal on this instance)
+    // So: DON'T set flow_definition on flow, set latest_snapshot = version sys_id.
     "    if (!flowSysId) {",
     "      try {",
     "        var f = new GlideRecord('sys_hub_flow');",
@@ -136,9 +138,10 @@ async function createFlowViaScheduledJob(
     "        f.setValue('run_as', runAs); f.setValue('active', false);",
     "        f.setValue('status', 'draft'); f.setValue('validated', true);",
     "        f.setValue('type', isSubflow ? 'subflow' : 'flow');",
-    "        if (flowDefStr) { f.setValue('flow_definition', flowDefStr); f.setValue('latest_snapshot', flowDefStr); }",
+    // Do NOT set flow_definition (null on working flows)
+    // Do NOT set latest_snapshot yet (set after version insert — it's a sys_id ref)
     "        flowSysId = f.insert();",
-    "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '', flow_def_set: !!flowDefStr };",
+    "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '' };",
     "        if (flowSysId) {",
     "          var v = new GlideRecord('sys_hub_flow_version');",
     "          v.initialize();",
@@ -146,30 +149,20 @@ async function createFlowViaScheduledJob(
     "          v.setValue('version', '1.0'); v.setValue('state', 'draft');",
     "          v.setValue('active', true); v.setValue('compile_state', 'draft');",
     "          v.setValue('is_current', true);",
-    "          v.setValue('internal_name', intName + '_v1_0');",
     "          if (flowDefStr) { v.setValue('flow_definition', flowDefStr); }",
     "          verSysId = v.insert();",
-    "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '', has_flow_def: !!flowDefStr };",
+    "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
     "",
-    // Force-set latest_version — bypass BRs with setWorkflow(false)
+    // Set latest_snapshot on flow record to version sys_id (reference field, not JSON)
     "          if (verSysId) {",
     "            try {",
     "              var flowUpd = new GlideRecord('sys_hub_flow');",
-    "              flowUpd.setWorkflow(false);",
-    "              flowUpd.autoSysFields(false);",
     "              if (flowUpd.get(flowSysId)) {",
-    "                flowUpd.setValue('latest_version', verSysId);",
+    "                flowUpd.setValue('latest_snapshot', verSysId);",
     "                flowUpd.update();",
-    "                r.steps.latest_version_force = 'attempted';",
+    "                r.steps.latest_snapshot_set = verSysId + '';",
     "              }",
-    "            } catch(lvE) { r.steps.latest_version_force = 'error:' + (lvE.getMessage ? lvE.getMessage() : lvE + ''); }",
-    // Verify latest_version was set
-    "            var lvCheck = new GlideRecord('sys_hub_flow');",
-    "            if (lvCheck.get(flowSysId)) {",
-    "              var lvVal = lvCheck.getValue('latest_version');",
-    "              r.steps.latest_version_after_force = lvVal + '';",
-    "              r.steps.latest_version_success = (lvVal === verSysId + '');",
-    "            }",
+    "            } catch(lsE) { r.steps.latest_snapshot_set = 'error:' + (lsE.getMessage ? lsE.getMessage() : lsE + ''); }",
     "          }",
     "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
     "        }",
@@ -303,20 +296,24 @@ async function createFlowViaScheduledJob(
     "            latest_version: refLv,",
     "            has_latest_version: refLv !== 'null' && refLv.length > 5",
     "          };",
-    // Also read the version record of the reference flow
-    "          if (refLv !== 'null' && refLv.length > 5) {",
-    "            var refVer = new GlideRecord('sys_hub_flow_version');",
-    "            if (refVer.get(refLv)) {",
-    "              var refVFd = refVer.getValue('flow_definition') + '';",
-    "              r.steps.reference_flow.version_state = refVer.getValue('state');",
-    "              r.steps.reference_flow.version_compile_state = refVer.getValue('compile_state');",
-    "              r.steps.reference_flow.version_is_current = refVer.getValue('is_current');",
-    "              r.steps.reference_flow.version_active = refVer.getValue('active');",
-    "              r.steps.reference_flow.version_has_flow_def = refVFd !== 'null' && refVFd.length > 0;",
-    "              r.steps.reference_flow.version_flow_def_length = refVFd.length;",
-    "              r.steps.reference_flow.version_flow_def_prefix = refVFd.substring(0, 200);",
-    "            }",
-    "          }",
+    // Query version records for reference flow (by flow= since latest_version is null)
+    "          var refVer = new GlideRecord('sys_hub_flow_version');",
+    "          refVer.addQuery('flow', refId);",
+    "          refVer.orderByDesc('sys_created_on');",
+    "          refVer.setLimit(1); refVer.query();",
+    "          if (refVer.next()) {",
+    "            var refVFd = refVer.getValue('flow_definition') + '';",
+    "            r.steps.reference_flow.version_sys_id = refVer.getUniqueValue();",
+    "            r.steps.reference_flow.version_state = refVer.getValue('state');",
+    "            r.steps.reference_flow.version_compile_state = refVer.getValue('compile_state');",
+    "            r.steps.reference_flow.version_is_current = refVer.getValue('is_current');",
+    "            r.steps.reference_flow.version_active = refVer.getValue('active');",
+    "            r.steps.reference_flow.version_has_flow_def = refVFd !== 'null' && refVFd.length > 0;",
+    "            r.steps.reference_flow.version_flow_def_length = refVFd.length;",
+    "            r.steps.reference_flow.version_flow_def_prefix = refVFd.substring(0, 200);",
+    // Check if latest_snapshot matches this version sys_id
+    "            r.steps.reference_flow.snapshot_matches_version = (refLs === refVer.getUniqueValue());",
+    "          } else { r.steps.reference_flow.version_found = false; }",
     "        }",
     "      } catch(refE) { r.steps.reference_flow = { error: refE + '' }; }",
     "",
@@ -1467,9 +1464,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             run_as: flowRunAs,
             status: shouldActivate ? 'published' : 'draft',
             validated: true,
-            type: isSubflow ? 'subflow' : 'flow',
-            flow_definition: JSON.stringify(flowDefinition),
-            latest_snapshot: JSON.stringify(flowDefinition)
+            type: isSubflow ? 'subflow' : 'flow'
+            // Do NOT set flow_definition or latest_snapshot on flow record
+            // Reference flow analysis: flow_definition=null, latest_snapshot=version sys_id
           };
 
           var flowResponse = await client.post('/api/now/table/sys_hub_flow', flowData);
@@ -1513,36 +1510,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               versionCreated = true;
               diagnostics.version_created = true;
               diagnostics.version_method = 'table_api (draft→update)';
-              diagnostics.version_fields_set = ['flow', 'name', 'version', 'state', 'active', 'compile_state', 'is_current', 'published_flow', 'internal_name'];
 
-              // Step 3: Check if BRs auto-set latest_version on the flow
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Set latest_snapshot on flow record to version sys_id (reference field)
               try {
-                var flowCheck = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
-                  params: { sysparm_fields: 'latest_version', sysparm_display_value: 'false' }
+                await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
+                  latest_snapshot: versionSysId
                 });
-                var autoLinked = !!(flowCheck.data.result?.latest_version);
-                diagnostics.latest_version_auto_set = autoLinked;
-
-                // Step 4: If BRs didn't set it, explicitly PATCH + verify
-                if (!autoLinked) {
-                  try {
-                    var linkResp = await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
-                      latest_version: versionSysId,
-                      latest_published_version: shouldActivate ? versionSysId : undefined
-                    });
-                    diagnostics.latest_version_patch_status = linkResp.status;
-                    // Immediate readback
-                    var readback = await client.get('/api/now/table/sys_hub_flow/' + flowSysId, {
-                      params: { sysparm_fields: 'latest_version', sysparm_display_value: 'false' }
-                    });
-                    diagnostics.latest_version_after_patch = readback.data.result?.latest_version || 'null';
-                  } catch (linkError: any) {
-                    diagnostics.latest_version_patch_error = linkError.message || 'unknown';
-                    factoryWarnings.push('latest_version link failed: ' + (linkError.message || linkError));
-                  }
-                }
-              } catch (_) {}
+                diagnostics.latest_snapshot_set = versionSysId;
+              } catch (snapshotErr: any) {
+                diagnostics.latest_snapshot_error = snapshotErr.message || 'unknown';
+              }
             }
           } catch (verError: any) {
             factoryWarnings.push('sys_hub_flow_version creation failed: ' + (verError.message || verError));
