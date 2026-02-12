@@ -124,11 +124,11 @@ async function createFlowViaScheduledJob(
     "    } catch(t1e) { r.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + '' }; }",
     "",
     // ── TIER 2: GlideRecord ──
-    // Reference flow analysis shows:
-    //   - flow_definition on flow record = null (working flows don't have it)
-    //   - latest_snapshot = 32-char sys_id (reference, NOT JSON!)
-    //   - latest_version = null (normal on this instance)
-    // So: DON'T set flow_definition on flow, set latest_snapshot = version sys_id.
+    // Reference flow analysis:
+    //   - latest_snapshot points to sys_hub_flow_snapshot (NOT version, NOT JSON)
+    //   - flow_definition on flow record = null
+    //   - latest_version = null (normal)
+    // Pipeline: flow → version → snapshot → set latest_snapshot on flow
     "    if (!flowSysId) {",
     "      try {",
     "        var f = new GlideRecord('sys_hub_flow');",
@@ -138,11 +138,10 @@ async function createFlowViaScheduledJob(
     "        f.setValue('run_as', runAs); f.setValue('active', false);",
     "        f.setValue('status', 'draft'); f.setValue('validated', true);",
     "        f.setValue('type', isSubflow ? 'subflow' : 'flow');",
-    // Do NOT set flow_definition (null on working flows)
-    // Do NOT set latest_snapshot yet (set after version insert — it's a sys_id ref)
     "        flowSysId = f.insert();",
     "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '' };",
     "        if (flowSysId) {",
+    // Version record
     "          var v = new GlideRecord('sys_hub_flow_version');",
     "          v.initialize();",
     "          v.setValue('flow', flowSysId); v.setValue('name', '1.0');",
@@ -153,16 +152,35 @@ async function createFlowViaScheduledJob(
     "          verSysId = v.insert();",
     "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
     "",
-    // Set latest_snapshot on flow record to version sys_id (reference field, not JSON)
-    "          if (verSysId) {",
+    // Create snapshot in sys_hub_flow_snapshot (this is what latest_snapshot points to!)
+    "          var snapId = null;",
+    "          try {",
+    "            var snap = new GlideRecord('sys_hub_flow_snapshot');",
+    "            if (snap.isValid()) {",
+    "              snap.initialize();",
+    "              snap.setValue('name', flowName);",
+    // Try setting common fields — some may not exist, that's OK
+    "              try { snap.setValue('flow', flowSysId); } catch(e) {}",
+    "              try { snap.setValue('version', verSysId); } catch(e) {}",
+    "              try { snap.setValue('state', 'draft'); } catch(e) {}",
+    "              try { snap.setValue('active', true); } catch(e) {}",
+    "              if (flowDefStr) { try { snap.setValue('flow_definition', flowDefStr); } catch(e) {} }",
+    "              snapId = snap.insert();",
+    "              r.steps.snapshot_insert = { success: !!snapId, sys_id: snapId + '' };",
+    "            } else { r.steps.snapshot_insert = { success: false, error: 'table not valid' }; }",
+    "          } catch(snapE) { r.steps.snapshot_insert = { success: false, error: snapE.getMessage ? snapE.getMessage() : snapE + '' }; }",
+    "",
+    // Set latest_snapshot on flow to point to the snapshot record
+    "          var snapshotRef = snapId || verSysId;",
+    "          if (snapshotRef) {",
     "            try {",
     "              var flowUpd = new GlideRecord('sys_hub_flow');",
     "              if (flowUpd.get(flowSysId)) {",
-    "                flowUpd.setValue('latest_snapshot', verSysId);",
+    "                flowUpd.setValue('latest_snapshot', snapshotRef);",
     "                flowUpd.update();",
-    "                r.steps.latest_snapshot_set = verSysId + '';",
+    "                r.steps.latest_snapshot_set = { value: snapshotRef + '', source: snapId ? 'snapshot' : 'version' };",
     "              }",
-    "            } catch(lsE) { r.steps.latest_snapshot_set = 'error:' + (lsE.getMessage ? lsE.getMessage() : lsE + ''); }",
+    "            } catch(lsE) { r.steps.latest_snapshot_set = { error: lsE.getMessage ? lsE.getMessage() : lsE + '' }; }",
     "          }",
     "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
     "        }",
@@ -289,37 +307,27 @@ async function createFlowViaScheduledJob(
     "            latest_snapshot_value: refLs,",
     "            latest_version: refGr.getValue('latest_version') + ''",
     "          };",
-    // Find what table latest_snapshot points to
+    // Read the reference snapshot record fields (sys_hub_flow_snapshot)
     "          if (refLs !== 'null' && refLs.length === 32) {",
-    "            var snapTables = ['sys_hub_flow_version', 'sys_hub_flow_snapshot', 'sys_hub_compiled_flow', 'sys_hub_flow_base'];",
-    "            for (var st = 0; st < snapTables.length; st++) {",
-    "              try {",
-    "                var stGr = new GlideRecord(snapTables[st]);",
-    "                if (stGr.isValid() && stGr.get(refLs)) {",
-    "                  r.steps.reference_flow.snapshot_found_in_table = snapTables[st];",
-    "                  r.steps.reference_flow.snapshot_record_name = stGr.getValue('name') + '';",
-    "                  break;",
+    "            try {",
+    "              var refSnap = new GlideRecord('sys_hub_flow_snapshot');",
+    "              if (refSnap.get(refLs)) {",
+    "                r.steps.reference_flow.snapshot_table = 'sys_hub_flow_snapshot';",
+    // Read all non-null fields to learn the schema
+    "                var snapFields = {};",
+    "                var snapEl = refSnap.getFields();",
+    "                for (var si = 0; si < snapEl.size(); si++) {",
+    "                  var sField = snapEl.get(si);",
+    "                  var sName = sField.getName() + '';",
+    "                  var sVal = refSnap.getValue(sName);",
+    "                  if (sVal && sName.indexOf('sys_') !== 0) {",
+    "                    var sStr = sVal + '';",
+    "                    snapFields[sName] = sStr.length > 100 ? sStr.substring(0, 100) + '...(len:' + sStr.length + ')' : sStr;",
+    "                  }",
     "                }",
-    "              } catch(e) {}",
-    "            }",
-    // Also try sys_metadata (universal)
-    "            if (!r.steps.reference_flow.snapshot_found_in_table) {",
-    "              try {",
-    "                var metaGr = new GlideRecord('sys_metadata');",
-    "                if (metaGr.get(refLs)) {",
-    "                  r.steps.reference_flow.snapshot_found_in_table = metaGr.getValue('sys_class_name') + '';",
-    "                }",
-    "              } catch(e) {}",
-    "            }",
-    "          }",
-    // Get field descriptor for latest_snapshot to see its reference table
-    "          var fd = refGr.getElement('latest_snapshot');",
-    "          if (fd) {",
-    "            var ed = fd.getED();",
-    "            if (ed) {",
-    "              r.steps.reference_flow.snapshot_field_type = ed.getInternalType() + '';",
-    "              r.steps.reference_flow.snapshot_field_reference = ed.getReference() + '';",
-    "            }",
+    "                r.steps.reference_flow.snapshot_fields = snapFields;",
+    "              }",
+    "            } catch(snapRefE) { r.steps.reference_flow.snapshot_error = snapRefE + ''; }",
     "          }",
     // Count trigger/action instances for reference flow
     "          var refTrig = new GlideAggregate('sys_hub_trigger_instance');",
