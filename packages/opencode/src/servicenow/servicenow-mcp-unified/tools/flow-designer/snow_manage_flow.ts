@@ -411,39 +411,94 @@ async function createFlowViaScheduledJob(
     "        }",
     "      } catch(refE) { r.steps.reference_flow = { error: refE + '' }; }",
     "",
-    // ── Engine: try FlowAPI.compile on snapshot and flow ──
-    "      r.steps.engine = { mode: 'compile', sn_fd: typeof sn_fd !== 'undefined' ? 'available' : 'unavailable' };",
+    // ── Engine: enumerate FlowAPI methods + try create/save/compile ──
+    "      r.steps.engine = { mode: 'discover_and_create', sn_fd: typeof sn_fd !== 'undefined' ? 'available' : 'unavailable' };",
     "      if (typeof sn_fd !== 'undefined' && sn_fd.FlowAPI) {",
     "        r.steps.engine.FlowAPI = 'available';",
-    // Try compile on snapshot first (snapshot extends sys_hub_flow_block)
-    "        if (snapId) {",
-    "          try {",
-    "            var snapCompResult = sn_fd.FlowAPI.compile(snapId);",
-    "            r.steps.engine.compile_snapshot = snapCompResult ? (snapCompResult + '').substring(0, 200) : 'success (null return)';",
-    "          } catch(sce) { r.steps.engine.compile_snapshot = 'error: ' + (sce.getMessage ? sce.getMessage() : sce + ''); }",
+    "",
+    // Enumerate ALL methods on FlowAPI
+    "        var apiMethods = [];",
+    "        try {",
+    "          for (var mk in sn_fd.FlowAPI) {",
+    "            if (typeof sn_fd.FlowAPI[mk] === 'function') apiMethods.push(mk);",
+    "          }",
+    "        } catch(e) {}",
+    // Also try prototype methods
+    "        try {",
+    "          var proto = Object.getPrototypeOf ? Object.getPrototypeOf(sn_fd.FlowAPI) : sn_fd.FlowAPI.__proto__;",
+    "          if (proto) {",
+    "            for (var pk in proto) {",
+    "              if (typeof proto[pk] === 'function' && apiMethods.indexOf(pk) === -1) apiMethods.push(pk + '(proto)');",
+    "            }",
+    "          }",
+    "        } catch(e) {}",
+    // Try known method names that might exist
+    "        var knownMethods = ['createFlow', 'createSubflow', 'saveFlow', 'save', 'newFlow', 'designFlow',",
+    "          'checkout', 'checkin', 'publish', 'activate', 'deactivate', 'compile', 'getFlow', 'getFlowById',",
+    "          'getDesignerModel', 'getDesignerStructure', 'openFlow', 'importFlow', 'createDraftFlow',",
+    "          'createVersion', 'publishFlow', 'activateFlow', 'compileFlow', 'getFlowStructure'];",
+    "        for (var km = 0; km < knownMethods.length; km++) {",
+    "          if (typeof sn_fd.FlowAPI[knownMethods[km]] === 'function' && apiMethods.indexOf(knownMethods[km]) === -1) {",
+    "            apiMethods.push(knownMethods[km]);",
+    "          }",
     "        }",
-    // Then compile the flow record itself
+    "        r.steps.engine.all_methods = apiMethods;",
+    "",
+    // Try createFlow / createSubflow / createDraftFlow if they exist
+    "        var createMethods = ['createFlow', 'createSubflow', 'createDraftFlow', 'newFlow'];",
+    "        for (var cm = 0; cm < createMethods.length; cm++) {",
+    "          if (typeof sn_fd.FlowAPI[createMethods[cm]] === 'function') {",
+    "            try {",
+    "              var createResult = sn_fd.FlowAPI[createMethods[cm]](flowName, flowDesc);",
+    "              var crStr = createResult ? JSON.stringify(createResult).substring(0, 300) : 'null';",
+    "              r.steps.engine['try_' + createMethods[cm]] = crStr;",
+    // If it returned a sys_id, use it as the real flow
+    "              if (createResult && typeof createResult === 'string' && createResult.length === 32) {",
+    "                r.steps.engine.engine_created_flow = createResult;",
+    "              } else if (createResult && createResult.sys_id) {",
+    "                r.steps.engine.engine_created_flow = createResult.sys_id + '';",
+    "              }",
+    "            } catch(cme) { r.steps.engine['try_' + createMethods[cm]] = 'error: ' + (cme.getMessage ? cme.getMessage() : cme + ''); }",
+    "          }",
+    "        }",
+    "",
+    // Try save/checkout/checkin on existing flow
+    "        if (flowSysId) {",
+    "          var saveMethods = ['save', 'saveFlow', 'checkout', 'checkin'];",
+    "          for (var sm = 0; sm < saveMethods.length; sm++) {",
+    "            if (typeof sn_fd.FlowAPI[saveMethods[sm]] === 'function') {",
+    "              try {",
+    "                var saveRes = sn_fd.FlowAPI[saveMethods[sm]](flowSysId);",
+    "                r.steps.engine['try_' + saveMethods[sm]] = saveRes ? (saveRes + '').substring(0, 200) : 'success (null)';",
+    "              } catch(se) { r.steps.engine['try_' + saveMethods[sm]] = 'error: ' + (se.getMessage ? se.getMessage() : se + ''); }",
+    "            }",
+    "          }",
+    "        }",
+    "",
+    // Still try compile on flow (for diagnostics)
     "        if (flowSysId) {",
     "          try {",
     "            var flowCompResult = sn_fd.FlowAPI.compile(flowSysId);",
-    "            r.steps.engine.compile_flow = flowCompResult ? (flowCompResult + '').substring(0, 200) : 'success (null return)';",
+    "            r.steps.engine.compile_flow = flowCompResult ? (flowCompResult + '').substring(0, 200) : 'success (null)';",
     "          } catch(fce) { r.steps.engine.compile_flow = 'error: ' + (fce.getMessage ? fce.getMessage() : fce + ''); }",
     "        }",
-    // After compile, re-read snapshot to check if label_cache was populated
-    "        if (snapId) {",
+    "",
+    // Enumerate other sn_fd top-level objects
+    "        var snfdKeys = [];",
+    "        try {",
+    "          for (var sk in sn_fd) {",
+    "            snfdKeys.push(sk + ':' + typeof sn_fd[sk]);",
+    "          }",
+    "        } catch(e) {}",
+    "        r.steps.engine.sn_fd_keys = snfdKeys;",
+    "",
+    // Also check for global FlowDesigner-related objects
+    "        var globalApis = ['GlideFlowDesigner', 'FlowDesignerService', 'FlowDesignerUtil', 'FlowEngine'];",
+    "        r.steps.engine.global_apis = {};",
+    "        for (var ga = 0; ga < globalApis.length; ga++) {",
     "          try {",
-    "            var postSnap = new GlideRecord('sys_hub_flow_snapshot');",
-    "            if (postSnap.get(snapId)) {",
-    "              var lc = postSnap.getValue('label_cache') + '';",
-    "              r.steps.engine.label_cache_after_compile = lc.length > 5 ? lc.substring(0, 100) + '...(len:' + lc.length + ')' : lc;",
-    "            }",
-    "          } catch(e) {}",
-    "        }",
-    // Try other known APIs
-    "        var otherApis = ['FlowDesigner', 'FlowPublisher', 'FlowCompiler'];",
-    "        r.steps.engine.other_apis = {};",
-    "        for (var oa = 0; oa < otherApis.length; oa++) {",
-    "          r.steps.engine.other_apis[otherApis[oa]] = typeof sn_fd[otherApis[oa]] !== 'undefined' ? 'available' : 'unavailable';",
+    "            r.steps.engine.global_apis[globalApis[ga]] = eval('typeof ' + globalApis[ga]) !== 'undefined' ? 'available' : 'unavailable';",
+    "          } catch(e) { r.steps.engine.global_apis[globalApis[ga]] = 'unavailable'; }",
     "        }",
     "      } else {",
     "        r.steps.engine.FlowAPI = 'unavailable';",
@@ -1879,17 +1934,28 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
         if (diagnostics.engine_registration) {
           var eng = diagnostics.engine_registration;
-          if (eng.mode === 'compile') {
-            // New compile mode (scheduled job path)
+          if (eng.mode === 'discover_and_create') {
+            // Discovery mode — show all FlowAPI methods found
+            createSummary.indented('Engine (discover): sn_fd=' + eng.sn_fd + ', FlowAPI=' + (eng.FlowAPI || 'unknown'));
+            if (eng.all_methods) createSummary.indented('  FlowAPI methods: [' + eng.all_methods.join(', ') + ']');
+            if (eng.sn_fd_keys) createSummary.indented('  sn_fd keys: [' + eng.sn_fd_keys.join(', ') + ']');
+            // Show any create/save attempts
+            var tryKeys = Object.keys(eng).filter(function(k: string) { return k.indexOf('try_') === 0; });
+            for (var tk = 0; tk < tryKeys.length; tk++) {
+              createSummary.indented('  ' + tryKeys[tk] + ': ' + eng[tryKeys[tk]]);
+            }
+            if (eng.engine_created_flow) createSummary.indented('  ENGINE CREATED FLOW: ' + eng.engine_created_flow);
+            if (eng.compile_flow) createSummary.indented('  compile(flow): ' + eng.compile_flow);
+            if (eng.global_apis) {
+              var gaList = Object.keys(eng.global_apis).map(function(k: string) { return k + '=' + eng.global_apis[k]; }).join(', ');
+              createSummary.indented('  Global APIs: ' + gaList);
+            }
+          } else if (eng.mode === 'compile') {
             var engineLabel = 'sn_fd=' + eng.sn_fd + ', FlowAPI=' + (eng.FlowAPI || 'unknown');
             if (eng.compile_snapshot) engineLabel += ', compile(snapshot)=' + eng.compile_snapshot;
             if (eng.compile_flow) engineLabel += ', compile(flow)=' + eng.compile_flow;
             if (eng.label_cache_after_compile) engineLabel += ', label_cache=' + eng.label_cache_after_compile;
             createSummary.indented('Engine (compile): ' + engineLabel);
-            if (eng.other_apis) {
-              var apiList = Object.keys(eng.other_apis).map(function(k: string) { return k + '=' + eng.other_apis[k]; }).join(', ');
-              createSummary.indented('  Other APIs: ' + apiList);
-            }
           } else if (eng.sn_fd) {
             // Legacy probe-only mode (from scheduled job)
             var legacyLabel = 'sn_fd=' + eng.sn_fd;
