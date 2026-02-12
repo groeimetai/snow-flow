@@ -168,7 +168,7 @@ async function createFlowViaScheduledJob(
     "              snap.setValue('access', 'public');",
     "              snap.setValue('active', true);",
     "              snap.setValue('master', true);",
-    "              snap.setValue('status', 'draft');",
+    "              snap.setValue('status', 'published');",
     "              try { snap.setValue('sc_callable', false); } catch(e) {}",
     "              try { snap.setValue('callable_by_client_api', false); } catch(e) {}",
     "              snapId = snap.insert();",
@@ -1130,7 +1130,7 @@ async function registerFlowWithEngine(
 ): Promise<{ success: boolean; method: string; attempts: string[] }> {
   var attempts: string[] = [];
 
-  // Helper: try a POST and classify the result
+  // Helper: try a POST and classify the result (capture error body for diagnostics)
   async function tryPost(label: string, url: string, body?: any): Promise<boolean> {
     try {
       await client.post(url, body || {});
@@ -1138,7 +1138,9 @@ async function registerFlowWithEngine(
       return true;
     } catch (e: any) {
       var s = e.response?.status || 'err';
-      attempts.push(label + ': ' + s);
+      var errBody = '';
+      try { errBody = JSON.stringify(e.response?.data || '').substring(0, 150); } catch (_) {}
+      attempts.push(label + ': ' + s + (errBody ? ' ' + errBody : ''));
       return false;
     }
   }
