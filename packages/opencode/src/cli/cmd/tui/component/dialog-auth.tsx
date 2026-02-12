@@ -1284,6 +1284,7 @@ function DialogAuthEnterpriseCombined() {
     | "code"
     | "verifying-enterprise"
     | "checking-portal-sn"
+    | "select-sn-instance"
     | "sn-method"
     | "sn-instance"
     | "sn-oauth-clientid"
@@ -1308,6 +1309,18 @@ function DialogAuthEnterpriseCombined() {
     clientId?: string
     clientSecret?: string
   } | null>(null)
+
+  // ServiceNow instances from enterprise portal (for multi-instance selection)
+  const [snInstances, setSnInstances] = createSignal<
+    Array<{
+      id: number
+      instanceName: string
+      instanceUrl: string
+      environmentType: string
+      isDefault: boolean
+      enabled: boolean
+    }>
+  >([])
 
   // ServiceNow state
   const [snMethod, setSnMethod] = createSignal<"oauth" | "basic">("oauth")
@@ -1369,6 +1382,9 @@ function DialogAuthEnterpriseCombined() {
         setSessionId("")
         setAuthCode("")
         setTimeout(() => subdomainInput?.focus(), 10)
+      } else if (currentStep === "select-sn-instance") {
+        // Can't re-do enterprise auth, go back to main auth menu
+        dialog.replace(() => <DialogAuth />)
       } else if (currentStep === "sn-method") {
         // Can't go back to enterprise flow, go to main menu
         dialog.replace(() => <DialogAuth />)
@@ -1520,28 +1536,42 @@ function DialogAuthEnterpriseCombined() {
         duration: 3000,
       })
 
-      // Check if enterprise portal has ServiceNow credentials
+      // Check if enterprise portal has ServiceNow instances
       setStep("checking-portal-sn")
-      const portalCreds = await fetchPortalSnCredentials(portalUrl, data.token)
+      const instances = await fetchPortalSnInstances(portalUrl, data.token)
 
-      if (portalCreds) {
-        // Portal has ServiceNow credentials - use them directly
-        setPortalSnCredentials(portalCreds)
+      if (instances.length === 0) {
+        // No instances — manual setup
         toast.show({
           variant: "info",
-          message: "ServiceNow credentials found in enterprise portal!",
-          duration: 3000,
-        })
-        // Skip manual ServiceNow input, go directly to completing
-        await startBothMcpServersWithPortalCreds(portalUrl, data.token, portalCreds, data.user)
-      } else {
-        // No ServiceNow credentials on portal - ask user to input manually
-        toast.show({
-          variant: "info",
-          message: "No ServiceNow credentials found on portal. Please configure manually.",
+          message: "No ServiceNow instances found on portal. Please configure manually.",
           duration: 3000,
         })
         setStep("sn-method")
+      } else if (instances.length === 1) {
+        // Single instance — fetch creds and proceed
+        toast.show({
+          variant: "info",
+          message: `ServiceNow instance found: ${instances[0].instanceName}`,
+          duration: 3000,
+        })
+        const creds = await fetchPortalSnInstanceById(portalUrl, data.token, instances[0].id)
+        if (creds) {
+          setPortalSnCredentials(creds)
+          await startBothMcpServersWithPortalCreds(portalUrl, data.token, creds, data.user)
+        } else {
+          toast.show({ variant: "error", message: "Failed to fetch instance credentials.", duration: 3000 })
+          setStep("sn-method")
+        }
+      } else {
+        // Multiple instances — show selection
+        setSnInstances(instances)
+        toast.show({
+          variant: "info",
+          message: `${instances.length} ServiceNow instances found. Please select one.`,
+          duration: 3000,
+        })
+        setStep("select-sn-instance")
       }
     } catch (e) {
       toast.show({ variant: "error", message: e instanceof Error ? e.message : "Verification failed" })
@@ -1552,38 +1582,58 @@ function DialogAuthEnterpriseCombined() {
 
   // === Portal ServiceNow Credentials ===
 
-  const fetchPortalSnCredentials = async (
+  const fetchPortalSnInstances = async (
     portalUrl: string,
-    token: string
-  ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
+    token: string,
+  ): Promise<
+    Array<{
+      id: number
+      instanceName: string
+      instanceUrl: string
+      environmentType: string
+      isDefault: boolean
+      enabled: boolean
+    }>
+  > => {
     try {
-      const response = await fetch(`${portalUrl}/api/user-credentials/servicenow/default`, {
+      const response = await fetch(`${portalUrl}/api/user-credentials/servicenow/instances`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
         },
       })
-
-      if (!response.ok) {
-        return null
-      }
-
+      if (!response.ok) return []
       const data = await response.json()
+      if (!data.success || !Array.isArray(data.instances)) return []
+      return data.instances.filter((i: any) => i.enabled)
+    } catch {
+      return []
+    }
+  }
 
-      if (!data.success || !data.instance) {
-        return null
-      }
-
-      const instance = data.instance
-      if (!instance.instanceUrl || !instance.clientId || !instance.clientSecret) {
-        return null
-      }
-
+  const fetchPortalSnInstanceById = async (
+    portalUrl: string,
+    token: string,
+    instanceId: number,
+  ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
+    try {
+      const response = await fetch(`${portalUrl}/api/user-credentials/servicenow/instances/${instanceId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      if (!data.success || !data.instance) return null
+      const inst = data.instance
+      if (!inst.instanceUrl || !inst.clientId || !inst.clientSecret) return null
       return {
-        instanceUrl: instance.instanceUrl,
-        clientId: instance.clientId,
-        clientSecret: instance.clientSecret,
+        instanceUrl: inst.instanceUrl,
+        clientId: inst.clientId,
+        clientSecret: inst.clientSecret,
       }
     } catch {
       return null
@@ -1936,6 +1986,33 @@ function DialogAuthEnterpriseCombined() {
           </box>
           <text fg={theme.textMuted}>Looking up ServiceNow configuration in enterprise portal</text>
         </box>
+      </Show>
+
+      {/* Step 4c: Select ServiceNow instance */}
+      <Show when={step() === "select-sn-instance"}>
+        <DialogSelect
+          title="Select ServiceNow Instance"
+          options={snInstances().map((inst) => ({
+            title: inst.instanceName,
+            value: String(inst.id),
+            description: inst.instanceUrl,
+            footer: inst.environmentType + (inst.isDefault ? " (default)" : ""),
+            category: "ServiceNow Instances",
+            onSelect: async () => {
+              setStep("completing")
+              const portalUrl = `https://${subdomain().trim().toLowerCase()}.snow-flow.dev`
+              const token = enterpriseData().token!
+              const creds = await fetchPortalSnInstanceById(portalUrl, token, inst.id)
+              if (creds) {
+                setPortalSnCredentials(creds)
+                await startBothMcpServersWithPortalCreds(portalUrl, token, creds, enterpriseData().user)
+              } else {
+                toast.show({ variant: "error", message: "Failed to fetch instance credentials.", duration: 3000 })
+                setStep("sn-method")
+              }
+            },
+          }))}
+        />
       </Show>
 
       {/* Step 5: Choose ServiceNow method */}
