@@ -83,6 +83,7 @@ import * as platformTools from '../tools/platform/index.js';
 import * as devopsTools from '../tools/devops/index.js';
 import * as virtualAgentTools from '../tools/virtual-agent/index.js';
 import * as flowDesignerTools from '../tools/flow-designer/index.js';
+import * as pluginsTools from '../tools/plugins/index.js';
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -150,6 +151,7 @@ const STATIC_TOOL_MODULES: Record<string, any> = {
   'devops': devopsTools,
   'virtual-agent': virtualAgentTools,
   'flow-designer': flowDesignerTools,
+  'plugins': pluginsTools,
 };
 
 export class ToolRegistry {
