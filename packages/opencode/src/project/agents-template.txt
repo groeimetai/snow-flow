@@ -125,6 +125,12 @@ await activity_start({
   updateSetUrl: "https://instance.service-now.com/sys_update_set.do?sys_id=abc123..."
 });
 
+await activity_update({
+  activityId: activityId,
+  status: "in_progress",  // or "review", "failed", "cancelled"
+  summary: "Progress update: completed widget creation, starting business rule"
+});
+
 await activity_add_artifact({
   activityId: activityId,
   artifactType: "widget",

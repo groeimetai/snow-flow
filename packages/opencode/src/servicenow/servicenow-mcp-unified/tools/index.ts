@@ -166,7 +166,7 @@ export * from './mappers/index.js';
 // Decoders (1 tool)
 export * from './decoders/index.js';
 
-// Plugins (3 tools)
+// Plugins (1 tool - unified plugin management)
 export * from './plugins/index.js';
 
 // Addons (3 tools)
