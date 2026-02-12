@@ -123,9 +123,10 @@ async function createFlowViaScheduledJob(
     "      }",
     "    } catch(t1e) { r.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + '' }; }",
     "",
-    // ── TIER 2: GlideRecord — minimal clean records ──
-    // Do NOT set flow_definition/latest_snapshot on flow record (computed/managed).
-    // Version: INSERT as draft → UPDATE is_current=true (triggers BRs that set latest_version).
+    // ── TIER 2: GlideRecord ──
+    // Set flow_definition + latest_snapshot on flow record.
+    // Set flow_definition on version record.
+    // Force-set latest_version with setWorkflow(false) to bypass BRs.
     "    if (!flowSysId) {",
     "      try {",
     "        var f = new GlideRecord('sys_hub_flow');",
@@ -135,30 +136,39 @@ async function createFlowViaScheduledJob(
     "        f.setValue('run_as', runAs); f.setValue('active', false);",
     "        f.setValue('status', 'draft'); f.setValue('validated', true);",
     "        f.setValue('type', isSubflow ? 'subflow' : 'flow');",
+    "        if (flowDefStr) { f.setValue('flow_definition', flowDefStr); f.setValue('latest_snapshot', flowDefStr); }",
     "        flowSysId = f.insert();",
-    "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '' };",
+    "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '', flow_def_set: !!flowDefStr };",
     "        if (flowSysId) {",
-    // Step 1: INSERT version as minimal draft
     "          var v = new GlideRecord('sys_hub_flow_version');",
     "          v.initialize();",
     "          v.setValue('flow', flowSysId); v.setValue('name', '1.0');",
     "          v.setValue('version', '1.0'); v.setValue('state', 'draft');",
-    "          v.setValue('active', false); v.setValue('compile_state', 'draft');",
-    "          v.setValue('is_current', false);",
+    "          v.setValue('active', true); v.setValue('compile_state', 'draft');",
+    "          v.setValue('is_current', true);",
+    "          v.setValue('internal_name', intName + '_v1_0');",
+    "          if (flowDefStr) { v.setValue('flow_definition', flowDefStr); }",
     "          verSysId = v.insert();",
-    "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
-    // Step 2: UPDATE version → is_current=true, active=true (triggers BRs)
+    "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '', has_flow_def: !!flowDefStr };",
+    "",
+    // Force-set latest_version — bypass BRs with setWorkflow(false)
     "          if (verSysId) {",
-    "            var vu = new GlideRecord('sys_hub_flow_version');",
-    "            if (vu.get(verSysId)) {",
-    "              vu.setValue('is_current', true); vu.setValue('active', true);",
-    "              vu.update();",
-    "              r.steps.version_update = { success: true };",
-    "            }",
-    // Check if BR set latest_version
+    "            try {",
+    "              var flowUpd = new GlideRecord('sys_hub_flow');",
+    "              flowUpd.setWorkflow(false);",
+    "              flowUpd.autoSysFields(false);",
+    "              if (flowUpd.get(flowSysId)) {",
+    "                flowUpd.setValue('latest_version', verSysId);",
+    "                flowUpd.update();",
+    "                r.steps.latest_version_force = 'attempted';",
+    "              }",
+    "            } catch(lvE) { r.steps.latest_version_force = 'error:' + (lvE.getMessage ? lvE.getMessage() : lvE + ''); }",
+    // Verify latest_version was set
     "            var lvCheck = new GlideRecord('sys_hub_flow');",
     "            if (lvCheck.get(flowSysId)) {",
-    "              r.steps.latest_version_after_update = lvCheck.getValue('latest_version') + '';",
+    "              var lvVal = lvCheck.getValue('latest_version');",
+    "              r.steps.latest_version_after_force = lvVal + '';",
+    "              r.steps.latest_version_success = (lvVal === verSysId + '');",
     "            }",
     "          }",
     "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
