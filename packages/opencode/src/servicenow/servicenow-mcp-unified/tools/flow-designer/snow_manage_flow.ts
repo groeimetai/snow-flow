@@ -152,43 +152,7 @@ async function createFlowViaScheduledJob(
     "          verSysId = v.insert();",
     "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
     "",
-    // Create snapshot in sys_hub_flow_snapshot (this is what latest_snapshot points to!)
-    // Reference snapshot fields: parent_flow, master, internal_name, type, run_as,
-    // access, active, status, name, sc_callable, callable_by_client_api
-    "          var snapId = null;",
-    "          try {",
-    "            var snap = new GlideRecord('sys_hub_flow_snapshot');",
-    "            if (snap.isValid()) {",
-    "              snap.initialize();",
-    "              snap.setValue('name', flowName);",
-    "              snap.setValue('internal_name', intName);",
-    "              snap.setValue('parent_flow', flowSysId);",
-    "              snap.setValue('type', isSubflow ? 'subflow' : 'flow');",
-    "              snap.setValue('run_as', runAs);",
-    "              snap.setValue('access', 'public');",
-    "              snap.setValue('active', true);",
-    "              snap.setValue('master', true);",
-    "              snap.setValue('status', 'published');",
-    "              snap.setValue('label_cache', '[]');",
-    "              try { snap.setValue('sc_callable', false); } catch(e) {}",
-    "              try { snap.setValue('callable_by_client_api', false); } catch(e) {}",
-    "              snapId = snap.insert();",
-    "              r.steps.snapshot_insert = { success: !!snapId, sys_id: snapId + '' };",
-    "            } else { r.steps.snapshot_insert = { success: false, error: 'table not valid' }; }",
-    "          } catch(snapE) { r.steps.snapshot_insert = { success: false, error: snapE.getMessage ? snapE.getMessage() : snapE + '' }; }",
-    "",
-    // Set latest_snapshot on flow to point to the snapshot record
-    "          var snapshotRef = snapId || verSysId;",
-    "          if (snapshotRef) {",
-    "            try {",
-    "              var flowUpd = new GlideRecord('sys_hub_flow');",
-    "              if (flowUpd.get(flowSysId)) {",
-    "                flowUpd.setValue('latest_snapshot', snapshotRef);",
-    "                flowUpd.update();",
-    "                r.steps.latest_snapshot_set = { value: snapshotRef + '', source: snapId ? 'snapshot' : 'version' };",
-    "              }",
-    "            } catch(lsE) { r.steps.latest_snapshot_set = { error: lsE.getMessage ? lsE.getMessage() : lsE + '' }; }",
-    "          }",
+    // No snapshot/latest_snapshot — let the engine create these via Business Rule post-compile
     "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
     "        }",
     "      } catch(t2e) { r.steps.tier2 = { success: false, error: t2e.getMessage ? t2e.getMessage() : t2e + '' }; }",
@@ -297,212 +261,8 @@ async function createFlowViaScheduledJob(
     "        }",
     "      }",
     "      r.steps.variables = { success: true, created: varsCreated };",
-    "",
-    // ── Duplicate trigger/action instances to snapshot ──
-    // Reference flow analysis: snapshot has its OWN action instances (flow=snapshot_id).
-    // Flow Designer loads the snapshot and queries instances where flow=snapshot_id.
-    "      if (snapId) {",
-    "        var snapTrigCreated = 0; var snapActCreated = 0;",
-    // Duplicate trigger instances
-    "        var trigQ = new GlideRecord('sys_hub_trigger_instance');",
-    "        trigQ.addQuery('flow', flowSysId); trigQ.query();",
-    "        while (trigQ.next()) {",
-    "          try {",
-    "            var st = new GlideRecord('sys_hub_trigger_instance');",
-    "            st.initialize();",
-    "            st.setValue('flow', snapId);",
-    "            st.setValue('name', trigQ.getValue('name'));",
-    "            st.setValue('order', trigQ.getValue('order'));",
-    "            st.setValue('active', trigQ.getValue('active'));",
-    "            var atVal = trigQ.getValue('action_type');",
-    "            if (atVal) st.setValue('action_type', atVal);",
-    "            var tblVal = trigQ.getValue('table');",
-    "            if (tblVal) st.setValue('table', tblVal);",
-    "            var condVal = trigQ.getValue('condition');",
-    "            if (condVal) st.setValue('condition', condVal);",
-    "            if (st.insert()) snapTrigCreated++;",
-    "          } catch(e) {}",
-    "        }",
-    // Duplicate action instances
-    "        var actQ = new GlideRecord('sys_hub_action_instance');",
-    "        actQ.addQuery('flow', flowSysId); actQ.query();",
-    "        while (actQ.next()) {",
-    "          try {",
-    "            var sa = new GlideRecord('sys_hub_action_instance');",
-    "            sa.initialize();",
-    "            sa.setValue('flow', snapId);",
-    "            sa.setValue('name', actQ.getValue('name'));",
-    "            sa.setValue('order', actQ.getValue('order'));",
-    "            sa.setValue('active', actQ.getValue('active'));",
-    "            var aatVal = actQ.getValue('action_type');",
-    "            if (aatVal) sa.setValue('action_type', aatVal);",
-    "            if (sa.insert()) snapActCreated++;",
-    "          } catch(e) {}",
-    "        }",
-    "        r.steps.snapshot_instances = { triggers: snapTrigCreated, actions: snapActCreated };",
-    "      }",
-    "",
-    // ── Reference: deep-inspect a published flow to find what latest_snapshot points to ──
-    "      r.steps.reference_flow = null;",
-    "      try {",
-    "        var refGr = new GlideRecord('sys_hub_flow');",
-    "        refGr.addQuery('status', 'published');",
-    "        refGr.addQuery('active', true);",
-    "        refGr.setLimit(1); refGr.query();",
-    "        if (refGr.next()) {",
-    "          var refId = refGr.getUniqueValue();",
-    "          var refLs = refGr.getValue('latest_snapshot') + '';",
-    "          r.steps.reference_flow = {",
-    "            sys_id: refId,",
-    "            name: refGr.getValue('name'),",
-    "            latest_snapshot_value: refLs,",
-    "            latest_version: refGr.getValue('latest_version') + ''",
-    "          };",
-    // Read the reference snapshot record fields (sys_hub_flow_snapshot)
-    "          if (refLs !== 'null' && refLs.length === 32) {",
-    "            try {",
-    "              var refSnap = new GlideRecord('sys_hub_flow_snapshot');",
-    "              if (refSnap.get(refLs)) {",
-    "                r.steps.reference_flow.snapshot_table = 'sys_hub_flow_snapshot';",
-    // Read all non-null fields to learn the schema
-    "                var snapFields = {};",
-    "                var snapEl = refSnap.getFields();",
-    "                for (var si = 0; si < snapEl.size(); si++) {",
-    "                  var sField = snapEl.get(si);",
-    "                  var sName = sField.getName() + '';",
-    "                  var sVal = refSnap.getValue(sName);",
-    "                  if (sVal && sName.indexOf('sys_') !== 0) {",
-    "                    var sStr = sVal + '';",
-    "                    snapFields[sName] = sStr.length > 100 ? sStr.substring(0, 100) + '...(len:' + sStr.length + ')' : sStr;",
-    "                  }",
-    "                }",
-    "                r.steps.reference_flow.snapshot_fields = snapFields;",
-    "              }",
-    "            } catch(snapRefE) { r.steps.reference_flow.snapshot_error = snapRefE + ''; }",
-    "          }",
-    // Count trigger/action instances for reference flow AND its snapshot
-    "          var refTrig = new GlideAggregate('sys_hub_trigger_instance');",
-    "          refTrig.addQuery('flow', refId); refTrig.addAggregate('COUNT'); refTrig.query();",
-    "          r.steps.reference_flow.trigger_count_on_flow = refTrig.next() ? parseInt(refTrig.getAggregate('COUNT')) : 0;",
-    "          var refAct = new GlideAggregate('sys_hub_action_instance');",
-    "          refAct.addQuery('flow', refId); refAct.addAggregate('COUNT'); refAct.query();",
-    "          r.steps.reference_flow.action_count_on_flow = refAct.next() ? parseInt(refAct.getAggregate('COUNT')) : 0;",
-    // KEY: check if snapshot has its OWN action/trigger instances
-    "          if (refLs !== 'null' && refLs.length === 32) {",
-    "            var snapTrig = new GlideAggregate('sys_hub_trigger_instance');",
-    "            snapTrig.addQuery('flow', refLs); snapTrig.addAggregate('COUNT'); snapTrig.query();",
-    "            r.steps.reference_flow.trigger_count_on_snapshot = snapTrig.next() ? parseInt(snapTrig.getAggregate('COUNT')) : 0;",
-    "            var snapAct = new GlideAggregate('sys_hub_action_instance');",
-    "            snapAct.addQuery('flow', refLs); snapAct.addAggregate('COUNT'); snapAct.query();",
-    "            r.steps.reference_flow.action_count_on_snapshot = snapAct.next() ? parseInt(snapAct.getAggregate('COUNT')) : 0;",
-    // Check sys_class_name of the snapshot (to understand table hierarchy)
-    "            try {",
-    "              var snapMeta = new GlideRecord('sys_metadata');",
-    "              if (snapMeta.get(refLs)) {",
-    "                r.steps.reference_flow.snapshot_sys_class = snapMeta.getValue('sys_class_name') + '';",
-    "              }",
-    "            } catch(e) {}",
-    // Check table hierarchy: does sys_hub_flow_snapshot extend sys_hub_flow?
-    "            try {",
-    "              var td = GlideDBObjectManager.get().getAbsoluteBase('sys_hub_flow_snapshot');",
-    "              r.steps.reference_flow.snapshot_base_table = td + '';",
-    "            } catch(e) { r.steps.reference_flow.snapshot_base_table = 'error'; }",
-    "          }",
-    "        }",
-    "      } catch(refE) { r.steps.reference_flow = { error: refE + '' }; }",
-    "",
-    // ── Engine: enumerate FlowAPI methods + try create/save/compile ──
-    "      r.steps.engine = { mode: 'discover_and_create', sn_fd: typeof sn_fd !== 'undefined' ? 'available' : 'unavailable' };",
-    "      if (typeof sn_fd !== 'undefined' && sn_fd.FlowAPI) {",
-    "        r.steps.engine.FlowAPI = 'available';",
-    "",
-    // Enumerate ALL methods on FlowAPI
-    "        var apiMethods = [];",
-    "        try {",
-    "          for (var mk in sn_fd.FlowAPI) {",
-    "            if (typeof sn_fd.FlowAPI[mk] === 'function') apiMethods.push(mk);",
-    "          }",
-    "        } catch(e) {}",
-    // Also try prototype methods
-    "        try {",
-    "          var proto = Object.getPrototypeOf ? Object.getPrototypeOf(sn_fd.FlowAPI) : sn_fd.FlowAPI.__proto__;",
-    "          if (proto) {",
-    "            for (var pk in proto) {",
-    "              if (typeof proto[pk] === 'function' && apiMethods.indexOf(pk) === -1) apiMethods.push(pk + '(proto)');",
-    "            }",
-    "          }",
-    "        } catch(e) {}",
-    // Try known method names that might exist
-    "        var knownMethods = ['createFlow', 'createSubflow', 'saveFlow', 'save', 'newFlow', 'designFlow',",
-    "          'checkout', 'checkin', 'publish', 'activate', 'deactivate', 'compile', 'getFlow', 'getFlowById',",
-    "          'getDesignerModel', 'getDesignerStructure', 'openFlow', 'importFlow', 'createDraftFlow',",
-    "          'createVersion', 'publishFlow', 'activateFlow', 'compileFlow', 'getFlowStructure'];",
-    "        for (var km = 0; km < knownMethods.length; km++) {",
-    "          if (typeof sn_fd.FlowAPI[knownMethods[km]] === 'function' && apiMethods.indexOf(knownMethods[km]) === -1) {",
-    "            apiMethods.push(knownMethods[km]);",
-    "          }",
-    "        }",
-    "        r.steps.engine.all_methods = apiMethods;",
-    "",
-    // Try createFlow / createSubflow / createDraftFlow if they exist
-    "        var createMethods = ['createFlow', 'createSubflow', 'createDraftFlow', 'newFlow'];",
-    "        for (var cm = 0; cm < createMethods.length; cm++) {",
-    "          if (typeof sn_fd.FlowAPI[createMethods[cm]] === 'function') {",
-    "            try {",
-    "              var createResult = sn_fd.FlowAPI[createMethods[cm]](flowName, flowDesc);",
-    "              var crStr = createResult ? JSON.stringify(createResult).substring(0, 300) : 'null';",
-    "              r.steps.engine['try_' + createMethods[cm]] = crStr;",
-    // If it returned a sys_id, use it as the real flow
-    "              if (createResult && typeof createResult === 'string' && createResult.length === 32) {",
-    "                r.steps.engine.engine_created_flow = createResult;",
-    "              } else if (createResult && createResult.sys_id) {",
-    "                r.steps.engine.engine_created_flow = createResult.sys_id + '';",
-    "              }",
-    "            } catch(cme) { r.steps.engine['try_' + createMethods[cm]] = 'error: ' + (cme.getMessage ? cme.getMessage() : cme + ''); }",
-    "          }",
-    "        }",
-    "",
-    // Try save/checkout/checkin on existing flow
-    "        if (flowSysId) {",
-    "          var saveMethods = ['save', 'saveFlow', 'checkout', 'checkin'];",
-    "          for (var sm = 0; sm < saveMethods.length; sm++) {",
-    "            if (typeof sn_fd.FlowAPI[saveMethods[sm]] === 'function') {",
-    "              try {",
-    "                var saveRes = sn_fd.FlowAPI[saveMethods[sm]](flowSysId);",
-    "                r.steps.engine['try_' + saveMethods[sm]] = saveRes ? (saveRes + '').substring(0, 200) : 'success (null)';",
-    "              } catch(se) { r.steps.engine['try_' + saveMethods[sm]] = 'error: ' + (se.getMessage ? se.getMessage() : se + ''); }",
-    "            }",
-    "          }",
-    "        }",
-    "",
-    // Still try compile on flow (for diagnostics)
-    "        if (flowSysId) {",
-    "          try {",
-    "            var flowCompResult = sn_fd.FlowAPI.compile(flowSysId);",
-    "            r.steps.engine.compile_flow = flowCompResult ? (flowCompResult + '').substring(0, 200) : 'success (null)';",
-    "          } catch(fce) { r.steps.engine.compile_flow = 'error: ' + (fce.getMessage ? fce.getMessage() : fce + ''); }",
-    "        }",
-    "",
-    // Enumerate other sn_fd top-level objects
-    "        var snfdKeys = [];",
-    "        try {",
-    "          for (var sk in sn_fd) {",
-    "            snfdKeys.push(sk + ':' + typeof sn_fd[sk]);",
-    "          }",
-    "        } catch(e) {}",
-    "        r.steps.engine.sn_fd_keys = snfdKeys;",
-    "",
-    // Also check for global FlowDesigner-related objects
-    "        var globalApis = ['GlideFlowDesigner', 'FlowDesignerService', 'FlowDesignerUtil', 'FlowEngine'];",
-    "        r.steps.engine.global_apis = {};",
-    "        for (var ga = 0; ga < globalApis.length; ga++) {",
-    "          try {",
-    "            r.steps.engine.global_apis[globalApis[ga]] = eval('typeof ' + globalApis[ga]) !== 'undefined' ? 'available' : 'unavailable';",
-    "          } catch(e) { r.steps.engine.global_apis[globalApis[ga]] = 'unavailable'; }",
-    "        }",
-    "      } else {",
-    "        r.steps.engine.FlowAPI = 'unavailable';",
-    "      }",
+    // Engine compilation delegated to Business Rule (runs in Flow Designer context)
+    "      r.steps.engine = 'deferred_to_business_rule';",
     "    }",
     "",
     "    r.flow_sys_id = flowSysId ? flowSysId + '' : null;",
@@ -587,6 +347,188 @@ async function createFlowViaScheduledJob(
     return { success: false, error: 'Scheduled job timed out after 30s — scheduler may be slow on this instance' };
   } catch (e: any) {
     return { success: false, error: 'Scheduled job setup failed: ' + (e.message || e) };
+  }
+}
+
+// ── Business Rule compile: create a temp BR on sys_hub_flow to trigger engine compile ──
+
+/**
+ * After the scheduled job creates the flow records, this function:
+ * 1. Creates a temporary Business Rule on sys_hub_flow (after update)
+ * 2. PATCHes the flow record to trigger the BR
+ * 3. The BR runs in the Flow Designer engine context and tries to compile/publish
+ * 4. Reads the result from a sys_property
+ * 5. Cleans up both the BR and the property
+ *
+ * Why a BR instead of scheduled job? BRs on sys_hub_flow run in the Flow Designer
+ * application scope, which may have access to APIs (like sn_fd.FlowDesigner) that
+ * aren't available in global-scope scheduled jobs.
+ */
+async function tryCompileViaBusinessRule(
+  client: any,
+  flowSysId: string,
+  flowDescription: string
+): Promise<{ success: boolean; result?: any; error?: string }> {
+  var brResultProp = 'snow_flow.br_compile.' + Date.now();
+
+  // The BR script: runs server-side in sys_hub_flow context
+  // Probes all available APIs and tries compile/publish
+  var brScript = [
+    "(function executeRule(current, previous) {",
+    "  var PROP = '" + escForScript(brResultProp) + "';",
+    "  var r = { fired: true, context: 'business_rule', flow_id: current.sys_id + '' };",
+    "  try {",
+    // Probe sn_fd namespace
+    "    if (typeof sn_fd !== 'undefined') {",
+    "      r.sn_fd = 'available';",
+    "      var snfdKeys = [];",
+    "      try { for (var k in sn_fd) { snfdKeys.push(k + ':' + typeof sn_fd[k]); } } catch(e) {}",
+    "      r.sn_fd_keys = snfdKeys;",
+    "",
+    // Try FlowDesigner (not available in scheduled job, might be available in BR)
+    "      if (typeof sn_fd.FlowDesigner !== 'undefined') {",
+    "        r.FlowDesigner = 'available';",
+    "        var fdMethods = [];",
+    "        try { for (var fm in sn_fd.FlowDesigner) { if (typeof sn_fd.FlowDesigner[fm] === 'function') fdMethods.push(fm); } } catch(e) {}",
+    "        r.FlowDesigner_methods = fdMethods;",
+    "        try {",
+    "          sn_fd.FlowDesigner.publishFlow(current.sys_id + '');",
+    "          r.publishFlow = 'success';",
+    "        } catch(pe) { r.publishFlow = (pe.getMessage ? pe.getMessage() : pe + '').substring(0, 200); }",
+    "      } else { r.FlowDesigner = 'unavailable'; }",
+    "",
+    // Try FlowAPI
+    "      if (typeof sn_fd.FlowAPI !== 'undefined') {",
+    "        r.FlowAPI = 'available';",
+    "        var faMethods = [];",
+    "        try { for (var am in sn_fd.FlowAPI) { if (typeof sn_fd.FlowAPI[am] === 'function') faMethods.push(am); } } catch(e) {}",
+    "        r.FlowAPI_methods = faMethods;",
+    "        try {",
+    "          var compRes = sn_fd.FlowAPI.compile(current.sys_id + '');",
+    "          r.compile = compRes ? (compRes + '').substring(0, 200) : 'success (null return)';",
+    "        } catch(ce) { r.compile = 'error: ' + (ce.getMessage ? ce.getMessage() : ce + '').substring(0, 200); }",
+    "        try {",
+    "          var pubRes = sn_fd.FlowAPI.publish(current.sys_id + '');",
+    "          r.publish = pubRes ? (pubRes + '').substring(0, 200) : 'success (null return)';",
+    "        } catch(pue) { r.publish = 'error: ' + (pue.getMessage ? pue.getMessage() : pue + '').substring(0, 200); }",
+    "      } else { r.FlowAPI = 'unavailable'; }",
+    "",
+    // Search for flow-related Script Includes
+    "      var si = new GlideRecord('sys_script_include');",
+    "      si.addQuery('name', 'CONTAINS', 'FlowDesigner');",
+    "      si.addOrCondition('name', 'CONTAINS', 'FlowCompiler');",
+    "      si.addOrCondition('name', 'CONTAINS', 'FlowPublish');",
+    "      si.addQuery('active', true);",
+    "      si.setLimit(15); si.query();",
+    "      r.script_includes = [];",
+    "      while (si.next()) {",
+    "        r.script_includes.push(si.getValue('name') + ' [api:' + si.getValue('api_name') + ', scope:' + si.getValue('sys_scope') + ']');",
+    "      }",
+    "",
+    // Try instantiating common Script Includes
+    "      var tryClasses = ['FlowDesignerScriptable', 'FlowDesignerService', 'FlowDesignerPublishService',",
+    "        'FlowDesignerCompileService', 'FlowDesignerActionService', 'sn_fd.FlowDesignerScriptable'];",
+    "      r.script_include_tests = {};",
+    "      for (var tc = 0; tc < tryClasses.length; tc++) {",
+    "        try {",
+    "          var cls = eval(tryClasses[tc]);",
+    "          if (typeof cls === 'function') {",
+    "            var inst = new cls();",
+    "            r.script_include_tests[tryClasses[tc]] = 'instantiated';",
+    // Try compile/publish methods on instance
+    "            if (typeof inst.compile === 'function') {",
+    "              try { inst.compile(current.sys_id + ''); r.script_include_tests[tryClasses[tc] + '.compile'] = 'success'; }",
+    "              catch(e) { r.script_include_tests[tryClasses[tc] + '.compile'] = (e + '').substring(0, 100); }",
+    "            }",
+    "            if (typeof inst.publishFlow === 'function') {",
+    "              try { inst.publishFlow(current.sys_id + ''); r.script_include_tests[tryClasses[tc] + '.publishFlow'] = 'success'; }",
+    "              catch(e) { r.script_include_tests[tryClasses[tc] + '.publishFlow'] = (e + '').substring(0, 100); }",
+    "            }",
+    "          } else { r.script_include_tests[tryClasses[tc]] = 'not a function: ' + typeof cls; }",
+    "        } catch(e) { r.script_include_tests[tryClasses[tc]] = 'error: ' + (e + '').substring(0, 100); }",
+    "      }",
+    "    } else { r.sn_fd = 'unavailable'; }",
+    "",
+    // Post-check: read back flow state
+    "    var post = new GlideRecord('sys_hub_flow');",
+    "    if (post.get(current.sys_id + '')) {",
+    "      r.post_latest_version = post.getValue('latest_version') + '';",
+    "      r.post_latest_snapshot = post.getValue('latest_snapshot') + '';",
+    "      r.post_status = post.getValue('status') + '';",
+    "    }",
+    "  } catch(topE) { r.error = (topE.getMessage ? topE.getMessage() : topE + '').substring(0, 300); }",
+    "  gs.setProperty(PROP, JSON.stringify(r));",
+    "})(current, previous);"
+  ].join('\n');
+
+  try {
+    // 1. Create result property
+    await client.post('/api/now/table/sys_properties', {
+      name: brResultProp,
+      value: 'pending',
+      type: 'string',
+      description: 'Snow-Flow BR compile result (auto-cleanup)'
+    });
+
+    // 2. Create temporary Business Rule on sys_hub_flow
+    var brResp = await client.post('/api/now/table/sys_script', {
+      name: 'Snow-Flow Auto-Compile (temp-cleanup)',
+      collection: 'sys_hub_flow',
+      when: 'after',
+      action_insert: false,
+      action_update: true,
+      action_delete: false,
+      active: true,
+      script: brScript,
+      order: 10000,
+      filter_condition: 'sys_id=' + flowSysId
+    });
+    var brSysId = brResp.data?.result?.sys_id;
+
+    // 3. PATCH the flow record to trigger the BR (tiny description change)
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Let BR register
+    await client.patch('/api/now/table/sys_hub_flow/' + flowSysId, {
+      description: (flowDescription || '').trim() + ' '
+    });
+
+    // 4. Poll for result (5 attempts, 2s each = 10s max)
+    for (var i = 0; i < 5; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      var propResp = await client.get('/api/now/table/sys_properties', {
+        params: {
+          sysparm_query: 'name=' + brResultProp,
+          sysparm_fields: 'sys_id,value',
+          sysparm_limit: 1
+        }
+      });
+      var propRecord = propResp.data.result?.[0];
+      var propValue = propRecord?.value;
+
+      if (propValue && propValue !== 'pending') {
+        // Got result — clean up
+        try { if (propRecord?.sys_id) await client.delete('/api/now/table/sys_properties/' + propRecord.sys_id); } catch (_) {}
+        try { if (brSysId) await client.delete('/api/now/table/sys_script/' + brSysId); } catch (_) {}
+
+        try {
+          return { success: true, result: JSON.parse(propValue) };
+        } catch (_) {
+          return { success: true, result: { raw: propValue.substring(0, 500) } };
+        }
+      }
+    }
+
+    // Timeout — clean up
+    try {
+      var cleanProp = await client.get('/api/now/table/sys_properties', {
+        params: { sysparm_query: 'name=' + brResultProp, sysparm_fields: 'sys_id', sysparm_limit: 1 }
+      });
+      if (cleanProp.data.result?.[0]?.sys_id) await client.delete('/api/now/table/sys_properties/' + cleanProp.data.result[0].sys_id);
+    } catch (_) {}
+    try { if (brSysId) await client.delete('/api/now/table/sys_script/' + brSysId); } catch (_) {}
+
+    return { success: false, error: 'Business Rule did not fire within 10s — BR may not have registered or flow update was ignored' };
+  } catch (e: any) {
+    return { success: false, error: 'BR compile setup failed: ' + (e.message || e) };
   }
 }
 
@@ -1609,6 +1551,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           factoryWarnings.push('Scheduled job failed: ' + (schedErr.message || schedErr));
         }
 
+        // ── Business Rule compile: trigger engine in Flow Designer context ──
+        if (flowSysId) {
+          try {
+            var brResult = await tryCompileViaBusinessRule(client, flowSysId, flowDescription);
+            diagnostics.br_compile = brResult.result || { error: brResult.error };
+            if (brResult.success && brResult.result) {
+              // Check if publish or compile succeeded
+              if (brResult.result.publishFlow === 'success' || brResult.result.publish === 'success (null return)') {
+                factoryWarnings.length = 0; // Clear warnings — compilation worked!
+              }
+            }
+          } catch (brErr: any) {
+            diagnostics.br_compile = { error: brErr.message || 'unknown' };
+          }
+        }
+
         // ── Table API fallback (last resort) ─────────────────────────
         if (!flowSysId) {
           diagnostics.table_api_used = true;
@@ -1932,43 +1890,36 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         createSummary.indented('Table API used: ' + diagnostics.table_api_used);
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
+        // Business Rule compile results
+        if (diagnostics.br_compile) {
+          var br = diagnostics.br_compile;
+          if (br.error) {
+            createSummary.indented('BR compile: FAILED — ' + br.error);
+          } else {
+            createSummary.indented('BR compile: fired=' + (br.fired || false));
+            createSummary.indented('  sn_fd=' + (br.sn_fd || 'unknown') + ', FlowDesigner=' + (br.FlowDesigner || 'unknown') + ', FlowAPI=' + (br.FlowAPI || 'unknown'));
+            if (br.FlowDesigner_methods) createSummary.indented('  FlowDesigner methods: [' + br.FlowDesigner_methods.join(', ') + ']');
+            if (br.FlowAPI_methods) createSummary.indented('  FlowAPI methods: [' + br.FlowAPI_methods.join(', ') + ']');
+            if (br.publishFlow) createSummary.indented('  FlowDesigner.publishFlow: ' + br.publishFlow);
+            if (br.compile) createSummary.indented('  FlowAPI.compile: ' + br.compile);
+            if (br.publish) createSummary.indented('  FlowAPI.publish: ' + br.publish);
+            if (br.sn_fd_keys && br.sn_fd_keys.length > 0) createSummary.indented('  sn_fd keys: [' + br.sn_fd_keys.join(', ') + ']');
+            if (br.script_includes && br.script_includes.length > 0) createSummary.indented('  Script Includes: [' + br.script_includes.join(', ') + ']');
+            if (br.script_include_tests) {
+              var siKeys = Object.keys(br.script_include_tests);
+              for (var sk = 0; sk < siKeys.length; sk++) {
+                createSummary.indented('  SI ' + siKeys[sk] + ': ' + br.script_include_tests[siKeys[sk]]);
+              }
+            }
+            if (br.post_latest_version) createSummary.indented('  post_latest_version: ' + br.post_latest_version);
+            if (br.post_latest_snapshot) createSummary.indented('  post_latest_snapshot: ' + br.post_latest_snapshot);
+            if (br.post_status) createSummary.indented('  post_status: ' + br.post_status);
+          }
+        }
         if (diagnostics.engine_registration) {
           var eng = diagnostics.engine_registration;
-          if (eng.mode === 'discover_and_create') {
-            // Discovery mode — show all FlowAPI methods found
-            createSummary.indented('Engine (discover): sn_fd=' + eng.sn_fd + ', FlowAPI=' + (eng.FlowAPI || 'unknown'));
-            if (eng.all_methods) createSummary.indented('  FlowAPI methods: [' + eng.all_methods.join(', ') + ']');
-            if (eng.sn_fd_keys) createSummary.indented('  sn_fd keys: [' + eng.sn_fd_keys.join(', ') + ']');
-            // Show any create/save attempts
-            var tryKeys = Object.keys(eng).filter(function(k: string) { return k.indexOf('try_') === 0; });
-            for (var tk = 0; tk < tryKeys.length; tk++) {
-              createSummary.indented('  ' + tryKeys[tk] + ': ' + eng[tryKeys[tk]]);
-            }
-            if (eng.engine_created_flow) createSummary.indented('  ENGINE CREATED FLOW: ' + eng.engine_created_flow);
-            if (eng.compile_flow) createSummary.indented('  compile(flow): ' + eng.compile_flow);
-            if (eng.global_apis) {
-              var gaList = Object.keys(eng.global_apis).map(function(k: string) { return k + '=' + eng.global_apis[k]; }).join(', ');
-              createSummary.indented('  Global APIs: ' + gaList);
-            }
-          } else if (eng.mode === 'compile') {
-            var engineLabel = 'sn_fd=' + eng.sn_fd + ', FlowAPI=' + (eng.FlowAPI || 'unknown');
-            if (eng.compile_snapshot) engineLabel += ', compile(snapshot)=' + eng.compile_snapshot;
-            if (eng.compile_flow) engineLabel += ', compile(flow)=' + eng.compile_flow;
-            if (eng.label_cache_after_compile) engineLabel += ', label_cache=' + eng.label_cache_after_compile;
-            createSummary.indented('Engine (compile): ' + engineLabel);
-          } else if (eng.sn_fd) {
-            // Legacy probe-only mode (from scheduled job)
-            var legacyLabel = 'sn_fd=' + eng.sn_fd;
-            if (eng.apis_found && eng.apis_found.length > 0) {
-              legacyLabel += ', APIs=[' + eng.apis_found.join(', ') + ']';
-            }
-            if (eng.publish) legacyLabel += ', publishFlow=' + eng.publish;
-            if (eng.compile) legacyLabel += ', compile=' + eng.compile;
-            if (eng.error) legacyLabel += ', error=' + eng.error;
-            createSummary.indented('Engine (server-side): ' + legacyLabel);
-          } else if (eng.success !== undefined) {
-            // REST-based engine registration (Table API path)
-            createSummary.indented('Engine registration: ' + (eng.success ? eng.method : 'FAILED'));
+          if (eng.success !== undefined) {
+            createSummary.indented('Engine REST registration: ' + (eng.success ? eng.method : 'FAILED'));
             if (eng.attempts) {
               for (var ea = 0; ea < eng.attempts.length; ea++) {
                 createSummary.indented('  ' + eng.attempts[ea]);
