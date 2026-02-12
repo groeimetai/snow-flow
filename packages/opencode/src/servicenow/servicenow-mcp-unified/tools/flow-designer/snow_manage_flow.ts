@@ -1479,14 +1479,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         // Diagnostics: track every step for debugging "flow cannot be found" issues
         var diagnostics: any = {
-          factory_bootstrap: 'skipped (direct scheduled job)',
-          factory_namespace: null,
-          factory_call: null,
           table_api_used: false,
           version_created: false,
           version_method: null,
-          version_fields_set: [] as string[],
-          engine_registration: null,
           post_verify: null
         };
 
@@ -1551,21 +1546,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           factoryWarnings.push('Scheduled job failed: ' + (schedErr.message || schedErr));
         }
 
-        // ── Business Rule compile: trigger engine in Flow Designer context ──
-        if (flowSysId) {
-          try {
-            var brResult = await tryCompileViaBusinessRule(client, flowSysId, flowDescription);
-            diagnostics.br_compile = brResult.result || { error: brResult.error };
-            if (brResult.success && brResult.result) {
-              // Check if publish or compile succeeded
-              if (brResult.result.publishFlow === 'success' || brResult.result.publish === 'success (null return)') {
-                factoryWarnings.length = 0; // Clear warnings — compilation worked!
-              }
-            }
-          } catch (brErr: any) {
-            diagnostics.br_compile = { error: brErr.message || 'unknown' };
-          }
-        }
+        // BR compile + engine REST registration skipped:
+        // - BR: FlowDesigner unavailable in all contexts, FlowAPI.compile returns error,
+        //   all Script Includes (FlowDesignerScriptable etc.) don't exist on PDI instances
+        // - REST: all sn_fd endpoints return 400 "Requested URI does not represent any resource"
+        // Both add ~20s combined and provide zero value. Flow records are functional
+        // (listable, queryable, deletable) but cannot be opened in Flow Designer UI.
 
         // ── Table API fallback (last resort) ─────────────────────────
         if (!flowSysId) {
@@ -1764,21 +1750,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         }
 
-        // ── Register flow with Flow Designer engine ──
-        // Call the REST API (publish/activate/checkout+checkin/snapshot) to
-        // trigger engine compilation and set latest_version (computed field
-        // that cannot be set via GlideRecord or Table API PATCH).
-        if (flowSysId) {
-          var engineResult = await registerFlowWithEngine(client, flowSysId, shouldActivate);
-          diagnostics.engine_registration = {
-            success: engineResult.success,
-            method: engineResult.method,
-            attempts: engineResult.attempts
-          };
-          if (!engineResult.success) {
-            factoryWarnings.push('Flow Designer engine registration failed — flow may show "cannot be found". Attempts: ' + engineResult.attempts.join(', '));
-          }
-        }
+        // Engine REST registration skipped — all sn_fd endpoints return 400 on this instance type
 
         // ── Post-creation verification ─────────────────────────────
         if (flowSysId) {
@@ -1890,43 +1862,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         createSummary.indented('Table API used: ' + diagnostics.table_api_used);
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
-        // Business Rule compile results
-        if (diagnostics.br_compile) {
-          var br = diagnostics.br_compile;
-          if (br.error) {
-            createSummary.indented('BR compile: FAILED — ' + br.error);
-          } else {
-            createSummary.indented('BR compile: fired=' + (br.fired || false));
-            createSummary.indented('  sn_fd=' + (br.sn_fd || 'unknown') + ', FlowDesigner=' + (br.FlowDesigner || 'unknown') + ', FlowAPI=' + (br.FlowAPI || 'unknown'));
-            if (br.FlowDesigner_methods) createSummary.indented('  FlowDesigner methods: [' + br.FlowDesigner_methods.join(', ') + ']');
-            if (br.FlowAPI_methods) createSummary.indented('  FlowAPI methods: [' + br.FlowAPI_methods.join(', ') + ']');
-            if (br.publishFlow) createSummary.indented('  FlowDesigner.publishFlow: ' + br.publishFlow);
-            if (br.compile) createSummary.indented('  FlowAPI.compile: ' + br.compile);
-            if (br.publish) createSummary.indented('  FlowAPI.publish: ' + br.publish);
-            if (br.sn_fd_keys && br.sn_fd_keys.length > 0) createSummary.indented('  sn_fd keys: [' + br.sn_fd_keys.join(', ') + ']');
-            if (br.script_includes && br.script_includes.length > 0) createSummary.indented('  Script Includes: [' + br.script_includes.join(', ') + ']');
-            if (br.script_include_tests) {
-              var siKeys = Object.keys(br.script_include_tests);
-              for (var sk = 0; sk < siKeys.length; sk++) {
-                createSummary.indented('  SI ' + siKeys[sk] + ': ' + br.script_include_tests[siKeys[sk]]);
-              }
-            }
-            if (br.post_latest_version) createSummary.indented('  post_latest_version: ' + br.post_latest_version);
-            if (br.post_latest_snapshot) createSummary.indented('  post_latest_snapshot: ' + br.post_latest_snapshot);
-            if (br.post_status) createSummary.indented('  post_status: ' + br.post_status);
-          }
-        }
-        if (diagnostics.engine_registration) {
-          var eng = diagnostics.engine_registration;
-          if (eng.success !== undefined) {
-            createSummary.indented('Engine REST registration: ' + (eng.success ? eng.method : 'FAILED'));
-            if (eng.attempts) {
-              for (var ea = 0; ea < eng.attempts.length; ea++) {
-                createSummary.indented('  ' + eng.attempts[ea]);
-              }
-            }
-          }
-        }
+        createSummary.indented('Engine compile: skipped (not available on this instance — FlowDesigner unavailable, REST 400s, no Script Includes)');
         if (diagnostics.latest_version_auto_set !== undefined) {
           createSummary.indented('latest_version: ' + (diagnostics.latest_version_auto_set ? 'set' : 'null'));
         }
