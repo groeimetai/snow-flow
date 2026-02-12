@@ -123,7 +123,9 @@ async function createFlowViaScheduledJob(
     "      }",
     "    } catch(t1e) { r.steps.tier1 = { success: false, error: t1e.getMessage ? t1e.getMessage() : t1e + '' }; }",
     "",
-    // ── TIER 2: GlideRecord with flow_definition ──
+    // ── TIER 2: GlideRecord — minimal clean records ──
+    // Do NOT set flow_definition/latest_snapshot on flow record (computed/managed).
+    // Version: INSERT as draft → UPDATE is_current=true (triggers BRs that set latest_version).
     "    if (!flowSysId) {",
     "      try {",
     "        var f = new GlideRecord('sys_hub_flow');",
@@ -133,29 +135,30 @@ async function createFlowViaScheduledJob(
     "        f.setValue('run_as', runAs); f.setValue('active', false);",
     "        f.setValue('status', 'draft'); f.setValue('validated', true);",
     "        f.setValue('type', isSubflow ? 'subflow' : 'flow');",
-    "        if (flowDefStr) { f.setValue('flow_definition', flowDefStr); f.setValue('latest_snapshot', flowDefStr); }",
     "        flowSysId = f.insert();",
     "        r.steps.flow_insert = { success: !!flowSysId, sys_id: flowSysId + '' };",
     "        if (flowSysId) {",
+    // Step 1: INSERT version as minimal draft
     "          var v = new GlideRecord('sys_hub_flow_version');",
     "          v.initialize();",
     "          v.setValue('flow', flowSysId); v.setValue('name', '1.0');",
     "          v.setValue('version', '1.0'); v.setValue('state', 'draft');",
-    "          v.setValue('active', true); v.setValue('compile_state', 'draft');",
-    "          v.setValue('is_current', true);",
-    "          if (flowDefStr) v.setValue('flow_definition', flowDefStr);",
+    "          v.setValue('active', false); v.setValue('compile_state', 'draft');",
+    "          v.setValue('is_current', false);",
     "          verSysId = v.insert();",
     "          r.steps.version_insert = { success: !!verSysId, sys_id: verSysId + '' };",
+    // Step 2: UPDATE version → is_current=true, active=true (triggers BRs)
     "          if (verSysId) {",
-    "            var lk = new GlideRecord('sys_hub_flow');",
-    "            if (lk.get(flowSysId)) { lk.setValue('latest_version', verSysId); lk.update(); }",
-    "          }",
-    "          if (activate) {",
-    "            var fp = new GlideRecord('sys_hub_flow');",
-    "            if (fp.get(flowSysId)) { fp.setValue('status', 'published'); fp.setValue('active', true); fp.update(); }",
-    "            if (verSysId) {",
-    "              var vp = new GlideRecord('sys_hub_flow_version');",
-    "              if (vp.get(verSysId)) { vp.setValue('state', 'published'); vp.setValue('compile_state', 'compiled'); vp.setValue('published_flow', flowSysId); vp.update(); }",
+    "            var vu = new GlideRecord('sys_hub_flow_version');",
+    "            if (vu.get(verSysId)) {",
+    "              vu.setValue('is_current', true); vu.setValue('active', true);",
+    "              vu.update();",
+    "              r.steps.version_update = { success: true };",
+    "            }",
+    // Check if BR set latest_version
+    "            var lvCheck = new GlideRecord('sys_hub_flow');",
+    "            if (lvCheck.get(flowSysId)) {",
+    "              r.steps.latest_version_after_update = lvCheck.getValue('latest_version') + '';",
     "            }",
     "          }",
     "          r.tier_used = 'gliderecord_scheduled'; r.success = true;",
@@ -206,23 +209,10 @@ async function createFlowViaScheduledJob(
     "            trigSearchLog.push('prefix_sn_fd.trigger:[' + prefixMatches.join(',') + ']');",
     "          }",
     "",
-    // Search 3: sys_hub_trigger_definition table
-    "          if (!trigDefId) {",
-    "            try {",
-    "              var tg3 = new GlideRecord('sys_hub_trigger_definition');",
-    "              if (tg3.isValid()) {",
-    "                tg3.addQuery('internal_name', 'CONTAINS', trigType);",
-    "                tg3.setLimit(5); tg3.query();",
-    "                while (tg3.next()) {",
-    "                  var t3n = tg3.getValue('internal_name') + '';",
-    "                  trigSearchLog.push('trigger_def:' + t3n);",
-    "                  if (!trigDefId) { trigDefId = tg3.getUniqueValue(); trigDefName = tg3.getValue('name'); }",
-    "                }",
-    "              } else { trigSearchLog.push('trigger_def_table:not_valid'); }",
-    "            } catch(e3) { trigSearchLog.push('trigger_def_table:' + e3); }",
-    "          }",
+    // Search 3 removed — sys_hub_trigger_definition returned wrong defs (Proactive Analytics, DevOps)
+    "          if (!trigDefId) { trigSearchLog.push('no_exact_trigger_def_found'); }",
     "",
-    // Create trigger instance
+    // Create trigger instance — only set action_type if exact sn_fd.trigger.* match found
     "          var trigInst = new GlideRecord('sys_hub_trigger_instance');",
     "          trigInst.initialize();",
     "          trigInst.setValue('flow', flowSysId);",
@@ -280,11 +270,11 @@ async function createFlowViaScheduledJob(
     "      }",
     "      r.steps.variables = { success: true, created: varsCreated };",
     "",
-    // ── Engine: probe APIs + try compile (NOT publish — that StackOverflowed) ──
-    // FlowAPI.publish() caused StackOverflowError and corrupted the flow.
-    // FlowAPI.compile() should be safer — it registers the flow with the
-    // engine and sets latest_version without the publish side effects.
-    "      r.steps.engine = { apis_found: [], mode: 'probe_and_compile' };",
+    // ── Engine: PROBE ONLY — do NOT call compile or publish ──
+    // FlowAPI.publish() → StackOverflowError (corrupts flow)
+    // FlowAPI.compile() → "success" but doesn't set latest_version, may corrupt
+    // Just probe what APIs exist for diagnostics.
+    "      r.steps.engine = { apis_found: [], mode: 'probe_only' };",
     "      try {",
     "        if (typeof sn_fd !== 'undefined') {",
     "          r.steps.engine.sn_fd = 'available';",
@@ -303,24 +293,6 @@ async function createFlowViaScheduledJob(
     "              }",
     "            } catch(e) {}",
     "          }",
-    // Try compile (safe) — DO NOT try publish (StackOverflowError)
-    "          var compiled = false;",
-    // Priority 1: FlowDesigner.compileFlow (most specific)
-    "          if (!compiled && sn_fd.FlowDesigner && typeof sn_fd.FlowDesigner.compileFlow === 'function') {",
-    "            try { sn_fd.FlowDesigner.compileFlow(flowSysId); r.steps.engine.compile = 'FlowDesigner.compileFlow:success'; compiled = true; }",
-    "            catch(e) { r.steps.engine.compile = 'FlowDesigner.compileFlow:' + (e.getMessage ? e.getMessage() : e + ''); }",
-    "          }",
-    // Priority 2: FlowCompiler.compile
-    "          if (!compiled && sn_fd.FlowCompiler && typeof sn_fd.FlowCompiler.compile === 'function') {",
-    "            try { sn_fd.FlowCompiler.compile(flowSysId); r.steps.engine.compile = 'FlowCompiler.compile:success'; compiled = true; }",
-    "            catch(e) { r.steps.engine.compile = 'FlowCompiler.compile:' + (e.getMessage ? e.getMessage() : e + ''); }",
-    "          }",
-    // Priority 3: FlowAPI.compile (available on this instance per diagnostics)
-    "          if (!compiled && sn_fd.FlowAPI && typeof sn_fd.FlowAPI.compile === 'function') {",
-    "            try { sn_fd.FlowAPI.compile(flowSysId); r.steps.engine.compile = 'FlowAPI.compile:success'; compiled = true; }",
-    "            catch(e) { r.steps.engine.compile = 'FlowAPI.compile:' + (e.getMessage ? e.getMessage() : e + ''); }",
-    "          }",
-    "          r.steps.engine.compiled = compiled;",
     "        } else {",
     "          r.steps.engine.sn_fd = 'unavailable';",
     "        }",
