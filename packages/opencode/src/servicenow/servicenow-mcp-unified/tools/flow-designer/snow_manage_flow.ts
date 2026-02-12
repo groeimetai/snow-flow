@@ -169,6 +169,7 @@ async function createFlowViaScheduledJob(
     "              snap.setValue('active', true);",
     "              snap.setValue('master', true);",
     "              snap.setValue('status', 'published');",
+    "              snap.setValue('label_cache', '[]');",
     "              try { snap.setValue('sc_callable', false); } catch(e) {}",
     "              try { snap.setValue('callable_by_client_api', false); } catch(e) {}",
     "              snapId = snap.insert();",
@@ -410,8 +411,43 @@ async function createFlowViaScheduledJob(
     "        }",
     "      } catch(refE) { r.steps.reference_flow = { error: refE + '' }; }",
     "",
-    // ── No engine calls — probe only ──
-    "      r.steps.engine = { mode: 'probe_only', sn_fd: typeof sn_fd !== 'undefined' ? 'available' : 'unavailable' };",
+    // ── Engine: try FlowAPI.compile on snapshot and flow ──
+    "      r.steps.engine = { mode: 'compile', sn_fd: typeof sn_fd !== 'undefined' ? 'available' : 'unavailable' };",
+    "      if (typeof sn_fd !== 'undefined' && sn_fd.FlowAPI) {",
+    "        r.steps.engine.FlowAPI = 'available';",
+    // Try compile on snapshot first (snapshot extends sys_hub_flow_block)
+    "        if (snapId) {",
+    "          try {",
+    "            var snapCompResult = sn_fd.FlowAPI.compile(snapId);",
+    "            r.steps.engine.compile_snapshot = snapCompResult ? (snapCompResult + '').substring(0, 200) : 'success (null return)';",
+    "          } catch(sce) { r.steps.engine.compile_snapshot = 'error: ' + (sce.getMessage ? sce.getMessage() : sce + ''); }",
+    "        }",
+    // Then compile the flow record itself
+    "        if (flowSysId) {",
+    "          try {",
+    "            var flowCompResult = sn_fd.FlowAPI.compile(flowSysId);",
+    "            r.steps.engine.compile_flow = flowCompResult ? (flowCompResult + '').substring(0, 200) : 'success (null return)';",
+    "          } catch(fce) { r.steps.engine.compile_flow = 'error: ' + (fce.getMessage ? fce.getMessage() : fce + ''); }",
+    "        }",
+    // After compile, re-read snapshot to check if label_cache was populated
+    "        if (snapId) {",
+    "          try {",
+    "            var postSnap = new GlideRecord('sys_hub_flow_snapshot');",
+    "            if (postSnap.get(snapId)) {",
+    "              var lc = postSnap.getValue('label_cache') + '';",
+    "              r.steps.engine.label_cache_after_compile = lc.length > 5 ? lc.substring(0, 100) + '...(len:' + lc.length + ')' : lc;",
+    "            }",
+    "          } catch(e) {}",
+    "        }",
+    // Try other known APIs
+    "        var otherApis = ['FlowDesigner', 'FlowPublisher', 'FlowCompiler'];",
+    "        r.steps.engine.other_apis = {};",
+    "        for (var oa = 0; oa < otherApis.length; oa++) {",
+    "          r.steps.engine.other_apis[otherApis[oa]] = typeof sn_fd[otherApis[oa]] !== 'undefined' ? 'available' : 'unavailable';",
+    "        }",
+    "      } else {",
+    "        r.steps.engine.FlowAPI = 'unavailable';",
+    "      }",
     "    }",
     "",
     "    r.flow_sys_id = flowSysId ? flowSysId + '' : null;",
@@ -1843,16 +1879,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         createSummary.indented('Version created: ' + diagnostics.version_created + (diagnostics.version_method ? ' (' + diagnostics.version_method + ')' : ''));
         if (diagnostics.engine_registration) {
           var eng = diagnostics.engine_registration;
-          if (eng.sn_fd) {
-            // Server-side engine registration (from scheduled job)
-            var engineLabel = 'sn_fd=' + eng.sn_fd;
-            if (eng.apis_found && eng.apis_found.length > 0) {
-              engineLabel += ', APIs=[' + eng.apis_found.join(', ') + ']';
+          if (eng.mode === 'compile') {
+            // New compile mode (scheduled job path)
+            var engineLabel = 'sn_fd=' + eng.sn_fd + ', FlowAPI=' + (eng.FlowAPI || 'unknown');
+            if (eng.compile_snapshot) engineLabel += ', compile(snapshot)=' + eng.compile_snapshot;
+            if (eng.compile_flow) engineLabel += ', compile(flow)=' + eng.compile_flow;
+            if (eng.label_cache_after_compile) engineLabel += ', label_cache=' + eng.label_cache_after_compile;
+            createSummary.indented('Engine (compile): ' + engineLabel);
+            if (eng.other_apis) {
+              var apiList = Object.keys(eng.other_apis).map(function(k: string) { return k + '=' + eng.other_apis[k]; }).join(', ');
+              createSummary.indented('  Other APIs: ' + apiList);
             }
-            if (eng.publish) engineLabel += ', publishFlow=' + eng.publish;
-            if (eng.compile) engineLabel += ', compile=' + eng.compile;
-            if (eng.error) engineLabel += ', error=' + eng.error;
-            createSummary.indented('Engine (server-side): ' + engineLabel);
+          } else if (eng.sn_fd) {
+            // Legacy probe-only mode (from scheduled job)
+            var legacyLabel = 'sn_fd=' + eng.sn_fd;
+            if (eng.apis_found && eng.apis_found.length > 0) {
+              legacyLabel += ', APIs=[' + eng.apis_found.join(', ') + ']';
+            }
+            if (eng.publish) legacyLabel += ', publishFlow=' + eng.publish;
+            if (eng.compile) legacyLabel += ', compile=' + eng.compile;
+            if (eng.error) legacyLabel += ', error=' + eng.error;
+            createSummary.indented('Engine (server-side): ' + legacyLabel);
           } else if (eng.success !== undefined) {
             // REST-based engine registration (Table API path)
             createSummary.indented('Engine registration: ' + (eng.success ? eng.method : 'FAILED'));
