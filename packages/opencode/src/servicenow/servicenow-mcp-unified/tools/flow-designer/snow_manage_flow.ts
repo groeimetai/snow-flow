@@ -365,6 +365,216 @@ async function calculateInsertOrder(
   return 1;
 }
 
+/**
+ * Flatten an attributes object { key: "val" } into comma-separated "key=val," string (matching UI format).
+ * If already a string, returns as-is.
+ */
+function flattenAttributes(attrs: any): string {
+  if (!attrs || typeof attrs === 'string') return attrs || '';
+  return Object.entries(attrs).map(([k, v]) => k + '=' + v).join(',') + ',';
+}
+
+/**
+ * Build full trigger input and output objects for the INSERT mutation by fetching from the
+ * triggerpicker API (/api/now/hub/triggerpicker/{id}) — the same endpoint Flow Designer UI uses.
+ *
+ * The UI sends ALL inputs with full parameter definitions (choices, defaults, attributes) and
+ * ALL outputs in a single INSERT mutation. This function replicates that format exactly.
+ *
+ * Fallback: if the triggerpicker API fails, queries sys_hub_trigger_input / sys_hub_trigger_output
+ * via the Table API (same approach as buildActionInputsForInsert / buildFlowLogicInputsForInsert).
+ */
+async function buildTriggerInputsForInsert(
+  client: any,
+  trigDefId: string,
+  userTable?: string,
+  userCondition?: string
+): Promise<{ inputs: any[]; outputs: any[]; error?: string }> {
+  var apiInputs: any[] = [];
+  var apiOutputs: any[] = [];
+  var fetchError = '';
+
+  // Strategy 1: triggerpicker API (primary — same as Flow Designer UI)
+  try {
+    var tpResp = await client.get('/api/now/hub/triggerpicker/' + trigDefId, {
+      params: { sysparm_transaction_scope: 'global' },
+      headers: { Accept: 'application/json' }
+    });
+    var tpData = tpResp.data?.result || tpResp.data;
+    if (tpData && typeof tpData === 'object') {
+      apiInputs = tpData.inputs || tpData.trigger_inputs || [];
+      apiOutputs = tpData.outputs || tpData.trigger_outputs || [];
+    }
+  } catch (tpErr: any) {
+    fetchError = 'triggerpicker: ' + (tpErr.message || 'unknown');
+  }
+
+  // Strategy 2: Table API fallback (query sys_hub_trigger_input / sys_hub_trigger_output)
+  if (apiInputs.length === 0) {
+    try {
+      var tiResp = await client.get('/api/now/table/sys_hub_trigger_input', {
+        params: {
+          sysparm_query: 'model=' + trigDefId,
+          sysparm_fields: 'sys_id,element,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,attributes,reference,reference_display,choice,dependent_on_field,use_dependent_field',
+          sysparm_display_value: 'false',
+          sysparm_limit: 50
+        }
+      });
+      var tableInputs = tiResp.data.result || [];
+      apiInputs = tableInputs.map(function (rec: any) {
+        return {
+          id: str(rec.sys_id), name: str(rec.element), label: str(rec.label) || str(rec.element),
+          type: str(rec.internal_type) || 'string',
+          type_label: TYPE_LABELS[str(rec.internal_type) || 'string'] || str(rec.internal_type),
+          mandatory: str(rec.mandatory) === 'true',
+          order: parseInt(str(rec.order) || '0', 10),
+          maxsize: parseInt(str(rec.max_length) || '4000', 10),
+          hint: str(rec.hint), defaultValue: str(rec.default_value),
+          reference: str(rec.reference), reference_display: str(rec.reference_display),
+          use_dependent: str(rec.use_dependent_field) === 'true',
+          dependent_on: str(rec.dependent_on_field),
+          attributes: str(rec.attributes)
+        };
+      });
+      fetchError = '';
+    } catch (tiErr: any) {
+      fetchError += '; table_api_inputs: ' + (tiErr.message || 'unknown');
+    }
+  }
+  if (apiOutputs.length === 0) {
+    try {
+      var toResp = await client.get('/api/now/table/sys_hub_trigger_output', {
+        params: {
+          sysparm_query: 'model=' + trigDefId,
+          sysparm_fields: 'sys_id,element,label,internal_type,mandatory,order,max_length,hint,attributes,reference,reference_display,use_dependent_field,dependent_on_field',
+          sysparm_display_value: 'false',
+          sysparm_limit: 50
+        }
+      });
+      var tableOutputs = toResp.data.result || [];
+      apiOutputs = tableOutputs.map(function (rec: any) {
+        return {
+          id: str(rec.sys_id), name: str(rec.element), label: str(rec.label) || str(rec.element),
+          type: str(rec.internal_type) || 'string',
+          type_label: TYPE_LABELS[str(rec.internal_type) || 'string'] || str(rec.internal_type),
+          mandatory: str(rec.mandatory) === 'true',
+          order: parseInt(str(rec.order) || '0', 10),
+          maxsize: parseInt(str(rec.max_length) || '200', 10),
+          hint: str(rec.hint), reference: str(rec.reference), reference_display: str(rec.reference_display),
+          use_dependent: str(rec.use_dependent_field) === 'true',
+          dependent_on: str(rec.dependent_on_field),
+          attributes: str(rec.attributes)
+        };
+      });
+    } catch (_) {}
+  }
+
+  // Transform inputs into GraphQL mutation format (matching exact UI structure)
+  var inputs = apiInputs.map(function (inp: any) {
+    var paramType = inp.type || 'string';
+    var name = inp.name || '';
+    var label = inp.label || name;
+    var attrs = typeof inp.attributes === 'object' ? flattenAttributes(inp.attributes) : (inp.attributes || '');
+
+    // Determine value: user-provided > default
+    var value = '';
+    if (name === 'table' && userTable) value = userTable;
+    else if (name === 'condition') value = userCondition || '^EQ';
+    else if (inp.defaultValue) value = inp.defaultValue;
+
+    var parameter: any = {
+      id: inp.id || '', label: label, name: name, type: paramType,
+      type_label: inp.type_label || TYPE_LABELS[paramType] || paramType,
+      order: inp.order || 0, extended: inp.extended || false,
+      mandatory: inp.mandatory || false, readonly: inp.readonly || false,
+      maxsize: inp.maxsize || 4000, data_structure: '',
+      reference: inp.reference || '', reference_display: inp.reference_display || '',
+      ref_qual: inp.ref_qual || '', choiceOption: inp.choiceOption || '',
+      table: '', columnName: '', defaultValue: inp.defaultValue || '',
+      use_dependent: inp.use_dependent || false, dependent_on: inp.dependent_on || '',
+      internal_link: inp.internal_link || '', show_ref_finder: inp.show_ref_finder || false,
+      local: inp.local || false, attributes: attrs, sys_class_name: '', children: []
+    };
+    if (inp.hint) parameter.hint = inp.hint;
+    if (inp.defaultDisplayValue) parameter.defaultDisplayValue = inp.defaultDisplayValue;
+    if (inp.choices) parameter.choices = inp.choices;
+    if (inp.defaultChoices) parameter.defaultChoices = inp.defaultChoices;
+
+    var inputObj: any = {
+      name: name, label: label, internalType: paramType,
+      mandatory: inp.mandatory || false, order: inp.order || 0,
+      valueSysId: '', field_name: name, type: paramType, children: [],
+      displayValue: { value: '' },
+      value: value ? { schemaless: false, schemalessValue: '', value: value } : { value: '' },
+      parameter: parameter
+    };
+
+    // Add choiceList for choice-type inputs (top-level, matching UI format)
+    if (inp.choices && Array.isArray(inp.choices)) {
+      inputObj.choiceList = inp.choices.map(function (c: any) {
+        return { label: c.label, value: c.value };
+      });
+    }
+
+    return inputObj;
+  });
+
+  // Transform outputs into GraphQL mutation format
+  var outputs = apiOutputs.map(function (out: any) {
+    var paramType = out.type || 'string';
+    var name = out.name || '';
+    var label = out.label || name;
+    var attrs = typeof out.attributes === 'object' ? flattenAttributes(out.attributes) : (out.attributes || '');
+
+    var parameter: any = {
+      id: out.id || '', label: label, name: name, type: paramType,
+      type_label: out.type_label || TYPE_LABELS[paramType] || paramType,
+      hint: out.hint || '', order: out.order || 0, extended: out.extended || false,
+      mandatory: out.mandatory || false, readonly: out.readonly || false,
+      maxsize: out.maxsize || 200, data_structure: '',
+      reference: out.reference || '', reference_display: out.reference_display || '',
+      ref_qual: '', choiceOption: '', table: '', columnName: '', defaultValue: '',
+      use_dependent: out.use_dependent || false, dependent_on: out.dependent_on || '',
+      internal_link: out.internal_link || '', show_ref_finder: false, local: false,
+      attributes: attrs, sys_class_name: ''
+    };
+
+    // Build children for complex types (like array.object)
+    var children: any[] = [];
+    var paramChildren: any[] = [];
+    if (out.children && Array.isArray(out.children)) {
+      children = out.children.map(function (child: any) {
+        return { id: '', name: child.name || '', scriptActive: false, children: [], value: { value: '' }, script: null };
+      });
+      paramChildren = out.children.map(function (child: any) {
+        return {
+          id: '', label: child.label || child.name || '', name: child.name || '',
+          type: child.type || 'string', type_label: child.type_label || TYPE_LABELS[child.type || 'string'] || 'String',
+          hint: '', order: child.order || 0, extended: false, mandatory: false, readonly: false, maxsize: 0,
+          data_structure: '', reference: '', reference_display: '', ref_qual: '', choiceOption: '',
+          table: '', columnName: '', defaultValue: '', defaultDisplayValue: '',
+          use_dependent: false, dependent_on: false, show_ref_finder: false, local: false,
+          attributes: '', sys_class_name: '',
+          uiDisplayType: child.uiDisplayType || child.type || 'string',
+          uiDisplayTypeLabel: child.type_label || 'String',
+          internal_link: '', value: '', display_value: '', scriptActive: false,
+          parent: out.id || '',
+          fieldFacetMap: 'uiTypeLabel=' + (child.type_label || 'String') + ',',
+          children: [], script: null
+        };
+      });
+    }
+    parameter.children = paramChildren;
+
+    return {
+      name: name, value: '', displayValue: '', type: paramType,
+      order: out.order || 0, label: label, children: children, parameter: parameter
+    };
+  });
+
+  return { inputs, outputs, error: fetchError || undefined };
+}
+
 async function addTriggerViaGraphQL(
   client: any,
   flowId: string,
@@ -432,8 +642,13 @@ async function addTriggerViaGraphQL(
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
 
+  // Build full trigger inputs and outputs from triggerpicker API (matching UI format)
+  var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, table, condition);
+  steps.trigger_data = { inputCount: triggerData.inputs.length, outputCount: triggerData.outputs.length, error: triggerData.error };
+
   const triggerResponseFields = 'triggerInstances { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
+    // Single INSERT with full inputs and outputs (matching UI behavior — no separate UPDATE needed)
     const insertResult = await executeFlowPatchMutation(client, {
       flowId: flowId,
       triggerInstances: {
@@ -445,8 +660,8 @@ async function addTriggerViaGraphQL(
           type: trigType,
           hasDynamicOutputs: false,
           metadata: '{"predicates":[]}',
-          inputs: [],
-          outputs: []
+          inputs: triggerData.inputs,
+          outputs: triggerData.outputs
         }]
       }
     }, triggerResponseFields);
@@ -454,31 +669,6 @@ async function addTriggerViaGraphQL(
     const triggerId = insertResult?.triggerInstances?.inserts?.[0]?.sysId;
     steps.insert = { success: !!triggerId, triggerId };
     if (!triggerId) return { success: false, steps, error: 'GraphQL trigger INSERT returned no trigger ID' };
-
-    if (table) {
-      const updateInputs: any[] = [
-        {
-          name: 'table',
-          displayField: 'number',
-          displayValue: { schemaless: false, schemalessValue: '', value: table.charAt(0).toUpperCase() + table.slice(1) },
-          value: { schemaless: false, schemalessValue: '', value: table }
-        },
-        {
-          name: 'condition',
-          displayValue: { schemaless: false, schemalessValue: '', value: condition || '^EQ' },
-          value: { schemaless: false, schemalessValue: '', value: condition || '^EQ' }
-        }
-      ];
-      try {
-        await executeFlowPatchMutation(client, {
-          flowId: flowId,
-          triggerInstances: { update: [{ id: triggerId, inputs: updateInputs }] }
-        }, triggerResponseFields);
-        steps.update = { success: true, table, condition: condition || '^EQ' };
-      } catch (e: any) {
-        steps.update = { success: false, error: e.message };
-      }
-    }
 
     return { success: true, triggerId, steps };
   } catch (e: any) {
