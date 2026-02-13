@@ -173,10 +173,14 @@ async function addActionViaGraphQL(
   for (const name of candidates) {
     try {
       const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
-        params: { sysparm_query: 'internal_name=' + name, sysparm_fields: 'sys_id', sysparm_limit: 1 }
+        params: { sysparm_query: 'internal_name=' + name, sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 1 }
       });
-      actionDefId = resp.data.result?.[0]?.sys_id || null;
-      if (actionDefId) break;
+      const found = resp.data.result?.[0];
+      if (found?.sys_id) {
+        actionDefId = found.sys_id;
+        steps.def_lookup = { id: found.sys_id, internal_name: found.internal_name, name: found.name, matched_query: name };
+        break;
+      }
     } catch (_) {}
   }
   if (!actionDefId) {
@@ -184,14 +188,16 @@ async function addActionViaGraphQL(
       const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
         params: {
           sysparm_query: 'internal_nameLIKE' + actionType + '^ORnameLIKE' + actionType,
-          sysparm_fields: 'sys_id,internal_name', sysparm_limit: 5
+          sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 5
         }
       });
-      actionDefId = resp.data.result?.[0]?.sys_id || null;
+      const results = resp.data.result || [];
+      steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: r.internal_name, name: r.name }));
+      actionDefId = results[0]?.sys_id || null;
+      if (actionDefId) steps.def_lookup = { id: actionDefId, internal_name: results[0].internal_name, name: results[0].name, matched_query: 'LIKE ' + actionType };
     } catch (_) {}
   }
   if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType, steps };
-  steps.def_lookup = { id: actionDefId };
 
   const uuid = generateUUID();
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
