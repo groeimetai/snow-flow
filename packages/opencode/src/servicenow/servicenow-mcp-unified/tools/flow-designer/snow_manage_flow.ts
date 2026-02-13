@@ -38,15 +38,14 @@ function generateUUID(): string {
   });
 }
 
-async function getNextOrder(client: any, flowId: string, parentId?: string): Promise<number> {
+async function getNextOrder(client: any, flowId: string): Promise<number> {
   let maxOrder = 0;
-  // Query elements at the same nesting level (same parent)
-  const parentFilter = parentId ? '^parent=' + parentId : '^parentISEMPTY';
+  // Order is global across all elements in the flow (not per-parent)
   for (const table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
     try {
       const resp = await client.get('/api/now/table/' + table, {
         params: {
-          sysparm_query: 'flow=' + flowId + parentFilter + '^ORDERBYDESCorder',
+          sysparm_query: 'flow=' + flowId + '^ORDERBYDESCorder',
           sysparm_fields: 'order',
           sysparm_limit: 1
         }
@@ -286,26 +285,32 @@ async function addActionViaGraphQL(
   }
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId, parentUiId);
-  const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+  const resolvedOrder = order || await getNextOrder(client, flowId);
+  const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
+    (parentUiId ? ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' : '');
+  // Build mutation payload — when nesting inside a flow logic block, also update the parent
+  const flowPatch: any = {
+    flowId: flowId,
+    actions: {
+      insert: [{
+        actionTypeSysId: actionDefId,
+        metadata: '{"predicates":[]}',
+        flowSysId: flowId,
+        generationSource: '',
+        order: String(resolvedOrder),
+        parent: parentUiId || '',
+        uiUniqueIdentifier: uuid,
+        type: 'action',
+        parentUiId: parentUiId || '',
+        inputs: []
+      }]
+    }
+  };
+  if (parentUiId) {
+    flowPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }] };
+  }
   try {
-    const result = await executeFlowPatchMutation(client, {
-      flowId: flowId,
-      actions: {
-        insert: [{
-          actionTypeSysId: actionDefId,
-          metadata: '{"predicates":[]}',
-          flowSysId: flowId,
-          generationSource: '',
-          order: String(resolvedOrder),
-          parent: parentUiId || '',
-          uiUniqueIdentifier: uuid,
-          type: 'action',
-          parentUiId: parentUiId || '',
-          inputs: []
-        }]
-      }
-    }, actionResponseFields);
+    const result = await executeFlowPatchMutation(client, flowPatch, actionResponseFields);
 
     const actionId = result?.actions?.inserts?.[0]?.sysId;
     steps.insert = { success: !!actionId, actionId, uuid };
@@ -387,7 +392,7 @@ async function addFlowLogicViaGraphQL(
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId, parentUiId);
+  const resolvedOrder = order || await getNextOrder(client, flowId);
   const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
@@ -495,27 +500,32 @@ async function addSubflowCallViaGraphQL(
   if (!subflowName) subflowName = subflowId;
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId, parentUiId);
-  const subflowResponseFields = 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+  const resolvedOrder = order || await getNextOrder(client, flowId);
+  const subflowResponseFields = 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
+    (parentUiId ? ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' : '');
+  const subPatch: any = {
+    flowId: flowId,
+    subflows: {
+      insert: [{
+        metadata: '{"predicates":[]}',
+        flowSysId: flowId,
+        generationSource: '',
+        name: subflowName,
+        order: String(resolvedOrder),
+        parent: parentUiId || '',
+        subflowSysId: subflowSysId,
+        uiUniqueIdentifier: uuid,
+        type: 'subflow',
+        parentUiId: parentUiId || '',
+        inputs: []
+      }]
+    }
+  };
+  if (parentUiId) {
+    subPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }] };
+  }
   try {
-    const result = await executeFlowPatchMutation(client, {
-      flowId: flowId,
-      subflows: {
-        insert: [{
-          metadata: '{"predicates":[]}',
-          flowSysId: flowId,
-          generationSource: '',
-          name: subflowName,
-          order: String(resolvedOrder),
-          parent: parentUiId || '',
-          subflowSysId: subflowSysId,
-          uiUniqueIdentifier: uuid,
-          type: 'subflow',
-          parentUiId: parentUiId || '',
-          inputs: []
-        }]
-      }
-    }, subflowResponseFields);
+    const result = await executeFlowPatchMutation(client, subPatch, subflowResponseFields);
 
     const callId = result?.subflows?.inserts?.[0]?.sysId;
     steps.insert = { success: !!callId, callId, uuid };
