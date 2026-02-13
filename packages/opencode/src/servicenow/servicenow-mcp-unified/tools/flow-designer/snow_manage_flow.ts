@@ -254,62 +254,78 @@ async function calculateInsertOrder(
 ): Promise<{ insertOrder: number; reorders: { flowLogicUpdates: any[]; actionUpdates: any[]; subflowUpdates: any[] } }> {
   var noReorders = { flowLogicUpdates: [], actionUpdates: [], subflowUpdates: [] };
 
-  // Explicit order: bump elements at that position
+  // ── Parent specified: ALWAYS compute global order from parent context ──
+  // Flow Designer uses GLOBAL ordering for ALL elements (not per-parent).
+  // When a parent is specified, any explicit "order" is ignored because callers
+  // typically pass a local/relative order (1, 2, 3) which would conflict with
+  // elements already at those global positions.
+  if (parentUiId) {
+    var parentSysId = '';
+    var parentOrder = 0;
+    try {
+      var pResp = await client.get('/api/now/table/sys_hub_flow_logic', {
+        params: {
+          sysparm_query: 'flow=' + flowId + '^ui_unique_identifier=' + parentUiId,
+          sysparm_fields: 'sys_id,order',
+          sysparm_limit: 1
+        }
+      });
+      var found = pResp.data.result?.[0];
+      if (found) {
+        parentSysId = str(found.sys_id);
+        parentOrder = parseInt(str(found.order) || '0', 10);
+      }
+    } catch (_) {}
+
+    if (!parentSysId) {
+      // Fallback: append at end
+      var fallbackOrder = await getNextOrder(client, flowId);
+      return { insertOrder: fallbackOrder, reorders: noReorders };
+    }
+
+    // Find max order of existing children of this parent (query by both sys_id and UUID)
+    var maxChildOrder = parentOrder;
+    for (var table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
+      try {
+        var cResp = await client.get('/api/now/table/' + table, {
+          params: {
+            sysparm_query: 'flow=' + flowId + '^parent=' + parentSysId + '^ORDERBYDESCorder',
+            sysparm_fields: 'order',
+            sysparm_limit: 1
+          }
+        });
+        var childOrder = parseInt(str(cResp.data.result?.[0]?.order) || '0', 10);
+        if (childOrder > maxChildOrder) maxChildOrder = childOrder;
+      } catch (_) {}
+      // Also try querying by parent UUID (GraphQL may store UUID in parent field)
+      try {
+        var cResp2 = await client.get('/api/now/table/' + table, {
+          params: {
+            sysparm_query: 'flow=' + flowId + '^parent=' + parentUiId + '^ORDERBYDESCorder',
+            sysparm_fields: 'order',
+            sysparm_limit: 1
+          }
+        });
+        var childOrder2 = parseInt(str(cResp2.data.result?.[0]?.order) || '0', 10);
+        if (childOrder2 > maxChildOrder) maxChildOrder = childOrder2;
+      } catch (_) {}
+    }
+
+    // Insert after last child; bump everything at that position
+    var insertOrder = maxChildOrder + 1;
+    var reorderInfo = await findElementsToReorder(client, flowId, insertOrder);
+    return { insertOrder: insertOrder, reorders: reorderInfo };
+  }
+
+  // ── Top-level with explicit order: bump elements at that position ──
   if (explicitOrder) {
     var reorders = await findElementsToReorder(client, flowId, explicitOrder);
     return { insertOrder: explicitOrder, reorders };
   }
 
-  // No parent: append at end, no bumping needed
-  if (!parentUiId) {
-    var nextOrder = await getNextOrder(client, flowId);
-    return { insertOrder: nextOrder, reorders: noReorders };
-  }
-
-  // Parent specified: find parent's order, then find max child order
-  var parentSysId = '';
-  var parentOrder = 0;
-  try {
-    var pResp = await client.get('/api/now/table/sys_hub_flow_logic', {
-      params: {
-        sysparm_query: 'flow=' + flowId + '^ui_unique_identifier=' + parentUiId,
-        sysparm_fields: 'sys_id,order',
-        sysparm_limit: 1
-      }
-    });
-    var found = pResp.data.result?.[0];
-    if (found) {
-      parentSysId = found.sys_id;
-      parentOrder = parseInt(found.order || '0', 10);
-    }
-  } catch (_) {}
-
-  if (!parentSysId) {
-    // Fallback: append at end
-    var fallbackOrder = await getNextOrder(client, flowId);
-    return { insertOrder: fallbackOrder, reorders: noReorders };
-  }
-
-  // Find max order of existing children of this parent
-  var maxChildOrder = parentOrder;
-  for (var table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
-    try {
-      var cResp = await client.get('/api/now/table/' + table, {
-        params: {
-          sysparm_query: 'flow=' + flowId + '^parent=' + parentSysId + '^ORDERBYDESCorder',
-          sysparm_fields: 'order',
-          sysparm_limit: 1
-        }
-      });
-      var childOrder = parseInt(cResp.data.result?.[0]?.order || '0', 10);
-      if (childOrder > maxChildOrder) maxChildOrder = childOrder;
-    } catch (_) {}
-  }
-
-  // Insert after last child; bump everything at that position
-  var insertOrder = maxChildOrder + 1;
-  var reorderInfo = await findElementsToReorder(client, flowId, insertOrder);
-  return { insertOrder: insertOrder, reorders: reorderInfo };
+  // ── Top-level without order: append at end ──
+  var nextOrder = await getNextOrder(client, flowId);
+  return { insertOrder: nextOrder, reorders: noReorders };
 }
 
 async function addTriggerViaGraphQL(
@@ -629,7 +645,7 @@ async function addFlowLogicViaGraphQL(
       insert: [{
         order: String(resolvedOrder),
         uiUniqueIdentifier: uuid,
-        parent: '',
+        parent: parentUiId || '',
         metadata: '{"predicates":[]}',
         flowSysId: flowId,
         generationSource: '',
@@ -641,10 +657,18 @@ async function addFlowLogicViaGraphQL(
     }
   };
 
-  // Merge reorder updates into flowLogics.update
-  if (orderCalc.reorders.flowLogicUpdates.length > 0) {
+  // Merge reorder updates + parent update into flowLogics.update
+  var flowLogicUpdatesForPatch: any[] = orderCalc.reorders.flowLogicUpdates.slice();
+  if (parentUiId) {
+    // Signal the parent flow logic was modified (same as action insert does)
+    var parentAlreadyInList = flowLogicUpdatesForPatch.some(function (u: any) { return u.uiUniqueIdentifier === parentUiId; });
+    if (!parentAlreadyInList) {
+      flowLogicUpdatesForPatch.push({ uiUniqueIdentifier: parentUiId, type: 'flowlogic' });
+    }
+  }
+  if (flowLogicUpdatesForPatch.length > 0) {
     if (!flowPatch.flowLogics.update) flowPatch.flowLogics.update = [];
-    flowPatch.flowLogics.update = flowPatch.flowLogics.update.concat(orderCalc.reorders.flowLogicUpdates);
+    flowPatch.flowLogics.update = flowPatch.flowLogics.update.concat(flowLogicUpdatesForPatch);
   }
   if (orderCalc.reorders.actionUpdates.length > 0) {
     flowPatch.actions = { update: orderCalc.reorders.actionUpdates };
