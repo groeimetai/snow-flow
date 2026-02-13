@@ -74,12 +74,15 @@ async function addTriggerViaGraphQL(
   else if (triggerType.endsWith('e')) variations.push(triggerType + 'd');
   else variations.push(triggerType + 'ed', triggerType + 'd');
 
+  // Resolve reference fields that may be objects {display_value, link} or plain strings
+  const str = (val: any) => typeof val === 'object' && val !== null ? (val.display_value || val.value || '') : (val || '');
+
   const assignFound = (found: any, matched: string) => {
     trigDefId = found.sys_id;
-    trigName = found.name || triggerType;
-    trigType = found.type || triggerType;
-    trigCategory = found.category || '';
-    steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, category: found.category, matched };
+    trigName = str(found.name) || triggerType;
+    trigType = str(found.type) || triggerType;
+    trigCategory = str(found.category);
+    steps.def_lookup = { id: found.sys_id, type: str(found.type), name: str(found.name), category: str(found.category), matched };
   };
 
   // Try exact match on type and name for each variation
