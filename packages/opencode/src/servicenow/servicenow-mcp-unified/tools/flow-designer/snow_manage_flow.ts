@@ -384,15 +384,238 @@ function flattenAttributes(attrs: any): string {
  * Fallback: if the triggerpicker API fails, queries sys_hub_trigger_input / sys_hub_trigger_output
  * via the Table API (same approach as buildActionInputsForInsert / buildFlowLogicInputsForInsert).
  */
+/**
+ * Parse XML string from triggerpicker API to extract input/output elements.
+ * The triggerpicker endpoint may return XML instead of JSON on some instances.
+ */
+function parseTriggerpickerXml(xmlStr: string): { inputs: any[]; outputs: any[] } {
+  var inputs: any[] = [];
+  var outputs: any[] = [];
+
+  // Helper: extract text content of an XML element by tag name
+  var getTag = function (xml: string, tag: string): string {
+    var m = xml.match(new RegExp('<' + tag + '>([\\s\\S]*?)</' + tag + '>'));
+    return m ? m[1].trim() : '';
+  };
+
+  // Helper: extract all occurrences of a repeated element
+  var getAll = function (xml: string, tag: string): string[] {
+    var re = new RegExp('<' + tag + '>([\\s\\S]*?)</' + tag + '>', 'g');
+    var results: string[] = [];
+    var m;
+    while ((m = re.exec(xml)) !== null) results.push(m[1]);
+    return results;
+  };
+
+  // Try to find input elements — XML may wrap them in <inputs><element>...</element></inputs>
+  // or <trigger_inputs><input>...</input></trigger_inputs> etc.
+  var inputsSection = getTag(xmlStr, 'inputs') || getTag(xmlStr, 'trigger_inputs') || xmlStr;
+  var inputElements = getAll(inputsSection, 'element');
+  if (inputElements.length === 0) inputElements = getAll(inputsSection, 'input');
+  if (inputElements.length === 0) inputElements = getAll(inputsSection, 'trigger_input');
+
+  for (var ii = 0; ii < inputElements.length; ii++) {
+    var el = inputElements[ii];
+    var name = getTag(el, 'name') || getTag(el, 'element');
+    if (!name) continue;
+    inputs.push({
+      id: getTag(el, 'sys_id') || getTag(el, 'id'),
+      name: name,
+      label: getTag(el, 'label') || name,
+      type: getTag(el, 'type') || getTag(el, 'internal_type') || 'string',
+      type_label: getTag(el, 'type_label') || '',
+      mandatory: getTag(el, 'mandatory') === 'true',
+      order: parseInt(getTag(el, 'order') || '0', 10),
+      maxsize: parseInt(getTag(el, 'maxsize') || getTag(el, 'max_length') || '4000', 10),
+      hint: getTag(el, 'hint'),
+      defaultValue: getTag(el, 'defaultValue') || getTag(el, 'default_value'),
+      defaultDisplayValue: getTag(el, 'defaultDisplayValue') || getTag(el, 'default_display_value'),
+      choiceOption: getTag(el, 'choiceOption') || getTag(el, 'choice_option'),
+      reference: getTag(el, 'reference'),
+      reference_display: getTag(el, 'reference_display'),
+      use_dependent: getTag(el, 'use_dependent') === 'true',
+      dependent_on: getTag(el, 'dependent_on'),
+      internal_link: getTag(el, 'internal_link'),
+      attributes: getTag(el, 'attributes')
+    });
+  }
+
+  var outputsSection = getTag(xmlStr, 'outputs') || getTag(xmlStr, 'trigger_outputs') || '';
+  var outputElements = getAll(outputsSection, 'element');
+  if (outputElements.length === 0) outputElements = getAll(outputsSection, 'output');
+  if (outputElements.length === 0) outputElements = getAll(outputsSection, 'trigger_output');
+
+  for (var oi = 0; oi < outputElements.length; oi++) {
+    var oel = outputElements[oi];
+    var oname = getTag(oel, 'name') || getTag(oel, 'element');
+    if (!oname) continue;
+    outputs.push({
+      id: getTag(oel, 'sys_id') || getTag(oel, 'id'),
+      name: oname,
+      label: getTag(oel, 'label') || oname,
+      type: getTag(oel, 'type') || getTag(oel, 'internal_type') || 'string',
+      type_label: getTag(oel, 'type_label') || '',
+      mandatory: getTag(oel, 'mandatory') === 'true',
+      order: parseInt(getTag(oel, 'order') || '0', 10),
+      maxsize: parseInt(getTag(oel, 'maxsize') || getTag(oel, 'max_length') || '200', 10),
+      hint: getTag(oel, 'hint'),
+      reference: getTag(oel, 'reference'),
+      reference_display: getTag(oel, 'reference_display'),
+      use_dependent: getTag(oel, 'use_dependent') === 'true',
+      dependent_on: getTag(oel, 'dependent_on'),
+      internal_link: getTag(oel, 'internal_link'),
+      attributes: getTag(oel, 'attributes')
+    });
+  }
+
+  return { inputs, outputs };
+}
+
+/**
+ * Build a single trigger input object in GraphQL mutation format.
+ * Used by buildTriggerInputsForInsert and the hardcoded fallback.
+ */
+function buildTriggerInputObj(inp: any, userTable?: string, userCondition?: string): any {
+  var paramType = inp.type || 'string';
+  var name = inp.name || '';
+  var label = inp.label || name;
+  var attrs = typeof inp.attributes === 'object' ? flattenAttributes(inp.attributes) : (inp.attributes || '');
+
+  // Determine value: user-provided > default
+  var value = '';
+  if (name === 'table' && userTable) value = userTable;
+  else if (name === 'condition') value = userCondition || '^EQ';
+  else if (inp.defaultValue) value = inp.defaultValue;
+
+  var parameter: any = {
+    id: inp.id || '', label: label, name: name, type: paramType,
+    type_label: inp.type_label || TYPE_LABELS[paramType] || paramType,
+    order: inp.order || 0, extended: inp.extended || false,
+    mandatory: inp.mandatory || false, readonly: inp.readonly || false,
+    maxsize: inp.maxsize || 4000, data_structure: '',
+    reference: inp.reference || '', reference_display: inp.reference_display || '',
+    ref_qual: inp.ref_qual || '', choiceOption: inp.choiceOption || '',
+    table: '', columnName: '', defaultValue: inp.defaultValue || '',
+    use_dependent: inp.use_dependent || false, dependent_on: inp.dependent_on || '',
+    internal_link: inp.internal_link || '', show_ref_finder: inp.show_ref_finder || false,
+    local: inp.local || false, attributes: attrs, sys_class_name: '', children: []
+  };
+  if (inp.hint) parameter.hint = inp.hint;
+  if (inp.defaultDisplayValue) parameter.defaultDisplayValue = inp.defaultDisplayValue;
+  if (inp.choices) parameter.choices = inp.choices;
+  if (inp.defaultChoices) parameter.defaultChoices = inp.defaultChoices;
+
+  var inputObj: any = {
+    name: name, label: label, internalType: paramType,
+    mandatory: inp.mandatory || false, order: inp.order || 0,
+    valueSysId: '', field_name: name, type: paramType, children: [],
+    displayValue: { value: '' },
+    value: value ? { schemaless: false, schemalessValue: '', value: value } : { value: '' },
+    parameter: parameter
+  };
+
+  if (inp.choices && Array.isArray(inp.choices)) {
+    inputObj.choiceList = inp.choices.map(function (c: any) {
+      return { label: c.label, value: c.value };
+    });
+  }
+
+  return inputObj;
+}
+
+/**
+ * Build a single trigger output object in GraphQL mutation format.
+ */
+function buildTriggerOutputObj(out: any): any {
+  var paramType = out.type || 'string';
+  var name = out.name || '';
+  var label = out.label || name;
+  var attrs = typeof out.attributes === 'object' ? flattenAttributes(out.attributes) : (out.attributes || '');
+
+  var parameter: any = {
+    id: out.id || '', label: label, name: name, type: paramType,
+    type_label: out.type_label || TYPE_LABELS[paramType] || paramType,
+    hint: out.hint || '', order: out.order || 0, extended: out.extended || false,
+    mandatory: out.mandatory || false, readonly: out.readonly || false,
+    maxsize: out.maxsize || 200, data_structure: '',
+    reference: out.reference || '', reference_display: out.reference_display || '',
+    ref_qual: '', choiceOption: '', table: '', columnName: '', defaultValue: '',
+    use_dependent: out.use_dependent || false, dependent_on: out.dependent_on || '',
+    internal_link: out.internal_link || '', show_ref_finder: false, local: false,
+    attributes: attrs, sys_class_name: ''
+  };
+
+  var children: any[] = [];
+  var paramChildren: any[] = [];
+  if (out.children && Array.isArray(out.children)) {
+    children = out.children.map(function (child: any) {
+      return { id: '', name: child.name || '', scriptActive: false, children: [], value: { value: '' }, script: null };
+    });
+    paramChildren = out.children.map(function (child: any) {
+      return {
+        id: '', label: child.label || child.name || '', name: child.name || '',
+        type: child.type || 'string', type_label: child.type_label || TYPE_LABELS[child.type || 'string'] || 'String',
+        hint: '', order: child.order || 0, extended: false, mandatory: false, readonly: false, maxsize: 0,
+        data_structure: '', reference: '', reference_display: '', ref_qual: '', choiceOption: '',
+        table: '', columnName: '', defaultValue: '', defaultDisplayValue: '',
+        use_dependent: false, dependent_on: false, show_ref_finder: false, local: false,
+        attributes: '', sys_class_name: '',
+        uiDisplayType: child.uiDisplayType || child.type || 'string',
+        uiDisplayTypeLabel: child.type_label || 'String',
+        internal_link: '', value: '', display_value: '', scriptActive: false,
+        parent: out.id || '',
+        fieldFacetMap: 'uiTypeLabel=' + (child.type_label || 'String') + ',',
+        children: [], script: null
+      };
+    });
+  }
+  parameter.children = paramChildren;
+
+  return {
+    name: name, value: '', displayValue: '', type: paramType,
+    order: out.order || 0, label: label, children: children, parameter: parameter
+  };
+}
+
+/**
+ * Hardcoded record trigger inputs — used as ultimate fallback when API and Table lookups fail.
+ * These definitions match the exact format captured from the Flow Designer UI for record-based triggers
+ * (record_create, record_update, record_create_or_update). Field names and types are consistent across instances.
+ */
+function getRecordTriggerFallbackInputs(): any[] {
+  return [
+    { name: 'table', label: 'Table', type: 'table_name', type_label: 'Table Name', mandatory: true, order: 1, maxsize: 80, attributes: 'filter_table_source=RECORD_WATCHER_RESTRICTED,' },
+    { name: 'condition', label: 'Condition', type: 'conditions', type_label: 'Conditions', mandatory: false, order: 100, maxsize: 4000, use_dependent: true, dependent_on: 'table', attributes: 'extended_operators=VALCHANGES;CHANGESFROM;CHANGESTO,wants_to_add_conditions=true,modelDependent=trigger_inputs,' },
+    { name: 'run_on_extended', label: 'run_on_extended', type: 'choice', type_label: 'Choice', mandatory: false, order: 100, maxsize: 40, defaultValue: 'false', defaultDisplayValue: 'Run only on current table', choiceOption: '3', attributes: 'advanced=true,', choices: [{ label: 'Run only on current table', value: 'false', order: 0 }, { label: 'Run on current and extended tables', value: 'true', order: 1 }], defaultChoices: [{ label: 'Run only on current table', value: 'false', order: 1 }, { label: 'Run on current and extended tables', value: 'true', order: 2 }] },
+    { name: 'run_flow_in', label: 'run_flow_in', type: 'choice', type_label: 'Choice', mandatory: false, order: 100, maxsize: 40, defaultValue: 'any', defaultDisplayValue: 'any', choiceOption: '3', attributes: 'advanced=true,', choices: [{ label: 'Run flow in background (default)', value: 'background', order: 0 }, { label: 'Run flow in foreground', value: 'foreground', order: 1 }], defaultChoices: [{ label: 'Run flow in background (default)', value: 'background', order: 1 }, { label: 'Run flow in foreground', value: 'foreground', order: 2 }] },
+    { name: 'run_when_user_list', label: 'run_when_user_list', type: 'glide_list', type_label: 'List', mandatory: false, order: 100, maxsize: 4000, reference: 'sys_user', reference_display: 'User', attributes: 'advanced=true,' },
+    { name: 'run_when_setting', label: 'run_when_setting', type: 'choice', type_label: 'Choice', mandatory: false, order: 100, maxsize: 40, defaultValue: 'both', defaultDisplayValue: 'Run for Both Interactive and Non-Interactive Sessions', choiceOption: '3', attributes: 'advanced=true,', choices: [{ label: 'Only Run for Non-Interactive Session', value: 'non_interactive', order: 0 }, { label: 'Only Run for User Interactive Session', value: 'interactive', order: 1 }, { label: 'Run for Both Interactive and Non-Interactive Sessions', value: 'both', order: 2 }], defaultChoices: [{ label: 'Only Run for Non-Interactive Session', value: 'non_interactive', order: 1 }, { label: 'Only Run for User Interactive Session', value: 'interactive', order: 2 }, { label: 'Run for Both Interactive and Non-Interactive Sessions', value: 'both', order: 3 }] },
+    { name: 'run_when_user_setting', label: 'run_when_user_setting', type: 'choice', type_label: 'Choice', mandatory: false, order: 100, maxsize: 40, defaultValue: 'any', defaultDisplayValue: 'Run for any user', choiceOption: '3', attributes: 'advanced=true,', choices: [{ label: 'Do not run if triggered by the following users', value: 'not_one_of', order: 0 }, { label: 'Only Run if triggered by the following users', value: 'one_of', order: 1 }, { label: 'Run for any user', value: 'any', order: 2 }], defaultChoices: [{ label: 'Do not run if triggered by the following users', value: 'not_one_of', order: 1 }, { label: 'Only Run if triggered by the following users', value: 'one_of', order: 2 }, { label: 'Run for any user', value: 'any', order: 3 }] },
+    { name: 'trigger_strategy', label: 'Run Trigger', type: 'choice', type_label: 'Choice', mandatory: false, order: 200, maxsize: 40, defaultValue: 'once', defaultDisplayValue: 'Once', choiceOption: '3', hint: 'Run Trigger every time the condition matches, or only the first time.', choices: [{ label: 'Once', value: 'once', order: 0 }, { label: 'For each unique change', value: 'unique_changes', order: 1 }, { label: 'Only if not currently running', value: 'always', order: 2 }, { label: 'For every update', value: 'every', order: 3 }], defaultChoices: [{ label: 'Once', value: 'once', order: 1 }, { label: 'For each unique change', value: 'unique_changes', order: 2 }, { label: 'Only if not currently running', value: 'always', order: 3 }, { label: 'For every update', value: 'every', order: 4 }] }
+  ];
+}
+
+function getRecordTriggerFallbackOutputs(): any[] {
+  return [
+    { name: 'current', label: 'Record', type: 'document_id', type_label: 'Document ID', mandatory: true, order: 100, maxsize: 200, use_dependent: true, dependent_on: 'table_name', internal_link: 'table' },
+    { name: 'changed_fields', label: 'Changed Fields', type: 'array.object', type_label: 'Array.Object', mandatory: false, order: 100, maxsize: 4000, attributes: 'uiTypeLabel=Array.Object,co_type_name=FDCollection,child_label=FDChangeDetails,child_type_label=Object,element_mapping_provider=com.glide.flow_design.action.data.FlowDesignVariableMapper,pwd2droppable=true,uiType=array.object,child_type=object,child_name=FDChangeDetails,', children: [{ name: 'field_name', label: 'Field Name', type: 'string', type_label: 'String', order: 1 }, { name: 'previous_value', label: 'Previous Value', type: 'string', type_label: 'String', order: 2 }, { name: 'current_value', label: 'Current Value', type: 'string', type_label: 'String', order: 3 }, { name: 'previous_display_value', label: 'Previous Display Value', type: 'string', type_label: 'String', order: 4 }, { name: 'current_display_value', label: 'Current Display Value', type: 'string', type_label: 'String', order: 5 }] },
+    { name: 'table_name', label: 'Table Name', type: 'table_name', type_label: 'Table Name', mandatory: false, order: 101, maxsize: 200, internal_link: 'table', attributes: 'test_input_hidden=true,' },
+    { name: 'run_start_time', label: 'Run Start Time UTC', type: 'glide_date_time', type_label: 'Date/Time', mandatory: false, order: 110, maxsize: 200, attributes: 'test_input_hidden=true,' },
+    { name: 'run_start_date_time', label: 'Run Start Date/Time', type: 'glide_date_time', type_label: 'Date/Time', mandatory: false, order: 110, maxsize: 200, attributes: 'test_input_hidden=true,' }
+  ];
+}
+
 async function buildTriggerInputsForInsert(
   client: any,
   trigDefId: string,
+  trigType: string,
   userTable?: string,
   userCondition?: string
-): Promise<{ inputs: any[]; outputs: any[]; error?: string }> {
+): Promise<{ inputs: any[]; outputs: any[]; source: string; error?: string }> {
   var apiInputs: any[] = [];
   var apiOutputs: any[] = [];
   var fetchError = '';
+  var source = '';
 
   // Strategy 1: triggerpicker API (primary — same as Flow Designer UI)
   try {
@@ -400,10 +623,50 @@ async function buildTriggerInputsForInsert(
       params: { sysparm_transaction_scope: 'global' },
       headers: { Accept: 'application/json' }
     });
-    var tpData = tpResp.data?.result || tpResp.data;
-    if (tpData && typeof tpData === 'object') {
-      apiInputs = tpData.inputs || tpData.trigger_inputs || [];
-      apiOutputs = tpData.outputs || tpData.trigger_outputs || [];
+    var tpRaw = tpResp.data;
+    var tpData = tpRaw?.result || tpRaw;
+
+    // Handle JSON object response
+    if (tpData && typeof tpData === 'object' && !Array.isArray(tpData)) {
+      // Try common field name variations
+      var foundInputs = Array.isArray(tpData.inputs) ? tpData.inputs
+        : Array.isArray(tpData.trigger_inputs) ? tpData.trigger_inputs
+        : Array.isArray(tpData.input) ? tpData.input : null;
+      var foundOutputs = Array.isArray(tpData.outputs) ? tpData.outputs
+        : Array.isArray(tpData.trigger_outputs) ? tpData.trigger_outputs
+        : Array.isArray(tpData.output) ? tpData.output : null;
+      if (foundInputs) { apiInputs = foundInputs; source = 'triggerpicker_json'; }
+      if (foundOutputs) apiOutputs = foundOutputs;
+
+      // If no arrays found, try to explore nested structure
+      if (!foundInputs && !foundOutputs) {
+        for (var key of Object.keys(tpData)) {
+          var val = tpData[key];
+          if (val && typeof val === 'object' && !Array.isArray(val)) {
+            if (Array.isArray(val.inputs)) { apiInputs = val.inputs; source = 'triggerpicker_json.' + key; }
+            if (Array.isArray(val.outputs)) apiOutputs = val.outputs;
+          }
+        }
+      }
+    }
+
+    // Handle XML string response
+    if (apiInputs.length === 0 && typeof tpData === 'string' && tpData.includes('<')) {
+      var xmlResult = parseTriggerpickerXml(tpData);
+      if (xmlResult.inputs.length > 0) {
+        apiInputs = xmlResult.inputs;
+        apiOutputs = xmlResult.outputs;
+        source = 'triggerpicker_xml';
+      }
+    }
+    // Also check if the raw response itself is XML (not wrapped in result)
+    if (apiInputs.length === 0 && typeof tpRaw === 'string' && tpRaw.includes('<')) {
+      var xmlResult2 = parseTriggerpickerXml(tpRaw);
+      if (xmlResult2.inputs.length > 0) {
+        apiInputs = xmlResult2.inputs;
+        apiOutputs = xmlResult2.outputs;
+        source = 'triggerpicker_xml_raw';
+      }
     }
   } catch (tpErr: any) {
     fetchError = 'triggerpicker: ' + (tpErr.message || 'unknown');
@@ -421,22 +684,25 @@ async function buildTriggerInputsForInsert(
         }
       });
       var tableInputs = tiResp.data.result || [];
-      apiInputs = tableInputs.map(function (rec: any) {
-        return {
-          id: str(rec.sys_id), name: str(rec.element), label: str(rec.label) || str(rec.element),
-          type: str(rec.internal_type) || 'string',
-          type_label: TYPE_LABELS[str(rec.internal_type) || 'string'] || str(rec.internal_type),
-          mandatory: str(rec.mandatory) === 'true',
-          order: parseInt(str(rec.order) || '0', 10),
-          maxsize: parseInt(str(rec.max_length) || '4000', 10),
-          hint: str(rec.hint), defaultValue: str(rec.default_value),
-          reference: str(rec.reference), reference_display: str(rec.reference_display),
-          use_dependent: str(rec.use_dependent_field) === 'true',
-          dependent_on: str(rec.dependent_on_field),
-          attributes: str(rec.attributes)
-        };
-      });
-      fetchError = '';
+      if (tableInputs.length > 0) {
+        apiInputs = tableInputs.map(function (rec: any) {
+          return {
+            id: str(rec.sys_id), name: str(rec.element), label: str(rec.label) || str(rec.element),
+            type: str(rec.internal_type) || 'string',
+            type_label: TYPE_LABELS[str(rec.internal_type) || 'string'] || str(rec.internal_type),
+            mandatory: str(rec.mandatory) === 'true',
+            order: parseInt(str(rec.order) || '0', 10),
+            maxsize: parseInt(str(rec.max_length) || '4000', 10),
+            hint: str(rec.hint), defaultValue: str(rec.default_value),
+            reference: str(rec.reference), reference_display: str(rec.reference_display),
+            use_dependent: str(rec.use_dependent_field) === 'true',
+            dependent_on: str(rec.dependent_on_field),
+            attributes: str(rec.attributes)
+          };
+        });
+        source = 'table_api';
+        fetchError = '';
+      }
     } catch (tiErr: any) {
       fetchError += '; table_api_inputs: ' + (tiErr.message || 'unknown');
     }
@@ -452,127 +718,62 @@ async function buildTriggerInputsForInsert(
         }
       });
       var tableOutputs = toResp.data.result || [];
-      apiOutputs = tableOutputs.map(function (rec: any) {
-        return {
-          id: str(rec.sys_id), name: str(rec.element), label: str(rec.label) || str(rec.element),
-          type: str(rec.internal_type) || 'string',
-          type_label: TYPE_LABELS[str(rec.internal_type) || 'string'] || str(rec.internal_type),
-          mandatory: str(rec.mandatory) === 'true',
-          order: parseInt(str(rec.order) || '0', 10),
-          maxsize: parseInt(str(rec.max_length) || '200', 10),
-          hint: str(rec.hint), reference: str(rec.reference), reference_display: str(rec.reference_display),
-          use_dependent: str(rec.use_dependent_field) === 'true',
-          dependent_on: str(rec.dependent_on_field),
-          attributes: str(rec.attributes)
-        };
-      });
+      if (tableOutputs.length > 0) {
+        apiOutputs = tableOutputs.map(function (rec: any) {
+          return {
+            id: str(rec.sys_id), name: str(rec.element), label: str(rec.label) || str(rec.element),
+            type: str(rec.internal_type) || 'string',
+            type_label: TYPE_LABELS[str(rec.internal_type) || 'string'] || str(rec.internal_type),
+            mandatory: str(rec.mandatory) === 'true',
+            order: parseInt(str(rec.order) || '0', 10),
+            maxsize: parseInt(str(rec.max_length) || '200', 10),
+            hint: str(rec.hint), reference: str(rec.reference), reference_display: str(rec.reference_display),
+            use_dependent: str(rec.use_dependent_field) === 'true',
+            dependent_on: str(rec.dependent_on_field),
+            attributes: str(rec.attributes)
+          };
+        });
+      }
     } catch (_) {}
   }
 
-  // Transform inputs into GraphQL mutation format (matching exact UI structure)
-  var inputs = apiInputs.map(function (inp: any) {
-    var paramType = inp.type || 'string';
-    var name = inp.name || '';
-    var label = inp.label || name;
-    var attrs = typeof inp.attributes === 'object' ? flattenAttributes(inp.attributes) : (inp.attributes || '');
+  // Strategy 3: Hardcoded fallback for record-based triggers (ultimate safety net)
+  // Uses exact definitions captured from the Flow Designer UI
+  var isRecordTrigger = /record/.test(trigType.toLowerCase());
+  if (apiInputs.length === 0 && isRecordTrigger) {
+    apiInputs = getRecordTriggerFallbackInputs();
+    source = 'hardcoded_fallback';
+  }
+  if (apiOutputs.length === 0 && isRecordTrigger) {
+    apiOutputs = getRecordTriggerFallbackOutputs();
+  }
 
-    // Determine value: user-provided > default
-    var value = '';
-    if (name === 'table' && userTable) value = userTable;
-    else if (name === 'condition') value = userCondition || '^EQ';
-    else if (inp.defaultValue) value = inp.defaultValue;
+  // Transform to GraphQL mutation format
+  var inputs = apiInputs.map(function (inp: any) { return buildTriggerInputObj(inp, userTable, userCondition); });
+  var outputs = apiOutputs.map(function (out: any) { return buildTriggerOutputObj(out); });
 
-    var parameter: any = {
-      id: inp.id || '', label: label, name: name, type: paramType,
-      type_label: inp.type_label || TYPE_LABELS[paramType] || paramType,
-      order: inp.order || 0, extended: inp.extended || false,
-      mandatory: inp.mandatory || false, readonly: inp.readonly || false,
-      maxsize: inp.maxsize || 4000, data_structure: '',
-      reference: inp.reference || '', reference_display: inp.reference_display || '',
-      ref_qual: inp.ref_qual || '', choiceOption: inp.choiceOption || '',
-      table: '', columnName: '', defaultValue: inp.defaultValue || '',
-      use_dependent: inp.use_dependent || false, dependent_on: inp.dependent_on || '',
-      internal_link: inp.internal_link || '', show_ref_finder: inp.show_ref_finder || false,
-      local: inp.local || false, attributes: attrs, sys_class_name: '', children: []
-    };
-    if (inp.hint) parameter.hint = inp.hint;
-    if (inp.defaultDisplayValue) parameter.defaultDisplayValue = inp.defaultDisplayValue;
-    if (inp.choices) parameter.choices = inp.choices;
-    if (inp.defaultChoices) parameter.defaultChoices = inp.defaultChoices;
-
-    var inputObj: any = {
-      name: name, label: label, internalType: paramType,
-      mandatory: inp.mandatory || false, order: inp.order || 0,
-      valueSysId: '', field_name: name, type: paramType, children: [],
-      displayValue: { value: '' },
-      value: value ? { schemaless: false, schemalessValue: '', value: value } : { value: '' },
-      parameter: parameter
-    };
-
-    // Add choiceList for choice-type inputs (top-level, matching UI format)
-    if (inp.choices && Array.isArray(inp.choices)) {
-      inputObj.choiceList = inp.choices.map(function (c: any) {
-        return { label: c.label, value: c.value };
-      });
+  // Final safety net: ensure table and condition inputs are ALWAYS present for record triggers
+  if (isRecordTrigger) {
+    var hasTable = inputs.some(function (i: any) { return i.name === 'table'; });
+    var hasCondition = inputs.some(function (i: any) { return i.name === 'condition'; });
+    if (!hasTable) {
+      inputs.unshift(buildTriggerInputObj(
+        { name: 'table', label: 'Table', type: 'table_name', type_label: 'Table Name', mandatory: true, order: 1, maxsize: 80, attributes: 'filter_table_source=RECORD_WATCHER_RESTRICTED,' },
+        userTable, userCondition
+      ));
+      source += '+table_injected';
     }
-
-    return inputObj;
-  });
-
-  // Transform outputs into GraphQL mutation format
-  var outputs = apiOutputs.map(function (out: any) {
-    var paramType = out.type || 'string';
-    var name = out.name || '';
-    var label = out.label || name;
-    var attrs = typeof out.attributes === 'object' ? flattenAttributes(out.attributes) : (out.attributes || '');
-
-    var parameter: any = {
-      id: out.id || '', label: label, name: name, type: paramType,
-      type_label: out.type_label || TYPE_LABELS[paramType] || paramType,
-      hint: out.hint || '', order: out.order || 0, extended: out.extended || false,
-      mandatory: out.mandatory || false, readonly: out.readonly || false,
-      maxsize: out.maxsize || 200, data_structure: '',
-      reference: out.reference || '', reference_display: out.reference_display || '',
-      ref_qual: '', choiceOption: '', table: '', columnName: '', defaultValue: '',
-      use_dependent: out.use_dependent || false, dependent_on: out.dependent_on || '',
-      internal_link: out.internal_link || '', show_ref_finder: false, local: false,
-      attributes: attrs, sys_class_name: ''
-    };
-
-    // Build children for complex types (like array.object)
-    var children: any[] = [];
-    var paramChildren: any[] = [];
-    if (out.children && Array.isArray(out.children)) {
-      children = out.children.map(function (child: any) {
-        return { id: '', name: child.name || '', scriptActive: false, children: [], value: { value: '' }, script: null };
-      });
-      paramChildren = out.children.map(function (child: any) {
-        return {
-          id: '', label: child.label || child.name || '', name: child.name || '',
-          type: child.type || 'string', type_label: child.type_label || TYPE_LABELS[child.type || 'string'] || 'String',
-          hint: '', order: child.order || 0, extended: false, mandatory: false, readonly: false, maxsize: 0,
-          data_structure: '', reference: '', reference_display: '', ref_qual: '', choiceOption: '',
-          table: '', columnName: '', defaultValue: '', defaultDisplayValue: '',
-          use_dependent: false, dependent_on: false, show_ref_finder: false, local: false,
-          attributes: '', sys_class_name: '',
-          uiDisplayType: child.uiDisplayType || child.type || 'string',
-          uiDisplayTypeLabel: child.type_label || 'String',
-          internal_link: '', value: '', display_value: '', scriptActive: false,
-          parent: out.id || '',
-          fieldFacetMap: 'uiTypeLabel=' + (child.type_label || 'String') + ',',
-          children: [], script: null
-        };
-      });
+    if (!hasCondition) {
+      var condIdx = inputs.findIndex(function (i: any) { return i.name === 'table'; });
+      inputs.splice(condIdx + 1, 0, buildTriggerInputObj(
+        { name: 'condition', label: 'Condition', type: 'conditions', type_label: 'Conditions', mandatory: false, order: 100, maxsize: 4000, use_dependent: true, dependent_on: 'table', attributes: 'extended_operators=VALCHANGES;CHANGESFROM;CHANGESTO,wants_to_add_conditions=true,modelDependent=trigger_inputs,' },
+        userTable, userCondition
+      ));
+      source += '+condition_injected';
     }
-    parameter.children = paramChildren;
+  }
 
-    return {
-      name: name, value: '', displayValue: '', type: paramType,
-      order: out.order || 0, label: label, children: children, parameter: parameter
-    };
-  });
-
-  return { inputs, outputs, error: fetchError || undefined };
+  return { inputs, outputs, source: source || 'none', error: fetchError || undefined };
 }
 
 async function addTriggerViaGraphQL(
@@ -643,8 +844,8 @@ async function addTriggerViaGraphQL(
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
 
   // Build full trigger inputs and outputs from triggerpicker API (matching UI format)
-  var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, table, condition);
-  steps.trigger_data = { inputCount: triggerData.inputs.length, outputCount: triggerData.outputs.length, error: triggerData.error };
+  var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, trigType, table, condition);
+  steps.trigger_data = { inputCount: triggerData.inputs.length, outputCount: triggerData.outputs.length, source: triggerData.source, error: triggerData.error };
 
   const triggerResponseFields = 'triggerInstances { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
