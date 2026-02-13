@@ -157,37 +157,28 @@ async function addActionViaGraphQL(
 ): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
-  // Action name mapping: our key → internal_name in sys_hub_action_type_snapshot
-  const actionInternalNames: Record<string, string> = {
-    'log': 'log',
-    'create_record': 'create_record',
-    'update_record': 'update_record',
-    'notification': 'send_notification',
-    'script': 'script',
-    'field_update': 'field_update',
-    'wait': 'wait',
-    'approval': 'create_approval',
-  };
-
-  // Action definitions live in sys_hub_action_type_snapshot, keyed by `internal_name`
+  // Dynamically look up action definition in sys_hub_action_type_snapshot
   let actionDefId: string | null = null;
-  const internalName = actionInternalNames[actionType] || actionType;
-  try {
-    const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
-      params: { sysparm_query: 'internal_name=' + internalName, sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 1 }
-    });
-    const found = resp.data.result?.[0];
-    if (found?.sys_id) {
-      actionDefId = found.sys_id;
-      steps.def_lookup = { id: found.sys_id, internal_name: found.internal_name, name: found.name, table: 'sys_hub_action_type_snapshot' };
-    }
-  } catch (_) {}
-  // Fallback: search by name
+  // Try exact match on internal_name first, then name
+  for (const field of ['internal_name', 'name']) {
+    if (actionDefId) break;
+    try {
+      const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
+        params: { sysparm_query: field + '=' + actionType, sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 1 }
+      });
+      const found = resp.data.result?.[0];
+      if (found?.sys_id) {
+        actionDefId = found.sys_id;
+        steps.def_lookup = { id: found.sys_id, internal_name: found.internal_name, name: found.name, matched: field + '=' + actionType };
+      }
+    } catch (_) {}
+  }
+  // Fallback: LIKE search on both fields
   if (!actionDefId) {
     try {
       const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
         params: {
-          sysparm_query: 'nameLIKE' + actionType + '^ORinternal_nameLIKE' + actionType,
+          sysparm_query: 'internal_nameLIKE' + actionType + '^ORnameLIKE' + actionType,
           sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 5
         }
       });
@@ -195,7 +186,7 @@ async function addActionViaGraphQL(
       steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: r.internal_name, name: r.name }));
       if (results[0]?.sys_id) {
         actionDefId = results[0].sys_id;
-        steps.def_lookup = { id: results[0].sys_id, internal_name: results[0].internal_name, name: results[0].name, table: 'sys_hub_action_type_snapshot' };
+        steps.def_lookup = { id: results[0].sys_id, internal_name: results[0].internal_name, name: results[0].name, matched: 'LIKE ' + actionType };
       }
     } catch (_) {}
   }
