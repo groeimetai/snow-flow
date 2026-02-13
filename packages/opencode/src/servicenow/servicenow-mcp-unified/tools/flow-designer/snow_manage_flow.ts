@@ -479,17 +479,37 @@ async function addActionViaGraphQL(
   const steps: any = {};
 
   // Dynamically look up action definition in sys_hub_action_type_snapshot
+  // Prefer global/core actions over spoke-specific ones (e.g. core "Update Record" vs SuccessFactors "Update Record")
+  const snapshotFields = 'sys_id,internal_name,name,sys_scope,sys_package';
   let actionDefId: string | null = null;
+
+  // Helper: pick the best match from candidates — prefer global scope
+  const pickBest = (candidates: any[]): any => {
+    if (!candidates || candidates.length === 0) return null;
+    if (candidates.length === 1) return candidates[0];
+    // Prefer global scope
+    var global = candidates.find((c: any) => str(c.sys_scope) === 'global' || str(c.sys_scope) === 'rhino.global');
+    if (global) return global;
+    // Prefer records without "spoke" in the package name
+    var nonSpoke = candidates.find((c: any) => !str(c.sys_package).toLowerCase().includes('spoke'));
+    if (nonSpoke) return nonSpoke;
+    return candidates[0];
+  };
+
   for (const field of ['internal_name', 'name']) {
     if (actionDefId) break;
     try {
       const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
-        params: { sysparm_query: field + '=' + actionType, sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 1 }
+        params: { sysparm_query: field + '=' + actionType, sysparm_fields: snapshotFields, sysparm_limit: 10 }
       });
-      const found = resp.data.result?.[0];
+      const results = resp.data.result || [];
+      if (results.length > 1) {
+        steps.def_lookup_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
+      }
+      const found = pickBest(results);
       if (found?.sys_id) {
         actionDefId = found.sys_id;
-        steps.def_lookup = { id: found.sys_id, internal_name: found.internal_name, name: found.name, matched: field + '=' + actionType };
+        steps.def_lookup = { id: found.sys_id, internal_name: str(found.internal_name), name: str(found.name), scope: str(found.sys_scope), package: str(found.sys_package), matched: field + '=' + actionType };
       }
     } catch (_) {}
   }
@@ -498,14 +518,15 @@ async function addActionViaGraphQL(
       const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
         params: {
           sysparm_query: 'internal_nameLIKE' + actionType + '^ORnameLIKE' + actionType,
-          sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 5
+          sysparm_fields: snapshotFields, sysparm_limit: 10
         }
       });
       const results = resp.data.result || [];
-      steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: r.internal_name, name: r.name }));
-      if (results[0]?.sys_id) {
-        actionDefId = results[0].sys_id;
-        steps.def_lookup = { id: results[0].sys_id, internal_name: results[0].internal_name, name: results[0].name, matched: 'LIKE ' + actionType };
+      steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
+      const found = pickBest(results);
+      if (found?.sys_id) {
+        actionDefId = found.sys_id;
+        steps.def_lookup = { id: found.sys_id, internal_name: str(found.internal_name), name: str(found.name), scope: str(found.sys_scope), package: str(found.sys_package), matched: 'LIKE ' + actionType };
       }
     } catch (_) {}
   }
