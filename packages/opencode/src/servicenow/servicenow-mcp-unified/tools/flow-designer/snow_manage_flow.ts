@@ -521,6 +521,61 @@ async function addSubflowCallViaGraphQL(
   }
 }
 
+// ── GENERIC UPDATE/DELETE for any flow element ───────────────────────
+
+const elementGraphQLMap: Record<string, { key: string; type: string; responseFields: string }> = {
+  action:     { key: 'actions',           type: 'action',    responseFields: 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' },
+  trigger:    { key: 'triggerInstances',  type: 'trigger',   responseFields: 'triggerInstances { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' },
+  flowlogic:  { key: 'flowLogics',        type: 'flowlogic', responseFields: 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' },
+  subflow:    { key: 'subflows',          type: 'subflow',   responseFields: 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' },
+};
+
+async function updateElementViaGraphQL(
+  client: any,
+  flowId: string,
+  elementType: string,
+  elementId: string,
+  inputs: Record<string, string>
+): Promise<{ success: boolean; steps?: any; error?: string }> {
+  const config = elementGraphQLMap[elementType];
+  if (!config) return { success: false, error: 'Unknown element type: ' + elementType };
+
+  const updateInputs = Object.entries(inputs).map(([name, value]) => ({
+    name,
+    value: { schemaless: false, schemalessValue: '', value: String(value) }
+  }));
+
+  try {
+    await executeFlowPatchMutation(client, {
+      flowId,
+      [config.key]: { update: [{ uiUniqueIdentifier: elementId, type: config.type, inputs: updateInputs }] }
+    }, config.responseFields);
+    return { success: true, steps: { element: elementId, type: elementType, inputs: updateInputs.map(i => i.name) } };
+  } catch (e: any) {
+    return { success: false, error: e.message, steps: { element: elementId, type: elementType } };
+  }
+}
+
+async function deleteElementViaGraphQL(
+  client: any,
+  flowId: string,
+  elementType: string,
+  elementIds: string[]
+): Promise<{ success: boolean; steps?: any; error?: string }> {
+  const config = elementGraphQLMap[elementType];
+  if (!config) return { success: false, error: 'Unknown element type: ' + elementType };
+
+  try {
+    await executeFlowPatchMutation(client, {
+      flowId,
+      [config.key]: { delete: elementIds }
+    }, config.responseFields);
+    return { success: true, steps: { deleted: elementIds, type: elementType } };
+  } catch (e: any) {
+    return { success: false, error: e.message, steps: { elementIds, type: elementType } };
+  }
+}
+
 async function createFlowViaProcessFlowAPI(
   client: any,
   params: {
@@ -629,8 +684,14 @@ export const toolDefinition: MCPToolDefinition = {
     properties: {
       action: {
         type: 'string',
-        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'update_trigger', 'add_action', 'add_flow_logic', 'add_subflow'],
-        description: 'Action to perform. Use add_trigger/add_action/add_flow_logic/add_subflow to add elements, update_trigger to change an existing trigger. Flow logic types: IF, FOR_EACH, DO_UNTIL, SWITCH. add_subflow calls an existing subflow as a step.'
+        enum: [
+          'create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish',
+          'add_trigger', 'update_trigger', 'delete_trigger',
+          'add_action', 'update_action', 'delete_action',
+          'add_flow_logic', 'update_flow_logic', 'delete_flow_logic',
+          'add_subflow', 'update_subflow', 'delete_subflow'
+        ],
+        description: 'Action to perform. add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. update_action/update_flow_logic/update_subflow change input values. delete_* removes elements by element_id.'
       },
 
       flow_id: {
@@ -731,6 +792,10 @@ export const toolDefinition: MCPToolDefinition = {
       subflow_id: {
         type: 'string',
         description: 'Subflow sys_id or name to call as a step (for add_subflow action). Looked up in sys_hub_flow where type=subflow.'
+      },
+      element_id: {
+        type: 'string',
+        description: 'Element sys_id or uiUniqueIdentifier for update_*/delete_* actions. For delete_* this can also be a comma-separated list of IDs.'
       },
       type: {
         type: 'string',
@@ -1736,6 +1801,62 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return addSubResult.success
           ? createSuccessResult({ action: 'add_subflow', ...addSubResult }, {}, addSubSummary.build())
           : createErrorResult(addSubResult.error || 'Failed to add subflow call');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // UPDATE_ACTION / UPDATE_FLOW_LOGIC / UPDATE_SUBFLOW
+      // ────────────────────────────────────────────────────────────────
+      case 'update_action':
+      case 'update_flow_logic':
+      case 'update_subflow': {
+        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required');
+        if (!args.element_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'element_id is required (sys_id or uiUniqueIdentifier of the element)');
+        var updElemFlowId = await resolveFlowId(client, args.flow_id);
+        var updElemType = action === 'update_action' ? 'action' : action === 'update_flow_logic' ? 'flowlogic' : 'subflow';
+        var updElemInputs = args.action_inputs || args.logic_inputs || args.inputs || {};
+
+        var updElemResult = await updateElementViaGraphQL(client, updElemFlowId, updElemType, args.element_id, updElemInputs);
+
+        var updElemSummary = summary();
+        if (updElemResult.success) {
+          updElemSummary.success('Element updated').field('Type', updElemType).field('Element', args.element_id);
+        } else {
+          updElemSummary.error('Failed to update element: ' + (updElemResult.error || 'unknown'));
+        }
+        return updElemResult.success
+          ? createSuccessResult({ action, ...updElemResult }, {}, updElemSummary.build())
+          : createErrorResult(updElemResult.error || 'Failed to update element');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // DELETE_ACTION / DELETE_FLOW_LOGIC / DELETE_SUBFLOW / DELETE_TRIGGER
+      // ────────────────────────────────────────────────────────────────
+      case 'delete_action':
+      case 'delete_flow_logic':
+      case 'delete_subflow':
+      case 'delete_trigger': {
+        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required');
+        if (!args.element_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'element_id is required (sys_id(s) to delete, comma-separated for multiple)');
+        var delElemFlowId = await resolveFlowId(client, args.flow_id);
+        var delElemType = action === 'delete_action' ? 'action'
+          : action === 'delete_flow_logic' ? 'flowlogic'
+          : action === 'delete_subflow' ? 'subflow'
+          : 'trigger';
+        var delElemIds = String(args.element_id).split(',').map((id: string) => id.trim());
+
+        // Map 'trigger' to the correct GraphQL key
+        var delGraphQLType = delElemType === 'trigger' ? 'trigger' : delElemType;
+        var delResult = await deleteElementViaGraphQL(client, delElemFlowId, delGraphQLType, delElemIds);
+
+        var delSummary = summary();
+        if (delResult.success) {
+          delSummary.success('Element(s) deleted').field('Type', delElemType).field('Deleted', delElemIds.join(', '));
+        } else {
+          delSummary.error('Failed to delete element: ' + (delResult.error || 'unknown'));
+        }
+        return delResult.success
+          ? createSuccessResult({ action, ...delResult }, {}, delSummary.build())
+          : createErrorResult(delResult.error || 'Failed to delete element');
       }
 
       default:
