@@ -54,16 +54,17 @@ async function executeFlowPatchMutation(
 }
 
 async function lookupDefinitionParams(client: any, defSysId: string): Promise<any[]> {
-  const paramTables = ['sys_hub_action_input', 'sys_hub_action_input_param', 'sys_hub_action_type_param'];
-  for (const table of paramTables) {
+  const queries = [
+    { table: 'sys_hub_action_type_param', query: 'action_type=' + defSysId },
+    { table: 'sys_hub_action_type_param', query: 'model=' + defSysId },
+    { table: 'sys_hub_action_input_param', query: 'action_type=' + defSysId },
+    { table: 'sys_hub_action_input_param', query: 'model=' + defSysId },
+  ];
+  const fields = 'sys_id,name,element,label,internal_type,type,type_label,order,mandatory,readonly,maxsize,data_structure,reference,reference_display,ref_qual,choice_option,column_name,default_value,use_dependent,dependent_on,internal_link,attributes,sys_class_name';
+  for (const q of queries) {
     try {
-      const resp = await client.get('/api/now/table/' + table, {
-        params: {
-          sysparm_query: 'model=' + defSysId + '^ORaction_type=' + defSysId,
-          sysparm_fields: 'sys_id,name,element,label,internal_type,type,type_label,order,mandatory,readonly,maxsize,data_structure,reference,reference_display,ref_qual,choice_option,column_name,default_value,use_dependent,dependent_on,internal_link,attributes,sys_class_name',
-          sysparm_display_value: 'false',
-          sysparm_limit: 50
-        }
+      const resp = await client.get('/api/now/table/' + q.table, {
+        params: { sysparm_query: q.query, sysparm_fields: fields, sysparm_display_value: 'false', sysparm_limit: 50 }
       });
       const raw = resp.data.result || [];
       if (raw.length === 0) continue;
@@ -73,6 +74,8 @@ async function lookupDefinitionParams(client: any, defSysId: string): Promise<an
         const id = r.sys_id || '';
         if (id === defSysId) continue;
         if (id && seen.has(id)) continue;
+        const name = r.name || r.element || '';
+        if (!name) continue;
         seen.add(id);
         unique.push(r);
       }
@@ -170,27 +173,34 @@ async function addTriggerViaGraphQL(
   const config = triggerMap[triggerType] || triggerMap['record_create_or_update'];
 
   let trigDefId: string | null = null;
-  for (const defName of config.defNames) {
-    try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
-        params: { sysparm_query: 'internal_name=' + defName, sysparm_fields: 'sys_id', sysparm_limit: 1 }
-      });
-      trigDefId = resp.data.result?.[0]?.sys_id || null;
-      if (trigDefId) break;
-    } catch (_) {}
+  const defTables = ['sys_hub_action_type_definition', 'sys_hub_trigger_definition'];
+  for (const defTable of defTables) {
+    if (trigDefId) break;
+    for (const defName of config.defNames) {
+      try {
+        const resp = await client.get('/api/now/table/' + defTable, {
+          params: { sysparm_query: 'internal_name=' + defName, sysparm_fields: 'sys_id', sysparm_limit: 1 }
+        });
+        trigDefId = resp.data.result?.[0]?.sys_id || null;
+        if (trigDefId) break;
+      } catch (_) {}
+    }
   }
   if (!trigDefId) {
-    try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
-        params: {
-          sysparm_query: 'internal_nameSTARTSWITHsn_fd.trigger^internal_nameLIKE' + config.type,
-          sysparm_fields: 'sys_id,internal_name', sysparm_limit: 10
+    for (const defTable of defTables) {
+      if (trigDefId) break;
+      try {
+        const resp = await client.get('/api/now/table/' + defTable, {
+          params: {
+            sysparm_query: 'internal_nameLIKE' + config.type + '^ORnameLIKE' + config.name,
+            sysparm_fields: 'sys_id,internal_name', sysparm_limit: 10
+          }
+        });
+        for (const r of (resp.data.result || [])) {
+          if ((r.internal_name || '').indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
         }
-      });
-      for (const r of (resp.data.result || [])) {
-        if ((r.internal_name || '').indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
   steps.def_lookup = { id: trigDefId };
@@ -309,6 +319,7 @@ async function addActionViaGraphQL(
 
   const params = await lookupDefinitionParams(client, actionDefId);
   steps.params_found = params.length;
+  steps.params_detail = params.map((p: any) => ({ sys_id: p.sys_id, name: p.name || p.element, type: str(p.internal_type) || str(p.type) }));
 
   const gqlInputs = params.map((p: any) => {
     const pName = p.name || p.element || '';
