@@ -1040,6 +1040,252 @@ async function addActionViaGraphQL(
   }
 }
 
+// ── DATA PILL CONDITION HELPERS ────────────────────────────────────────
+
+/**
+ * Get trigger info from a flow for constructing data pill references.
+ * Reads the flow version payload to find the trigger name, table, and outputs.
+ *
+ * Returns the data pill base (e.g., "Created or Updated_1") and table (e.g., "incident").
+ * The data pill base is used as: {{dataPillBase.fieldName}} in condition values.
+ */
+async function getFlowTriggerInfo(
+  client: any,
+  flowId: string
+): Promise<{ dataPillBase: string; triggerName: string; table: string; tableLabel: string; tableRef: string; error?: string }> {
+  var triggerName = '';
+  var table = '';
+  var tableLabel = '';
+
+  try {
+    // Read the flow version payload which contains all flow elements
+    var resp = await client.get('/api/now/table/sys_hub_flow_version', {
+      params: {
+        sysparm_query: 'flow=' + flowId + '^ORDERBYDESCsys_created_on',
+        sysparm_fields: 'sys_id,payload',
+        sysparm_limit: 1
+      }
+    });
+    var payload = resp.data.result?.[0]?.payload;
+    if (payload) {
+      var parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
+      // The payload contains triggerInstances array with trigger data
+      var triggerInstances = parsed.triggerInstances || parsed.trigger_instances || [];
+      if (!Array.isArray(triggerInstances)) {
+        // Some payloads nest elements differently
+        if (parsed.elements) {
+          triggerInstances = (Array.isArray(parsed.elements) ? parsed.elements : []).filter(
+            (e: any) => e.type === 'trigger' || e.elementType === 'trigger'
+          );
+        }
+      }
+      if (triggerInstances.length > 0) {
+        var trigger = triggerInstances[0];
+        triggerName = trigger.name || trigger.triggerName || '';
+        // Look for table in trigger inputs
+        if (trigger.inputs && Array.isArray(trigger.inputs)) {
+          for (var ti = 0; ti < trigger.inputs.length; ti++) {
+            if (trigger.inputs[ti].name === 'table') {
+              table = trigger.inputs[ti].value?.value || trigger.inputs[ti].value || '';
+              break;
+            }
+          }
+        }
+      }
+    }
+  } catch (_) {}
+
+  // Look up table label for display in label cache
+  if (table) {
+    try {
+      var labelResp = await client.get('/api/now/table/sys_db_object', {
+        params: {
+          sysparm_query: 'name=' + table,
+          sysparm_fields: 'label',
+          sysparm_display_value: 'true',
+          sysparm_limit: 1
+        }
+      });
+      tableLabel = str(labelResp.data.result?.[0]?.label) || '';
+    } catch (_) {}
+    if (!tableLabel) {
+      // Fallback: capitalize the table name
+      tableLabel = table.charAt(0).toUpperCase() + table.slice(1).replace(/_/g, ' ');
+    }
+  }
+
+  if (!triggerName) {
+    return { dataPillBase: '', triggerName: '', table: table, tableLabel: tableLabel, tableRef: table, error: 'Could not determine trigger name from flow version payload' };
+  }
+
+  var dataPillBase = triggerName + '_1.current';
+  return { dataPillBase, triggerName, table, tableLabel, tableRef: table };
+}
+
+/**
+ * Parse a ServiceNow encoded query into individual condition clauses.
+ * Each clause has: prefix (^ or ^OR), field, operator, value.
+ *
+ * Example: "category=inquiry^priority!=1^ORshort_descriptionLIKEtest"
+ * → [
+ *     { prefix: '', field: 'category', operator: '=', value: 'inquiry' },
+ *     { prefix: '^', field: 'priority', operator: '!=', value: '1' },
+ *     { prefix: '^OR', field: 'short_description', operator: 'LIKE', value: 'test' }
+ *   ]
+ */
+function parseEncodedQuery(query: string): { prefix: string; field: string; operator: string; value: string }[] {
+  if (!query || query === '^EQ') return [];
+
+  // Remove trailing ^EQ
+  var q = query.replace(/\^EQ$/, '');
+  if (!q) return [];
+
+  // Split on ^OR and ^ while keeping the separators
+  var clauses: { prefix: string; raw: string }[] = [];
+  var parts = q.split(/(\^OR|\^NQ|\^)/);
+  var currentPrefix = '';
+
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i];
+    if (part === '^' || part === '^OR' || part === '^NQ') {
+      currentPrefix = part;
+    } else if (part.length > 0) {
+      clauses.push({ prefix: currentPrefix, raw: part });
+      currentPrefix = '';
+    }
+  }
+
+  // Operators sorted by length descending to match longest first
+  var operators = [
+    'VALCHANGES', 'CHANGESFROM', 'CHANGESTO',
+    'ISNOTEMPTY', 'ISEMPTY', 'EMPTYSTRING', 'ANYTHING',
+    'NOT LIKE', 'NOT IN', 'NSAMEAS',
+    'STARTSWITH', 'ENDSWITH', 'BETWEEN', 'INSTANCEOF',
+    'DYNAMIC', 'SAMEAS',
+    'LIKE', 'IN',
+    '!=', '>=', '<=', '>', '<', '='
+  ];
+
+  var result: { prefix: string; field: string; operator: string; value: string }[] = [];
+  for (var j = 0; j < clauses.length; j++) {
+    var clause = clauses[j];
+    var raw = clause.raw;
+    var matched = false;
+
+    for (var k = 0; k < operators.length; k++) {
+      var op = operators[k];
+      var opIdx = raw.indexOf(op);
+      if (opIdx > 0) {
+        result.push({
+          prefix: clause.prefix,
+          field: raw.substring(0, opIdx),
+          operator: op,
+          value: raw.substring(opIdx + op.length)
+        });
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      // Unrecognized format — keep as-is
+      result.push({ prefix: clause.prefix, field: raw, operator: '', value: '' });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Transform an encoded query condition value to use data pill references.
+ * Replaces field names with {{dataPillBase.fieldName}} syntax.
+ *
+ * Example: "category=inquiry" → "{{Created or Updated_1.current.category}}=inquiry"
+ */
+function transformConditionToDataPills(conditionValue: string, dataPillBase: string): string {
+  if (!conditionValue || !dataPillBase) return conditionValue;
+
+  var clauses = parseEncodedQuery(conditionValue);
+  if (clauses.length === 0) return conditionValue;
+
+  var result = '';
+  for (var i = 0; i < clauses.length; i++) {
+    var clause = clauses[i];
+    result += clause.prefix;
+    result += '{{' + dataPillBase + '.' + clause.field + '}}';
+    result += clause.operator;
+    result += clause.value;
+  }
+
+  return result;
+}
+
+/**
+ * Build labelCache entries for data pills used in flow logic conditions.
+ * Each unique data pill reference needs a labelCache entry so the Flow Designer UI
+ * can display the data pill label correctly.
+ *
+ * The entry format matches the captured UI mutation format.
+ */
+function buildConditionLabelCache(
+  conditionValue: string,
+  dataPillBase: string,
+  triggerName: string,
+  table: string,
+  tableLabel: string,
+  logicUiId: string
+): any[] {
+  if (!conditionValue || !dataPillBase) return [];
+
+  var clauses = parseEncodedQuery(conditionValue);
+  if (clauses.length === 0) return [];
+
+  // Build a label cache entry for each unique field-level data pill
+  var seen: Record<string, boolean> = {};
+  var entries: any[] = [];
+
+  // Also register the record-level data pill (the base: TriggerName_1.current)
+  // This is needed for the condition builder to understand the context
+  if (!seen[dataPillBase]) {
+    seen[dataPillBase] = true;
+    entries.push({
+      name: dataPillBase,
+      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record',
+      reference: table,
+      reference_display: tableLabel,
+      type: 'reference',
+      base_type: 'reference',
+      attributes: '',
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
+      choices: {}
+    });
+  }
+
+  for (var i = 0; i < clauses.length; i++) {
+    var field = clauses[i].field;
+    if (!field) continue;
+    var pillName = dataPillBase + '.' + field;
+    if (seen[pillName]) continue;
+    seen[pillName] = true;
+
+    // Capitalize field name for label
+    var fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
+
+    entries.push({
+      name: pillName,
+      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record\u27a1' + fieldLabel,
+      reference: '',
+      reference_display: '',
+      type: 'string',
+      base_type: 'string',
+      attributes: '',
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
+      choices: {}
+    });
+  }
+
+  return entries;
+}
+
 // ── FLOW LOGIC (If/Else, For Each, etc.) ─────────────────────────────
 
 async function addFlowLogicViaGraphQL(
@@ -1112,11 +1358,37 @@ async function addFlowLogicViaGraphQL(
   steps.resolved_inputs = inputResult.resolvedInputs;
   steps.input_query_stats = { defParamsFound: inputResult.defParamsCount, inputsBuilt: inputResult.inputs.length, error: inputResult.inputQueryError };
 
+  // ── Data pill transformation for condition inputs ───────────────────
+  // Flow Designer conditions require data pill references ({{TriggerName_1.current.field}})
+  // instead of bare field names. Transform encoded query conditions and build labelCache.
+  const uuid = generateUUID();
+  var labelCacheEntries: any[] = [];
+
+  var conditionInput = inputResult.inputs.find(function (inp: any) { return inp.name === 'condition'; });
+  var rawCondition = conditionInput?.value?.value || '';
+  if (rawCondition && rawCondition !== '^EQ') {
+    var triggerInfo = await getFlowTriggerInfo(client, flowId);
+    steps.trigger_info = { dataPillBase: triggerInfo.dataPillBase, triggerName: triggerInfo.triggerName, table: triggerInfo.table, tableLabel: triggerInfo.tableLabel, error: triggerInfo.error };
+
+    if (triggerInfo.dataPillBase) {
+      // Transform condition value: "category=inquiry" → "{{Created or Updated_1.current.category}}=inquiry"
+      var transformedCondition = transformConditionToDataPills(rawCondition, triggerInfo.dataPillBase);
+      conditionInput.value = { schemaless: false, schemalessValue: '', value: transformedCondition };
+      steps.condition_transform = { original: rawCondition, transformed: transformedCondition };
+
+      // Build labelCache entries for each data pill used in the condition
+      labelCacheEntries = buildConditionLabelCache(
+        rawCondition, triggerInfo.dataPillBase, triggerInfo.triggerName,
+        triggerInfo.tableRef, triggerInfo.tableLabel, uuid
+      );
+      steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }) };
+    }
+  }
+
   // Calculate insertion order
   const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
   steps.insert_order = resolvedOrder;
 
-  const uuid = generateUUID();
   const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
@@ -1146,6 +1418,11 @@ async function addFlowLogicViaGraphQL(
       insert: [insertObj]
     }
   };
+
+  // Add labelCache entries for data pill references in conditions
+  if (labelCacheEntries.length > 0) {
+    flowPatch.labelCache = { insert: labelCacheEntries };
+  }
 
   // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
