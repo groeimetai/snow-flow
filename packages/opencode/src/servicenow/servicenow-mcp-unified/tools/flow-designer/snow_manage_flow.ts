@@ -67,34 +67,47 @@ async function addTriggerViaGraphQL(
   let trigName = '';
   let trigType = triggerType;
   let trigCategory = '';
-  // Try exact match on type first, then name
-  for (const field of ['type', 'name']) {
+
+  // Build search variations: record_updated → also try record_update, and vice versa
+  const variations = [triggerType];
+  if (triggerType.endsWith('ed')) variations.push(triggerType.slice(0, -1), triggerType.slice(0, -2));
+  else if (triggerType.endsWith('e')) variations.push(triggerType + 'd');
+  else variations.push(triggerType + 'ed', triggerType + 'd');
+
+  const assignFound = (found: any, matched: string) => {
+    trigDefId = found.sys_id;
+    trigName = found.name || triggerType;
+    trigType = found.type || triggerType;
+    trigCategory = found.category || '';
+    steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, category: found.category, matched };
+  };
+
+  // Try exact match on type and name for each variation
+  for (const variant of variations) {
     if (trigDefId) break;
-    try {
-      const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
-        params: {
-          sysparm_query: field + '=' + triggerType,
-          sysparm_fields: 'sys_id,type,name,category',
-          sysparm_display_value: 'true',
-          sysparm_limit: 1
-        }
-      });
-      const found = resp.data.result?.[0];
-      if (found?.sys_id) {
-        trigDefId = found.sys_id;
-        trigName = found.name || triggerType;
-        trigType = found.type || triggerType;
-        trigCategory = found.category || '';
-        steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, category: found.category, matched: field + '=' + triggerType };
-      }
-    } catch (_) {}
+    for (const field of ['type', 'name']) {
+      if (trigDefId) break;
+      try {
+        const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
+          params: {
+            sysparm_query: field + '=' + variant,
+            sysparm_fields: 'sys_id,type,name,category',
+            sysparm_display_value: 'true',
+            sysparm_limit: 1
+          }
+        });
+        const found = resp.data.result?.[0];
+        if (found?.sys_id) assignFound(found, field + '=' + variant);
+      } catch (_) {}
+    }
   }
-  // Fallback: LIKE search on both fields
+  // Fallback: LIKE search using shortest variation (most likely to match)
   if (!trigDefId) {
+    const shortest = variations.reduce((a, b) => a.length <= b.length ? a : b);
     try {
       const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
         params: {
-          sysparm_query: 'typeLIKE' + triggerType + '^ORnameLIKE' + triggerType,
+          sysparm_query: 'typeLIKE' + shortest + '^ORnameLIKE' + shortest,
           sysparm_fields: 'sys_id,type,name,category',
           sysparm_display_value: 'true',
           sysparm_limit: 5
@@ -102,13 +115,7 @@ async function addTriggerViaGraphQL(
       });
       const results = resp.data.result || [];
       steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, type: r.type, name: r.name, category: r.category }));
-      if (results[0]?.sys_id) {
-        trigDefId = results[0].sys_id;
-        trigName = results[0].name || triggerType;
-        trigType = results[0].type || triggerType;
-        trigCategory = results[0].category || '';
-        steps.def_lookup = { id: results[0].sys_id, type: results[0].type, name: results[0].name, category: results[0].category, matched: 'LIKE ' + triggerType };
-      }
+      if (results[0]?.sys_id) assignFound(results[0], 'LIKE ' + shortest);
     } catch (_) {}
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
