@@ -311,6 +311,108 @@ async function addActionViaGraphQL(
   }
 }
 
+// ── FLOW LOGIC (If/Else, For Each, etc.) ─────────────────────────────
+
+async function addFlowLogicViaGraphQL(
+  client: any,
+  flowId: string,
+  logicType: string,
+  inputs?: Record<string, string>,
+  order?: number,
+  parentUiId?: string
+): Promise<{ success: boolean; logicId?: string; steps?: any; error?: string }> {
+  const steps: any = {};
+
+  // Dynamically look up flow logic definition in sys_hub_flow_logic_definition
+  let defId: string | null = null;
+  let defName = '';
+  let defType = logicType;
+  // Try exact match on type (IF, FOR_EACH, DO_UNTIL, SWITCH), then name
+  for (const field of ['type', 'name']) {
+    if (defId) break;
+    try {
+      const resp = await client.get('/api/now/table/sys_hub_flow_logic_definition', {
+        params: { sysparm_query: field + '=' + logicType, sysparm_fields: 'sys_id,type,name,description', sysparm_limit: 1 }
+      });
+      const found = resp.data.result?.[0];
+      if (found?.sys_id) {
+        defId = found.sys_id;
+        defName = found.name || logicType;
+        defType = found.type || logicType;
+        steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, matched: field + '=' + logicType };
+      }
+    } catch (_) {}
+  }
+  // Fallback: LIKE search
+  if (!defId) {
+    try {
+      const resp = await client.get('/api/now/table/sys_hub_flow_logic_definition', {
+        params: {
+          sysparm_query: 'typeLIKE' + logicType + '^ORnameLIKE' + logicType,
+          sysparm_fields: 'sys_id,type,name,description', sysparm_limit: 5
+        }
+      });
+      const results = resp.data.result || [];
+      steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, type: r.type, name: r.name }));
+      if (results[0]?.sys_id) {
+        defId = results[0].sys_id;
+        defName = results[0].name || logicType;
+        defType = results[0].type || logicType;
+        steps.def_lookup = { id: results[0].sys_id, type: results[0].type, name: results[0].name, matched: 'LIKE ' + logicType };
+      }
+    } catch (_) {}
+  }
+  if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
+
+  const uuid = generateUUID();
+  const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+  try {
+    const result = await executeFlowPatchMutation(client, {
+      flowId: flowId,
+      flowLogics: {
+        insert: [{
+          order: String(order || 1),
+          uiUniqueIdentifier: uuid,
+          parent: '',
+          metadata: '{"predicates":[]}',
+          flowSysId: flowId,
+          generationSource: '',
+          definitionId: defId,
+          type: 'flowlogic',
+          parentUiId: parentUiId || '',
+          inputs: []
+        }]
+      }
+    }, logicResponseFields);
+
+    const logicId = result?.flowLogics?.inserts?.[0]?.sysId;
+    steps.insert = { success: !!logicId, logicId, uuid };
+    if (!logicId) return { success: false, steps, error: 'GraphQL flow logic INSERT returned no ID' };
+
+    // Update with input values if provided
+    if (inputs && Object.keys(inputs).length > 0) {
+      const updateInputs = Object.entries(inputs).map(([name, value]) => ({
+        name,
+        value: { schemaless: false, schemalessValue: '', value: String(value) }
+      }));
+      try {
+        await executeFlowPatchMutation(client, {
+          flowId: flowId,
+          flowLogics: { update: [{ uiUniqueIdentifier: uuid, type: 'flowlogic', inputs: updateInputs }] }
+        }, logicResponseFields);
+        steps.value_update = { success: true, inputs: updateInputs.map(i => i.name) };
+      } catch (e: any) {
+        steps.value_update = { success: false, error: e.message };
+      }
+    }
+
+    return { success: true, logicId, steps };
+  } catch (e: any) {
+    steps.insert = { success: false, error: e.message };
+    return { success: false, steps, error: 'GraphQL flow logic INSERT failed: ' + e.message };
+  }
+}
+
 async function createFlowViaProcessFlowAPI(
   client: any,
   params: {
@@ -419,8 +521,8 @@ export const toolDefinition: MCPToolDefinition = {
     properties: {
       action: {
         type: 'string',
-        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'update_trigger', 'add_action'],
-        description: 'Action to perform. Use add_trigger/add_action to add new elements, update_trigger to change an existing trigger type/table/condition.'
+        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'update_trigger', 'add_action', 'add_flow_logic'],
+        description: 'Action to perform. Use add_trigger/add_action/add_flow_logic to add elements, update_trigger to change an existing trigger. Flow logic types: IF, FOR_EACH, DO_UNTIL, SWITCH.'
       },
 
       flow_id: {
@@ -505,6 +607,18 @@ export const toolDefinition: MCPToolDefinition = {
         type: 'boolean',
         description: 'Activate flow after creation (default: true)',
         default: true
+      },
+      logic_type: {
+        type: 'string',
+        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Common values: IF, FOR_EACH, DO_UNTIL, SWITCH'
+      },
+      logic_inputs: {
+        type: 'object',
+        description: 'Input values for the flow logic block (e.g. {condition: "expression", condition_name: "My Condition"})'
+      },
+      parent_ui_id: {
+        type: 'string',
+        description: 'Parent UI unique identifier for nesting flow logic blocks (e.g. placing actions inside an If block)'
       },
       type: {
         type: 'string',
@@ -1442,6 +1556,40 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return addActResult.success
           ? createSuccessResult({ action: 'add_action', ...addActResult }, {}, addActSummary.build())
           : createErrorResult(addActResult.error || 'Failed to add action');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // ADD_FLOW_LOGIC — add If/Else, For Each, Do Until, Switch blocks
+      // ────────────────────────────────────────────────────────────────
+      case 'add_flow_logic': {
+        if (!args.flow_id) {
+          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for add_flow_logic');
+        }
+        if (!args.logic_type) {
+          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'logic_type is required for add_flow_logic (e.g. IF, FOR_EACH, DO_UNTIL, SWITCH)');
+        }
+        var addLogicFlowId = await resolveFlowId(client, args.flow_id);
+        var addLogicType = args.logic_type;
+        var addLogicInputs = args.logic_inputs || {};
+        var addLogicOrder = args.order;
+        var addLogicParentUiId = args.parent_ui_id || '';
+
+        var addLogicResult = await addFlowLogicViaGraphQL(client, addLogicFlowId, addLogicType, addLogicInputs, addLogicOrder, addLogicParentUiId);
+
+        var addLogicSummary = summary();
+        if (addLogicResult.success) {
+          addLogicSummary
+            .success('Flow logic added via GraphQL')
+            .field('Flow', addLogicFlowId)
+            .field('Type', addLogicType)
+            .field('Logic ID', addLogicResult.logicId || 'unknown');
+        } else {
+          addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
+        }
+
+        return addLogicResult.success
+          ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult }, {}, addLogicSummary.build())
+          : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
       }
 
       default:
