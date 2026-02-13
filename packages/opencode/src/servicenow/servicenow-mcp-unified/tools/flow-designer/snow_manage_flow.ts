@@ -71,57 +71,61 @@ async function lookupDefinitionParams(client: any, defSysId: string): Promise<an
   return [];
 }
 
-function buildGraphQLInput(p: any, defaultValue?: any): any {
+function buildGraphQLInput(p: any, defaultValue?: any, forTrigger?: boolean): any {
   const name = p.name || p.element || '';
   const type = p.internal_type || p.type || 'string';
   const isMandatory = p.mandatory === 'true' || p.mandatory === true;
   const order = parseInt(p.order) || 100;
   const defVal = defaultValue !== undefined ? defaultValue : (p.default_value || '');
-  return {
+  const valueObj = type === 'conditions'
+    ? { schemaless: false, schemalessValue: '', value: '^EQ' }
+    : defVal
+      ? { schemaless: false, schemalessValue: '', value: String(defVal) }
+      : { value: '' };
+  const parameter: any = {
     id: p.sys_id || '',
-    name,
     label: p.label || name,
-    internalType: type,
-    mandatory: isMandatory,
-    order,
-    valueSysId: '',
-    field_name: name,
+    name,
     type,
-    children: [],
-    displayValue: { value: '' },
-    value: type === 'conditions'
-      ? { schemaless: false, schemalessValue: '', value: '^EQ' }
-      : defVal
-        ? { schemaless: false, schemalessValue: '', value: String(defVal) }
-        : { value: '' },
-    parameter: {
-      id: p.sys_id || '',
-      label: p.label || name,
-      name,
-      type,
-      type_label: p.type_label || '',
-      order,
-      extended: false,
-      mandatory: isMandatory,
-      readonly: p.readonly === 'true' || p.readonly === true,
-      maxsize: parseInt(p.maxsize) || 80,
-      data_structure: p.data_structure || '',
-      reference: p.reference || '',
-      reference_display: p.reference_display || '',
-      ref_qual: p.ref_qual || '',
-      choiceOption: p.choice_option || '',
-      table: '',
-      columnName: p.column_name || '',
-      defaultValue: p.default_value || '',
-      use_dependent: p.use_dependent === 'true' || p.use_dependent === true,
-      dependent_on: p.dependent_on || '',
-      internal_link: p.internal_link || '',
-      show_ref_finder: false,
-      local: false,
-      attributes: p.attributes || '',
-      sys_class_name: p.sys_class_name || '',
-      children: []
-    }
+    type_label: p.type_label || '',
+    hint: '',
+    order,
+    extended: false,
+    mandatory: isMandatory,
+    readonly: p.readonly === 'true' || p.readonly === true,
+    maxsize: parseInt(p.maxsize) || 80,
+    data_structure: p.data_structure || '',
+    reference: p.reference || '',
+    reference_display: p.reference_display || '',
+    ref_qual: p.ref_qual || '',
+    choiceOption: p.choice_option || '',
+    table: '',
+    columnName: p.column_name || '',
+    defaultValue: p.default_value || '',
+    use_dependent: p.use_dependent === 'true' || p.use_dependent === true,
+    dependent_on: p.dependent_on || '',
+    show_ref_finder: false,
+    local: false,
+    attributes: p.attributes || '',
+    sys_class_name: p.sys_class_name || '',
+    children: []
+  };
+  if (!forTrigger) {
+    parameter.dynamic = null;
+  } else {
+    parameter.internal_link = p.internal_link || '';
+  }
+
+  if (forTrigger) {
+    return {
+      name, label: p.label || name, internalType: type, mandatory: isMandatory,
+      order, valueSysId: '', field_name: name, type,
+      children: [], displayValue: { value: '' }, value: valueObj, parameter
+    };
+  }
+  return {
+    id: p.sys_id || '', name,
+    children: [], displayValue: { value: '' }, value: valueObj, parameter
   };
 }
 
@@ -176,12 +180,12 @@ async function addTriggerViaGraphQL(
   const params = await lookupDefinitionParams(client, trigDefId);
   steps.params_found = params.length;
 
-  const gqlInputs = params.map((p: any) => buildGraphQLInput(p));
+  const gqlInputs = params.map((p: any) => buildGraphQLInput(p, undefined, true));
 
   if (gqlInputs.length === 0 && config.triggerType === 'Record') {
     gqlInputs.push(
-      buildGraphQLInput({ name: 'table', label: 'Table', internal_type: 'table_name', mandatory: 'true', order: '1' }),
-      buildGraphQLInput({ name: 'condition', label: 'Condition', internal_type: 'conditions', mandatory: 'false', order: '100', use_dependent: 'true', dependent_on: 'table' })
+      buildGraphQLInput({ name: 'table', label: 'Table', internal_type: 'table_name', mandatory: 'true', order: '1' }, undefined, true),
+      buildGraphQLInput({ name: 'condition', label: 'Condition', internal_type: 'conditions', mandatory: 'false', order: '100', use_dependent: 'true', dependent_on: 'table' }, undefined, true)
     );
   }
 
