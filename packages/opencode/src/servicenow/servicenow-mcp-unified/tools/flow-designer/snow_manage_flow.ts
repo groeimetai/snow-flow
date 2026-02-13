@@ -438,8 +438,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       trigger_type: {
         type: 'string',
-        enum: ['record_created', 'record_updated', 'scheduled', 'manual'],
-        description: 'Trigger type (create only, default: manual)',
+        description: 'Trigger type - looked up dynamically in sys_hub_trigger_definition. Common values: record_create, record_update, record_create_or_update, scheduled, manual (default: manual)',
         default: 'manual'
       },
       table: {
