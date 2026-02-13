@@ -677,6 +677,18 @@ async function addTriggerViaGraphQL(
   }
 }
 
+// Common short-name aliases for action types — maps user-friendly names to ServiceNow internal names
+const ACTION_TYPE_ALIASES: Record<string, string[]> = {
+  script: ['script_step', 'run_script', 'Run Script'],
+  log: ['log_message', 'Log Message', 'Log'],
+  create_record: ['Create Record'],
+  update_record: ['Update Record'],
+  notification: ['send_notification', 'send_email', 'Send Notification', 'Send Email'],
+  field_update: ['set_field_values', 'Set Field Values'],
+  wait: ['wait_for', 'Wait For Duration', 'Wait'],
+  approval: ['ask_for_approval', 'create_approval', 'Ask for Approval'],
+};
+
 async function addActionViaGraphQL(
   client: any,
   flowId: string,
@@ -689,7 +701,7 @@ async function addActionViaGraphQL(
 ): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
-  // Dynamically look up action definition in sys_hub_action_type_snapshot
+  // Dynamically look up action definition in sys_hub_action_type_snapshot and sys_hub_action_type_definition
   // Prefer global/core actions over spoke-specific ones (e.g. core "Update Record" vs spoke-specific "Update Record")
   const snapshotFields = 'sys_id,internal_name,name,sys_scope,sys_package';
   let actionDefId: string | null = null;
@@ -717,41 +729,66 @@ async function addActionViaGraphQL(
     return candidates[0];
   };
 
-  for (const field of ['internal_name', 'name']) {
-    if (actionDefId) break;
-    try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
-        params: { sysparm_query: field + '=' + actionType, sysparm_fields: snapshotFields, sysparm_limit: 10 }
-      });
-      const results = resp.data.result || [];
-      if (results.length > 1) {
-        steps.def_lookup_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
+  // Helper: search a table for action definitions by exact match and LIKE
+  const searchTable = async (tableName: string, searchTerms: string[]): Promise<void> => {
+    for (var si = 0; si < searchTerms.length && !actionDefId; si++) {
+      var term = searchTerms[si];
+      // Exact match on internal_name and name
+      for (const field of ['internal_name', 'name']) {
+        if (actionDefId) break;
+        try {
+          const resp = await client.get('/api/now/table/' + tableName, {
+            params: { sysparm_query: field + '=' + term, sysparm_fields: snapshotFields, sysparm_limit: 10 }
+          });
+          const results = resp.data.result || [];
+          if (results.length > 1) {
+            steps.def_lookup_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
+          }
+          const found = pickBest(results);
+          if (found?.sys_id) {
+            actionDefId = found.sys_id;
+            steps.def_lookup = { id: found.sys_id, internal_name: str(found.internal_name), name: str(found.name), scope: str(found.sys_scope), package: str(found.sys_package), matched: tableName + ':' + field + '=' + term };
+          }
+        } catch (_) {}
       }
-      const found = pickBest(results);
-      if (found?.sys_id) {
-        actionDefId = found.sys_id;
-        steps.def_lookup = { id: found.sys_id, internal_name: str(found.internal_name), name: str(found.name), scope: str(found.sys_scope), package: str(found.sys_package), matched: field + '=' + actionType };
+      // LIKE search
+      if (!actionDefId) {
+        try {
+          const resp = await client.get('/api/now/table/' + tableName, {
+            params: {
+              sysparm_query: 'internal_nameLIKE' + term + '^ORnameLIKE' + term,
+              sysparm_fields: snapshotFields, sysparm_limit: 10
+            }
+          });
+          const results = resp.data.result || [];
+          if (results.length > 0 && !steps.def_lookup_fallback_candidates) {
+            steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
+          }
+          const found = pickBest(results);
+          if (found?.sys_id) {
+            actionDefId = found.sys_id;
+            steps.def_lookup = { id: found.sys_id, internal_name: str(found.internal_name), name: str(found.name), scope: str(found.sys_scope), package: str(found.sys_package), matched: tableName + ':LIKE ' + term };
+          }
+        } catch (_) {}
       }
-    } catch (_) {}
-  }
+    }
+  };
+
+  // Build search terms: original actionType + any alias variations
+  var searchTerms = [actionType];
+  var aliases = ACTION_TYPE_ALIASES[actionType.toLowerCase()];
+  if (aliases) searchTerms = searchTerms.concat(aliases);
+
+  // Search 1: sys_hub_action_type_snapshot (published action snapshots)
+  await searchTable('sys_hub_action_type_snapshot', searchTerms);
+
+  // Search 2: sys_hub_action_type_definition (action definitions — includes built-in/native actions)
   if (!actionDefId) {
-    try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
-        params: {
-          sysparm_query: 'internal_nameLIKE' + actionType + '^ORnameLIKE' + actionType,
-          sysparm_fields: snapshotFields, sysparm_limit: 10
-        }
-      });
-      const results = resp.data.result || [];
-      steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
-      const found = pickBest(results);
-      if (found?.sys_id) {
-        actionDefId = found.sys_id;
-        steps.def_lookup = { id: found.sys_id, internal_name: str(found.internal_name), name: str(found.name), scope: str(found.sys_scope), package: str(found.sys_package), matched: 'LIKE ' + actionType };
-      }
-    } catch (_) {}
+    steps.snapshot_not_found = true;
+    await searchTable('sys_hub_action_type_definition', searchTerms);
   }
-  if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType, steps };
+
+  if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType + ' (searched snapshot + definition tables with terms: ' + searchTerms.join(', ') + ')', steps };
 
   // Build full input objects with parameter definitions (matching UI format)
   const inputResult = await buildActionInputsForInsert(client, actionDefId, inputs);
@@ -1341,8 +1378,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       action_type: {
         type: 'string',
-        enum: ['log', 'create_record', 'update_record', 'notification', 'script', 'field_update', 'wait', 'approval'],
-        description: 'Action type to add (for add_action)',
+        description: 'Action type to add (for add_action). Looked up dynamically by internal_name or name in sys_hub_action_type_snapshot and sys_hub_action_type_definition. Common short names: log, script, create_record, update_record, notification, field_update, wait, approval. You can also use the exact ServiceNow internal name (e.g. "sn_fd.script_step", "global.update_record") or display name (e.g. "Run Script", "Update Record").',
         default: 'log'
       },
       action_name: {
