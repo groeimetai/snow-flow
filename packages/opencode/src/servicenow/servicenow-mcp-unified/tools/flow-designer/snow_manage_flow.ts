@@ -65,8 +65,18 @@ async function lookupDefinitionParams(client: any, defSysId: string): Promise<an
           sysparm_limit: 50
         }
       });
-      const results = resp.data.result;
-      if (results && results.length > 0) return results;
+      const raw = resp.data.result || [];
+      if (raw.length === 0) continue;
+      const seen = new Set<string>();
+      const unique: any[] = [];
+      for (const r of raw) {
+        const id = r.sys_id || '';
+        if (id === defSysId) continue;
+        if (id && seen.has(id)) continue;
+        seen.add(id);
+        unique.push(r);
+      }
+      if (unique.length > 0) return unique;
     } catch (_) {}
   }
   return [];
