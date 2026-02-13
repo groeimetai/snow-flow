@@ -95,15 +95,31 @@ async function addTriggerViaGraphQL(
       try {
         const resp = await client.get('/api/now/table/' + defTable, {
           params: {
-            sysparm_query: 'internal_nameLIKE' + config.type + '^ORnameLIKE' + config.name,
-            sysparm_fields: 'sys_id,internal_name', sysparm_limit: 10
+            sysparm_query: 'internal_nameLIKEsn_fd.trigger.' + config.type,
+            sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 10
           }
         });
         for (const r of (resp.data.result || [])) {
-          if ((r.internal_name || '').indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
+          const iname = r.internal_name || '';
+          if (iname.indexOf('trigger') > -1 && iname.indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
         }
       } catch (_) {}
     }
+  }
+  if (!trigDefId) {
+    try {
+      const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+        params: {
+          sysparm_query: 'internal_nameLIKEtrigger^internal_nameLIKE' + config.type,
+          sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 10
+        }
+      });
+      steps.fallback_candidates = (resp.data.result || []).map((r: any) => ({ sys_id: r.sys_id, internal_name: r.internal_name, name: r.name }));
+      for (const r of (resp.data.result || [])) {
+        const iname = r.internal_name || '';
+        if (iname.indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
+      }
+    } catch (_) {}
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
   steps.def_lookup = { id: trigDefId };
