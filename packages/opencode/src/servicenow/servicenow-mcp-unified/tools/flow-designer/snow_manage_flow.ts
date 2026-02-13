@@ -39,47 +39,45 @@ function generateUUID(): string {
 }
 
 /**
- * Resolve the flow ID(s) that elements might be stored under.
- * ServiceNow may store the flow sys_id OR the version sys_id in the `flow` field
- * on sys_hub_action_instance / sys_hub_flow_logic / sys_hub_sub_flow_instance.
- * Returns an encoded query fragment like "flow=abc^ORflow=def" for use in Table API queries.
+ * Get the current max global order from the flow's version payload.
+ *
+ * IMPORTANT: Flow Designer elements (actions, flow logic, subflows) are NOT stored as
+ * individual records in sys_hub_action_instance / sys_hub_flow_logic / sys_hub_sub_flow_instance.
+ * They only exist inside the sys_hub_flow_version.payload (managed by the GraphQL API).
+ * Table API queries on these tables will always return 0 results.
+ *
+ * This function reads the version payload to determine the current max order.
+ * If the payload can't be read/parsed, it returns 0 (caller should use explicit order).
  */
-async function resolveFlowQueryFilter(client: any, flowId: string): Promise<string> {
-  var filter = 'flow=' + flowId;
+async function getMaxOrderFromVersion(client: any, flowId: string): Promise<number> {
   try {
-    var resp = await client.get('/api/now/table/sys_hub_flow_version', {
+    const resp = await client.get('/api/now/table/sys_hub_flow_version', {
       params: {
         sysparm_query: 'flow=' + flowId + '^ORDERBYDESCsys_created_on',
-        sysparm_fields: 'sys_id',
-        sysparm_limit: 3
+        sysparm_fields: 'sys_id,payload',
+        sysparm_limit: 1
       }
     });
-    var versions = resp.data.result || [];
-    for (var v of versions) {
-      if (v.sys_id) filter += '^ORflow=' + str(v.sys_id);
-    }
-  } catch (_) {}
-  return filter;
-}
-
-async function getNextOrder(client: any, flowId: string): Promise<number> {
-  let maxOrder = 0;
-  var flowFilter = await resolveFlowQueryFilter(client, flowId);
-  // Order is global across all elements in the flow (not per-parent)
-  for (const table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
-    try {
-      const resp = await client.get('/api/now/table/' + table, {
-        params: {
-          sysparm_query: flowFilter + '^ORDERBYDESCorder',
-          sysparm_fields: 'order',
-          sysparm_limit: 1
-        }
-      });
-      const order = parseInt(str(resp.data.result?.[0]?.order) || '0', 10);
-      if (order > maxOrder) maxOrder = order;
-    } catch (_) {}
+    const payload = resp.data.result?.[0]?.payload;
+    if (!payload) return 0;
+    // Payload may be JSON containing flow elements with order fields
+    const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
+    // Extract max order from any structure — search recursively for "order" values
+    let maxOrder = 0;
+    const findOrders = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      if (obj.order !== undefined) {
+        const o = parseInt(String(obj.order), 10);
+        if (!isNaN(o) && o > maxOrder) maxOrder = o;
+      }
+      if (Array.isArray(obj)) obj.forEach(findOrders);
+      else Object.values(obj).forEach(findOrders);
+    };
+    findOrders(parsed);
+    return maxOrder;
+  } catch (_) {
+    return 0;
   }
-  return maxOrder + 1;
 }
 
 async function executeFlowPatchMutation(
@@ -196,164 +194,43 @@ async function buildActionInputsForInsert(
   return { inputs, resolvedInputs, actionParams };
 }
 
-/**
- * Find all flow elements at order >= targetOrder and build GraphQL update payloads to bump their order by 1.
- * This is needed when inserting an element inside a flow logic block (e.g. action inside If block).
- * The UI does this to keep the Else block (and other subsequent elements) after the new element.
- */
-async function findElementsToReorder(
-  client: any,
-  flowId: string,
-  targetOrder: number
-): Promise<{ flowLogicUpdates: any[]; actionUpdates: any[]; subflowUpdates: any[] }> {
-  var flowLogicUpdates: any[] = [];
-  var actionUpdates: any[] = [];
-  var subflowUpdates: any[] = [];
-  var flowFilter = await resolveFlowQueryFilter(client, flowId);
-
-  // Flow logic blocks
-  try {
-    var resp = await client.get('/api/now/table/sys_hub_flow_logic', {
-      params: {
-        sysparm_query: flowFilter + '^order>=' + targetOrder,
-        sysparm_fields: 'sys_id,order,ui_unique_identifier',
-        sysparm_limit: 100
-      }
-    });
-    for (var rec of (resp.data.result || [])) {
-      var uuid = str(rec.ui_unique_identifier);
-      var curOrder = parseInt(str(rec.order) || '0', 10);
-      if (uuid && curOrder >= targetOrder) {
-        flowLogicUpdates.push({ order: String(curOrder + 1), uiUniqueIdentifier: uuid, type: 'flowlogic' });
-      }
-    }
-  } catch (_) {}
-
-  // Action instances
-  try {
-    var resp2 = await client.get('/api/now/table/sys_hub_action_instance', {
-      params: {
-        sysparm_query: flowFilter + '^order>=' + targetOrder,
-        sysparm_fields: 'sys_id,order,ui_unique_identifier',
-        sysparm_limit: 100
-      }
-    });
-    for (var rec2 of (resp2.data.result || [])) {
-      var uuid2 = str(rec2.ui_unique_identifier);
-      var curOrder2 = parseInt(str(rec2.order) || '0', 10);
-      if (uuid2 && curOrder2 >= targetOrder) {
-        actionUpdates.push({ order: String(curOrder2 + 1), uiUniqueIdentifier: uuid2, type: 'action' });
-      }
-    }
-  } catch (_) {}
-
-  // Subflow instances
-  try {
-    var resp3 = await client.get('/api/now/table/sys_hub_sub_flow_instance', {
-      params: {
-        sysparm_query: flowFilter + '^order>=' + targetOrder,
-        sysparm_fields: 'sys_id,order,ui_unique_identifier',
-        sysparm_limit: 100
-      }
-    });
-    for (var rec3 of (resp3.data.result || [])) {
-      var uuid3 = str(rec3.ui_unique_identifier);
-      var curOrder3 = parseInt(str(rec3.order) || '0', 10);
-      if (uuid3 && curOrder3 >= targetOrder) {
-        subflowUpdates.push({ order: String(curOrder3 + 1), uiUniqueIdentifier: uuid3, type: 'subflow' });
-      }
-    }
-  } catch (_) {}
-
-  return { flowLogicUpdates, actionUpdates, subflowUpdates };
-}
+// Note: reordering of existing elements is NOT possible via Table API because
+// Flow Designer elements only exist in the version payload (managed by GraphQL).
+// The caller must provide the correct global order. When inserting between existing
+// elements, the caller should include the necessary sibling updates in the same
+// GraphQL mutation (matching how the Flow Designer UI works).
 
 /**
- * Calculate the insert order for an element being added inside a parent flow logic block.
- * Returns the order right after the last child of the parent, and reorder info for elements that need bumping.
+ * Calculate the insert order for a new flow element.
+ *
+ * Flow Designer uses GLOBAL ordering: all elements (actions, flow logic, subflows)
+ * share a single sequential numbering (1, 2, 3, 4, 5...).
+ *
+ * IMPORTANT: Flow elements do NOT exist as individual records in the Table API.
+ * They only live inside the version payload managed by the GraphQL API.
+ * Therefore we CANNOT query Table API to find existing elements or their orders.
+ *
+ * Order computation strategy:
+ * 1. If explicit order is provided → use it as the global order (the caller knows best)
+ * 2. Otherwise → try to determine max order from version payload, return max + 1
  */
 async function calculateInsertOrder(
   client: any,
   flowId: string,
-  parentUiId?: string,
+  _parentUiId?: string,
   explicitOrder?: number
-): Promise<{ insertOrder: number; reorders: { flowLogicUpdates: any[]; actionUpdates: any[]; subflowUpdates: any[] } }> {
-  var noReorders = { flowLogicUpdates: [], actionUpdates: [], subflowUpdates: [] };
-  var flowFilter = await resolveFlowQueryFilter(client, flowId);
+): Promise<number> {
+  // Explicit order provided: trust it as the correct global order.
+  // This matches how the Flow Designer UI works — it computes the correct global
+  // order client-side and sends it in the mutation.
+  if (explicitOrder) return explicitOrder;
 
-  // ── Parent specified: ALWAYS compute global order from parent context ──
-  // Flow Designer uses GLOBAL ordering for ALL elements (not per-parent).
-  // When a parent is specified, any explicit "order" is ignored because callers
-  // typically pass a local/relative order (1, 2, 3) which would conflict with
-  // elements already at those global positions.
-  if (parentUiId) {
-    var parentSysId = '';
-    var parentOrder = 0;
+  // No explicit order: try to find max order from version payload
+  const maxOrder = await getMaxOrderFromVersion(client, flowId);
+  if (maxOrder > 0) return maxOrder + 1;
 
-    // Look up the parent flow logic record.
-    // Try multiple strategies: the `flow` field may store the version sys_id, not the flow sys_id.
-    // Also support parentUiId being a sys_id (32 hex chars) or a UUID.
-    var parentQueries = [
-      flowFilter + '^ui_unique_identifier=' + parentUiId,
-      'ui_unique_identifier=' + parentUiId,
-    ];
-    if (isSysId(parentUiId)) {
-      parentQueries.unshift('sys_id=' + parentUiId);
-    }
-    for (var pq of parentQueries) {
-      if (parentSysId) break;
-      try {
-        var pResp = await client.get('/api/now/table/sys_hub_flow_logic', {
-          params: { sysparm_query: pq, sysparm_fields: 'sys_id,order', sysparm_limit: 1 }
-        });
-        var found = pResp.data.result?.[0];
-        if (found) {
-          parentSysId = str(found.sys_id);
-          parentOrder = parseInt(str(found.order) || '0', 10);
-        }
-      } catch (_) {}
-    }
-
-    if (!parentSysId) {
-      // Parent not found via Table API — fallback: append at end using global max order
-      var fallbackOrder = await getNextOrder(client, flowId);
-      return { insertOrder: fallbackOrder, reorders: noReorders };
-    }
-
-    // Find max order of existing children of this parent.
-    // Query by parent sys_id, parent UUID, and with/without flow filter to handle all cases.
-    var maxChildOrder = parentOrder;
-    for (var table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
-      var childQueries = [
-        'parent=' + parentSysId + '^ORDERBYDESCorder',
-        'parent=' + parentUiId + '^ORDERBYDESCorder',
-      ];
-      for (var cq of childQueries) {
-        try {
-          var cResp = await client.get('/api/now/table/' + table, {
-            params: { sysparm_query: cq, sysparm_fields: 'order', sysparm_limit: 1 }
-          });
-          var childOrder = parseInt(str(cResp.data.result?.[0]?.order) || '0', 10);
-          if (childOrder > maxChildOrder) maxChildOrder = childOrder;
-        } catch (_) {}
-      }
-    }
-
-    // Insert after last child; bump everything at that position
-    var insertOrder = maxChildOrder + 1;
-    var reorderInfo = await findElementsToReorder(client, flowId, insertOrder);
-    return { insertOrder: insertOrder, reorders: reorderInfo };
-  }
-
-  // ── Top-level with explicit order: bump elements at that position ──
-  if (explicitOrder) {
-    var reorders = await findElementsToReorder(client, flowId, explicitOrder);
-    return { insertOrder: explicitOrder, reorders };
-  }
-
-  // ── Top-level without order: append at end ──
-  var nextOrder = await getNextOrder(client, flowId);
-  return { insertOrder: nextOrder, reorders: noReorders };
+  // Last resort fallback
+  return 1;
 }
 
 async function addTriggerViaGraphQL(
@@ -526,17 +403,9 @@ async function addActionViaGraphQL(
   steps.available_inputs = inputResult.actionParams.map((p: any) => ({ element: p.element, label: p.label }));
   steps.resolved_inputs = inputResult.resolvedInputs;
 
-  // Calculate insertion order and find elements that need reordering
-  const orderCalc = await calculateInsertOrder(client, flowId, parentUiId, order);
-  const resolvedOrder = orderCalc.insertOrder;
+  // Calculate insertion order
+  const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
   steps.insert_order = resolvedOrder;
-  if (orderCalc.reorders.flowLogicUpdates.length > 0 || orderCalc.reorders.actionUpdates.length > 0 || orderCalc.reorders.subflowUpdates.length > 0) {
-    steps.reordered_elements = {
-      flowLogics: orderCalc.reorders.flowLogicUpdates.length,
-      actions: orderCalc.reorders.actionUpdates.length,
-      subflows: orderCalc.reorders.subflowUpdates.length
-    };
-  }
 
   const uuid = generateUUID();
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
@@ -562,24 +431,9 @@ async function addActionViaGraphQL(
     }
   };
 
-  // Merge reorder updates + parent flow logic update into the mutation
-  var flowLogicUpdates: any[] = orderCalc.reorders.flowLogicUpdates.slice();
+  // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
-    // Add parent update (no order change, just signals the parent was modified)
-    // Avoid duplicating if the parent is already in the reorder list
-    var parentAlreadyIncluded = flowLogicUpdates.some(function (u: any) { return u.uiUniqueIdentifier === parentUiId; });
-    if (!parentAlreadyIncluded) {
-      flowLogicUpdates.push({ uiUniqueIdentifier: parentUiId, type: 'flowlogic' });
-    }
-  }
-  if (flowLogicUpdates.length > 0) {
-    flowPatch.flowLogics = { update: flowLogicUpdates };
-  }
-  if (orderCalc.reorders.actionUpdates.length > 0) {
-    flowPatch.actions.update = orderCalc.reorders.actionUpdates;
-  }
-  if (orderCalc.reorders.subflowUpdates.length > 0) {
-    flowPatch.subflows = { update: orderCalc.reorders.subflowUpdates };
+    flowPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }] };
   }
 
   try {
@@ -646,9 +500,8 @@ async function addFlowLogicViaGraphQL(
   }
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
 
-  // Calculate insertion order with reordering
-  const orderCalc = await calculateInsertOrder(client, flowId, parentUiId, order);
-  const resolvedOrder = orderCalc.insertOrder;
+  // Calculate insertion order
+  const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
   steps.insert_order = resolvedOrder;
 
   const uuid = generateUUID();
@@ -685,24 +538,9 @@ async function addFlowLogicViaGraphQL(
     }
   };
 
-  // Merge reorder updates + parent update into flowLogics.update
-  var flowLogicUpdatesForPatch: any[] = orderCalc.reorders.flowLogicUpdates.slice();
+  // Add parent flow logic update signal
   if (parentUiId) {
-    // Signal the parent flow logic was modified (same as action insert does)
-    var parentAlreadyInList = flowLogicUpdatesForPatch.some(function (u: any) { return u.uiUniqueIdentifier === parentUiId; });
-    if (!parentAlreadyInList) {
-      flowLogicUpdatesForPatch.push({ uiUniqueIdentifier: parentUiId, type: 'flowlogic' });
-    }
-  }
-  if (flowLogicUpdatesForPatch.length > 0) {
-    if (!flowPatch.flowLogics.update) flowPatch.flowLogics.update = [];
-    flowPatch.flowLogics.update = flowPatch.flowLogics.update.concat(flowLogicUpdatesForPatch);
-  }
-  if (orderCalc.reorders.actionUpdates.length > 0) {
-    flowPatch.actions = { update: orderCalc.reorders.actionUpdates };
-  }
-  if (orderCalc.reorders.subflowUpdates.length > 0) {
-    flowPatch.subflows = { update: orderCalc.reorders.subflowUpdates };
+    flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }];
   }
 
   try {
@@ -776,9 +614,8 @@ async function addSubflowCallViaGraphQL(
 
   if (!subflowName) subflowName = subflowId;
 
-  // Calculate insertion order with reordering
-  const orderCalc = await calculateInsertOrder(client, flowId, parentUiId, order);
-  const resolvedOrder = orderCalc.insertOrder;
+  // Calculate insertion order
+  const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
   steps.insert_order = resolvedOrder;
 
   const uuid = generateUUID();
@@ -813,23 +650,9 @@ async function addSubflowCallViaGraphQL(
     }
   };
 
-  // Merge reorder updates + parent flow logic update
-  var subFlowLogicUpdates: any[] = orderCalc.reorders.flowLogicUpdates.slice();
+  // Add parent flow logic update signal
   if (parentUiId) {
-    var parentIncluded = subFlowLogicUpdates.some(function (u: any) { return u.uiUniqueIdentifier === parentUiId; });
-    if (!parentIncluded) {
-      subFlowLogicUpdates.push({ uiUniqueIdentifier: parentUiId, type: 'flowlogic' });
-    }
-  }
-  if (subFlowLogicUpdates.length > 0) {
-    subPatch.flowLogics = { update: subFlowLogicUpdates };
-  }
-  if (orderCalc.reorders.actionUpdates.length > 0) {
-    subPatch.actions = { update: orderCalc.reorders.actionUpdates };
-  }
-  if (orderCalc.reorders.subflowUpdates.length > 0) {
-    if (!subPatch.subflows.update) subPatch.subflows.update = [];
-    subPatch.subflows.update = subPatch.subflows.update.concat(orderCalc.reorders.subflowUpdates);
+    subPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }] };
   }
 
   try {
@@ -1122,7 +945,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       order: {
         type: 'number',
-        description: 'Position/order of the element in the flow (for add_* actions). Auto-detected if not provided (appends after last element).'
+        description: 'GLOBAL position/order of the element in the flow (for add_* actions). Flow Designer uses global sequential ordering across ALL elements (1, 2, 3...). For nested elements (e.g. action inside If block), the order must be global — not relative to the parent. Example: If block at order 2, first child should be order 3, second child order 4, etc. Each add_* response includes insert_order — use the previous insert_order + 1 for the next element.'
       },
       type: {
         type: 'string',
