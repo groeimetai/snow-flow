@@ -198,8 +198,8 @@ async function buildActionInputsForInsert(
  * Build full flow logic input objects AND flowLogicDefinition matching the Flow Designer UI format.
  * The UI sends inputs WITH parameter definitions and the full flowLogicDefinition in the INSERT mutation.
  *
- * Flow logic definitions (IF, ELSE, FOR_EACH, etc.) store their input parameters in the same
- * sys_hub_action_input table as actions, using the definition's sys_id as the 'model' reference.
+ * Flow logic definitions (IF, ELSE, FOR_EACH, etc.) store their input parameters in
+ * sys_hub_flow_logic_input (NOT sys_hub_action_input), using the definition's sys_id as the 'model' reference.
  */
 async function buildFlowLogicInputsForInsert(
   client: any,
@@ -207,10 +207,10 @@ async function buildFlowLogicInputsForInsert(
   defRecord: { name?: string; type?: string; description?: string; order?: string; attributes?: string; compilation_class?: string; quiescence?: string; visible?: string; category?: string; connected_to?: string },
   userValues?: Record<string, string>
 ): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string> }> {
-  // Query sys_hub_action_input for this definition's inputs (same table as actions — uses generic 'model' reference)
+  // Query sys_hub_flow_logic_input for this definition's inputs (separate table from sys_hub_action_input)
   var defParams: any[] = [];
   try {
-    var resp = await client.get('/api/now/table/sys_hub_action_input', {
+    var resp = await client.get('/api/now/table/sys_hub_flow_logic_input', {
       params: {
         sysparm_query: 'model=' + defId,
         sysparm_fields: 'sys_id,element,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,extended,data_structure,reference,reference_display,ref_qual,choice_option,table_name,column_name,use_dependent,dependent_on,show_ref_finder,local,attributes,sys_class_name',
