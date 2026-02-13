@@ -206,20 +206,39 @@ async function buildFlowLogicInputsForInsert(
   defId: string,
   defRecord: { name?: string; type?: string; description?: string; order?: string; attributes?: string; compilation_class?: string; quiescence?: string; visible?: string; category?: string; connected_to?: string },
   userValues?: Record<string, string>
-): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string> }> {
+): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string>; inputQueryError?: string; defParamsCount: number }> {
   // Query sys_hub_flow_logic_input for this definition's inputs (separate table from sys_hub_action_input)
+  // Field names verified from actual sys_hub_flow_logic_input XML schema
   var defParams: any[] = [];
+  var inputQueryError = '';
   try {
     var resp = await client.get('/api/now/table/sys_hub_flow_logic_input', {
       params: {
         sysparm_query: 'model=' + defId,
-        sysparm_fields: 'sys_id,element,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,extended,data_structure,reference,reference_display,ref_qual,choice_option,table_name,column_name,use_dependent,dependent_on,show_ref_finder,local,attributes,sys_class_name',
+        sysparm_fields: 'sys_id,element,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,attributes,sys_class_name,reference,choice,dependent,dependent_on_field,use_dependent_field,column_label',
         sysparm_display_value: 'false',
         sysparm_limit: 50
       }
     });
     defParams = resp.data.result || [];
-  } catch (_) {}
+  } catch (e: any) {
+    inputQueryError = e.message || 'unknown error';
+    // Fallback: try with minimal fields
+    try {
+      var resp2 = await client.get('/api/now/table/sys_hub_flow_logic_input', {
+        params: {
+          sysparm_query: 'model=' + defId,
+          sysparm_fields: 'sys_id,element,label,internal_type,mandatory,order,max_length,attributes',
+          sysparm_display_value: 'false',
+          sysparm_limit: 50
+        }
+      });
+      defParams = resp2.data.result || [];
+      inputQueryError = '';
+    } catch (e2: any) {
+      inputQueryError += '; fallback also failed: ' + (e2.message || '');
+    }
+  }
 
   // Fuzzy-match user-provided values to actual field names
   var resolvedInputs: Record<string, string> = {};
@@ -304,7 +323,7 @@ async function buildFlowLogicInputsForInsert(
     variables: '[]'
   };
 
-  return { inputs, flowLogicDefinition, resolvedInputs };
+  return { inputs, flowLogicDefinition, resolvedInputs, inputQueryError: inputQueryError || undefined, defParamsCount: defParams.length };
 }
 
 // Note: reordering of existing elements is NOT possible via Table API because
@@ -446,7 +465,8 @@ async function addTriggerViaGraphQL(
         },
         {
           name: 'condition',
-          displayValue: { schemaless: false, schemalessValue: '', value: condition || '^EQ' }
+          displayValue: { schemaless: false, schemalessValue: '', value: condition || '^EQ' },
+          value: { schemaless: false, schemalessValue: '', value: condition || '^EQ' }
         }
       ];
       try {
@@ -662,6 +682,7 @@ async function addFlowLogicViaGraphQL(
   const inputResult = await buildFlowLogicInputsForInsert(client, defId, defRecord, inputs);
   steps.available_inputs = inputResult.inputs.map((i: any) => ({ name: i.name, label: i.parameter?.label }));
   steps.resolved_inputs = inputResult.resolvedInputs;
+  steps.input_query_stats = { defParamsFound: inputResult.defParamsCount, inputsBuilt: inputResult.inputs.length, error: inputResult.inputQueryError };
 
   // Calculate insertion order
   const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
