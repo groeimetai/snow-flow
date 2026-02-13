@@ -62,36 +62,56 @@ async function addTriggerViaGraphQL(
 ): Promise<{ success: boolean; triggerId?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
-  const triggerMap: Record<string, { type: string; name: string; triggerType: string }> = {
-    'record_created': { type: 'record_create', name: 'Created', triggerType: 'Record' },
-    'record_updated': { type: 'record_update', name: 'Updated', triggerType: 'Record' },
-    'record_create_or_update': { type: 'record_create_or_update', name: 'Created or Updated', triggerType: 'Record' },
-    'scheduled': { type: 'scheduled', name: 'Scheduled', triggerType: 'Scheduled' },
-  };
-
-  const config = triggerMap[triggerType] || triggerMap['record_create_or_update'];
-
-  // Trigger definitions live in sys_hub_trigger_definition, keyed by `type` field
+  // Dynamically look up trigger definition in sys_hub_trigger_definition
   let trigDefId: string | null = null;
-  try {
-    const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
-      params: { sysparm_query: 'type=' + config.type, sysparm_fields: 'sys_id,type,name', sysparm_limit: 1 }
-    });
-    trigDefId = resp.data.result?.[0]?.sys_id || null;
-    steps.def_lookup_primary = resp.data.result?.[0] || null;
-  } catch (_) {}
-  // Fallback: search by name
+  let trigName = '';
+  let trigType = triggerType;
+  let trigCategory = '';
+  // Try exact match on type first, then name
+  for (const field of ['type', 'name']) {
+    if (trigDefId) break;
+    try {
+      const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
+        params: {
+          sysparm_query: field + '=' + triggerType,
+          sysparm_fields: 'sys_id,type,name,category',
+          sysparm_display_value: 'true',
+          sysparm_limit: 1
+        }
+      });
+      const found = resp.data.result?.[0];
+      if (found?.sys_id) {
+        trigDefId = found.sys_id;
+        trigName = found.name || triggerType;
+        trigType = found.type || triggerType;
+        trigCategory = found.category || '';
+        steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, category: found.category, matched: field + '=' + triggerType };
+      }
+    } catch (_) {}
+  }
+  // Fallback: LIKE search on both fields
   if (!trigDefId) {
     try {
       const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
-        params: { sysparm_query: 'name=' + config.name, sysparm_fields: 'sys_id,type,name', sysparm_limit: 1 }
+        params: {
+          sysparm_query: 'typeLIKE' + triggerType + '^ORnameLIKE' + triggerType,
+          sysparm_fields: 'sys_id,type,name,category',
+          sysparm_display_value: 'true',
+          sysparm_limit: 5
+        }
       });
-      trigDefId = resp.data.result?.[0]?.sys_id || null;
-      steps.def_lookup_fallback = resp.data.result?.[0] || null;
+      const results = resp.data.result || [];
+      steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, type: r.type, name: r.name, category: r.category }));
+      if (results[0]?.sys_id) {
+        trigDefId = results[0].sys_id;
+        trigName = results[0].name || triggerType;
+        trigType = results[0].type || triggerType;
+        trigCategory = results[0].category || '';
+        steps.def_lookup = { id: results[0].sys_id, type: results[0].type, name: results[0].name, category: results[0].category, matched: 'LIKE ' + triggerType };
+      }
     } catch (_) {}
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
-  steps.def_lookup = { id: trigDefId };
 
   const triggerResponseFields = 'triggerInstances { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
@@ -100,10 +120,10 @@ async function addTriggerViaGraphQL(
       triggerInstances: {
         insert: [{
           flowSysId: flowId,
-          name: config.name,
-          triggerType: config.triggerType,
+          name: trigName,
+          triggerType: trigCategory,
           triggerDefinitionId: trigDefId,
-          type: config.type,
+          type: trigType,
           hasDynamicOutputs: false,
           metadata: '{"predicates":[]}',
           inputs: [],
