@@ -53,103 +53,6 @@ async function executeFlowPatchMutation(
   return resp.data?.data?.global?.snFlowDesigner?.flow || resp.data;
 }
 
-async function lookupDefinitionParams(client: any, defSysId: string): Promise<any[]> {
-  const queries = [
-    { table: 'sys_hub_action_type_param', query: 'action_type=' + defSysId },
-    { table: 'sys_hub_action_type_param', query: 'model=' + defSysId },
-    { table: 'sys_hub_action_input_param', query: 'action_type=' + defSysId },
-    { table: 'sys_hub_action_input_param', query: 'model=' + defSysId },
-  ];
-  const fields = 'sys_id,name,element,label,internal_type,type,type_label,order,mandatory,readonly,maxsize,data_structure,reference,reference_display,ref_qual,choice_option,column_name,default_value,use_dependent,dependent_on,internal_link,attributes,sys_class_name';
-  for (const q of queries) {
-    try {
-      const resp = await client.get('/api/now/table/' + q.table, {
-        params: { sysparm_query: q.query, sysparm_fields: fields, sysparm_display_value: 'false', sysparm_limit: 50 }
-      });
-      const raw = resp.data.result || [];
-      if (raw.length === 0) continue;
-      const seen = new Set<string>();
-      const unique: any[] = [];
-      for (const r of raw) {
-        const id = r.sys_id || '';
-        if (id === defSysId) continue;
-        if (id && seen.has(id)) continue;
-        const name = r.name || r.element || '';
-        if (!name) continue;
-        seen.add(id);
-        unique.push(r);
-      }
-      if (unique.length > 0) return unique;
-    } catch (_) {}
-  }
-  return [];
-}
-
-function str(v: any): string {
-  if (!v) return '';
-  if (typeof v === 'string') return v;
-  if (typeof v === 'object' && v.value !== undefined) return String(v.value);
-  return String(v);
-}
-
-function buildGraphQLInput(p: any, defaultValue?: any, forTrigger?: boolean): any {
-  const name = str(p.name) || str(p.element) || '';
-  const type = str(p.internal_type) || str(p.type) || 'string';
-  const isMandatory = p.mandatory === 'true' || p.mandatory === true;
-  const order = parseInt(str(p.order)) || 100;
-  const defVal = defaultValue !== undefined ? defaultValue : (str(p.default_value) || '');
-  const valueObj = type === 'conditions'
-    ? { schemaless: false, schemalessValue: '', value: '^EQ' }
-    : defVal
-      ? { schemaless: false, schemalessValue: '', value: String(defVal) }
-      : { value: '' };
-  const parameter: any = {
-    id: str(p.sys_id) || '',
-    label: str(p.label) || name,
-    name,
-    type,
-    type_label: str(p.type_label) || '',
-    hint: '',
-    order,
-    extended: false,
-    mandatory: isMandatory,
-    readonly: p.readonly === 'true' || p.readonly === true,
-    maxsize: parseInt(str(p.maxsize)) || 80,
-    data_structure: str(p.data_structure) || '',
-    reference: str(p.reference) || '',
-    reference_display: str(p.reference_display) || '',
-    ref_qual: str(p.ref_qual) || '',
-    choiceOption: str(p.choice_option) || '',
-    table: '',
-    columnName: str(p.column_name) || '',
-    defaultValue: str(p.default_value) || '',
-    use_dependent: p.use_dependent === 'true' || p.use_dependent === true,
-    dependent_on: str(p.dependent_on) || '',
-    show_ref_finder: false,
-    local: false,
-    attributes: str(p.attributes) || '',
-    sys_class_name: str(p.sys_class_name) || '',
-    children: []
-  };
-  if (!forTrigger) {
-    parameter.dynamic = null;
-  } else {
-    parameter.internal_link = p.internal_link || '';
-  }
-
-  if (forTrigger) {
-    return {
-      name, label: str(p.label) || name, internalType: type, mandatory: isMandatory,
-      order, valueSysId: '', field_name: name, type,
-      children: [], displayValue: { value: '' }, value: valueObj, parameter
-    };
-  }
-  return {
-    id: str(p.sys_id) || '', name,
-    children: [], displayValue: { value: '' }, value: valueObj, parameter
-  };
-}
-
 async function addTriggerViaGraphQL(
   client: any,
   flowId: string,
@@ -205,18 +108,6 @@ async function addTriggerViaGraphQL(
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
   steps.def_lookup = { id: trigDefId };
 
-  const params = await lookupDefinitionParams(client, trigDefId);
-  steps.params_found = params.length;
-
-  const gqlInputs = params.map((p: any) => buildGraphQLInput(p, undefined, true));
-
-  if (gqlInputs.length === 0 && config.triggerType === 'Record') {
-    gqlInputs.push(
-      buildGraphQLInput({ name: 'table', label: 'Table', internal_type: 'table_name', mandatory: 'true', order: '1' }, undefined, true),
-      buildGraphQLInput({ name: 'condition', label: 'Condition', internal_type: 'conditions', mandatory: 'false', order: '100', use_dependent: 'true', dependent_on: 'table' }, undefined, true)
-    );
-  }
-
   const triggerResponseFields = 'triggerInstances { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const insertResult = await executeFlowPatchMutation(client, {
@@ -230,7 +121,7 @@ async function addTriggerViaGraphQL(
           type: config.type,
           hasDynamicOutputs: false,
           metadata: '{"predicates":[]}',
-          inputs: gqlInputs,
+          inputs: [],
           outputs: []
         }]
       }
@@ -317,16 +208,6 @@ async function addActionViaGraphQL(
   if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType, steps };
   steps.def_lookup = { id: actionDefId };
 
-  const params = await lookupDefinitionParams(client, actionDefId);
-  steps.params_found = params.length;
-  steps.params_detail = params.map((p: any) => ({ sys_id: p.sys_id, name: p.name || p.element, type: str(p.internal_type) || str(p.type) }));
-
-  const gqlInputs = params.map((p: any) => {
-    const pName = p.name || p.element || '';
-    const providedValue = inputs?.[pName];
-    return buildGraphQLInput(p, providedValue);
-  });
-
   const uuid = generateUUID();
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
@@ -343,7 +224,7 @@ async function addActionViaGraphQL(
           uiUniqueIdentifier: uuid,
           type: 'action',
           parentUiId: '',
-          inputs: gqlInputs
+          inputs: []
         }]
       }
     }, actionResponseFields);
