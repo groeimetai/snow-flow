@@ -141,7 +141,7 @@ async function buildActionInputsForInsert(
       }
       var match = actionParams.find(function (p: any) {
         var el = str(p.element);
-        return el.endsWith('_' + key) || el === key || str(p.label).toLowerCase() === key.toLowerCase();
+        return el.endsWith('_' + key) || el.startsWith(key + '_') || el === key || str(p.label).toLowerCase() === key.toLowerCase();
       });
       if (match) resolvedInputs[str(match.element)] = value;
       else resolvedInputs[key] = value;
@@ -1001,6 +1001,15 @@ async function addActionViaGraphQL(
   steps.insert_order = resolvedOrder;
 
   const uuid = generateUUID();
+
+  // ── Data pill transformation for record actions (Update/Create Record) ──
+  // These actions need: record → data pill, table_name → displayValue, field values → packed into values string
+  var recordActionResult = await transformActionInputsForRecordAction(
+    client, flowId, inputResult.inputs, inputResult.resolvedInputs,
+    inputResult.actionParams, uuid
+  );
+  steps.record_action = recordActionResult.steps;
+
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
@@ -1019,10 +1028,15 @@ async function addActionViaGraphQL(
         uiUniqueIdentifier: uuid,
         type: 'action',
         parentUiId: parentUiId || '',
-        inputs: inputResult.inputs
+        inputs: recordActionResult.inputs
       }]
     }
   };
+
+  // Add labelCache entries for data pill references in record actions
+  if (recordActionResult.labelCacheEntries.length > 0) {
+    flowPatch.labelCache = { insert: recordActionResult.labelCacheEntries };
+  }
 
   // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
@@ -1284,6 +1298,181 @@ function buildConditionLabelCache(
   }
 
   return entries;
+}
+
+// ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
+
+/** Shorthands that users can pass for `record` to mean "the trigger's current record". */
+const RECORD_PILL_SHORTHANDS = ['current', 'trigger.current', 'trigger_record', 'trigger record'];
+
+/**
+ * Post-process action inputs for record-modifying actions (Update Record, Create Record).
+ *
+ * These actions have 3 key inputs:
+ * - `record`: reference to the record → needs data pill format {{TriggerName_1.current}}
+ * - `table_name`: target table → needs displayValue (e.g. "Incident")
+ * - `values`: packed field=value pairs → e.g. "priority=2^state=3"
+ *
+ * User-provided field-value pairs that don't match defined action parameters are
+ * automatically packed into the `values` string.
+ *
+ * Returns the transformed inputs and labelCache entries.
+ */
+async function transformActionInputsForRecordAction(
+  client: any,
+  flowId: string,
+  actionInputs: any[],
+  resolvedInputs: Record<string, string>,
+  actionParams: any[],
+  uuid: string
+): Promise<{ inputs: any[]; labelCacheEntries: any[]; steps: any }> {
+  var steps: any = {};
+
+  // Detect if this is a record action: must have both `record` and `table_name` parameters
+  var definedParamNames = actionParams.map(function (p: any) { return str(p.element); });
+  var hasRecord = definedParamNames.includes('record');
+  var hasTableName = definedParamNames.includes('table_name');
+  var hasValues = definedParamNames.includes('values');
+
+  if (!hasRecord || !hasTableName) {
+    steps.record_action = false;
+    return { inputs: actionInputs, labelCacheEntries: [], steps };
+  }
+  steps.record_action = true;
+
+  // Get trigger info for data pill construction
+  var triggerInfo = await getFlowTriggerInfo(client, flowId);
+  steps.trigger_info = {
+    dataPillBase: triggerInfo.dataPillBase,
+    triggerName: triggerInfo.triggerName,
+    table: triggerInfo.table,
+    tableLabel: triggerInfo.tableLabel,
+    error: triggerInfo.error
+  };
+
+  var dataPillBase = triggerInfo.dataPillBase; // e.g. "Created or Updated_1.current"
+  var labelCacheEntries: any[] = [];
+  var usedInstances: { uiUniqueIdentifier: string; inputName: string }[] = [];
+
+  // ── 1. Transform `record` input to data pill ──────────────────────
+  var recordInput = actionInputs.find(function (inp: any) { return inp.name === 'record'; });
+  if (recordInput && dataPillBase) {
+    var recordVal = recordInput.value?.value || '';
+    var isShorthand = RECORD_PILL_SHORTHANDS.includes(recordVal.toLowerCase());
+    var isAlreadyPill = recordVal.startsWith('{{');
+
+    if (isShorthand || !recordVal) {
+      // Auto-fill with trigger's current record data pill
+      recordInput.value = { schemaless: false, schemalessValue: '', value: '{{' + dataPillBase + '}}' };
+      usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
+      steps.record_transform = { original: recordVal, pill: '{{' + dataPillBase + '}}' };
+    } else if (isAlreadyPill) {
+      usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
+    }
+  }
+
+  // ── 2. Transform `table_name` input with displayValue ─────────────
+  var tableNameInput = actionInputs.find(function (inp: any) { return inp.name === 'table_name'; });
+  if (tableNameInput) {
+    var tableVal = tableNameInput.value?.value || '';
+    // Also accept `table` as user key (maps to table_name)
+    if (!tableVal && resolvedInputs['table']) {
+      tableVal = resolvedInputs['table'];
+    }
+    // If still empty, use trigger's table
+    if (!tableVal && triggerInfo.table) {
+      tableVal = triggerInfo.table;
+    }
+    if (tableVal) {
+      // Look up display name for the table
+      var tableDisplayName = triggerInfo.tableLabel || '';
+      if (tableVal !== triggerInfo.table || !tableDisplayName) {
+        // Different table than trigger — look up its label
+        try {
+          var tblResp = await client.get('/api/now/table/sys_db_object', {
+            params: { sysparm_query: 'name=' + tableVal, sysparm_fields: 'label', sysparm_display_value: 'true', sysparm_limit: 1 }
+          });
+          tableDisplayName = str(tblResp.data.result?.[0]?.label) || tableVal.charAt(0).toUpperCase() + tableVal.slice(1).replace(/_/g, ' ');
+        } catch (_) {
+          tableDisplayName = tableVal.charAt(0).toUpperCase() + tableVal.slice(1).replace(/_/g, ' ');
+        }
+      }
+      tableNameInput.value = { schemaless: false, schemalessValue: '', value: tableVal };
+      tableNameInput.displayValue = { schemaless: false, schemalessValue: '', value: tableDisplayName };
+      steps.table_name_transform = { value: tableVal, displayValue: tableDisplayName };
+    }
+  }
+
+  // ── 3. Pack non-parameter field values into `values` string ───────
+  // Any user-provided key that is NOT a defined action parameter goes into the values string
+  var valuesInput = actionInputs.find(function (inp: any) { return inp.name === 'values'; });
+  if (valuesInput) {
+    var fieldPairs: string[] = [];
+    var existingValues = valuesInput.value?.value || '';
+
+    // If user already passed a pre-built values string, use it
+    if (existingValues && existingValues.includes('=')) {
+      fieldPairs.push(existingValues);
+    }
+
+    // Find user-provided keys that are not defined action parameters
+    for (var key of Object.keys(resolvedInputs)) {
+      if (definedParamNames.includes(key)) continue;
+      // Also skip table (alias for table_name) and record
+      if (key === 'table' || key === 'record') continue;
+
+      var val = resolvedInputs[key];
+
+      // Check if value should be a data pill reference
+      if (val && dataPillBase) {
+        var valLower = val.toLowerCase();
+        if (RECORD_PILL_SHORTHANDS.includes(valLower)) {
+          // Shorthand → record-level data pill
+          val = '{{' + dataPillBase + '}}';
+          usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
+        } else if (valLower.startsWith('trigger.current.') || valLower.startsWith('current.')) {
+          // Field-level data pill: "trigger.current.assigned_to" → {{dataPillBase.assigned_to}}
+          var fieldName = valLower.startsWith('trigger.current.') ? val.substring(16) : val.substring(8);
+          val = '{{' + dataPillBase + '.' + fieldName + '}}';
+          usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
+        } else if (val.startsWith('{{')) {
+          // Already a data pill
+          usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
+        }
+      }
+
+      fieldPairs.push(key + '=' + val);
+    }
+
+    if (fieldPairs.length > 0) {
+      var packedValues = fieldPairs.join('^');
+      valuesInput.value = { schemaless: false, schemalessValue: '', value: packedValues };
+      steps.values_transform = { packed: packedValues, fieldCount: fieldPairs.length };
+    }
+  }
+
+  // ── 4. Build labelCache entries for data pills ────────────────────
+  if (dataPillBase && usedInstances.length > 0) {
+    var tableRef = triggerInfo.tableRef || triggerInfo.table || '';
+    var tableLabel = triggerInfo.tableLabel || '';
+
+    // Record-level data pill entry
+    labelCacheEntries.push({
+      name: dataPillBase,
+      label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tableLabel + ' Record',
+      reference: tableRef,
+      reference_display: tableLabel,
+      type: 'reference',
+      base_type: 'reference',
+      attributes: '',
+      usedInstances: usedInstances,
+      choices: {}
+    });
+
+    steps.label_cache = { count: labelCacheEntries.length, pills: [dataPillBase], usedInstances: usedInstances.length };
+  }
+
+  return { inputs: actionInputs, labelCacheEntries, steps };
 }
 
 // ── FLOW LOGIC (If/Else, For Each, etc.) ─────────────────────────────
