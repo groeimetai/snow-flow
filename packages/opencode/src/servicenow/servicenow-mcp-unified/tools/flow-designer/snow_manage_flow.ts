@@ -802,7 +802,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       logic_type: {
         type: 'string',
-        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Common values: IF, FOR_EACH, DO_UNTIL, SWITCH'
+        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Common values: IF, FOR_EACH, DO_UNTIL, SWITCH. Note: IF does NOT require an Else block — if the condition is false the flow simply continues to the next step. Only add Else if explicitly requested.'
       },
       logic_inputs: {
         type: 'object',
