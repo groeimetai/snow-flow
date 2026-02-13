@@ -38,14 +38,15 @@ function generateUUID(): string {
   });
 }
 
-async function getNextOrder(client: any, flowId: string): Promise<number> {
+async function getNextOrder(client: any, flowId: string, parentId?: string): Promise<number> {
   let maxOrder = 0;
-  // Query all element types that have an order field on this flow
+  // Query elements at the same nesting level (same parent)
+  const parentFilter = parentId ? '^parent=' + parentId : '^parentISEMPTY';
   for (const table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
     try {
       const resp = await client.get('/api/now/table/' + table, {
         params: {
-          sysparm_query: 'flow=' + flowId + '^ORDERBYDESCorder',
+          sysparm_query: 'flow=' + flowId + parentFilter + '^ORDERBYDESCorder',
           sysparm_fields: 'order',
           sysparm_limit: 1
         }
@@ -285,7 +286,7 @@ async function addActionViaGraphQL(
   }
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId);
+  const resolvedOrder = order || await getNextOrder(client, flowId, parentUiId);
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
@@ -386,7 +387,7 @@ async function addFlowLogicViaGraphQL(
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId);
+  const resolvedOrder = order || await getNextOrder(client, flowId, parentUiId);
   const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
@@ -494,7 +495,7 @@ async function addSubflowCallViaGraphQL(
   if (!subflowName) subflowName = subflowId;
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId);
+  const resolvedOrder = order || await getNextOrder(client, flowId, parentUiId);
   const subflowResponseFields = 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
@@ -1002,7 +1003,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           for (var pfai = 0; pfai < activitiesArg.length; pfai++) {
             try {
               var pfAct = activitiesArg[pfai];
-              var pfActResult = await addActionViaGraphQL(client, flowSysId, pfAct.type || 'log', pfAct.name || ('Action ' + (pfai + 1)), pfAct.inputs, pfai + 1);
+              var pfActResult = await addActionViaGraphQL(client, flowSysId, pfAct.type || 'log', pfAct.name || ('Action ' + (pfai + 1)), pfAct.inputs, undefined, pfai + 1);
               if (pfActResult.success) actionsCreated++;
               diagnostics['action_' + pfai] = pfActResult;
             } catch (_) { /* best-effort */ }
@@ -1120,7 +1121,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           for (var ai = 0; ai < activitiesArg.length; ai++) {
             var activity = activitiesArg[ai];
             try {
-              var taActResult = await addActionViaGraphQL(client, flowSysId, activity.type || 'log', activity.name || ('Action ' + (ai + 1)), activity.inputs, ai + 1);
+              var taActResult = await addActionViaGraphQL(client, flowSysId, activity.type || 'log', activity.name || ('Action ' + (ai + 1)), activity.inputs, undefined, ai + 1);
               if (taActResult.success) actionsCreated++;
               diagnostics['action_' + ai] = taActResult;
             } catch (actError) {
