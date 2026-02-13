@@ -194,6 +194,119 @@ async function buildActionInputsForInsert(
   return { inputs, resolvedInputs, actionParams };
 }
 
+/**
+ * Build full flow logic input objects AND flowLogicDefinition matching the Flow Designer UI format.
+ * The UI sends inputs WITH parameter definitions and the full flowLogicDefinition in the INSERT mutation.
+ *
+ * Flow logic definitions (IF, ELSE, FOR_EACH, etc.) store their input parameters in the same
+ * sys_hub_action_input table as actions, using the definition's sys_id as the 'model' reference.
+ */
+async function buildFlowLogicInputsForInsert(
+  client: any,
+  defId: string,
+  defRecord: { name?: string; type?: string; description?: string; order?: string; attributes?: string; compilation_class?: string; quiescence?: string; visible?: string; category?: string; connected_to?: string },
+  userValues?: Record<string, string>
+): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string> }> {
+  // Query sys_hub_action_input for this definition's inputs (same table as actions — uses generic 'model' reference)
+  var defParams: any[] = [];
+  try {
+    var resp = await client.get('/api/now/table/sys_hub_action_input', {
+      params: {
+        sysparm_query: 'model=' + defId,
+        sysparm_fields: 'sys_id,element,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,extended,data_structure,reference,reference_display,ref_qual,choice_option,table_name,column_name,use_dependent,dependent_on,show_ref_finder,local,attributes,sys_class_name',
+        sysparm_display_value: 'false',
+        sysparm_limit: 50
+      }
+    });
+    defParams = resp.data.result || [];
+  } catch (_) {}
+
+  // Fuzzy-match user-provided values to actual field names
+  var resolvedInputs: Record<string, string> = {};
+  if (userValues) {
+    var paramElements = defParams.map(function (p: any) { return str(p.element); });
+    for (var [key, value] of Object.entries(userValues)) {
+      if (paramElements.includes(key)) {
+        resolvedInputs[key] = value;
+        continue;
+      }
+      var match = defParams.find(function (p: any) {
+        var el = str(p.element);
+        return el.endsWith('_' + key) || el === key || str(p.label).toLowerCase() === key.toLowerCase();
+      });
+      if (match) resolvedInputs[str(match.element)] = value;
+      else resolvedInputs[key] = value;
+    }
+  }
+
+  // Build parameter definition objects (shared between inputs array and flowLogicDefinition.inputs)
+  var inputDefs = defParams.map(function (rec: any) {
+    var paramType = str(rec.internal_type) || 'string';
+    var element = str(rec.element);
+    return {
+      id: str(rec.sys_id),
+      label: str(rec.label) || element,
+      name: element,
+      type: paramType,
+      type_label: TYPE_LABELS[paramType] || paramType.charAt(0).toUpperCase() + paramType.slice(1),
+      hint: str(rec.hint),
+      order: parseInt(str(rec.order) || '0', 10),
+      extended: str(rec.extended) === 'true',
+      mandatory: str(rec.mandatory) === 'true',
+      readonly: str(rec.read_only) === 'true',
+      maxsize: parseInt(str(rec.max_length) || '8000', 10),
+      data_structure: str(rec.data_structure),
+      reference: str(rec.reference),
+      reference_display: str(rec.reference_display),
+      ref_qual: str(rec.ref_qual),
+      choiceOption: str(rec.choice_option),
+      table: str(rec.table_name),
+      columnName: str(rec.column_name),
+      defaultValue: str(rec.default_value),
+      use_dependent: str(rec.use_dependent) === 'true',
+      dependent_on: str(rec.dependent_on),
+      show_ref_finder: str(rec.show_ref_finder) === 'true',
+      local: str(rec.local) === 'true',
+      attributes: str(rec.attributes),
+      sys_class_name: str(rec.sys_class_name),
+      children: []
+    };
+  });
+
+  // Build full input objects with parameter definitions and user values
+  var inputs = inputDefs.map(function (paramDef: any) {
+    var userVal = resolvedInputs[paramDef.name] || '';
+    return {
+      id: paramDef.id,
+      name: paramDef.name,
+      children: [],
+      displayValue: { value: '' },
+      value: { schemaless: false, schemalessValue: '', value: userVal },
+      parameter: paramDef
+    };
+  });
+
+  // Build flowLogicDefinition object (matching UI format)
+  var flowLogicDefinition: any = {
+    id: defId,
+    name: defRecord.name || '',
+    description: str(defRecord.description),
+    connectedTo: str(defRecord.connected_to),
+    quiescence: str(defRecord.quiescence) || 'never',
+    compilationClass: str(defRecord.compilation_class),
+    order: parseInt(str(defRecord.order) || '1', 10),
+    type: str(defRecord.type) || '',
+    visible: str(defRecord.visible) !== 'false',
+    attributes: str(defRecord.attributes),
+    userCanRead: true,
+    category: str(defRecord.category),
+    inputs: inputDefs,
+    variables: '[]'
+  };
+
+  return { inputs, flowLogicDefinition, resolvedInputs };
+}
+
 // Note: reordering of existing elements is NOT possible via Table API because
 // Flow Designer elements only exist in the version payload (managed by GraphQL).
 // The caller must provide the correct global order. When inserting between existing
@@ -455,26 +568,31 @@ async function addFlowLogicViaGraphQL(
   logicType: string,
   inputs?: Record<string, string>,
   order?: number,
-  parentUiId?: string
-): Promise<{ success: boolean; logicId?: string; steps?: any; error?: string }> {
+  parentUiId?: string,
+  connectedTo?: string
+): Promise<{ success: boolean; logicId?: string; uiUniqueIdentifier?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
   // Dynamically look up flow logic definition in sys_hub_flow_logic_definition
+  // Fetch extra fields needed for the flowLogicDefinition object in the mutation
+  const defFields = 'sys_id,type,name,description,order,attributes,compilation_class,quiescence,visible,category,connected_to';
   let defId: string | null = null;
   let defName = '';
   let defType = logicType;
-  // Try exact match on type (IF, FOR_EACH, DO_UNTIL, SWITCH), then name
+  let defRecord: any = {};
+  // Try exact match on type (IF, ELSE, FOR_EACH, DO_UNTIL, SWITCH), then name
   for (const field of ['type', 'name']) {
     if (defId) break;
     try {
       const resp = await client.get('/api/now/table/sys_hub_flow_logic_definition', {
-        params: { sysparm_query: field + '=' + logicType, sysparm_fields: 'sys_id,type,name,description', sysparm_limit: 1 }
+        params: { sysparm_query: field + '=' + logicType, sysparm_fields: defFields, sysparm_limit: 1 }
       });
       const found = resp.data.result?.[0];
       if (found?.sys_id) {
         defId = found.sys_id;
         defName = found.name || logicType;
         defType = found.type || logicType;
+        defRecord = found;
         steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, matched: field + '=' + logicType };
       }
     } catch (_) {}
@@ -485,7 +603,7 @@ async function addFlowLogicViaGraphQL(
       const resp = await client.get('/api/now/table/sys_hub_flow_logic_definition', {
         params: {
           sysparm_query: 'typeLIKE' + logicType + '^ORnameLIKE' + logicType,
-          sysparm_fields: 'sys_id,type,name,description', sysparm_limit: 5
+          sysparm_fields: defFields, sysparm_limit: 5
         }
       });
       const results = resp.data.result || [];
@@ -494,11 +612,24 @@ async function addFlowLogicViaGraphQL(
         defId = results[0].sys_id;
         defName = results[0].name || logicType;
         defType = results[0].type || logicType;
+        defRecord = results[0];
         steps.def_lookup = { id: results[0].sys_id, type: results[0].type, name: results[0].name, matched: 'LIKE ' + logicType };
       }
     } catch (_) {}
   }
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
+
+  // ELSE/ELSEIF blocks MUST be connected to an If block via connectedTo (the If block's uiUniqueIdentifier)
+  // Unlike other flow logic, Else is NOT a child (parent="") — it uses connectedTo to link to the If block.
+  const upperType = defType.toUpperCase();
+  if ((upperType === 'ELSE' || upperType === 'ELSEIF') && !connectedTo) {
+    return { success: false, error: upperType + ' blocks require connected_to set to the If block\'s uiUniqueIdentifier (returned from the add_flow_logic response for the If block). Else is NOT a child of If — it uses connectedTo to link to it.', steps };
+  }
+
+  // Build full input objects with parameter definitions (matching UI format)
+  const inputResult = await buildFlowLogicInputsForInsert(client, defId, defRecord, inputs);
+  steps.available_inputs = inputResult.inputs.map((i: any) => ({ name: i.name, label: i.parameter?.label }));
+  steps.resolved_inputs = inputResult.resolvedInputs;
 
   // Calculate insertion order
   const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
@@ -509,36 +640,33 @@ async function addFlowLogicViaGraphQL(
     ' actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
 
-  // Build flow logic input objects (for INSERT — matching UI format with id, name, value, parameter)
-  var logicInputObjects: any[] = [];
-  if (inputs && Object.keys(inputs).length > 0) {
-    logicInputObjects = Object.entries(inputs).map(function ([name, value]) {
-      return {
-        name: name,
-        value: { schemaless: false, schemalessValue: '', value: String(value) }
-      };
-    });
+  // Build the insert object — include connectedTo when linking Else to an If block
+  var insertObj: any = {
+    order: String(resolvedOrder),
+    uiUniqueIdentifier: uuid,
+    parent: parentUiId || '',
+    metadata: '{"predicates":[]}',
+    flowSysId: flowId,
+    generationSource: '',
+    definitionId: defId,
+    type: 'flowlogic',
+    parentUiId: parentUiId || '',
+    inputs: inputResult.inputs,
+    outputsToAssign: [],
+    flowLogicDefinition: inputResult.flowLogicDefinition
+  };
+  if (connectedTo) {
+    insertObj.connectedTo = connectedTo;
   }
 
   var flowPatch: any = {
     flowId: flowId,
     flowLogics: {
-      insert: [{
-        order: String(resolvedOrder),
-        uiUniqueIdentifier: uuid,
-        parent: parentUiId || '',
-        metadata: '{"predicates":[]}',
-        flowSysId: flowId,
-        generationSource: '',
-        definitionId: defId,
-        type: 'flowlogic',
-        parentUiId: parentUiId || '',
-        inputs: logicInputObjects
-      }]
+      insert: [insertObj]
     }
   };
 
-  // Add parent flow logic update signal
+  // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
     flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }];
   }
@@ -546,10 +674,11 @@ async function addFlowLogicViaGraphQL(
   try {
     const result = await executeFlowPatchMutation(client, flowPatch, logicResponseFields);
     const logicId = result?.flowLogics?.inserts?.[0]?.sysId;
-    steps.insert = { success: !!logicId, logicId, uuid };
+    const returnedUuid = result?.flowLogics?.inserts?.[0]?.uiUniqueIdentifier || uuid;
+    steps.insert = { success: !!logicId, logicId, uuid: returnedUuid };
     if (!logicId) return { success: false, steps, error: 'GraphQL flow logic INSERT returned no ID' };
 
-    return { success: true, logicId, steps };
+    return { success: true, logicId, uiUniqueIdentifier: returnedUuid, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
     return { success: false, steps, error: 'GraphQL flow logic INSERT failed: ' + e.message };
@@ -925,7 +1054,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       logic_type: {
         type: 'string',
-        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Common values: IF, FOR_EACH, DO_UNTIL, SWITCH. Note: IF does NOT require an Else block — if the condition is false the flow simply continues to the next step. Only add Else if explicitly requested.'
+        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Common values: IF, ELSE, FOR_EACH, DO_UNTIL, SWITCH. IMPORTANT: ELSE blocks require connected_to set to the If block\'s uiUniqueIdentifier. IF does NOT require an Else block — only add Else if explicitly requested.'
       },
       logic_inputs: {
         type: 'object',
@@ -933,7 +1062,11 @@ export const toolDefinition: MCPToolDefinition = {
       },
       parent_ui_id: {
         type: 'string',
-        description: 'Parent UI unique identifier for nesting elements inside flow logic blocks (e.g. placing actions/subflows inside an If block)'
+        description: 'Parent UI unique identifier for nesting elements inside flow logic blocks. REQUIRED for placing actions/subflows inside an If/Else block — set to the If/Else block\'s uiUniqueIdentifier from its add_flow_logic response.'
+      },
+      connected_to: {
+        type: 'string',
+        description: 'REQUIRED for ELSE blocks: the uiUniqueIdentifier of the If block this Else is connected to. Unlike parent_ui_id (which nests elements inside a block), connected_to links sibling blocks like Else to their If. Get this value from the add_flow_logic response for the If block.'
       },
       subflow_id: {
         type: 'string',
@@ -1900,8 +2033,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addLogicInputs = args.logic_inputs || {};
         var addLogicOrder = args.order;
         var addLogicParentUiId = args.parent_ui_id || '';
+        var addLogicConnectedTo = args.connected_to || '';
 
-        var addLogicResult = await addFlowLogicViaGraphQL(client, addLogicFlowId, addLogicType, addLogicInputs, addLogicOrder, addLogicParentUiId);
+        var addLogicResult = await addFlowLogicViaGraphQL(client, addLogicFlowId, addLogicType, addLogicInputs, addLogicOrder, addLogicParentUiId, addLogicConnectedTo);
 
         var addLogicSummary = summary();
         if (addLogicResult.success) {
@@ -1909,7 +2043,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             .success('Flow logic added via GraphQL')
             .field('Flow', addLogicFlowId)
             .field('Type', addLogicType)
-            .field('Logic ID', addLogicResult.logicId || 'unknown');
+            .field('Logic ID', addLogicResult.logicId || 'unknown')
+            .field('uiUniqueIdentifier', addLogicResult.uiUniqueIdentifier || 'unknown');
         } else {
           addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
         }
