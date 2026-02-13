@@ -480,7 +480,7 @@ async function addActionViaGraphQL(
   const steps: any = {};
 
   // Dynamically look up action definition in sys_hub_action_type_snapshot
-  // Prefer global/core actions over spoke-specific ones (e.g. core "Update Record" vs SuccessFactors "Update Record")
+  // Prefer global/core actions over spoke-specific ones (e.g. core "Update Record" vs spoke-specific "Update Record")
   const snapshotFields = 'sys_id,internal_name,name,sys_scope,sys_package';
   let actionDefId: string | null = null;
 
@@ -1140,7 +1140,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       spoke: {
         type: 'string',
-        description: 'Spoke/scope filter for action lookup (for add_action). Use to disambiguate when multiple spokes have actions with the same name (e.g. "global" for core actions, "SuccessFactors" for SuccessFactors Spoke actions). Matched against sys_scope and sys_package fields.'
+        description: 'Spoke/scope filter for action lookup (for add_action). Use to disambiguate when multiple spokes have actions with the same name (e.g. "global" for core actions, "spoke-specific" for spoke-specific Spoke actions). Matched against sys_scope and sys_package fields.'
       },
       action_inputs: {
         type: 'object',
