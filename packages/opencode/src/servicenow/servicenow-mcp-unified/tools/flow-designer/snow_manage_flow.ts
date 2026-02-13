@@ -38,19 +38,44 @@ function generateUUID(): string {
   });
 }
 
+/**
+ * Resolve the flow ID(s) that elements might be stored under.
+ * ServiceNow may store the flow sys_id OR the version sys_id in the `flow` field
+ * on sys_hub_action_instance / sys_hub_flow_logic / sys_hub_sub_flow_instance.
+ * Returns an encoded query fragment like "flow=abc^ORflow=def" for use in Table API queries.
+ */
+async function resolveFlowQueryFilter(client: any, flowId: string): Promise<string> {
+  var filter = 'flow=' + flowId;
+  try {
+    var resp = await client.get('/api/now/table/sys_hub_flow_version', {
+      params: {
+        sysparm_query: 'flow=' + flowId + '^ORDERBYDESCsys_created_on',
+        sysparm_fields: 'sys_id',
+        sysparm_limit: 3
+      }
+    });
+    var versions = resp.data.result || [];
+    for (var v of versions) {
+      if (v.sys_id) filter += '^ORflow=' + str(v.sys_id);
+    }
+  } catch (_) {}
+  return filter;
+}
+
 async function getNextOrder(client: any, flowId: string): Promise<number> {
   let maxOrder = 0;
+  var flowFilter = await resolveFlowQueryFilter(client, flowId);
   // Order is global across all elements in the flow (not per-parent)
   for (const table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
     try {
       const resp = await client.get('/api/now/table/' + table, {
         params: {
-          sysparm_query: 'flow=' + flowId + '^ORDERBYDESCorder',
+          sysparm_query: flowFilter + '^ORDERBYDESCorder',
           sysparm_fields: 'order',
           sysparm_limit: 1
         }
       });
-      const order = parseInt(resp.data.result?.[0]?.order || '0', 10);
+      const order = parseInt(str(resp.data.result?.[0]?.order) || '0', 10);
       if (order > maxOrder) maxOrder = order;
     } catch (_) {}
   }
@@ -184,12 +209,13 @@ async function findElementsToReorder(
   var flowLogicUpdates: any[] = [];
   var actionUpdates: any[] = [];
   var subflowUpdates: any[] = [];
+  var flowFilter = await resolveFlowQueryFilter(client, flowId);
 
   // Flow logic blocks
   try {
     var resp = await client.get('/api/now/table/sys_hub_flow_logic', {
       params: {
-        sysparm_query: 'flow=' + flowId + '^order>=' + targetOrder,
+        sysparm_query: flowFilter + '^order>=' + targetOrder,
         sysparm_fields: 'sys_id,order,ui_unique_identifier',
         sysparm_limit: 100
       }
@@ -207,7 +233,7 @@ async function findElementsToReorder(
   try {
     var resp2 = await client.get('/api/now/table/sys_hub_action_instance', {
       params: {
-        sysparm_query: 'flow=' + flowId + '^order>=' + targetOrder,
+        sysparm_query: flowFilter + '^order>=' + targetOrder,
         sysparm_fields: 'sys_id,order,ui_unique_identifier',
         sysparm_limit: 100
       }
@@ -225,7 +251,7 @@ async function findElementsToReorder(
   try {
     var resp3 = await client.get('/api/now/table/sys_hub_sub_flow_instance', {
       params: {
-        sysparm_query: 'flow=' + flowId + '^order>=' + targetOrder,
+        sysparm_query: flowFilter + '^order>=' + targetOrder,
         sysparm_fields: 'sys_id,order,ui_unique_identifier',
         sysparm_limit: 100
       }
@@ -253,6 +279,7 @@ async function calculateInsertOrder(
   explicitOrder?: number
 ): Promise<{ insertOrder: number; reorders: { flowLogicUpdates: any[]; actionUpdates: any[]; subflowUpdates: any[] } }> {
   var noReorders = { flowLogicUpdates: [], actionUpdates: [], subflowUpdates: [] };
+  var flowFilter = await resolveFlowQueryFilter(client, flowId);
 
   // ── Parent specified: ALWAYS compute global order from parent context ──
   // Flow Designer uses GLOBAL ordering for ALL elements (not per-parent).
@@ -262,53 +289,54 @@ async function calculateInsertOrder(
   if (parentUiId) {
     var parentSysId = '';
     var parentOrder = 0;
-    try {
-      var pResp = await client.get('/api/now/table/sys_hub_flow_logic', {
-        params: {
-          sysparm_query: 'flow=' + flowId + '^ui_unique_identifier=' + parentUiId,
-          sysparm_fields: 'sys_id,order',
-          sysparm_limit: 1
+
+    // Look up the parent flow logic record.
+    // Try multiple strategies: the `flow` field may store the version sys_id, not the flow sys_id.
+    // Also support parentUiId being a sys_id (32 hex chars) or a UUID.
+    var parentQueries = [
+      flowFilter + '^ui_unique_identifier=' + parentUiId,
+      'ui_unique_identifier=' + parentUiId,
+    ];
+    if (isSysId(parentUiId)) {
+      parentQueries.unshift('sys_id=' + parentUiId);
+    }
+    for (var pq of parentQueries) {
+      if (parentSysId) break;
+      try {
+        var pResp = await client.get('/api/now/table/sys_hub_flow_logic', {
+          params: { sysparm_query: pq, sysparm_fields: 'sys_id,order', sysparm_limit: 1 }
+        });
+        var found = pResp.data.result?.[0];
+        if (found) {
+          parentSysId = str(found.sys_id);
+          parentOrder = parseInt(str(found.order) || '0', 10);
         }
-      });
-      var found = pResp.data.result?.[0];
-      if (found) {
-        parentSysId = str(found.sys_id);
-        parentOrder = parseInt(str(found.order) || '0', 10);
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
     if (!parentSysId) {
-      // Fallback: append at end
+      // Parent not found via Table API — fallback: append at end using global max order
       var fallbackOrder = await getNextOrder(client, flowId);
       return { insertOrder: fallbackOrder, reorders: noReorders };
     }
 
-    // Find max order of existing children of this parent (query by both sys_id and UUID)
+    // Find max order of existing children of this parent.
+    // Query by parent sys_id, parent UUID, and with/without flow filter to handle all cases.
     var maxChildOrder = parentOrder;
     for (var table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
-      try {
-        var cResp = await client.get('/api/now/table/' + table, {
-          params: {
-            sysparm_query: 'flow=' + flowId + '^parent=' + parentSysId + '^ORDERBYDESCorder',
-            sysparm_fields: 'order',
-            sysparm_limit: 1
-          }
-        });
-        var childOrder = parseInt(str(cResp.data.result?.[0]?.order) || '0', 10);
-        if (childOrder > maxChildOrder) maxChildOrder = childOrder;
-      } catch (_) {}
-      // Also try querying by parent UUID (GraphQL may store UUID in parent field)
-      try {
-        var cResp2 = await client.get('/api/now/table/' + table, {
-          params: {
-            sysparm_query: 'flow=' + flowId + '^parent=' + parentUiId + '^ORDERBYDESCorder',
-            sysparm_fields: 'order',
-            sysparm_limit: 1
-          }
-        });
-        var childOrder2 = parseInt(str(cResp2.data.result?.[0]?.order) || '0', 10);
-        if (childOrder2 > maxChildOrder) maxChildOrder = childOrder2;
-      } catch (_) {}
+      var childQueries = [
+        'parent=' + parentSysId + '^ORDERBYDESCorder',
+        'parent=' + parentUiId + '^ORDERBYDESCorder',
+      ];
+      for (var cq of childQueries) {
+        try {
+          var cResp = await client.get('/api/now/table/' + table, {
+            params: { sysparm_query: cq, sysparm_fields: 'order', sysparm_limit: 1 }
+          });
+          var childOrder = parseInt(str(cResp.data.result?.[0]?.order) || '0', 10);
+          if (childOrder > maxChildOrder) maxChildOrder = childOrder;
+        } catch (_) {}
+      }
     }
 
     // Insert after last child; bump everything at that position
