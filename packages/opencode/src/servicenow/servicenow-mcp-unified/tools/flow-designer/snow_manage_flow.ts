@@ -62,63 +62,32 @@ async function addTriggerViaGraphQL(
 ): Promise<{ success: boolean; triggerId?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
-  const triggerMap: Record<string, { type: string; name: string; triggerType: string; defNames: string[] }> = {
-    'record_created': { type: 'record_create', name: 'Created', triggerType: 'Record',
-      defNames: ['sn_fd.trigger.record_create', 'global.sn_fd.trigger.record_create', 'sn_fd.trigger.record_created', 'global.sn_fd.trigger.record_created'] },
-    'record_updated': { type: 'record_update', name: 'Updated', triggerType: 'Record',
-      defNames: ['sn_fd.trigger.record_update', 'global.sn_fd.trigger.record_update', 'sn_fd.trigger.record_updated', 'global.sn_fd.trigger.record_updated'] },
-    'record_create_or_update': { type: 'record_create_or_update', name: 'Created or Updated', triggerType: 'Record',
-      defNames: ['sn_fd.trigger.record_create_or_update', 'global.sn_fd.trigger.record_create_or_update'] },
-    'scheduled': { type: 'scheduled', name: 'Scheduled', triggerType: 'Scheduled',
-      defNames: ['sn_fd.trigger.scheduled', 'global.sn_fd.trigger.scheduled'] },
+  const triggerMap: Record<string, { type: string; name: string; triggerType: string }> = {
+    'record_created': { type: 'record_create', name: 'Created', triggerType: 'Record' },
+    'record_updated': { type: 'record_update', name: 'Updated', triggerType: 'Record' },
+    'record_create_or_update': { type: 'record_create_or_update', name: 'Created or Updated', triggerType: 'Record' },
+    'scheduled': { type: 'scheduled', name: 'Scheduled', triggerType: 'Scheduled' },
   };
 
   const config = triggerMap[triggerType] || triggerMap['record_create_or_update'];
 
+  // Trigger definitions live in sys_hub_trigger_definition, keyed by `type` field
   let trigDefId: string | null = null;
-  const defTables = ['sys_hub_action_type_definition', 'sys_hub_trigger_definition'];
-  for (const defTable of defTables) {
-    if (trigDefId) break;
-    for (const defName of config.defNames) {
-      try {
-        const resp = await client.get('/api/now/table/' + defTable, {
-          params: { sysparm_query: 'internal_name=' + defName, sysparm_fields: 'sys_id', sysparm_limit: 1 }
-        });
-        trigDefId = resp.data.result?.[0]?.sys_id || null;
-        if (trigDefId) break;
-      } catch (_) {}
-    }
-  }
-  if (!trigDefId) {
-    for (const defTable of defTables) {
-      if (trigDefId) break;
-      try {
-        const resp = await client.get('/api/now/table/' + defTable, {
-          params: {
-            sysparm_query: 'internal_nameLIKEsn_fd.trigger.' + config.type,
-            sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 10
-          }
-        });
-        for (const r of (resp.data.result || [])) {
-          const iname = r.internal_name || '';
-          if (iname.indexOf('trigger') > -1 && iname.indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
-        }
-      } catch (_) {}
-    }
-  }
+  try {
+    const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
+      params: { sysparm_query: 'type=' + config.type, sysparm_fields: 'sys_id,type,name', sysparm_limit: 1 }
+    });
+    trigDefId = resp.data.result?.[0]?.sys_id || null;
+    steps.def_lookup_primary = resp.data.result?.[0] || null;
+  } catch (_) {}
+  // Fallback: search by name
   if (!trigDefId) {
     try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
-        params: {
-          sysparm_query: 'internal_nameLIKEtrigger^internal_nameLIKE' + config.type,
-          sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 10
-        }
+      const resp = await client.get('/api/now/table/sys_hub_trigger_definition', {
+        params: { sysparm_query: 'name=' + config.name, sysparm_fields: 'sys_id,type,name', sysparm_limit: 1 }
       });
-      steps.fallback_candidates = (resp.data.result || []).map((r: any) => ({ sys_id: r.sys_id, internal_name: r.internal_name, name: r.name }));
-      for (const r of (resp.data.result || [])) {
-        const iname = r.internal_name || '';
-        if (iname.indexOf(config.type) > -1) { trigDefId = r.sys_id; break; }
-      }
+      trigDefId = resp.data.result?.[0]?.sys_id || null;
+      steps.def_lookup_fallback = resp.data.result?.[0] || null;
     } catch (_) {}
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
