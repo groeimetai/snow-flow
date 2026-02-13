@@ -38,6 +38,25 @@ function generateUUID(): string {
   });
 }
 
+async function getNextOrder(client: any, flowId: string): Promise<number> {
+  let maxOrder = 0;
+  // Query all element types that have an order field on this flow
+  for (const table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
+    try {
+      const resp = await client.get('/api/now/table/' + table, {
+        params: {
+          sysparm_query: 'flow=' + flowId + '^ORDERBYDESCorder',
+          sysparm_fields: 'order',
+          sysparm_limit: 1
+        }
+      });
+      const order = parseInt(resp.data.result?.[0]?.order || '0', 10);
+      if (order > maxOrder) maxOrder = order;
+    } catch (_) {}
+  }
+  return maxOrder + 1;
+}
+
 async function executeFlowPatchMutation(
   client: any,
   flowPatch: any,
@@ -183,6 +202,7 @@ async function addActionViaGraphQL(
   actionType: string,
   actionName: string,
   inputs?: Record<string, string>,
+  parentUiId?: string,
   order?: number
 ): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
   const steps: any = {};
@@ -265,6 +285,7 @@ async function addActionViaGraphQL(
   }
 
   const uuid = generateUUID();
+  const resolvedOrder = order || await getNextOrder(client, flowId);
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
@@ -275,11 +296,11 @@ async function addActionViaGraphQL(
           metadata: '{"predicates":[]}',
           flowSysId: flowId,
           generationSource: '',
-          order: String(order || 1),
-          parent: '',
+          order: String(resolvedOrder),
+          parent: parentUiId || '',
           uiUniqueIdentifier: uuid,
           type: 'action',
-          parentUiId: '',
+          parentUiId: parentUiId || '',
           inputs: []
         }]
       }
@@ -365,13 +386,14 @@ async function addFlowLogicViaGraphQL(
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
 
   const uuid = generateUUID();
+  const resolvedOrder = order || await getNextOrder(client, flowId);
   const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
       flowId: flowId,
       flowLogics: {
         insert: [{
-          order: String(order || 1),
+          order: String(resolvedOrder),
           uiUniqueIdentifier: uuid,
           parent: '',
           metadata: '{"predicates":[]}',
@@ -472,6 +494,7 @@ async function addSubflowCallViaGraphQL(
   if (!subflowName) subflowName = subflowId;
 
   const uuid = generateUUID();
+  const resolvedOrder = order || await getNextOrder(client, flowId);
   const subflowResponseFields = 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
     const result = await executeFlowPatchMutation(client, {
@@ -482,7 +505,7 @@ async function addSubflowCallViaGraphQL(
           flowSysId: flowId,
           generationSource: '',
           name: subflowName,
-          order: String(order || 1),
+          order: String(resolvedOrder),
           parent: parentUiId || '',
           subflowSysId: subflowSysId,
           uiUniqueIdentifier: uuid,
@@ -796,6 +819,10 @@ export const toolDefinition: MCPToolDefinition = {
       element_id: {
         type: 'string',
         description: 'Element sys_id or uiUniqueIdentifier for update_*/delete_* actions. For delete_* this can also be a comma-separated list of IDs.'
+      },
+      order: {
+        type: 'number',
+        description: 'Position/order of the element in the flow (for add_* actions). Auto-detected if not provided (appends after last element).'
       },
       type: {
         type: 'string',
@@ -1716,7 +1743,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addActName = args.action_name || args.name || addActType;
         var addActInputs = args.action_inputs || args.inputs || {};
 
-        var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs);
+        var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs, args.parent_ui_id, args.order);
 
         var addActSummary = summary();
         if (addActResult.success) {
