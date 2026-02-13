@@ -474,7 +474,8 @@ async function addActionViaGraphQL(
   actionName: string,
   inputs?: Record<string, string>,
   parentUiId?: string,
-  order?: number
+  order?: number,
+  spoke?: string
 ): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
@@ -483,10 +484,20 @@ async function addActionViaGraphQL(
   const snapshotFields = 'sys_id,internal_name,name,sys_scope,sys_package';
   let actionDefId: string | null = null;
 
-  // Helper: pick the best match from candidates — prefer global scope
+  // Helper: pick the best match from candidates — prefer spoke filter, then global scope
   const pickBest = (candidates: any[]): any => {
     if (!candidates || candidates.length === 0) return null;
     if (candidates.length === 1) return candidates[0];
+    // If spoke filter is specified, match against scope or package name
+    if (spoke) {
+      var spokeLC = spoke.toLowerCase();
+      var spokeMatch = candidates.find((c: any) =>
+        str(c.sys_scope).toLowerCase().includes(spokeLC) ||
+        str(c.sys_package).toLowerCase().includes(spokeLC) ||
+        str(c.internal_name).toLowerCase().includes(spokeLC)
+      );
+      if (spokeMatch) return spokeMatch;
+    }
     // Prefer global scope
     var global = candidates.find((c: any) => str(c.sys_scope) === 'global' || str(c.sys_scope) === 'rhino.global');
     if (global) return global;
@@ -1126,6 +1137,10 @@ export const toolDefinition: MCPToolDefinition = {
       action_name: {
         type: 'string',
         description: 'Display name for the action (for add_action)'
+      },
+      spoke: {
+        type: 'string',
+        description: 'Spoke/scope filter for action lookup (for add_action). Use to disambiguate when multiple spokes have actions with the same name (e.g. "global" for core actions, "SuccessFactors" for SuccessFactors Spoke actions). Matched against sys_scope and sys_package fields.'
       },
       action_inputs: {
         type: 'object',
@@ -2020,7 +2035,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addActName = args.action_name || args.name || addActType;
         var addActInputs = args.action_inputs || args.inputs || {};
 
-        var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs, args.parent_ui_id, args.order);
+        var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs, args.parent_ui_id, args.order, args.spoke);
 
         var addActSummary = summary();
         if (addActResult.success) {
