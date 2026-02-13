@@ -413,6 +413,114 @@ async function addFlowLogicViaGraphQL(
   }
 }
 
+// ── SUBFLOW CALL (invoke a subflow as a step) ────────────────────────
+
+async function addSubflowCallViaGraphQL(
+  client: any,
+  flowId: string,
+  subflowId: string,
+  inputs?: Record<string, string>,
+  order?: number,
+  parentUiId?: string
+): Promise<{ success: boolean; callId?: string; steps?: any; error?: string }> {
+  const steps: any = {};
+
+  // Resolve subflow: look up by sys_id, name, or internal_name in sys_hub_flow
+  let subflowSysId = isSysId(subflowId) ? subflowId : null;
+  let subflowName = '';
+  if (!subflowSysId) {
+    for (const field of ['name', 'internal_name']) {
+      if (subflowSysId) break;
+      try {
+        const resp = await client.get('/api/now/table/sys_hub_flow', {
+          params: {
+            sysparm_query: field + '=' + subflowId + '^type=subflow',
+            sysparm_fields: 'sys_id,name,internal_name',
+            sysparm_limit: 1
+          }
+        });
+        const found = resp.data.result?.[0];
+        if (found?.sys_id) {
+          subflowSysId = found.sys_id;
+          subflowName = found.name || subflowId;
+          steps.subflow_lookup = { id: found.sys_id, name: found.name, internal_name: found.internal_name, matched: field + '=' + subflowId };
+        }
+      } catch (_) {}
+    }
+    // LIKE fallback
+    if (!subflowSysId) {
+      try {
+        const resp = await client.get('/api/now/table/sys_hub_flow', {
+          params: {
+            sysparm_query: 'nameLIKE' + subflowId + '^type=subflow',
+            sysparm_fields: 'sys_id,name,internal_name',
+            sysparm_limit: 5
+          }
+        });
+        const results = resp.data.result || [];
+        steps.subflow_lookup_candidates = results.map((r: any) => ({ sys_id: r.sys_id, name: r.name, internal_name: r.internal_name }));
+        if (results[0]?.sys_id) {
+          subflowSysId = results[0].sys_id;
+          subflowName = results[0].name || subflowId;
+          steps.subflow_lookup = { id: results[0].sys_id, name: results[0].name, matched: 'LIKE ' + subflowId };
+        }
+      } catch (_) {}
+    }
+  }
+  if (!subflowSysId) return { success: false, error: 'Subflow not found: ' + subflowId, steps };
+
+  if (!subflowName) subflowName = subflowId;
+
+  const uuid = generateUUID();
+  const subflowResponseFields = 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+  try {
+    const result = await executeFlowPatchMutation(client, {
+      flowId: flowId,
+      subflows: {
+        insert: [{
+          metadata: '{"predicates":[]}',
+          flowSysId: flowId,
+          generationSource: '',
+          name: subflowName,
+          order: String(order || 1),
+          parent: parentUiId || '',
+          subflowSysId: subflowSysId,
+          uiUniqueIdentifier: uuid,
+          type: 'subflow',
+          parentUiId: parentUiId || '',
+          inputs: []
+        }]
+      }
+    }, subflowResponseFields);
+
+    const callId = result?.subflows?.inserts?.[0]?.sysId;
+    steps.insert = { success: !!callId, callId, uuid };
+    if (!callId) return { success: false, steps, error: 'GraphQL subflow INSERT returned no ID' };
+
+    // Update with input values if provided
+    if (inputs && Object.keys(inputs).length > 0) {
+      const updateInputs = Object.entries(inputs).map(([name, value]) => ({
+        name,
+        value: { schemaless: false, schemalessValue: '', value: String(value) }
+      }));
+      try {
+        await executeFlowPatchMutation(client, {
+          flowId: flowId,
+          subflows: { update: [{ uiUniqueIdentifier: uuid, type: 'subflow', inputs: updateInputs }] }
+        }, subflowResponseFields);
+        steps.value_update = { success: true, inputs: updateInputs.map(i => i.name) };
+      } catch (e: any) {
+        steps.value_update = { success: false, error: e.message };
+      }
+    }
+
+    return { success: true, callId, steps };
+  } catch (e: any) {
+    steps.insert = { success: false, error: e.message };
+    return { success: false, steps, error: 'GraphQL subflow INSERT failed: ' + e.message };
+  }
+}
+
 async function createFlowViaProcessFlowAPI(
   client: any,
   params: {
@@ -521,8 +629,8 @@ export const toolDefinition: MCPToolDefinition = {
     properties: {
       action: {
         type: 'string',
-        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'update_trigger', 'add_action', 'add_flow_logic'],
-        description: 'Action to perform. Use add_trigger/add_action/add_flow_logic to add elements, update_trigger to change an existing trigger. Flow logic types: IF, FOR_EACH, DO_UNTIL, SWITCH.'
+        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'update_trigger', 'add_action', 'add_flow_logic', 'add_subflow'],
+        description: 'Action to perform. Use add_trigger/add_action/add_flow_logic/add_subflow to add elements, update_trigger to change an existing trigger. Flow logic types: IF, FOR_EACH, DO_UNTIL, SWITCH. add_subflow calls an existing subflow as a step.'
       },
 
       flow_id: {
@@ -618,7 +726,11 @@ export const toolDefinition: MCPToolDefinition = {
       },
       parent_ui_id: {
         type: 'string',
-        description: 'Parent UI unique identifier for nesting flow logic blocks (e.g. placing actions inside an If block)'
+        description: 'Parent UI unique identifier for nesting elements inside flow logic blocks (e.g. placing actions/subflows inside an If block)'
+      },
+      subflow_id: {
+        type: 'string',
+        description: 'Subflow sys_id or name to call as a step (for add_subflow action). Looked up in sys_hub_flow where type=subflow.'
       },
       type: {
         type: 'string',
@@ -1590,6 +1702,40 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return addLogicResult.success
           ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult }, {}, addLogicSummary.build())
           : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // ADD_SUBFLOW — call an existing subflow as a step in the flow
+      // ────────────────────────────────────────────────────────────────
+      case 'add_subflow': {
+        if (!args.flow_id) {
+          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for add_subflow');
+        }
+        if (!args.subflow_id) {
+          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'subflow_id is required for add_subflow (sys_id or name of the subflow to call)');
+        }
+        var addSubFlowId = await resolveFlowId(client, args.flow_id);
+        var addSubSubflowId = args.subflow_id;
+        var addSubInputs = args.action_inputs || args.inputs || {};
+        var addSubOrder = args.order;
+        var addSubParentUiId = args.parent_ui_id || '';
+
+        var addSubResult = await addSubflowCallViaGraphQL(client, addSubFlowId, addSubSubflowId, addSubInputs, addSubOrder, addSubParentUiId);
+
+        var addSubSummary = summary();
+        if (addSubResult.success) {
+          addSubSummary
+            .success('Subflow call added via GraphQL')
+            .field('Flow', addSubFlowId)
+            .field('Subflow', addSubSubflowId)
+            .field('Call ID', addSubResult.callId || 'unknown');
+        } else {
+          addSubSummary.error('Failed to add subflow call: ' + (addSubResult.error || 'unknown'));
+        }
+
+        return addSubResult.success
+          ? createSuccessResult({ action: 'add_subflow', ...addSubResult }, {}, addSubSummary.build())
+          : createErrorResult(addSubResult.error || 'Failed to add subflow call');
       }
 
       default:
