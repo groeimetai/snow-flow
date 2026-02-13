@@ -72,6 +72,239 @@ async function executeFlowPatchMutation(
   return resp.data?.data?.global?.snFlowDesigner?.flow || resp.data;
 }
 
+// Type label mapping for parameter definitions
+const TYPE_LABELS: Record<string, string> = {
+  string: 'String', integer: 'Integer', boolean: 'True/False', choice: 'Choice',
+  reference: 'Reference', object: 'Object', glide_date_time: 'Date/Time',
+  glide_date: 'Date', decimal: 'Decimal', conditions: 'Conditions',
+  glide_list: 'List', html: 'HTML', script: 'Script', url: 'URL',
+};
+
+/**
+ * Build full action input objects matching the Flow Designer UI format.
+ * The UI sends inputs WITH parameter definitions in the INSERT mutation (not empty inputs + separate UPDATE).
+ */
+async function buildActionInputsForInsert(
+  client: any,
+  actionDefId: string,
+  userValues?: Record<string, string>
+): Promise<{ inputs: any[]; resolvedInputs: Record<string, string>; actionParams: any[] }> {
+  // Query sys_hub_action_input with full field set
+  var actionParams: any[] = [];
+  try {
+    var resp = await client.get('/api/now/table/sys_hub_action_input', {
+      params: {
+        sysparm_query: 'model=' + actionDefId,
+        sysparm_fields: 'sys_id,element,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,extended,data_structure,reference,reference_display,ref_qual,choice_option,table_name,column_name,use_dependent,dependent_on,show_ref_finder,local,attributes,sys_class_name',
+        sysparm_display_value: 'false',
+        sysparm_limit: 50
+      }
+    });
+    actionParams = resp.data.result || [];
+  } catch (_) {}
+
+  // Fuzzy-match user-provided values to actual field names
+  var resolvedInputs: Record<string, string> = {};
+  if (userValues) {
+    var paramElements = actionParams.map(function (p: any) { return p.element; });
+    for (var [key, value] of Object.entries(userValues)) {
+      if (paramElements.includes(key)) {
+        resolvedInputs[key] = value;
+        continue;
+      }
+      var match = actionParams.find(function (p: any) {
+        return p.element.endsWith('_' + key) || p.element === key || (p.label || '').toLowerCase() === key.toLowerCase();
+      });
+      if (match) resolvedInputs[match.element] = value;
+      else resolvedInputs[key] = value;
+    }
+  }
+
+  // Build full input objects with parameter definitions (matching UI format)
+  var inputs = actionParams.map(function (rec: any) {
+    var paramType = rec.internal_type || 'string';
+    var userVal = resolvedInputs[rec.element] || '';
+    return {
+      id: rec.sys_id,
+      name: rec.element,
+      children: [],
+      displayValue: { value: '' },
+      value: { schemaless: false, schemalessValue: '', value: userVal },
+      parameter: {
+        id: rec.sys_id,
+        label: rec.label || rec.element,
+        name: rec.element,
+        type: paramType,
+        type_label: TYPE_LABELS[paramType] || paramType.charAt(0).toUpperCase() + paramType.slice(1),
+        hint: rec.hint || '',
+        order: parseInt(rec.order || '0', 10),
+        extended: rec.extended === 'true',
+        mandatory: rec.mandatory === 'true',
+        readonly: rec.read_only === 'true',
+        maxsize: parseInt(rec.max_length || '8000', 10),
+        data_structure: rec.data_structure || '',
+        reference: rec.reference || '',
+        reference_display: rec.reference_display || '',
+        ref_qual: rec.ref_qual || '',
+        choiceOption: rec.choice_option || '',
+        table: rec.table_name || '',
+        columnName: rec.column_name || '',
+        defaultValue: rec.default_value || '',
+        use_dependent: rec.use_dependent === 'true',
+        dependent_on: rec.dependent_on || '',
+        show_ref_finder: rec.show_ref_finder === 'true',
+        local: rec.local === 'true',
+        attributes: rec.attributes || '',
+        sys_class_name: rec.sys_class_name || '',
+        children: []
+      }
+    };
+  });
+
+  return { inputs, resolvedInputs, actionParams };
+}
+
+/**
+ * Find all flow elements at order >= targetOrder and build GraphQL update payloads to bump their order by 1.
+ * This is needed when inserting an element inside a flow logic block (e.g. action inside If block).
+ * The UI does this to keep the Else block (and other subsequent elements) after the new element.
+ */
+async function findElementsToReorder(
+  client: any,
+  flowId: string,
+  targetOrder: number
+): Promise<{ flowLogicUpdates: any[]; actionUpdates: any[]; subflowUpdates: any[] }> {
+  var flowLogicUpdates: any[] = [];
+  var actionUpdates: any[] = [];
+  var subflowUpdates: any[] = [];
+
+  // Flow logic blocks
+  try {
+    var resp = await client.get('/api/now/table/sys_hub_flow_logic', {
+      params: {
+        sysparm_query: 'flow=' + flowId + '^order>=' + targetOrder,
+        sysparm_fields: 'sys_id,order,ui_unique_identifier',
+        sysparm_limit: 100
+      }
+    });
+    for (var rec of (resp.data.result || [])) {
+      var uuid = rec.ui_unique_identifier;
+      var curOrder = parseInt(rec.order || '0', 10);
+      if (uuid && curOrder >= targetOrder) {
+        flowLogicUpdates.push({ order: String(curOrder + 1), uiUniqueIdentifier: uuid, type: 'flowlogic' });
+      }
+    }
+  } catch (_) {}
+
+  // Action instances
+  try {
+    var resp2 = await client.get('/api/now/table/sys_hub_action_instance', {
+      params: {
+        sysparm_query: 'flow=' + flowId + '^order>=' + targetOrder,
+        sysparm_fields: 'sys_id,order,ui_unique_identifier',
+        sysparm_limit: 100
+      }
+    });
+    for (var rec2 of (resp2.data.result || [])) {
+      var uuid2 = rec2.ui_unique_identifier;
+      var curOrder2 = parseInt(rec2.order || '0', 10);
+      if (uuid2 && curOrder2 >= targetOrder) {
+        actionUpdates.push({ order: String(curOrder2 + 1), uiUniqueIdentifier: uuid2, type: 'action' });
+      }
+    }
+  } catch (_) {}
+
+  // Subflow instances
+  try {
+    var resp3 = await client.get('/api/now/table/sys_hub_sub_flow_instance', {
+      params: {
+        sysparm_query: 'flow=' + flowId + '^order>=' + targetOrder,
+        sysparm_fields: 'sys_id,order,ui_unique_identifier',
+        sysparm_limit: 100
+      }
+    });
+    for (var rec3 of (resp3.data.result || [])) {
+      var uuid3 = rec3.ui_unique_identifier;
+      var curOrder3 = parseInt(rec3.order || '0', 10);
+      if (uuid3 && curOrder3 >= targetOrder) {
+        subflowUpdates.push({ order: String(curOrder3 + 1), uiUniqueIdentifier: uuid3, type: 'subflow' });
+      }
+    }
+  } catch (_) {}
+
+  return { flowLogicUpdates, actionUpdates, subflowUpdates };
+}
+
+/**
+ * Calculate the insert order for an element being added inside a parent flow logic block.
+ * Returns the order right after the last child of the parent, and reorder info for elements that need bumping.
+ */
+async function calculateInsertOrder(
+  client: any,
+  flowId: string,
+  parentUiId?: string,
+  explicitOrder?: number
+): Promise<{ insertOrder: number; reorders: { flowLogicUpdates: any[]; actionUpdates: any[]; subflowUpdates: any[] } }> {
+  var noReorders = { flowLogicUpdates: [], actionUpdates: [], subflowUpdates: [] };
+
+  // Explicit order: bump elements at that position
+  if (explicitOrder) {
+    var reorders = await findElementsToReorder(client, flowId, explicitOrder);
+    return { insertOrder: explicitOrder, reorders };
+  }
+
+  // No parent: append at end, no bumping needed
+  if (!parentUiId) {
+    var nextOrder = await getNextOrder(client, flowId);
+    return { insertOrder: nextOrder, reorders: noReorders };
+  }
+
+  // Parent specified: find parent's order, then find max child order
+  var parentSysId = '';
+  var parentOrder = 0;
+  try {
+    var pResp = await client.get('/api/now/table/sys_hub_flow_logic', {
+      params: {
+        sysparm_query: 'flow=' + flowId + '^ui_unique_identifier=' + parentUiId,
+        sysparm_fields: 'sys_id,order',
+        sysparm_limit: 1
+      }
+    });
+    var found = pResp.data.result?.[0];
+    if (found) {
+      parentSysId = found.sys_id;
+      parentOrder = parseInt(found.order || '0', 10);
+    }
+  } catch (_) {}
+
+  if (!parentSysId) {
+    // Fallback: append at end
+    var fallbackOrder = await getNextOrder(client, flowId);
+    return { insertOrder: fallbackOrder, reorders: noReorders };
+  }
+
+  // Find max order of existing children of this parent
+  var maxChildOrder = parentOrder;
+  for (var table of ['sys_hub_action_instance', 'sys_hub_flow_logic', 'sys_hub_sub_flow_instance']) {
+    try {
+      var cResp = await client.get('/api/now/table/' + table, {
+        params: {
+          sysparm_query: 'flow=' + flowId + '^parent=' + parentSysId + '^ORDERBYDESCorder',
+          sysparm_fields: 'order',
+          sysparm_limit: 1
+        }
+      });
+      var childOrder = parseInt(cResp.data.result?.[0]?.order || '0', 10);
+      if (childOrder > maxChildOrder) maxChildOrder = childOrder;
+    } catch (_) {}
+  }
+
+  // Insert after last child; bump everything at that position
+  var insertOrder = maxChildOrder + 1;
+  var reorderInfo = await findElementsToReorder(client, flowId, insertOrder);
+  return { insertOrder: insertOrder, reorders: reorderInfo };
+}
+
 async function addTriggerViaGraphQL(
   client: any,
   flowId: string,
@@ -209,7 +442,6 @@ async function addActionViaGraphQL(
 
   // Dynamically look up action definition in sys_hub_action_type_snapshot
   let actionDefId: string | null = null;
-  // Try exact match on internal_name first, then name
   for (const field of ['internal_name', 'name']) {
     if (actionDefId) break;
     try {
@@ -223,7 +455,6 @@ async function addActionViaGraphQL(
       }
     } catch (_) {}
   }
-  // Fallback: LIKE search on both fields
   if (!actionDefId) {
     try {
       const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
@@ -242,53 +473,29 @@ async function addActionViaGraphQL(
   }
   if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType, steps };
 
-  // Look up available input fields from sys_hub_action_input
-  let actionParams: { element: string; label: string; mandatory: boolean; default_value: string; internal_type: string }[] = [];
-  try {
-    const resp = await client.get('/api/now/table/sys_hub_action_input', {
-      params: {
-        sysparm_query: 'model=' + actionDefId,
-        sysparm_fields: 'sys_id,element,label,mandatory,default_value,internal_type',
-        sysparm_display_value: 'false',
-        sysparm_limit: 50
-      }
-    });
-    actionParams = (resp.data.result || []).map((r: any) => ({
-      element: r.element,
-      label: r.label,
-      mandatory: r.mandatory === 'true' || r.mandatory === true,
-      default_value: r.default_value || '',
-      internal_type: r.internal_type || ''
-    }));
-    steps.available_inputs = actionParams;
-  } catch (_) {}
+  // Build full input objects with parameter definitions (matching UI format)
+  const inputResult = await buildActionInputsForInsert(client, actionDefId, inputs);
+  steps.available_inputs = inputResult.actionParams.map((p: any) => ({ element: p.element, label: p.label }));
+  steps.resolved_inputs = inputResult.resolvedInputs;
 
-  // Match provided inputs to actual field names (fuzzy: "message" → "log_message", "level" → "log_level")
-  const resolvedInputs: Record<string, string> = {};
-  if (inputs) {
-    const paramElements = actionParams.map(p => p.element);
-    for (const [key, value] of Object.entries(inputs)) {
-      // Exact match first
-      if (paramElements.includes(key)) {
-        resolvedInputs[key] = value;
-        continue;
-      }
-      // Try to find a param whose element ends with the key or contains it
-      const match = actionParams.find(p => p.element.endsWith('_' + key) || p.element === key || p.label.toLowerCase() === key.toLowerCase());
-      if (match) {
-        resolvedInputs[match.element] = value;
-      } else {
-        resolvedInputs[key] = value;
-      }
-    }
-    steps.resolved_inputs = resolvedInputs;
+  // Calculate insertion order and find elements that need reordering
+  const orderCalc = await calculateInsertOrder(client, flowId, parentUiId, order);
+  const resolvedOrder = orderCalc.insertOrder;
+  steps.insert_order = resolvedOrder;
+  if (orderCalc.reorders.flowLogicUpdates.length > 0 || orderCalc.reorders.actionUpdates.length > 0 || orderCalc.reorders.subflowUpdates.length > 0) {
+    steps.reordered_elements = {
+      flowLogics: orderCalc.reorders.flowLogicUpdates.length,
+      actions: orderCalc.reorders.actionUpdates.length,
+      subflows: orderCalc.reorders.subflowUpdates.length
+    };
   }
 
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId);
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
-    (parentUiId ? ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' : '');
-  // Build mutation payload — when nesting inside a flow logic block, also update the parent
+    ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
+    ' subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+
+  // Build mutation payload — single INSERT with full inputs (matching UI behavior)
   const flowPatch: any = {
     flowId: flowId,
     actions: {
@@ -302,35 +509,35 @@ async function addActionViaGraphQL(
         uiUniqueIdentifier: uuid,
         type: 'action',
         parentUiId: parentUiId || '',
-        inputs: []
+        inputs: inputResult.inputs
       }]
     }
   };
+
+  // Merge reorder updates + parent flow logic update into the mutation
+  var flowLogicUpdates: any[] = orderCalc.reorders.flowLogicUpdates.slice();
   if (parentUiId) {
-    flowPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }] };
+    // Add parent update (no order change, just signals the parent was modified)
+    // Avoid duplicating if the parent is already in the reorder list
+    var parentAlreadyIncluded = flowLogicUpdates.some(function (u: any) { return u.uiUniqueIdentifier === parentUiId; });
+    if (!parentAlreadyIncluded) {
+      flowLogicUpdates.push({ uiUniqueIdentifier: parentUiId, type: 'flowlogic' });
+    }
   }
+  if (flowLogicUpdates.length > 0) {
+    flowPatch.flowLogics = { update: flowLogicUpdates };
+  }
+  if (orderCalc.reorders.actionUpdates.length > 0) {
+    flowPatch.actions.update = orderCalc.reorders.actionUpdates;
+  }
+  if (orderCalc.reorders.subflowUpdates.length > 0) {
+    flowPatch.subflows = { update: orderCalc.reorders.subflowUpdates };
+  }
+
   try {
     const result = await executeFlowPatchMutation(client, flowPatch, actionResponseFields);
-
     const actionId = result?.actions?.inserts?.[0]?.sysId;
     steps.insert = { success: !!actionId, actionId, uuid };
-
-    if (actionId && Object.keys(resolvedInputs).length > 0) {
-      const updateInputs = Object.entries(resolvedInputs).map(([name, value]) => ({
-        name,
-        value: { schemaless: false, schemalessValue: '', value: String(value) }
-      }));
-      try {
-        await executeFlowPatchMutation(client, {
-          flowId: flowId,
-          actions: { update: [{ uiUniqueIdentifier: uuid, type: 'action', inputs: updateInputs }] }
-        }, actionResponseFields);
-        steps.value_update = { success: true, inputs: updateInputs.map(i => i.name) };
-      } catch (e: any) {
-        steps.value_update = { success: false, error: e.message };
-      }
-    }
-
     return { success: true, actionId: actionId || undefined, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
@@ -391,48 +598,62 @@ async function addFlowLogicViaGraphQL(
   }
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
 
-  const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId);
-  const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
-  try {
-    const result = await executeFlowPatchMutation(client, {
-      flowId: flowId,
-      flowLogics: {
-        insert: [{
-          order: String(resolvedOrder),
-          uiUniqueIdentifier: uuid,
-          parent: '',
-          metadata: '{"predicates":[]}',
-          flowSysId: flowId,
-          generationSource: '',
-          definitionId: defId,
-          type: 'flowlogic',
-          parentUiId: parentUiId || '',
-          inputs: []
-        }]
-      }
-    }, logicResponseFields);
+  // Calculate insertion order with reordering
+  const orderCalc = await calculateInsertOrder(client, flowId, parentUiId, order);
+  const resolvedOrder = orderCalc.insertOrder;
+  steps.insert_order = resolvedOrder;
 
+  const uuid = generateUUID();
+  const logicResponseFields = 'flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
+    ' actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
+    ' subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+
+  // Build flow logic input objects (for INSERT — matching UI format with id, name, value, parameter)
+  var logicInputObjects: any[] = [];
+  if (inputs && Object.keys(inputs).length > 0) {
+    logicInputObjects = Object.entries(inputs).map(function ([name, value]) {
+      return {
+        name: name,
+        value: { schemaless: false, schemalessValue: '', value: String(value) }
+      };
+    });
+  }
+
+  var flowPatch: any = {
+    flowId: flowId,
+    flowLogics: {
+      insert: [{
+        order: String(resolvedOrder),
+        uiUniqueIdentifier: uuid,
+        parent: '',
+        metadata: '{"predicates":[]}',
+        flowSysId: flowId,
+        generationSource: '',
+        definitionId: defId,
+        type: 'flowlogic',
+        parentUiId: parentUiId || '',
+        inputs: logicInputObjects
+      }]
+    }
+  };
+
+  // Merge reorder updates into flowLogics.update
+  if (orderCalc.reorders.flowLogicUpdates.length > 0) {
+    if (!flowPatch.flowLogics.update) flowPatch.flowLogics.update = [];
+    flowPatch.flowLogics.update = flowPatch.flowLogics.update.concat(orderCalc.reorders.flowLogicUpdates);
+  }
+  if (orderCalc.reorders.actionUpdates.length > 0) {
+    flowPatch.actions = { update: orderCalc.reorders.actionUpdates };
+  }
+  if (orderCalc.reorders.subflowUpdates.length > 0) {
+    flowPatch.subflows = { update: orderCalc.reorders.subflowUpdates };
+  }
+
+  try {
+    const result = await executeFlowPatchMutation(client, flowPatch, logicResponseFields);
     const logicId = result?.flowLogics?.inserts?.[0]?.sysId;
     steps.insert = { success: !!logicId, logicId, uuid };
     if (!logicId) return { success: false, steps, error: 'GraphQL flow logic INSERT returned no ID' };
-
-    // Update with input values if provided
-    if (inputs && Object.keys(inputs).length > 0) {
-      const updateInputs = Object.entries(inputs).map(([name, value]) => ({
-        name,
-        value: { schemaless: false, schemalessValue: '', value: String(value) }
-      }));
-      try {
-        await executeFlowPatchMutation(client, {
-          flowId: flowId,
-          flowLogics: { update: [{ uiUniqueIdentifier: uuid, type: 'flowlogic', inputs: updateInputs }] }
-        }, logicResponseFields);
-        steps.value_update = { success: true, inputs: updateInputs.map(i => i.name) };
-      } catch (e: any) {
-        steps.value_update = { success: false, error: e.message };
-      }
-    }
 
     return { success: true, logicId, steps };
   } catch (e: any) {
@@ -499,10 +720,24 @@ async function addSubflowCallViaGraphQL(
 
   if (!subflowName) subflowName = subflowId;
 
+  // Calculate insertion order with reordering
+  const orderCalc = await calculateInsertOrder(client, flowId, parentUiId, order);
+  const resolvedOrder = orderCalc.insertOrder;
+  steps.insert_order = resolvedOrder;
+
   const uuid = generateUUID();
-  const resolvedOrder = order || await getNextOrder(client, flowId);
   const subflowResponseFields = 'subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
-    (parentUiId ? ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' : '');
+    ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
+    ' actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
+
+  // Build subflow input objects for INSERT
+  var subInputObjects: any[] = [];
+  if (inputs && Object.keys(inputs).length > 0) {
+    subInputObjects = Object.entries(inputs).map(function ([name, value]) {
+      return { name: name, value: { schemaless: false, schemalessValue: '', value: String(value) } };
+    });
+  }
+
   const subPatch: any = {
     flowId: flowId,
     subflows: {
@@ -517,37 +752,35 @@ async function addSubflowCallViaGraphQL(
         uiUniqueIdentifier: uuid,
         type: 'subflow',
         parentUiId: parentUiId || '',
-        inputs: []
+        inputs: subInputObjects
       }]
     }
   };
+
+  // Merge reorder updates + parent flow logic update
+  var subFlowLogicUpdates: any[] = orderCalc.reorders.flowLogicUpdates.slice();
   if (parentUiId) {
-    subPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }] };
+    var parentIncluded = subFlowLogicUpdates.some(function (u: any) { return u.uiUniqueIdentifier === parentUiId; });
+    if (!parentIncluded) {
+      subFlowLogicUpdates.push({ uiUniqueIdentifier: parentUiId, type: 'flowlogic' });
+    }
   }
+  if (subFlowLogicUpdates.length > 0) {
+    subPatch.flowLogics = { update: subFlowLogicUpdates };
+  }
+  if (orderCalc.reorders.actionUpdates.length > 0) {
+    subPatch.actions = { update: orderCalc.reorders.actionUpdates };
+  }
+  if (orderCalc.reorders.subflowUpdates.length > 0) {
+    if (!subPatch.subflows.update) subPatch.subflows.update = [];
+    subPatch.subflows.update = subPatch.subflows.update.concat(orderCalc.reorders.subflowUpdates);
+  }
+
   try {
     const result = await executeFlowPatchMutation(client, subPatch, subflowResponseFields);
-
     const callId = result?.subflows?.inserts?.[0]?.sysId;
     steps.insert = { success: !!callId, callId, uuid };
     if (!callId) return { success: false, steps, error: 'GraphQL subflow INSERT returned no ID' };
-
-    // Update with input values if provided
-    if (inputs && Object.keys(inputs).length > 0) {
-      const updateInputs = Object.entries(inputs).map(([name, value]) => ({
-        name,
-        value: { schemaless: false, schemalessValue: '', value: String(value) }
-      }));
-      try {
-        await executeFlowPatchMutation(client, {
-          flowId: flowId,
-          subflows: { update: [{ uiUniqueIdentifier: uuid, type: 'subflow', inputs: updateInputs }] }
-        }, subflowResponseFields);
-        steps.value_update = { success: true, inputs: updateInputs.map(i => i.name) };
-      } catch (e: any) {
-        steps.value_update = { success: false, error: e.message };
-      }
-    }
-
     return { success: true, callId, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
