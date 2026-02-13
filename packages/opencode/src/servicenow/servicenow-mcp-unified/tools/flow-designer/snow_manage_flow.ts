@@ -406,7 +406,7 @@ async function resolveFlowId(client: any, flowId: string): Promise<string> {
 
 export const toolDefinition: MCPToolDefinition = {
   name: 'snow_manage_flow',
-  description: 'Complete Flow Designer lifecycle: create flows/subflows, list, get details, update, activate, deactivate, delete and publish',
+  description: 'Complete Flow Designer lifecycle: create flows/subflows, add/update triggers and actions, list, get details, update, activate, deactivate, delete and publish. Use update_trigger to change an existing trigger (e.g. switch from record_created to record_create_or_update) without deleting the flow.',
   category: 'automation',
   subcategory: 'flow-designer',
   use_cases: ['flow-designer', 'automation', 'flow-management', 'subflow'],
@@ -419,8 +419,8 @@ export const toolDefinition: MCPToolDefinition = {
     properties: {
       action: {
         type: 'string',
-        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'add_action'],
-        description: 'Action to perform'
+        enum: ['create', 'create_subflow', 'list', 'get', 'update', 'activate', 'deactivate', 'delete', 'publish', 'add_trigger', 'update_trigger', 'add_action'],
+        description: 'Action to perform. Use add_trigger/add_action to add new elements, update_trigger to change an existing trigger type/table/condition.'
       },
 
       flow_id: {
@@ -469,8 +469,7 @@ export const toolDefinition: MCPToolDefinition = {
             name: { type: 'string', description: 'Step name' },
             type: {
               type: 'string',
-              enum: ['notification', 'field_update', 'create_record', 'script', 'log', 'wait', 'approval'],
-              description: 'Action type'
+              description: 'Action type - looked up dynamically in sys_hub_action_type_snapshot by internal_name or name. Common values: log, create_record, update_record, send_notification, script, field_update, wait, create_approval'
             },
             inputs: { type: 'object', description: 'Step-specific input values' }
           }
@@ -1349,6 +1348,69 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return addTrigResult.success
           ? createSuccessResult({ action: 'add_trigger', ...addTrigResult }, {}, addTrigSummary.build())
           : createErrorResult(addTrigResult.error || 'Failed to add trigger');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // UPDATE_TRIGGER — replace existing trigger(s) with a new one
+      // ────────────────────────────────────────────────────────────────
+      case 'update_trigger': {
+        if (!args.flow_id) {
+          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for update_trigger');
+        }
+        var updTrigFlowId = await resolveFlowId(client, args.flow_id);
+        var updTrigType = args.trigger_type || 'record_create_or_update';
+        var updTrigTable = args.table || '';
+        var updTrigCondition = args.trigger_condition || '';
+        var updTrigSteps: any = {};
+
+        // Step 1: Find existing trigger instances on this flow
+        try {
+          var existingTriggers = await client.get('/api/now/table/sys_hub_trigger_instance', {
+            params: {
+              sysparm_query: 'flow=' + updTrigFlowId,
+              sysparm_fields: 'sys_id,name,type',
+              sysparm_limit: 10
+            }
+          });
+          var trigInstances = existingTriggers.data.result || [];
+          updTrigSteps.existing_triggers = trigInstances.map((t: any) => ({ sys_id: t.sys_id, name: t.name, type: t.type }));
+
+          // Step 2: Delete existing triggers via GraphQL
+          if (trigInstances.length > 0) {
+            var deleteIds = trigInstances.map((t: any) => t.sys_id);
+            try {
+              await executeFlowPatchMutation(client, {
+                flowId: updTrigFlowId,
+                triggerInstances: { delete: deleteIds }
+              }, 'triggerInstances { deletes __typename }');
+              updTrigSteps.deleted = deleteIds;
+            } catch (e: any) {
+              updTrigSteps.delete_error = e.message;
+            }
+          }
+        } catch (_) {
+          updTrigSteps.lookup_error = 'Could not query existing triggers';
+        }
+
+        // Step 3: Add the new trigger
+        var updTrigResult = await addTriggerViaGraphQL(client, updTrigFlowId, updTrigType, updTrigTable, updTrigCondition);
+        updTrigSteps.new_trigger = updTrigResult;
+
+        var updTrigSummary = summary();
+        if (updTrigResult.success) {
+          updTrigSummary
+            .success('Trigger updated via GraphQL')
+            .field('Flow', updTrigFlowId)
+            .field('New Type', updTrigType)
+            .field('Trigger ID', updTrigResult.triggerId || 'unknown');
+          if (updTrigTable) updTrigSummary.field('Table', updTrigTable);
+        } else {
+          updTrigSummary.error('Failed to update trigger: ' + (updTrigResult.error || 'unknown'));
+        }
+
+        return updTrigResult.success
+          ? createSuccessResult({ action: 'update_trigger', steps: updTrigSteps }, {}, updTrigSummary.build())
+          : createErrorResult(updTrigResult.error || 'Failed to update trigger');
       }
 
       // ────────────────────────────────────────────────────────────────
