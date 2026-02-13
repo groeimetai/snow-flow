@@ -157,44 +157,46 @@ async function addActionViaGraphQL(
 ): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
-  const actionTypeNames: Record<string, string[]> = {
-    'log': ['sn_fd.action.log', 'global.sn_fd.action.log', 'global.log'],
-    'create_record': ['sn_fd.action.create_record', 'global.sn_fd.action.create_record'],
-    'update_record': ['sn_fd.action.update_record', 'global.sn_fd.action.update_record'],
-    'notification': ['sn_fd.action.send_notification', 'global.sn_fd.action.send_notification'],
-    'script': ['sn_fd.action.script', 'global.sn_fd.action.script', 'global.script_action'],
-    'field_update': ['sn_fd.action.field_update', 'global.sn_fd.action.field_update'],
-    'wait': ['sn_fd.action.wait', 'global.sn_fd.action.wait'],
-    'approval': ['sn_fd.action.create_approval', 'global.sn_fd.action.create_approval'],
+  // Action name mapping: our key → internal_name in sys_hub_action_type_snapshot
+  const actionInternalNames: Record<string, string> = {
+    'log': 'log',
+    'create_record': 'create_record',
+    'update_record': 'update_record',
+    'notification': 'send_notification',
+    'script': 'script',
+    'field_update': 'field_update',
+    'wait': 'wait',
+    'approval': 'create_approval',
   };
 
+  // Action definitions live in sys_hub_action_type_snapshot, keyed by `internal_name`
   let actionDefId: string | null = null;
-  const candidates = actionTypeNames[actionType] || [];
-  for (const name of candidates) {
-    try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
-        params: { sysparm_query: 'internal_name=' + name, sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 1 }
-      });
-      const found = resp.data.result?.[0];
-      if (found?.sys_id) {
-        actionDefId = found.sys_id;
-        steps.def_lookup = { id: found.sys_id, internal_name: found.internal_name, name: found.name, matched_query: name };
-        break;
-      }
-    } catch (_) {}
-  }
+  const internalName = actionInternalNames[actionType] || actionType;
+  try {
+    const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
+      params: { sysparm_query: 'internal_name=' + internalName, sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 1 }
+    });
+    const found = resp.data.result?.[0];
+    if (found?.sys_id) {
+      actionDefId = found.sys_id;
+      steps.def_lookup = { id: found.sys_id, internal_name: found.internal_name, name: found.name, table: 'sys_hub_action_type_snapshot' };
+    }
+  } catch (_) {}
+  // Fallback: search by name
   if (!actionDefId) {
     try {
-      const resp = await client.get('/api/now/table/sys_hub_action_type_definition', {
+      const resp = await client.get('/api/now/table/sys_hub_action_type_snapshot', {
         params: {
-          sysparm_query: 'internal_nameLIKE' + actionType + '^ORnameLIKE' + actionType,
+          sysparm_query: 'nameLIKE' + actionType + '^ORinternal_nameLIKE' + actionType,
           sysparm_fields: 'sys_id,internal_name,name', sysparm_limit: 5
         }
       });
       const results = resp.data.result || [];
       steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: r.internal_name, name: r.name }));
-      actionDefId = results[0]?.sys_id || null;
-      if (actionDefId) steps.def_lookup = { id: actionDefId, internal_name: results[0].internal_name, name: results[0].name, matched_query: 'LIKE ' + actionType };
+      if (results[0]?.sys_id) {
+        actionDefId = results[0].sys_id;
+        steps.def_lookup = { id: results[0].sys_id, internal_name: results[0].internal_name, name: results[0].name, table: 'sys_hub_action_type_snapshot' };
+      }
     } catch (_) {}
   }
   if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType, steps };
