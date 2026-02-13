@@ -72,6 +72,10 @@ async function executeFlowPatchMutation(
   return resp.data?.data?.global?.snFlowDesigner?.flow || resp.data;
 }
 
+/** Safely extract a string from a ServiceNow Table API value (handles reference objects like {value, link}). */
+const str = (val: any): string =>
+  typeof val === 'object' && val !== null ? (val.display_value || val.value || '') : (val || '');
+
 // Type label mapping for parameter definitions
 const TYPE_LABELS: Record<string, string> = {
   string: 'String', integer: 'Integer', boolean: 'True/False', choice: 'Choice',
@@ -106,56 +110,59 @@ async function buildActionInputsForInsert(
   // Fuzzy-match user-provided values to actual field names
   var resolvedInputs: Record<string, string> = {};
   if (userValues) {
-    var paramElements = actionParams.map(function (p: any) { return p.element; });
+    var paramElements = actionParams.map(function (p: any) { return str(p.element); });
     for (var [key, value] of Object.entries(userValues)) {
       if (paramElements.includes(key)) {
         resolvedInputs[key] = value;
         continue;
       }
       var match = actionParams.find(function (p: any) {
-        return p.element.endsWith('_' + key) || p.element === key || (p.label || '').toLowerCase() === key.toLowerCase();
+        var el = str(p.element);
+        return el.endsWith('_' + key) || el === key || str(p.label).toLowerCase() === key.toLowerCase();
       });
-      if (match) resolvedInputs[match.element] = value;
+      if (match) resolvedInputs[str(match.element)] = value;
       else resolvedInputs[key] = value;
     }
   }
 
   // Build full input objects with parameter definitions (matching UI format)
+  // Use str() on all fields — the Table API may return reference fields as objects {value, link}
   var inputs = actionParams.map(function (rec: any) {
-    var paramType = rec.internal_type || 'string';
-    var userVal = resolvedInputs[rec.element] || '';
+    var paramType = str(rec.internal_type) || 'string';
+    var element = str(rec.element);
+    var userVal = resolvedInputs[element] || '';
     return {
-      id: rec.sys_id,
-      name: rec.element,
+      id: str(rec.sys_id),
+      name: element,
       children: [],
       displayValue: { value: '' },
       value: { schemaless: false, schemalessValue: '', value: userVal },
       parameter: {
-        id: rec.sys_id,
-        label: rec.label || rec.element,
-        name: rec.element,
+        id: str(rec.sys_id),
+        label: str(rec.label) || element,
+        name: element,
         type: paramType,
         type_label: TYPE_LABELS[paramType] || paramType.charAt(0).toUpperCase() + paramType.slice(1),
-        hint: rec.hint || '',
-        order: parseInt(rec.order || '0', 10),
-        extended: rec.extended === 'true',
-        mandatory: rec.mandatory === 'true',
-        readonly: rec.read_only === 'true',
-        maxsize: parseInt(rec.max_length || '8000', 10),
-        data_structure: rec.data_structure || '',
-        reference: rec.reference || '',
-        reference_display: rec.reference_display || '',
-        ref_qual: rec.ref_qual || '',
-        choiceOption: rec.choice_option || '',
-        table: rec.table_name || '',
-        columnName: rec.column_name || '',
-        defaultValue: rec.default_value || '',
-        use_dependent: rec.use_dependent === 'true',
-        dependent_on: rec.dependent_on || '',
-        show_ref_finder: rec.show_ref_finder === 'true',
-        local: rec.local === 'true',
-        attributes: rec.attributes || '',
-        sys_class_name: rec.sys_class_name || '',
+        hint: str(rec.hint),
+        order: parseInt(str(rec.order) || '0', 10),
+        extended: str(rec.extended) === 'true',
+        mandatory: str(rec.mandatory) === 'true',
+        readonly: str(rec.read_only) === 'true',
+        maxsize: parseInt(str(rec.max_length) || '8000', 10),
+        data_structure: str(rec.data_structure),
+        reference: str(rec.reference),
+        reference_display: str(rec.reference_display),
+        ref_qual: str(rec.ref_qual),
+        choiceOption: str(rec.choice_option),
+        table: str(rec.table_name),
+        columnName: str(rec.column_name),
+        defaultValue: str(rec.default_value),
+        use_dependent: str(rec.use_dependent) === 'true',
+        dependent_on: str(rec.dependent_on),
+        show_ref_finder: str(rec.show_ref_finder) === 'true',
+        local: str(rec.local) === 'true',
+        attributes: str(rec.attributes),
+        sys_class_name: str(rec.sys_class_name),
         children: []
       }
     };
@@ -188,8 +195,8 @@ async function findElementsToReorder(
       }
     });
     for (var rec of (resp.data.result || [])) {
-      var uuid = rec.ui_unique_identifier;
-      var curOrder = parseInt(rec.order || '0', 10);
+      var uuid = str(rec.ui_unique_identifier);
+      var curOrder = parseInt(str(rec.order) || '0', 10);
       if (uuid && curOrder >= targetOrder) {
         flowLogicUpdates.push({ order: String(curOrder + 1), uiUniqueIdentifier: uuid, type: 'flowlogic' });
       }
@@ -206,8 +213,8 @@ async function findElementsToReorder(
       }
     });
     for (var rec2 of (resp2.data.result || [])) {
-      var uuid2 = rec2.ui_unique_identifier;
-      var curOrder2 = parseInt(rec2.order || '0', 10);
+      var uuid2 = str(rec2.ui_unique_identifier);
+      var curOrder2 = parseInt(str(rec2.order) || '0', 10);
       if (uuid2 && curOrder2 >= targetOrder) {
         actionUpdates.push({ order: String(curOrder2 + 1), uiUniqueIdentifier: uuid2, type: 'action' });
       }
@@ -224,8 +231,8 @@ async function findElementsToReorder(
       }
     });
     for (var rec3 of (resp3.data.result || [])) {
-      var uuid3 = rec3.ui_unique_identifier;
-      var curOrder3 = parseInt(rec3.order || '0', 10);
+      var uuid3 = str(rec3.ui_unique_identifier);
+      var curOrder3 = parseInt(str(rec3.order) || '0', 10);
       if (uuid3 && curOrder3 >= targetOrder) {
         subflowUpdates.push({ order: String(curOrder3 + 1), uiUniqueIdentifier: uuid3, type: 'subflow' });
       }
@@ -325,9 +332,6 @@ async function addTriggerViaGraphQL(
   if (triggerType.endsWith('ed')) variations.push(triggerType.slice(0, -1), triggerType.slice(0, -2));
   else if (triggerType.endsWith('e')) variations.push(triggerType + 'd');
   else variations.push(triggerType + 'ed', triggerType + 'd');
-
-  // Resolve reference fields that may be objects {display_value, link} or plain strings
-  const str = (val: any) => typeof val === 'object' && val !== null ? (val.display_value || val.value || '') : (val || '');
 
   const assignFound = (found: any, matched: string) => {
     trigDefId = found.sys_id;
