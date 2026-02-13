@@ -222,6 +222,48 @@ async function addActionViaGraphQL(
   }
   if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType, steps };
 
+  // Look up available input fields from sys_hub_action_input
+  let actionParams: { element: string; label: string; mandatory: boolean; default_value: string; internal_type: string }[] = [];
+  try {
+    const resp = await client.get('/api/now/table/sys_hub_action_input', {
+      params: {
+        sysparm_query: 'model=' + actionDefId,
+        sysparm_fields: 'sys_id,element,label,mandatory,default_value,internal_type',
+        sysparm_display_value: 'false',
+        sysparm_limit: 50
+      }
+    });
+    actionParams = (resp.data.result || []).map((r: any) => ({
+      element: r.element,
+      label: r.label,
+      mandatory: r.mandatory === 'true' || r.mandatory === true,
+      default_value: r.default_value || '',
+      internal_type: r.internal_type || ''
+    }));
+    steps.available_inputs = actionParams;
+  } catch (_) {}
+
+  // Match provided inputs to actual field names (fuzzy: "message" → "log_message", "level" → "log_level")
+  const resolvedInputs: Record<string, string> = {};
+  if (inputs) {
+    const paramElements = actionParams.map(p => p.element);
+    for (const [key, value] of Object.entries(inputs)) {
+      // Exact match first
+      if (paramElements.includes(key)) {
+        resolvedInputs[key] = value;
+        continue;
+      }
+      // Try to find a param whose element ends with the key or contains it
+      const match = actionParams.find(p => p.element.endsWith('_' + key) || p.element === key || p.label.toLowerCase() === key.toLowerCase());
+      if (match) {
+        resolvedInputs[match.element] = value;
+      } else {
+        resolvedInputs[key] = value;
+      }
+    }
+    steps.resolved_inputs = resolvedInputs;
+  }
+
   const uuid = generateUUID();
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
@@ -246,8 +288,8 @@ async function addActionViaGraphQL(
     const actionId = result?.actions?.inserts?.[0]?.sysId;
     steps.insert = { success: !!actionId, actionId, uuid };
 
-    if (actionId && inputs && Object.keys(inputs).length > 0) {
-      const updateInputs = Object.entries(inputs).map(([name, value]) => ({
+    if (actionId && Object.keys(resolvedInputs).length > 0) {
+      const updateInputs = Object.entries(resolvedInputs).map(([name, value]) => ({
         name,
         value: { schemaless: false, schemalessValue: '', value: String(value) }
       }));
@@ -256,7 +298,7 @@ async function addActionViaGraphQL(
           flowId: flowId,
           actions: { update: [{ uiUniqueIdentifier: uuid, type: 'action', inputs: updateInputs }] }
         }, actionResponseFields);
-        steps.value_update = { success: true };
+        steps.value_update = { success: true, inputs: updateInputs.map(i => i.name) };
       } catch (e: any) {
         steps.value_update = { success: false, error: e.message };
       }
