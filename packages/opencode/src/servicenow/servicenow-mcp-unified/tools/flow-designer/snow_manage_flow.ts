@@ -1222,9 +1222,9 @@ async function getFlowTriggerInfo(
   // This API returns XML (not JSON). We parse trigger info from the XML string.
   try {
     debug.processflow_api = 'attempting';
-    var pfResp = await client.get('/api/now/processflow/flow/' + flowId, {
-      headers: { 'Accept': 'application/xml, application/json' }
-    });
+    // Note: do NOT pass custom headers in config — some Axios interceptors freeze the config
+    // object, causing "Attempted to assign to readonly property" errors.
+    var pfResp = await client.get('/api/now/processflow/flow/' + flowId);
     var pfRaw = pfResp.data;
     debug.processflow_api = 'success';
     debug.processflow_type = typeof pfRaw;
@@ -1300,16 +1300,28 @@ async function getFlowTriggerInfo(
         var parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
         debug.version_payload_keys = Object.keys(parsed);
         var trigInst = parsed.triggerInstances || parsed.trigger_instances || [];
+        debug.version_trigger_count = Array.isArray(trigInst) ? trigInst.length : typeof trigInst;
         if (Array.isArray(trigInst) && trigInst.length > 0) {
-          if (!triggerName) triggerName = trigInst[0].name || trigInst[0].triggerName || '';
-          if (!table && trigInst[0].inputs) {
-            for (var vi = 0; vi < trigInst[0].inputs.length; vi++) {
-              if (trigInst[0].inputs[vi].name === 'table') {
-                table = trigInst[0].inputs[vi].value?.value || '';
+          var t0 = trigInst[0];
+          debug.version_trigger_keys = Object.keys(t0);
+          debug.version_trigger_name_field = t0.name || t0.triggerName || t0.triggerDefinitionName || '';
+          if (!triggerName) triggerName = t0.name || t0.triggerName || t0.triggerDefinitionName || '';
+          // Also try getting the trigger definition name (e.g. "Created or Updated")
+          if (!triggerName && t0.triggerDefinition) {
+            triggerName = t0.triggerDefinition.name || '';
+          }
+          if (!table && t0.inputs) {
+            var t0Inputs = Array.isArray(t0.inputs) ? t0.inputs : [];
+            for (var vi = 0; vi < t0Inputs.length; vi++) {
+              if (t0Inputs[vi].name === 'table') {
+                table = t0Inputs[vi].value?.value || str(t0Inputs[vi].value) || '';
+                debug.version_table_input = t0Inputs[vi];
                 break;
               }
             }
           }
+          // Fallback: try reading table directly from trigger object
+          if (!table && t0.table) table = str(t0.table);
         }
       }
     } catch (_) {}
@@ -1494,14 +1506,20 @@ function transformConditionToDataPills(conditionValue: string, dataPillBase: str
 }
 
 /**
- * Build labelCache entries for field-level data pills used in flow logic conditions.
+ * Build labelCache INSERT entries for field-level data pills used in flow logic conditions.
  *
- * Returns { inserts, updates }:
- * - inserts: record-level pill with full metadata (processflow XML format)
- * - updates: field-level pills with minimal fields (name + usedInstances, matching UI mutation)
+ * Returns an array of labelCache INSERT entries with full metadata, matching the UI's exact
+ * mutation format (captured from Flow Designer network tab when editing a programmatic flow):
  *
- * The UI uses labelCache.update for field-level condition pills (captured from network tab).
- * The record-level pill is INSERTed to ensure it exists when triggers are created programmatically.
+ *   labelCache: { insert: [{
+ *     name: "Created or Updated_1.current.category",
+ *     label: "Trigger - Record Created or Updated➛Incident Record➛Category",
+ *     reference: "", reference_display: "Category",
+ *     type: "choice", base_type: "choice",
+ *     parent_table_name: "incident", column_name: "category",
+ *     usedInstances: [{uiUniqueIdentifier: "...", inputName: "condition"}],
+ *     choices: {}
+ *   }] }
  */
 async function buildConditionLabelCache(
   client: any,
@@ -1535,27 +1553,54 @@ async function buildConditionLabelCache(
   }
   if (uniqueFields.length === 0) return [];
 
-  // Build labelCache UPDATE entries for condition pills.
-  // Matches the UI's exact mutation format (from if-statement-update.txt):
-  //   labelCache: { update: [{ name: "Created or Updated_1.current.category", usedInstances: [...] }] }
-  //
-  // The record-level pill (e.g. "Created or Updated_1.current") is NOT included here because:
-  // - The ServiceNow backend automatically creates it when the trigger is saved (INSERT → UPDATE)
-  // - Sending a duplicate labelCache.insert for it can cause the entire labelCache block to fail
-  // - The UI's condition mutation never sends a record-level pill insert (confirmed via network capture)
-  var updates: any[] = [];
+  // Batch-query sys_dictionary for field metadata (type, label, reference)
+  var fieldMeta: Record<string, { type: string; label: string; reference: string }> = {};
+  try {
+    var dictResp = await client.get('/api/now/table/sys_dictionary', {
+      params: {
+        sysparm_query: 'name=' + table + '^elementIN' + uniqueFields.join(','),
+        sysparm_fields: 'element,column_label,internal_type,reference',
+        sysparm_display_value: 'false',
+        sysparm_limit: uniqueFields.length + 5
+      }
+    });
+    var dictResults = dictResp.data.result || [];
+    for (var d = 0; d < dictResults.length; d++) {
+      var rec = dictResults[d];
+      var elName = str(rec.element);
+      var intType = str(rec.internal_type?.value || rec.internal_type || 'string');
+      var colLabel = str(rec.column_label);
+      var refTable = str(rec.reference?.value || rec.reference || '');
+      if (elName) fieldMeta[elName] = { type: intType, label: colLabel, reference: refTable };
+    }
+  } catch (_) {
+    // Fallback: use "string" type and generated labels if dictionary lookup fails
+  }
+
+  // Build labelCache INSERT entries with full metadata for each field-level pill.
+  // This matches the UI's mutation format when editing a programmatically-created flow.
+  var inserts: any[] = [];
 
   for (var j = 0; j < uniqueFields.length; j++) {
     var f = uniqueFields[j];
     var pillName = dataPillBase + '.' + f;
+    var meta = fieldMeta[f] || { type: 'string', label: f.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }), reference: '' };
 
-    updates.push({
+    inserts.push({
       name: pillName,
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }]
+      label: 'Trigger - Record ' + triggerName + '\u279b' + tableLabel + ' Record\u279b' + meta.label,
+      reference: meta.reference,
+      reference_display: meta.label,
+      type: meta.type,
+      base_type: meta.type,
+      parent_table_name: table,
+      column_name: f,
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
+      choices: {}
     });
   }
 
-  return updates;
+  return inserts;
 }
 
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
@@ -1886,27 +1931,69 @@ async function addFlowLogicViaGraphQL(
   var needsConditionUpdate = false;
   var conditionTriggerInfo: any = null;
 
-  // Pre-process: detect JS-style dot notation conditions and convert to shorthand pill format.
-  // Users may write conditions like:
-  //   "trigger.current.category = software"      (single =)
-  //   "trigger.current.category == 'software'"   (JS equality)
-  //   "current.priority = 1"                     (short prefix)
-  // These are converted to pill shorthand format that the existing logic can handle:
-  //   "{{trigger.current.category}}=software"
-  var DOT_NOTATION_RE = /((?:trigger\.)?current)\.(\w+)\s*(===?|!==?|>=|<=|>|<|=)\s*(?:'([^']*)'|"([^"]*)"|(\S+))/g;
-  if (DOT_NOTATION_RE.test(rawCondition)) {
+  // Pre-process: detect dot notation conditions and convert to shorthand pill format.
+  // Supports both symbol operators and word operators:
+  //   "trigger.current.category = software"          → "{{trigger.current.category}}=software"
+  //   "trigger.current.category == 'software'"       → "{{trigger.current.category}}=software"
+  //   "trigger.current.category equals software"     → "{{trigger.current.category}}=software"
+  //   "trigger.current.priority != 1"                → "{{trigger.current.priority}}!=1"
+  //   "current.active is true"                       → "{{current.active}}=true"
+  var WORD_OP_MAP: Record<string, string> = {
+    'equals': '=', 'is': '=', 'eq': '=',
+    'not_equals': '!=', 'is not': '!=', 'neq': '!=', 'not equals': '!=',
+    'greater than': '>', 'gt': '>', 'less than': '<', 'lt': '<',
+    'greater or equals': '>=', 'gte': '>=', 'less or equals': '<=', 'lte': '<=',
+    'contains': 'LIKE', 'starts with': 'STARTSWITH', 'ends with': 'ENDSWITH',
+    'not contains': 'NOT LIKE', 'is empty': 'ISEMPTY', 'is not empty': 'ISNOTEMPTY'
+  };
+  // First replace word operators with symbols so the regex can match uniformly
+  var dotOriginal = rawCondition;
+  var dotProcessed = rawCondition;
+  var WORD_OPS_SORTED = Object.keys(WORD_OP_MAP).sort(function (a, b) { return b.length - a.length; }); // longest first
+  for (var wi = 0; wi < WORD_OPS_SORTED.length; wi++) {
+    var wordOp = WORD_OPS_SORTED[wi];
+    // Only replace word operators that appear between a dot-notation field and a value
+    var wordRe = new RegExp('((?:trigger\\.)?current\\.\\w+)\\s+' + wordOp.replace(/ /g, '\\s+') + '\\s+', 'gi');
+    dotProcessed = dotProcessed.replace(wordRe, function (m: string, prefix: string) {
+      return prefix + WORD_OP_MAP[wordOp];
+    });
+  }
+  var DOT_NOTATION_RE = /((?:trigger\.)?current)\.(\w+)(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*(?:'([^']*)'|"([^"]*)"|(\S*))/g;
+  if (DOT_NOTATION_RE.test(dotProcessed)) {
     DOT_NOTATION_RE.lastIndex = 0;
-    var dotOriginal = rawCondition;
-    rawCondition = rawCondition.replace(DOT_NOTATION_RE, function (_m: string, prefix: string, field: string, op: string, qv1: string, qv2: string, uv: string) {
+    rawCondition = dotProcessed.replace(DOT_NOTATION_RE, function (_m: string, prefix: string, field: string, op: string, qv1: string, qv2: string, uv: string) {
       var snOp = op;
       if (op === '==' || op === '===') snOp = '=';
       else if (op === '!=' || op === '!==') snOp = '!=';
-      var val = qv1 !== undefined ? qv1 : (qv2 !== undefined ? qv2 : uv);
+      var val = qv1 !== undefined ? qv1 : (qv2 !== undefined ? qv2 : (uv || ''));
       return '{{' + prefix + '.' + field + '}}' + snOp + val;
     });
     // Replace JS && with ServiceNow ^ (AND separator)
     rawCondition = rawCondition.replace(/\s*&&\s*/g, '^');
     steps.dot_notation_rewrite = { original: dotOriginal, rewritten: rawCondition };
+  }
+
+  // Pre-process: convert word operators in pill-format conditions
+  // e.g. "{{trigger.current.category}} equals software" → "{{trigger.current.category}}=software"
+  if (rawCondition.includes('{{')) {
+    var PILL_WORD_OPS: [RegExp, string][] = [
+      [/(\}\})\s+not\s+equals\s+/gi, '$1!='],
+      [/(\}\})\s+is\s+not\s+/gi, '$1!='],
+      [/(\}\})\s+equals\s+/gi, '$1='],
+      [/(\}\})\s+is\s+/gi, '$1='],
+      [/(\}\})\s+contains\s+/gi, '$1LIKE'],
+      [/(\}\})\s+starts\s+with\s+/gi, '$1STARTSWITH'],
+      [/(\}\})\s+ends\s+with\s+/gi, '$1ENDSWITH'],
+      [/(\}\})\s+greater\s+than\s+/gi, '$1>'],
+      [/(\}\})\s+less\s+than\s+/gi, '$1<'],
+    ];
+    var pillWordOriginal = rawCondition;
+    for (var pwi = 0; pwi < PILL_WORD_OPS.length; pwi++) {
+      rawCondition = rawCondition.replace(PILL_WORD_OPS[pwi][0], PILL_WORD_OPS[pwi][1]);
+    }
+    if (rawCondition !== pillWordOriginal) {
+      steps.pill_word_op_rewrite = { original: pillWordOriginal, rewritten: rawCondition };
+    }
   }
 
   // Shorthand patterns that need rewriting to the real data pill base
@@ -2032,10 +2119,11 @@ async function addFlowLogicViaGraphQL(
       steps.label_cache = labelCacheResult.map(function (e: any) { return e.name; });
 
       try {
-        // Match the UI's exact format for condition UPDATE (from if-statement-update.txt):
-        // - labelCache.update: field-level pills with minimal name + usedInstances
-        // - NO labelCache.insert (record-level pill is auto-created by backend during trigger save)
-        // - condition input: only name + value (NO displayValue, NO flowLogicDefinition)
+        // Match the UI's exact format for condition UPDATE (captured from Flow Designer
+        // when editing a programmatically-created flow):
+        // - labelCache.insert: field-level pills with FULL metadata (type, parent_table_name, etc.)
+        // - condition input: name + value + displayValue
+        // - flowLogicDefinition: with condition_name attributes
         var updatePatch: any = {
           flowId: flowId,
           flowLogics: {
@@ -2044,13 +2132,18 @@ async function addFlowLogicViaGraphQL(
               type: 'flowlogic',
               inputs: [{
                 name: 'condition',
+                displayValue: { value: '' },
                 value: { schemaless: false, schemalessValue: '', value: transformedCondition }
-              }]
+              }],
+              flowLogicDefinition: {
+                inputs: [{ name: 'condition_name', attributes: 'use_basic_input=true,' }],
+                variables: 'undefined'
+              }
             }]
           }
         };
         if (labelCacheResult.length > 0) {
-          updatePatch.labelCache = { update: labelCacheResult };
+          updatePatch.labelCache = { insert: labelCacheResult };
         }
         // Log the exact GraphQL mutation for debugging
         steps.condition_update_mutation = jsToGraphQL(updatePatch);
