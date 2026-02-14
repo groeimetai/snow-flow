@@ -1560,22 +1560,79 @@ async function transformActionInputsForRecordAction(
   // ── 4. Build labelCache entries for data pills ────────────────────
   if (dataPillBase && usedInstances.length > 0) {
     var tableRef = triggerInfo.tableRef || triggerInfo.table || '';
-    var tableLabel = triggerInfo.tableLabel || '';
+    var tblLabel = triggerInfo.tableLabel || '';
 
-    // Record-level data pill entry
+    // Record-level data pill entry (for the `record` input — selecting the whole record)
     labelCacheEntries.push({
       name: dataPillBase,
-      label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tableLabel + ' Record',
+      label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tblLabel + ' Record',
       reference: tableRef,
-      reference_display: tableLabel,
+      reference_display: tblLabel,
       type: 'reference',
       base_type: 'reference',
-      attributes: '',
+      parent_table_name: tableRef,
+      column_name: '',
       usedInstances: usedInstances,
       choices: {}
     });
 
-    steps.label_cache = { count: labelCacheEntries.length, pills: [dataPillBase], usedInstances: usedInstances.length };
+    // Field-level data pill entries for any field references in the `values` string
+    var valuesStr = '';
+    var valuesInp = actionInputs.find(function (inp: any) { return inp.name === 'values'; });
+    if (valuesInp) valuesStr = valuesInp.value?.value || '';
+
+    if (valuesStr && valuesStr.includes('{{')) {
+      // Extract field-level pills from values like "assigned_to={{dataPillBase.assigned_to}}"
+      var pillRegex = /\{\{([^}]+)\}\}/g;
+      var pillMatch;
+      var seenPills: Record<string, boolean> = {};
+      seenPills[dataPillBase] = true;
+
+      while ((pillMatch = pillRegex.exec(valuesStr)) !== null) {
+        var fullPillName = pillMatch[1];
+        if (seenPills[fullPillName]) continue;
+        seenPills[fullPillName] = true;
+
+        // Extract field name from pill (e.g. "Created or Updated_1.current.assigned_to" → "assigned_to")
+        var dotParts = fullPillName.split('.');
+        var fieldCol = dotParts.length > 2 ? dotParts[dotParts.length - 1] : '';
+
+        if (fieldCol) {
+          // Look up field metadata from sys_dictionary
+          var fMeta: { type: string; label: string } = { type: 'string', label: fieldCol.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }) };
+          try {
+            var dictResp = await client.get('/api/now/table/sys_dictionary', {
+              params: {
+                sysparm_query: 'name=' + tableRef + '^element=' + fieldCol,
+                sysparm_fields: 'element,column_label,internal_type',
+                sysparm_display_value: 'false',
+                sysparm_limit: 1
+              }
+            });
+            var dictRec = dictResp.data.result?.[0];
+            if (dictRec) {
+              fMeta.type = str(dictRec.internal_type?.value || dictRec.internal_type || 'string');
+              fMeta.label = str(dictRec.column_label) || fMeta.label;
+            }
+          } catch (_) {}
+
+          labelCacheEntries.push({
+            name: fullPillName,
+            label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tblLabel + ' Record\u27a1' + fMeta.label,
+            reference: '',
+            reference_display: fMeta.label,
+            type: fMeta.type,
+            base_type: fMeta.type,
+            parent_table_name: tableRef,
+            column_name: fieldCol,
+            usedInstances: [{ uiUniqueIdentifier: uuid, inputName: fieldCol }],
+            choices: {}
+          });
+        }
+      }
+    }
+
+    steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }), usedInstances: usedInstances.length };
   }
 
   return { inputs: actionInputs, labelCacheEntries, steps };
