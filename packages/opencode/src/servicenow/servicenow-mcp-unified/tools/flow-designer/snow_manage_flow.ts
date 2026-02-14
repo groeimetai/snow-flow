@@ -1148,102 +1148,114 @@ async function getFlowTriggerInfo(
   var tableLabel = '';
   var debug: any = {};
 
+  // PRIMARY: Read flow via ProcessFlow REST API (same endpoint as Flow Designer UI)
+  // This is how the UI loads the flow — returns JSON/XML with full trigger data
   try {
-    // Read the flow version payload which contains all flow elements
-    var resp = await client.get('/api/now/table/sys_hub_flow_version', {
-      params: {
-        sysparm_query: 'flow=' + flowId + '^ORDERBYDESCsys_created_on',
-        sysparm_fields: 'sys_id,payload',
-        sysparm_limit: 1
-      }
-    });
-    var versionRecord = resp.data.result?.[0];
-    debug.version_found = !!versionRecord;
-    debug.version_sys_id = versionRecord?.sys_id || null;
-    var payload = versionRecord?.payload;
-    debug.payload_exists = !!payload;
-    debug.payload_type = typeof payload;
-    if (payload) {
-      var parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
-      debug.payload_keys = Object.keys(parsed);
-      // The payload contains triggerInstances array with trigger data
-      var triggerInstances = parsed.triggerInstances || parsed.trigger_instances || [];
-      debug.triggerInstances_found = Array.isArray(triggerInstances) ? triggerInstances.length : 'not_array';
-      if (!Array.isArray(triggerInstances)) {
-        // Some payloads nest elements differently
-        if (parsed.elements) {
-          triggerInstances = (Array.isArray(parsed.elements) ? parsed.elements : []).filter(
-            (e: any) => e.type === 'trigger' || e.elementType === 'trigger'
-          );
-          debug.elements_trigger_count = triggerInstances.length;
+    debug.processflow_api = 'attempting';
+    var pfResp = await client.get('/api/now/processflow/flow/' + flowId);
+    var pfData = pfResp.data?.result || pfResp.data;
+    debug.processflow_api = 'success';
+    debug.processflow_type = typeof pfData;
+    debug.processflow_keys = pfData && typeof pfData === 'object' ? Object.keys(pfData).slice(0, 20) : null;
+
+    // The ProcessFlow API returns the flow with trigger instances
+    // Try multiple possible structures for trigger data
+    var pfTriggers = pfData?.triggerInstances || pfData?.trigger_instances || pfData?.triggers || [];
+    if (!Array.isArray(pfTriggers) && pfData?.model?.triggerInstances) {
+      pfTriggers = pfData.model.triggerInstances;
+    }
+    if (!Array.isArray(pfTriggers) && pfData?.definition?.triggerInstances) {
+      pfTriggers = pfData.definition.triggerInstances;
+    }
+    debug.processflow_triggers = Array.isArray(pfTriggers) ? pfTriggers.length : typeof pfTriggers;
+
+    if (Array.isArray(pfTriggers) && pfTriggers.length > 0) {
+      var pfTrig = pfTriggers[0];
+      debug.processflow_trigger_keys = Object.keys(pfTrig);
+      debug.processflow_trigger_name = pfTrig.name;
+      triggerName = pfTrig.name || pfTrig.triggerName || '';
+      if (pfTrig.inputs && Array.isArray(pfTrig.inputs)) {
+        for (var pfi = 0; pfi < pfTrig.inputs.length; pfi++) {
+          if (pfTrig.inputs[pfi].name === 'table') {
+            table = pfTrig.inputs[pfi].value?.value || str(pfTrig.inputs[pfi].value) || '';
+            break;
+          }
         }
       }
-      if (triggerInstances.length > 0) {
-        var trigger = triggerInstances[0];
-        debug.trigger_keys = Object.keys(trigger);
-        debug.trigger_name_field = trigger.name;
-        debug.trigger_triggerName_field = trigger.triggerName;
-        triggerName = trigger.name || trigger.triggerName || '';
-        // Look for table in trigger inputs
-        if (trigger.inputs && Array.isArray(trigger.inputs)) {
-          debug.trigger_input_names = trigger.inputs.map(function (inp: any) { return inp.name; });
-          for (var ti = 0; ti < trigger.inputs.length; ti++) {
-            if (trigger.inputs[ti].name === 'table') {
-              table = trigger.inputs[ti].value?.value || trigger.inputs[ti].value || '';
-              break;
+    }
+
+    // If trigger not found in expected structure, search recursively in the response
+    if (!triggerName && pfData) {
+      var searchForTrigger = function (obj: any, depth: number): void {
+        if (depth > 4 || triggerName) return;
+        if (!obj || typeof obj !== 'object') return;
+        // Look for objects that have triggerDefinitionId or triggerType + name
+        if (obj.triggerDefinitionId && obj.name) {
+          triggerName = obj.name;
+          debug.processflow_trigger_found_at = 'recursive_search';
+          if (obj.inputs && Array.isArray(obj.inputs)) {
+            for (var ri = 0; ri < obj.inputs.length; ri++) {
+              if (obj.inputs[ri].name === 'table') {
+                table = obj.inputs[ri].value?.value || str(obj.inputs[ri].value) || '';
+                break;
+              }
             }
           }
-        } else {
-          debug.trigger_inputs = trigger.inputs ? typeof trigger.inputs : 'undefined';
+          return;
         }
-      }
-    } else {
-      debug.payload_raw = 'null_or_empty';
+        if (Array.isArray(obj)) {
+          for (var ai = 0; ai < obj.length; ai++) searchForTrigger(obj[ai], depth + 1);
+        } else {
+          for (var key of Object.keys(obj)) searchForTrigger(obj[key], depth + 1);
+        }
+      };
+      searchForTrigger(pfData, 0);
     }
-  } catch (e: any) {
-    debug.error = e.message;
+  } catch (pfErr: any) {
+    debug.processflow_api = 'error: ' + pfErr.message;
   }
 
-  // Fallback 1: no-op GraphQL mutation to read current flow state (same API as our INSERT/UPDATE)
-  // Sending just flowId with no changes returns the current state including trigger instances
+  // Fallback 1: Read version payload (legacy approach)
   if (!triggerName || !table) {
-    debug.fallback_noop_mutation = 'attempting';
+    debug.version_fallback = 'attempting';
     try {
-      var noopMutation = 'mutation { global { snFlowDesigner { flow(flowPatch: {flowId: "' + flowId + '"}) { id triggerInstances { name type inputs { name value { value } } __typename } __typename } __typename } __typename } }';
-      var noopResp = await client.post('/api/now/graphql', { variables: {}, query: noopMutation });
-      var noopFlow = noopResp.data?.data?.global?.snFlowDesigner?.flow;
-      debug.fallback_noop_response_keys = noopFlow ? Object.keys(noopFlow) : 'null';
-      var noopTriggers = noopFlow?.triggerInstances || [];
-      debug.fallback_noop_triggers = Array.isArray(noopTriggers) ? noopTriggers.length : noopTriggers;
-      if (Array.isArray(noopTriggers) && noopTriggers.length > 0) {
-        var nt = noopTriggers[0];
-        debug.fallback_noop_trigger = { name: nt.name, type: nt.type, inputCount: nt.inputs?.length };
-        if (!triggerName && nt.name) triggerName = nt.name;
-        if (!table && nt.inputs) {
-          for (var ni = 0; ni < nt.inputs.length; ni++) {
-            if (nt.inputs[ni].name === 'table') {
-              table = nt.inputs[ni].value?.value || '';
-              break;
+      var resp = await client.get('/api/now/table/sys_hub_flow_version', {
+        params: {
+          sysparm_query: 'flow=' + flowId + '^ORDERBYDESCsys_created_on',
+          sysparm_fields: 'sys_id,payload',
+          sysparm_limit: 1
+        }
+      });
+      var payload = resp.data.result?.[0]?.payload;
+      if (payload) {
+        var parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
+        debug.version_payload_keys = Object.keys(parsed);
+        var trigInst = parsed.triggerInstances || parsed.trigger_instances || [];
+        if (Array.isArray(trigInst) && trigInst.length > 0) {
+          if (!triggerName) triggerName = trigInst[0].name || trigInst[0].triggerName || '';
+          if (!table && trigInst[0].inputs) {
+            for (var vi = 0; vi < trigInst[0].inputs.length; vi++) {
+              if (trigInst[0].inputs[vi].name === 'table') {
+                table = trigInst[0].inputs[vi].value?.value || '';
+                break;
+              }
             }
           }
         }
       }
-    } catch (noopErr: any) {
-      debug.fallback_noop_mutation = 'error: ' + noopErr.message;
-    }
+    } catch (_) {}
   }
 
   // Fallback 2: query sys_hub_flow for table + trigger definition for name
   if (!triggerName || !table) {
-    debug.fallback_flow_table = 'attempting';
+    debug.flow_record_fallback = 'attempting';
     try {
       var flowResp = await client.get('/api/now/table/sys_hub_flow', {
         params: { sysparm_query: 'sys_id=' + flowId, sysparm_fields: 'sys_id,name,table,trigger_type', sysparm_limit: 1 }
       });
       var flowRec = flowResp.data.result?.[0];
-      debug.fallback_flow_record = { table: str(flowRec?.table), trigger_type: str(flowRec?.trigger_type) };
+      debug.flow_record = { table: str(flowRec?.table), trigger_type: str(flowRec?.trigger_type) };
       if (!table && flowRec?.table) table = str(flowRec.table);
-      // Try to resolve trigger name from trigger_type reference
       var trigTypeId = str(flowRec?.trigger_type);
       if (!triggerName && trigTypeId) {
         try {
@@ -1252,7 +1264,7 @@ async function getFlowTriggerInfo(
           });
           var trigDef = trigDefResp.data.result?.[0];
           if (trigDef?.name) triggerName = str(trigDef.name);
-          debug.fallback_trigger_def = { name: str(trigDef?.name), type: str(trigDef?.type) };
+          debug.trigger_def = { name: str(trigDef?.name), type: str(trigDef?.type) };
         } catch (_) {}
       }
     } catch (_) {}
