@@ -2506,9 +2506,10 @@ export const toolDefinition: MCPToolDefinition = {
           'add_action', 'update_action', 'delete_action',
           'add_flow_logic', 'update_flow_logic', 'delete_flow_logic',
           'add_subflow', 'update_subflow', 'delete_subflow',
-          'close_flow'
+          'open_flow', 'close_flow'
         ],
-        description: 'Action to perform. add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. update_action/update_flow_logic/update_subflow change input values. delete_* removes elements by element_id. IMPORTANT: When making multiple edits to a flow (add_action, add_flow_logic, etc.), call close_flow as the LAST step to release the editing lock. Without close_flow, the flow stays locked and cannot be edited in the UI. create_flow auto-releases the lock.'
+        description: 'Action to perform. EDITING WORKFLOW: create_flow keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. Always call close_flow as the LAST step to release the lock so users can edit in the UI. ' +
+          'add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id.'
       },
 
       flow_id: {
@@ -3094,11 +3095,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           }
         }
 
-        // Release Flow Designer editing lock (safeEdit delete) so users can edit the flow in the UI
-        if (flowSysId) {
-          var lockReleased = await releaseFlowEditingLock(client, flowSysId);
-          diagnostics.editing_lock_released = lockReleased;
-        }
+        // NOTE: Do NOT release the editing lock here. The agent may need to add more elements
+        // (flow logic, actions, etc.) after creation. The agent must call close_flow when done.
 
         return createSuccessResult({
           created: true,
@@ -3704,6 +3702,26 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return delResult.success
           ? createSuccessResult({ action, ...delResult }, {}, delSummary.build())
           : createErrorResult(delResult.error || 'Failed to delete element');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // OPEN_FLOW — acquire Flow Designer editing lock (processflow GET)
+      // ────────────────────────────────────────────────────────────────
+      case 'open_flow': {
+        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for open_flow');
+        var openFlowId = await resolveFlowId(client, args.flow_id);
+        var openSummary = summary();
+        try {
+          // The processflow GET is what the Flow Designer UI calls when opening a flow for editing.
+          // This acquires the editing lock so subsequent GraphQL mutations can work.
+          await client.get('/api/now/processflow/flow/' + openFlowId);
+          openSummary.success('Flow opened for editing').field('Flow', openFlowId)
+            .line('You can now use add_action, add_flow_logic, etc. Call close_flow when done.');
+          return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true }, {}, openSummary.build());
+        } catch (e: any) {
+          openSummary.error('Failed to open flow for editing: ' + (e.message || 'unknown')).field('Flow', openFlowId);
+          return createErrorResult('Failed to open flow for editing: ' + (e.message || 'unknown'));
+        }
       }
 
       // ────────────────────────────────────────────────────────────────
