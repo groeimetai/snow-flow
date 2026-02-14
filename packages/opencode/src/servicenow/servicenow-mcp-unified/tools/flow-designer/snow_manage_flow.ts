@@ -1614,7 +1614,8 @@ async function buildConditionLabelCache(
   table: string,
   tableLabel: string,
   logicUiId: string,
-  explicitFields?: string[]
+  explicitFields?: string[],
+  inputName?: string
 ): Promise<any[]> {
   if (!dataPillBase) return [];
 
@@ -1680,7 +1681,7 @@ async function buildConditionLabelCache(
       base_type: meta.type,
       parent_table_name: table,
       column_name: f,
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }],
       choices: {}
     });
   }
@@ -2163,6 +2164,60 @@ async function addFlowLogicViaGraphQL(
     steps.condition_not_encoded_query = true;
   }
 
+  // ── Rewrite shorthand pills in non-condition inputs (e.g. FOR_EACH "items") ────
+  // These inputs may contain {{trigger.current}} or {{current.field}} that need rewriting
+  // to the full dataPillBase (e.g. {{Created or Updated_1.current}}) + labelCache for rendering.
+  var nonConditionPillInputs: { name: string; fields: string[]; isRecordLevel: boolean }[] = [];
+  for (var nci = 0; nci < inputResult.inputs.length; nci++) {
+    var ncInput = inputResult.inputs[nci];
+    if (ncInput.name === 'condition' || ncInput.name === 'condition_name') continue;
+    var ncVal = ncInput.value?.value || '';
+    if (!ncVal.includes('{{')) continue;
+
+    var ncHasShorthand = PILL_SHORTHANDS.some(function (sh) {
+      return ncVal.includes('{{' + sh + '.') || ncVal.includes('{{' + sh + '}}');
+    });
+    if (!ncHasShorthand) continue;
+
+    // Get trigger info if not already fetched
+    if (!conditionTriggerInfo) {
+      conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
+      steps.trigger_info = {
+        dataPillBase: conditionTriggerInfo.dataPillBase, triggerName: conditionTriggerInfo.triggerName,
+        table: conditionTriggerInfo.table, tableLabel: conditionTriggerInfo.tableLabel, error: conditionTriggerInfo.error,
+        debug: conditionTriggerInfo.debug
+      };
+    }
+    if (!conditionTriggerInfo.dataPillBase) continue;
+
+    var ncPillBase = conditionTriggerInfo.dataPillBase;
+    var ncOrigVal = ncVal;
+    for (var si2 = 0; si2 < PILL_SHORTHANDS.length; si2++) {
+      var sh2 = PILL_SHORTHANDS[si2];
+      ncVal = ncVal.split('{{' + sh2 + '.').join('{{' + ncPillBase + '.');
+      ncVal = ncVal.split('{{' + sh2 + '}}').join('{{' + ncPillBase + '}}');
+    }
+    ncInput.value.value = ncVal;
+
+    // Extract field names from pills for labelCache
+    var ncPillFields: string[] = [];
+    var ncIsRecordLevel = false;
+    var ncPillRx = /\{\{([^}]+)\}\}/g;
+    var ncm: RegExpExecArray | null;
+    while ((ncm = ncPillRx.exec(ncVal)) !== null) {
+      var ncParts = ncm[1].split('.');
+      if (ncParts.length > 2) {
+        ncPillFields.push(ncParts[ncParts.length - 1]);
+      } else {
+        // Record-level pill like {{Created or Updated_1.current}}
+        ncIsRecordLevel = true;
+      }
+    }
+
+    nonConditionPillInputs.push({ name: ncInput.name, fields: ncPillFields, isRecordLevel: ncIsRecordLevel });
+    steps['pill_rewrite_' + ncInput.name] = { original: ncOrigVal, rewritten: ncVal };
+  }
+
   // Calculate insertion order
   const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
   steps.insert_order = resolvedOrder;
@@ -2279,6 +2334,65 @@ async function addFlowLogicViaGraphQL(
       } catch (ue: any) {
         steps.condition_update = { success: false, error: ue.message };
         // Element was created successfully — condition update failure is non-fatal
+      }
+    }
+
+    // Step 3: UPDATE labelCache for non-condition inputs with data pills (e.g. FOR_EACH "items")
+    if (nonConditionPillInputs.length > 0 && conditionTriggerInfo?.dataPillBase) {
+      try {
+        var ncLabelInserts: any[] = [];
+        var dPillBase = conditionTriggerInfo.dataPillBase;
+        var dTriggerName = conditionTriggerInfo.triggerName;
+        var dTable = conditionTriggerInfo.tableRef;
+        var dTableLabel = conditionTriggerInfo.tableLabel;
+
+        for (var nli = 0; nli < nonConditionPillInputs.length; nli++) {
+          var ncpi = nonConditionPillInputs[nli];
+
+          // Field-level pills: reuse buildConditionLabelCache with the correct inputName
+          if (ncpi.fields.length > 0) {
+            var ncFieldEntries = await buildConditionLabelCache(
+              client, '', dPillBase, dTriggerName, dTable, dTableLabel, returnedUuid, ncpi.fields, ncpi.name
+            );
+            ncLabelInserts = ncLabelInserts.concat(ncFieldEntries);
+          }
+
+          // Record-level pill (e.g. {{Created or Updated_1.current}}) — add record-level labelCache entry
+          if (ncpi.isRecordLevel) {
+            ncLabelInserts.push({
+              name: dPillBase,
+              label: 'Trigger - Record ' + dTriggerName + '\u279b' + dTableLabel + ' Record\u279b' + dTableLabel,
+              reference: dTable,
+              reference_display: dTableLabel,
+              type: 'reference',
+              base_type: 'reference',
+              parent_table_name: dTable,
+              column_name: '',
+              attributes: '',
+              choices: {},
+              usedInstances: [{ uiUniqueIdentifier: returnedUuid, inputName: ncpi.name }]
+            });
+          }
+        }
+
+        if (ncLabelInserts.length > 0) {
+          var ncUpdatePatch: any = {
+            flowId: flowId,
+            flowLogics: {
+              update: [{
+                uiUniqueIdentifier: returnedUuid,
+                type: 'flowlogic',
+              }]
+            },
+            labelCache: { insert: ncLabelInserts }
+          };
+          steps.nc_pill_label_cache_mutation = jsToGraphQL(ncUpdatePatch);
+          await executeFlowPatchMutation(client, ncUpdatePatch, logicResponseFields);
+          steps.nc_pill_label_cache_update = { success: true, count: ncLabelInserts.length };
+        }
+      } catch (nce: any) {
+        steps.nc_pill_label_cache_update = { success: false, error: nce.message };
+        // Non-fatal: element was created, just label rendering may be affected
       }
     }
 
