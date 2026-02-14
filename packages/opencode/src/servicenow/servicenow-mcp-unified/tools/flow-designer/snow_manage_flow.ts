@@ -1142,10 +1142,11 @@ async function addActionViaGraphQL(
 async function getFlowTriggerInfo(
   client: any,
   flowId: string
-): Promise<{ dataPillBase: string; triggerName: string; table: string; tableLabel: string; tableRef: string; error?: string }> {
+): Promise<{ dataPillBase: string; triggerName: string; table: string; tableLabel: string; tableRef: string; error?: string; debug?: any }> {
   var triggerName = '';
   var table = '';
   var tableLabel = '';
+  var debug: any = {};
 
   try {
     // Read the flow version payload which contains all flow elements
@@ -1156,34 +1157,52 @@ async function getFlowTriggerInfo(
         sysparm_limit: 1
       }
     });
-    var payload = resp.data.result?.[0]?.payload;
+    var versionRecord = resp.data.result?.[0];
+    debug.version_found = !!versionRecord;
+    debug.version_sys_id = versionRecord?.sys_id || null;
+    var payload = versionRecord?.payload;
+    debug.payload_exists = !!payload;
+    debug.payload_type = typeof payload;
     if (payload) {
       var parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
+      debug.payload_keys = Object.keys(parsed);
       // The payload contains triggerInstances array with trigger data
       var triggerInstances = parsed.triggerInstances || parsed.trigger_instances || [];
+      debug.triggerInstances_found = Array.isArray(triggerInstances) ? triggerInstances.length : 'not_array';
       if (!Array.isArray(triggerInstances)) {
         // Some payloads nest elements differently
         if (parsed.elements) {
           triggerInstances = (Array.isArray(parsed.elements) ? parsed.elements : []).filter(
             (e: any) => e.type === 'trigger' || e.elementType === 'trigger'
           );
+          debug.elements_trigger_count = triggerInstances.length;
         }
       }
       if (triggerInstances.length > 0) {
         var trigger = triggerInstances[0];
+        debug.trigger_keys = Object.keys(trigger);
+        debug.trigger_name_field = trigger.name;
+        debug.trigger_triggerName_field = trigger.triggerName;
         triggerName = trigger.name || trigger.triggerName || '';
         // Look for table in trigger inputs
         if (trigger.inputs && Array.isArray(trigger.inputs)) {
+          debug.trigger_input_names = trigger.inputs.map(function (inp: any) { return inp.name; });
           for (var ti = 0; ti < trigger.inputs.length; ti++) {
             if (trigger.inputs[ti].name === 'table') {
               table = trigger.inputs[ti].value?.value || trigger.inputs[ti].value || '';
               break;
             }
           }
+        } else {
+          debug.trigger_inputs = trigger.inputs ? typeof trigger.inputs : 'undefined';
         }
       }
+    } else {
+      debug.payload_raw = 'null_or_empty';
     }
-  } catch (_) {}
+  } catch (e: any) {
+    debug.error = e.message;
+  }
 
   // Look up table label for display in label cache
   if (table) {
@@ -1205,11 +1224,11 @@ async function getFlowTriggerInfo(
   }
 
   if (!triggerName) {
-    return { dataPillBase: '', triggerName: '', table: table, tableLabel: tableLabel, tableRef: table, error: 'Could not determine trigger name from flow version payload' };
+    return { dataPillBase: '', triggerName: '', table: table, tableLabel: tableLabel, tableRef: table, error: 'Could not determine trigger name from flow version payload', debug };
   }
 
   var dataPillBase = triggerName + '_1.current';
-  return { dataPillBase, triggerName, table, tableLabel, tableRef: table };
+  return { dataPillBase, triggerName, table, tableLabel, tableRef: table, debug };
 }
 
 /**
@@ -1474,7 +1493,8 @@ async function transformActionInputsForRecordAction(
     triggerName: triggerInfo.triggerName,
     table: triggerInfo.table,
     tableLabel: triggerInfo.tableLabel,
-    error: triggerInfo.error
+    error: triggerInfo.error,
+    debug: triggerInfo.debug
   };
 
   var dataPillBase = triggerInfo.dataPillBase; // e.g. "Created or Updated_1.current"
@@ -1745,7 +1765,8 @@ async function addFlowLogicViaGraphQL(
     conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
     steps.trigger_info = {
       dataPillBase: conditionTriggerInfo.dataPillBase, triggerName: conditionTriggerInfo.triggerName,
-      table: conditionTriggerInfo.table, tableLabel: conditionTriggerInfo.tableLabel, error: conditionTriggerInfo.error
+      table: conditionTriggerInfo.table, tableLabel: conditionTriggerInfo.tableLabel, error: conditionTriggerInfo.error,
+      debug: conditionTriggerInfo.debug
     };
     if (conditionTriggerInfo.dataPillBase) {
       needsConditionUpdate = true;
