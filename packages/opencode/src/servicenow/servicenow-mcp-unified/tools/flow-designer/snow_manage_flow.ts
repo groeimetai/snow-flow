@@ -1886,6 +1886,29 @@ async function addFlowLogicViaGraphQL(
   var needsConditionUpdate = false;
   var conditionTriggerInfo: any = null;
 
+  // Pre-process: detect JS-style dot notation conditions and convert to shorthand pill format.
+  // Users may write conditions like:
+  //   "trigger.current.category = software"      (single =)
+  //   "trigger.current.category == 'software'"   (JS equality)
+  //   "current.priority = 1"                     (short prefix)
+  // These are converted to pill shorthand format that the existing logic can handle:
+  //   "{{trigger.current.category}}=software"
+  var DOT_NOTATION_RE = /((?:trigger\.)?current)\.(\w+)\s*(===?|!==?|>=|<=|>|<|=)\s*(?:'([^']*)'|"([^"]*)"|(\S+))/g;
+  if (DOT_NOTATION_RE.test(rawCondition)) {
+    DOT_NOTATION_RE.lastIndex = 0;
+    var dotOriginal = rawCondition;
+    rawCondition = rawCondition.replace(DOT_NOTATION_RE, function (_m: string, prefix: string, field: string, op: string, qv1: string, qv2: string, uv: string) {
+      var snOp = op;
+      if (op === '==' || op === '===') snOp = '=';
+      else if (op === '!=' || op === '!==') snOp = '!=';
+      var val = qv1 !== undefined ? qv1 : (qv2 !== undefined ? qv2 : uv);
+      return '{{' + prefix + '.' + field + '}}' + snOp + val;
+    });
+    // Replace JS && with ServiceNow ^ (AND separator)
+    rawCondition = rawCondition.replace(/\s*&&\s*/g, '^');
+    steps.dot_notation_rewrite = { original: dotOriginal, rewritten: rawCondition };
+  }
+
   // Shorthand patterns that need rewriting to the real data pill base
   // e.g. {{trigger.current.category}} → {{Created or Updated_1.current.category}}
   var PILL_SHORTHANDS = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
