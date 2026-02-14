@@ -1323,58 +1323,81 @@ function transformConditionToDataPills(conditionValue: string, dataPillBase: str
  * Build labelCache entries for field-level data pills used in flow logic conditions.
  *
  * Each field referenced in the condition needs a labelCache entry so the Flow Designer UI
- * can display the data pill correctly. Also registers the record-level parent pill.
+ * can display the data pill correctly. Queries sys_dictionary for actual field types/labels.
  *
- * Example for "category=software":
- * - Record pill: { name: "Created or Updated_1.current", type: "reference", reference: "incident" }
- * - Field pill: { name: "Created or Updated_1.current.category", type: "string" }
+ * The UI only sends field-level pills (NOT a record-level parent pill).
+ * Each entry includes parent_table_name and column_name for the UI to resolve the field.
+ *
+ * Example for "category=inquiry" on incident table:
+ * - { name: "Created or Updated_1.current.category", type: "choice", parent_table_name: "incident", column_name: "category" }
  */
-function buildConditionLabelCache(
+async function buildConditionLabelCache(
+  client: any,
   conditionValue: string,
   dataPillBase: string,
   triggerName: string,
   table: string,
   tableLabel: string,
   logicUiId: string
-): any[] {
+): Promise<any[]> {
   if (!dataPillBase) return [];
 
   var clauses = parseEncodedQuery(conditionValue);
-  var entries: any[] = [];
+  if (clauses.length === 0) return [];
+
+  // Collect unique field names
+  var uniqueFields: string[] = [];
   var seen: Record<string, boolean> = {};
-
-  // Register the record-level parent pill (always needed as context)
-  entries.push({
-    name: dataPillBase,
-    label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record',
-    reference: table,
-    reference_display: tableLabel,
-    type: 'reference',
-    base_type: 'reference',
-    attributes: '',
-    usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
-    choices: {}
-  });
-  seen[dataPillBase] = true;
-
-  // Register each field-level pill
   for (var i = 0; i < clauses.length; i++) {
     var field = clauses[i].field;
-    if (!field) continue;
-    var pillName = dataPillBase + '.' + field;
-    if (seen[pillName]) continue;
-    seen[pillName] = true;
+    if (field && !seen[field]) {
+      seen[field] = true;
+      uniqueFields.push(field);
+    }
+  }
+  if (uniqueFields.length === 0) return [];
 
-    var fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
+  // Batch-query sys_dictionary for field metadata (type, label)
+  var fieldMeta: Record<string, { type: string; label: string }> = {};
+  try {
+    var dictResp = await client.get('/api/now/table/sys_dictionary', {
+      params: {
+        sysparm_query: 'name=' + table + '^elementIN' + uniqueFields.join(','),
+        sysparm_fields: 'element,column_label,internal_type',
+        sysparm_display_value: 'false',
+        sysparm_limit: uniqueFields.length + 5
+      }
+    });
+    var dictResults = dictResp.data.result || [];
+    for (var d = 0; d < dictResults.length; d++) {
+      var rec = dictResults[d];
+      var elName = str(rec.element);
+      var intType = str(rec.internal_type?.value || rec.internal_type || 'string');
+      var colLabel = str(rec.column_label);
+      if (elName) fieldMeta[elName] = { type: intType, label: colLabel };
+    }
+  } catch (_) {
+    // Fallback: use "string" type and generated labels if dictionary lookup fails
+  }
+
+  // Build field-level labelCache entries (no record-level parent — UI doesn't send one)
+  var entries: any[] = [];
+  for (var j = 0; j < uniqueFields.length; j++) {
+    var f = uniqueFields[j];
+    var meta = fieldMeta[f];
+    var fType = meta ? meta.type : 'string';
+    var fLabel = meta ? meta.label : f.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
+    var pillName = dataPillBase + '.' + f;
 
     entries.push({
       name: pillName,
-      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record\u27a1' + fieldLabel,
+      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record\u27a1' + fLabel,
       reference: '',
-      reference_display: '',
-      type: 'string',
-      base_type: 'string',
-      attributes: '',
+      reference_display: fLabel,
+      type: fType,
+      base_type: fType,
+      parent_table_name: table,
+      column_name: f,
       usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
       choices: {}
     });
@@ -1710,8 +1733,8 @@ async function addFlowLogicViaGraphQL(
     if (needsConditionUpdate && conditionTriggerInfo) {
       var dataPillBase = conditionTriggerInfo.dataPillBase;
       var transformedCondition = transformConditionToDataPills(rawCondition, dataPillBase);
-      var labelCacheEntries = buildConditionLabelCache(
-        rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
+      var labelCacheEntries = await buildConditionLabelCache(
+        client, rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
         conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid
       );
 
@@ -1728,8 +1751,13 @@ async function addFlowLogicViaGraphQL(
               type: 'flowlogic',
               inputs: [{
                 name: 'condition',
+                displayValue: { value: '' },
                 value: { schemaless: false, schemalessValue: '', value: transformedCondition }
-              }]
+              }],
+              flowLogicDefinition: {
+                inputs: [{ name: 'condition_name', attributes: 'use_basic_input=true,' }],
+                variables: 'undefined'
+              }
             }]
           }
         };
