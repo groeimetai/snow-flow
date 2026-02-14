@@ -1917,6 +1917,27 @@ async function addFlowLogicViaGraphQL(
 ): Promise<{ success: boolean; logicId?: string; uiUniqueIdentifier?: string; steps?: any; error?: string }> {
   const steps: any = {};
 
+  // Normalize common aliases to actual ServiceNow flow logic type values
+  var LOGIC_TYPE_ALIASES: Record<string, string> = {
+    'FOR_EACH': 'FOREACH',
+    'DO_UNTIL': 'DOUNTIL',
+    'ELSE_IF': 'ELSEIF',
+    'SKIP_ITERATION': 'CONTINUE',
+    'EXIT_LOOP': 'BREAK',
+    'GO_BACK_TO': 'GOBACKTO',
+    'DYNAMIC_FLOW': 'DYNAMICFLOW',
+    'END_FLOW': 'END',
+    'GET_FLOW_OUTPUT': 'GETFLOWOUTPUT',
+    'GET_FLOW_OUTPUTS': 'GETFLOWOUTPUT',
+    'SET_FLOW_VARIABLES': 'SETFLOWVARIABLES',
+    'APPEND_FLOW_VARIABLES': 'APPENDFLOWVARIABLES',
+  };
+  var normalizedType = LOGIC_TYPE_ALIASES[logicType.toUpperCase()] || logicType;
+  if (normalizedType !== logicType) {
+    steps.type_normalized = { from: logicType, to: normalizedType };
+    logicType = normalizedType;
+  }
+
   // Dynamically look up flow logic definition in sys_hub_flow_logic_definition
   // Fetch extra fields needed for the flowLogicDefinition object in the mutation
   const defFields = 'sys_id,type,name,description,order,attributes,compilation_class,quiescence,visible,category,connected_to';
@@ -1924,7 +1945,7 @@ async function addFlowLogicViaGraphQL(
   let defName = '';
   let defType = logicType;
   let defRecord: any = {};
-  // Try exact match on type (IF, ELSE, FOR_EACH, DO_UNTIL, SWITCH), then name
+  // Try exact match on type (IF, ELSE, FOREACH, DOUNTIL, etc.), then name
   for (const field of ['type', 'name']) {
     if (defId) break;
     try {
@@ -2597,17 +2618,18 @@ export const toolDefinition: MCPToolDefinition = {
       },
       logic_type: {
         type: 'string',
-        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Available types: ' +
+        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. ' +
+          'Common aliases (FOR_EACH, DO_UNTIL, etc.) are auto-normalized to ServiceNow types. Available types: ' +
           'IF, ELSEIF, ELSE — conditional branching. Use ELSEIF (not nested ELSE+IF) for else-if branches. ELSE and ELSEIF require connected_to set to the If block\'s uiUniqueIdentifier. ' +
-          'FOR_EACH, DO_UNTIL — loops. SKIP_ITERATION and EXIT_LOOP can be used inside loops. ' +
+          'FOREACH (or FOR_EACH), DOUNTIL (or DO_UNTIL) — loops. CONTINUE (skip iteration) and BREAK (exit loop) can be used inside loops. ' +
           'PARALLEL — execute branches in parallel. ' +
           'DECISION — switch/decision table. ' +
           'TRY — error handling (try/catch). ' +
           'END — End Flow (stops execution). Always add END as the last element when the flow should terminate cleanly. ' +
           'TIMER — Wait for a duration of time. ' +
-          'GO_BACK_TO — jump back to a previous step. ' +
-          'SET_FLOW_VARIABLES, APPEND_FLOW_VARIABLES, GET_FLOW_OUTPUT — flow variable management. ' +
-          'WORKFLOW — call a legacy workflow. DYNAMIC_FLOW — dynamically invoke a flow. ' +
+          'GOBACKTO (or GO_BACK_TO) — jump back to a previous step. ' +
+          'SETFLOWVARIABLES, APPENDFLOWVARIABLES, GETFLOWOUTPUT — flow variable management. ' +
+          'WORKFLOW — call a legacy workflow. DYNAMICFLOW — dynamically invoke a flow. ' +
           'Best practice: add an END element at the end of your flow for clean termination.'
       },
       logic_inputs: {
