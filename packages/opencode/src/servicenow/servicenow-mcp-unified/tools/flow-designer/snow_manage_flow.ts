@@ -1204,45 +1204,57 @@ async function getFlowTriggerInfo(
     debug.error = e.message;
   }
 
-  // Fallback: if version payload didn't have trigger, try reading from GraphQL flow state
+  // Fallback 1: no-op GraphQL mutation to read current flow state (same API as our INSERT/UPDATE)
+  // Sending just flowId with no changes returns the current state including trigger instances
   if (!triggerName || !table) {
-    debug.fallback_graphql = 'attempting';
+    debug.fallback_noop_mutation = 'attempting';
     try {
-      var gqlQuery = 'query { global { snFlowDesigner { designTimeFlow(sysId: "' + flowId + '") { triggerInstances { name type inputs { name value { value } } } __typename } __typename } __typename } }';
-      var gqlResp = await client.post('/api/now/graphql', { variables: {}, query: gqlQuery });
-      var dtFlow = gqlResp.data?.data?.global?.snFlowDesigner?.designTimeFlow;
-      var gqlTriggers = dtFlow?.triggerInstances || [];
-      debug.fallback_graphql_triggers = gqlTriggers.length;
-      if (gqlTriggers.length > 0) {
-        var gqlTrig = gqlTriggers[0];
-        debug.fallback_graphql_trigger = { name: gqlTrig.name, type: gqlTrig.type, inputCount: gqlTrig.inputs?.length };
-        if (!triggerName && gqlTrig.name) triggerName = gqlTrig.name;
-        if (!table && gqlTrig.inputs) {
-          for (var gi = 0; gi < gqlTrig.inputs.length; gi++) {
-            if (gqlTrig.inputs[gi].name === 'table') {
-              table = gqlTrig.inputs[gi].value?.value || '';
+      var noopMutation = 'mutation { global { snFlowDesigner { flow(flowPatch: {flowId: "' + flowId + '"}) { id triggerInstances { name type inputs { name value { value } } __typename } __typename } __typename } __typename } }';
+      var noopResp = await client.post('/api/now/graphql', { variables: {}, query: noopMutation });
+      var noopFlow = noopResp.data?.data?.global?.snFlowDesigner?.flow;
+      debug.fallback_noop_response_keys = noopFlow ? Object.keys(noopFlow) : 'null';
+      var noopTriggers = noopFlow?.triggerInstances || [];
+      debug.fallback_noop_triggers = Array.isArray(noopTriggers) ? noopTriggers.length : noopTriggers;
+      if (Array.isArray(noopTriggers) && noopTriggers.length > 0) {
+        var nt = noopTriggers[0];
+        debug.fallback_noop_trigger = { name: nt.name, type: nt.type, inputCount: nt.inputs?.length };
+        if (!triggerName && nt.name) triggerName = nt.name;
+        if (!table && nt.inputs) {
+          for (var ni = 0; ni < nt.inputs.length; ni++) {
+            if (nt.inputs[ni].name === 'table') {
+              table = nt.inputs[ni].value?.value || '';
               break;
             }
           }
         }
       }
-    } catch (gqlErr: any) {
-      debug.fallback_graphql = 'error: ' + gqlErr.message;
+    } catch (noopErr: any) {
+      debug.fallback_noop_mutation = 'error: ' + noopErr.message;
     }
   }
 
-  // Fallback 2: look up trigger definition that belongs to this flow
-  if (!triggerName) {
-    debug.fallback_trigdef = 'attempting';
+  // Fallback 2: query sys_hub_flow for table + trigger definition for name
+  if (!triggerName || !table) {
+    debug.fallback_flow_table = 'attempting';
     try {
-      // Query sys_hub_trigger_type_definition to find triggers available for this flow
-      // The trigger name in the definition matches the data pill prefix
-      var trigResp = await client.get('/api/now/table/sys_hub_flow', {
-        params: { sysparm_query: 'sys_id=' + flowId, sysparm_fields: 'sys_id,name,table', sysparm_limit: 1 }
+      var flowResp = await client.get('/api/now/table/sys_hub_flow', {
+        params: { sysparm_query: 'sys_id=' + flowId, sysparm_fields: 'sys_id,name,table,trigger_type', sysparm_limit: 1 }
       });
-      var flowRec = trigResp.data.result?.[0];
-      debug.fallback_flow_record = { table: flowRec?.table };
-      if (flowRec?.table && !table) table = str(flowRec.table);
+      var flowRec = flowResp.data.result?.[0];
+      debug.fallback_flow_record = { table: str(flowRec?.table), trigger_type: str(flowRec?.trigger_type) };
+      if (!table && flowRec?.table) table = str(flowRec.table);
+      // Try to resolve trigger name from trigger_type reference
+      var trigTypeId = str(flowRec?.trigger_type);
+      if (!triggerName && trigTypeId) {
+        try {
+          var trigDefResp = await client.get('/api/now/table/sys_hub_trigger_definition', {
+            params: { sysparm_query: 'sys_id=' + trigTypeId, sysparm_fields: 'name,type', sysparm_limit: 1 }
+          });
+          var trigDef = trigDefResp.data.result?.[0];
+          if (trigDef?.name) triggerName = str(trigDef.name);
+          debug.fallback_trigger_def = { name: str(trigDef?.name), type: str(trigDef?.type) };
+        } catch (_) {}
+      }
     } catch (_) {}
   }
 
