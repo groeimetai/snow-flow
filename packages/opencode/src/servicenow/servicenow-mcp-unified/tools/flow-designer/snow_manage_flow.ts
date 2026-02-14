@@ -1112,8 +1112,10 @@ async function addActionViaGraphQL(
           if (recordActionResult.labelCacheInserts.length > 0) {
             updatePatch.labelCache.insert = recordActionResult.labelCacheInserts;
           }
-          await executeFlowPatchMutation(client, updatePatch, actionResponseFields);
-          steps.record_update = { success: true, inputCount: updateInputs.length };
+          // Log the exact GraphQL mutation for debugging
+          steps.record_update_mutation = jsToGraphQL(updatePatch);
+          var actionUpdateResult = await executeFlowPatchMutation(client, updatePatch, actionResponseFields);
+          steps.record_update = { success: true, inputCount: updateInputs.length, response: actionUpdateResult };
         } catch (ue: any) {
           steps.record_update = { success: false, error: ue.message };
           // Action was created — update failure is non-fatal
@@ -1837,8 +1839,10 @@ async function addFlowLogicViaGraphQL(
             }]
           }
         };
-        await executeFlowPatchMutation(client, updatePatch, logicResponseFields);
-        steps.condition_update = { success: true };
+        // Log the exact GraphQL mutation for debugging
+        steps.condition_update_mutation = jsToGraphQL(updatePatch);
+        var updateResult = await executeFlowPatchMutation(client, updatePatch, logicResponseFields);
+        steps.condition_update = { success: true, response: updateResult };
       } catch (ue: any) {
         steps.condition_update = { success: false, error: ue.message };
         // Element was created successfully — condition update failure is non-fatal
