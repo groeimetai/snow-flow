@@ -859,12 +859,21 @@ async function addTriggerViaGraphQL(
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
 
   // Build full trigger inputs and outputs from triggerpicker API (matching UI format)
-  var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, trigType, table, condition);
+  // Pass empty table/condition — values are set via separate UPDATE (two-step, matching UI)
+  var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, trigType, undefined, undefined);
   steps.trigger_data = { inputCount: triggerData.inputs.length, outputCount: triggerData.outputs.length, source: triggerData.source, error: triggerData.error };
 
   const triggerResponseFields = 'triggerInstances { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
   try {
-    // Single INSERT with full inputs and outputs (matching UI behavior — no separate UPDATE needed)
+    // Step 1: INSERT with empty table/condition values (matching UI behavior from trigger-query.txt)
+    // The UI always inserts the trigger with empty inputs first, then updates with actual values.
+    var insertInputs = triggerData.inputs.map(function (inp: any) {
+      if (inp.name === 'table' || inp.name === 'condition') {
+        return { ...inp, value: { value: '' }, displayValue: { value: '' } };
+      }
+      return inp;
+    });
+
     const insertResult = await executeFlowPatchMutation(client, {
       flowId: flowId,
       triggerInstances: {
@@ -876,15 +885,60 @@ async function addTriggerViaGraphQL(
           type: trigType,
           hasDynamicOutputs: false,
           metadata: '{"predicates":[]}',
-          inputs: triggerData.inputs,
+          inputs: insertInputs,
           outputs: triggerData.outputs
         }]
       }
     }, triggerResponseFields);
 
     const triggerId = insertResult?.triggerInstances?.inserts?.[0]?.sysId;
-    steps.insert = { success: !!triggerId, triggerId };
+    const triggerUiId = insertResult?.triggerInstances?.inserts?.[0]?.uiUniqueIdentifier;
+    steps.insert = { success: !!triggerId, triggerId, triggerUiId };
     if (!triggerId) return { success: false, steps, error: 'GraphQL trigger INSERT returned no trigger ID' };
+
+    // Step 2: UPDATE with actual table and condition values (matching UI behavior from trigger-query-2.txt)
+    // The UI sends: table with displayField+displayValue+value, condition with just displayValue
+    if (table) {
+      try {
+        var tableDisplayName = '';
+        try {
+          var tblResp = await client.get('/api/now/table/sys_db_object', {
+            params: { sysparm_query: 'name=' + table, sysparm_fields: 'label', sysparm_display_value: 'true', sysparm_limit: 1 }
+          });
+          tableDisplayName = str(tblResp.data.result?.[0]?.label) || '';
+        } catch (_) {}
+        if (!tableDisplayName) {
+          tableDisplayName = table.charAt(0).toUpperCase() + table.slice(1).replace(/_/g, ' ');
+        }
+
+        var trigUpdateInputs: any[] = [
+          {
+            name: 'table',
+            displayField: 'number',
+            displayValue: { schemaless: false, schemalessValue: '', value: tableDisplayName },
+            value: { schemaless: false, schemalessValue: '', value: table }
+          },
+          {
+            name: 'condition',
+            displayValue: { schemaless: false, schemalessValue: '', value: condition || '^EQ' }
+          }
+        ];
+
+        await executeFlowPatchMutation(client, {
+          flowId: flowId,
+          triggerInstances: {
+            update: [{
+              id: triggerId,
+              inputs: trigUpdateInputs
+            }]
+          }
+        }, triggerResponseFields);
+        steps.trigger_update = { success: true, table: table, tableDisplay: tableDisplayName };
+      } catch (updateErr: any) {
+        steps.trigger_update = { success: false, error: updateErr.message };
+        // Trigger was created — update failure is non-fatal
+      }
+    }
 
     return { success: true, triggerId, steps };
   } catch (e: any) {
@@ -1088,7 +1142,12 @@ async function addActionViaGraphQL(
         var inp = recordActionResult.inputs[ri];
         var val = inp.value?.value || '';
         if (inp.name === 'record' && val.startsWith('{{')) {
-          updateInputs.push({ name: 'record', value: { schemaless: false, schemalessValue: '', value: val } });
+          // Both value and displayValue must be set (matching processflow XML format)
+          updateInputs.push({
+            name: 'record',
+            displayValue: { schemaless: false, schemalessValue: '', value: val },
+            value: { schemaless: false, schemalessValue: '', value: val }
+          });
         } else if (inp.name === 'table_name') {
           // displayValue must use full schemaless format: {schemaless, schemalessValue, value}
           updateInputs.push({
@@ -1119,11 +1178,7 @@ async function addActionViaGraphQL(
               }]
             }
           };
-          // Record-level pills → labelCache UPDATE (already exist from trigger)
-          if (recordActionResult.labelCacheUpdates.length > 0) {
-            updatePatch.labelCache.update = recordActionResult.labelCacheUpdates;
-          }
-          // Field-level pills → labelCache INSERT (new entries)
+          // All pills → labelCache INSERT (trigger created by our code, entries may not exist yet)
           if (recordActionResult.labelCacheInserts.length > 0) {
             updatePatch.labelCache.insert = recordActionResult.labelCacheInserts;
           }
@@ -1441,14 +1496,12 @@ function transformConditionToDataPills(conditionValue: string, dataPillBase: str
 /**
  * Build labelCache entries for field-level data pills used in flow logic conditions.
  *
- * Each field referenced in the condition needs a labelCache entry so the Flow Designer UI
- * can display the data pill correctly. Queries sys_dictionary for actual field types/labels.
+ * Returns { inserts, updates }:
+ * - inserts: record-level pill with full metadata (processflow XML format)
+ * - updates: field-level pills with minimal fields (name + usedInstances, matching UI mutation)
  *
- * The UI only sends field-level pills (NOT a record-level parent pill).
- * Each entry includes parent_table_name and column_name for the UI to resolve the field.
- *
- * Example for "category=inquiry" on incident table:
- * - { name: "Created or Updated_1.current.category", type: "choice", parent_table_name: "incident", column_name: "category" }
+ * The UI uses labelCache.update for field-level condition pills (captured from network tab).
+ * The record-level pill is INSERTed to ensure it exists when triggers are created programmatically.
  */
 async function buildConditionLabelCache(
   client: any,
@@ -1459,16 +1512,17 @@ async function buildConditionLabelCache(
   tableLabel: string,
   logicUiId: string,
   explicitFields?: string[]
-): Promise<any[]> {
-  if (!dataPillBase) return [];
+): Promise<{ inserts: any[]; updates: any[] }> {
+  var empty = { inserts: [], updates: [] };
+  if (!dataPillBase) return empty;
 
   // Collect unique field names — either from explicit list or by parsing encoded query
   if (!explicitFields) {
     var clauses = parseEncodedQuery(conditionValue);
-    if (clauses.length === 0) return [];
+    if (clauses.length === 0) return empty;
     explicitFields = clauses.map(function (c) { return c.field; }).filter(function (f) { return !!f; });
   }
-  if (explicitFields.length === 0) return [];
+  if (explicitFields.length === 0) return empty;
 
   // De-duplicate field names
   var uniqueFields: string[] = [];
@@ -1505,30 +1559,39 @@ async function buildConditionLabelCache(
     // Fallback: use "string" type and generated labels if dictionary lookup fails
   }
 
-  // Build field-level labelCache entries (no record-level parent — UI doesn't send one)
-  var entries: any[] = [];
+  // Build labelCache entries for condition pills, split into INSERT and UPDATE:
+  // - INSERT: record-level pill (must exist for actions; format from processflow XML)
+  // - UPDATE: field-level pills (minimal: name + usedInstances — matching the UI's exact mutation format)
+  //
+  // The UI uses labelCache.update for condition pills (captured mutation shows only name + usedInstances).
+  // The record-level pill is INSERTed to ensure it exists (our trigger is created via code, not UI).
+  var inserts: any[] = [];
+  var updates: any[] = [];
+
+  // Record-level pill entry → INSERT with full metadata (processflow XML format)
+  inserts.push({
+    name: dataPillBase,
+    label: 'Trigger - Record ' + triggerName + '\u279b' + tableLabel + ' Record',
+    reference: table,
+    reference_display: tableLabel,
+    type: 'reference',
+    base_type: 'reference',
+    attributes: {},
+    usedInstances: []
+  });
+
+  // Field-level pill entries → UPDATE with minimal fields (matching UI mutation)
   for (var j = 0; j < uniqueFields.length; j++) {
     var f = uniqueFields[j];
-    var meta = fieldMeta[f];
-    var fType = meta ? meta.type : 'string';
-    var fLabel = meta ? meta.label : f.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
     var pillName = dataPillBase + '.' + f;
 
-    entries.push({
+    updates.push({
       name: pillName,
-      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record\u27a1' + fLabel,
-      reference: '',
-      reference_display: fLabel,
-      type: fType,
-      base_type: fType,
-      parent_table_name: table,
-      column_name: f,
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
-      choices: {}
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }]
     });
   }
 
-  return entries;
+  return { inserts, updates };
 }
 
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
@@ -1595,10 +1658,15 @@ async function transformActionInputsForRecordAction(
 
     if (isShorthand || !recordVal) {
       // Auto-fill with trigger's current record data pill
-      recordInput.value = { schemaless: false, schemalessValue: '', value: '{{' + dataPillBase + '}}' };
+      // The processflow XML shows both value AND displayValue must be set to the pill reference
+      var pillRef = '{{' + dataPillBase + '}}';
+      recordInput.value = { schemaless: false, schemalessValue: '', value: pillRef };
+      recordInput.displayValue = { schemaless: false, schemalessValue: '', value: pillRef };
       usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
-      steps.record_transform = { original: recordVal, pill: '{{' + dataPillBase + '}}' };
+      steps.record_transform = { original: recordVal, pill: pillRef };
     } else if (isAlreadyPill) {
+      // Also ensure displayValue is set for existing pill references
+      recordInput.displayValue = { schemaless: false, schemalessValue: '', value: recordVal };
       usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
     }
   }
@@ -1684,10 +1752,10 @@ async function transformActionInputsForRecordAction(
   }
 
   // ── 4. Build labelCache entries for data pills ────────────────────
-  // The record-level pill (e.g. "Created or Updated_1.current") already exists in the
-  // flow's labelCache from the trigger. The UI sends a labelCache UPDATE (not INSERT)
-  // with just name + usedInstances to register this action's usage.
-  // Field-level pills (e.g. "Created or Updated_1.current.assigned_to") are new and need INSERT.
+  // Based on processflow XML analysis (labelCacheAsJsonString), the record-level pill
+  // format is: { name, label, reference (table), reference_display (table label), type: "reference", base_type: "reference", attributes: {} }
+  // Since our trigger is created via code (not UI), the labelCache entry may not exist yet.
+  // We use INSERT for the record-level pill to ensure it exists.
   var labelCacheUpdates: any[] = [];
   var labelCacheInserts: any[] = [];
 
@@ -1695,9 +1763,16 @@ async function transformActionInputsForRecordAction(
     var tableRef = triggerInfo.tableRef || triggerInfo.table || '';
     var tblLabel = triggerInfo.tableLabel || '';
 
-    // Record-level pill — UPDATE existing entry with new usedInstances (minimal: name + usedInstances only)
-    labelCacheUpdates.push({
+    // Record-level pill — INSERT with full metadata matching processflow XML format:
+    // { name: "Created or Updated_1.current", type: "reference", reference: "incident", reference_display: "Incident", ... }
+    labelCacheInserts.push({
       name: dataPillBase,
+      label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record',
+      reference: tableRef,
+      reference_display: tblLabel,
+      type: 'reference',
+      base_type: 'reference',
+      attributes: {},
       usedInstances: usedInstances
     });
 
@@ -1740,22 +1815,21 @@ async function transformActionInputsForRecordAction(
 
           labelCacheInserts.push({
             name: fullPillName,
-            label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tblLabel + ' Record\u27a1' + fMeta.label,
-            reference: '',
+            label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record\u279b' + fMeta.label,
+            reference: tableRef,
             reference_display: fMeta.label,
             type: fMeta.type,
             base_type: fMeta.type,
             parent_table_name: tableRef,
             column_name: fieldCol,
-            usedInstances: [{ uiUniqueIdentifier: uuid, inputName: fieldCol }],
-            choices: {}
+            attributes: {},
+            usedInstances: [{ uiUniqueIdentifier: uuid, inputName: fieldCol }]
           });
         }
       }
     }
 
     steps.label_cache = {
-      updates: labelCacheUpdates.map(function (e: any) { return e.name; }),
       inserts: labelCacheInserts.map(function (e: any) { return e.name; }),
       usedInstances: usedInstances.length
     };
@@ -1940,7 +2014,6 @@ async function addFlowLogicViaGraphQL(
     if (needsConditionUpdate && conditionTriggerInfo) {
       var dataPillBase = conditionTriggerInfo.dataPillBase;
       var transformedCondition: string;
-      var labelCacheEntries: any[];
 
       if (rawCondition.includes('{{')) {
         // Condition already contains data pill references (after shorthand rewrite)
@@ -1954,7 +2027,7 @@ async function addFlowLogicViaGraphQL(
           if (pParts.length > 2) pillFields.push(pParts[pParts.length - 1]);
         }
         // Build labelCache using extracted field names
-        labelCacheEntries = await buildConditionLabelCache(
+        var labelCacheResult = await buildConditionLabelCache(
           client, rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
           conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid,
           pillFields
@@ -1962,35 +2035,43 @@ async function addFlowLogicViaGraphQL(
       } else {
         // Plain encoded query — transform to data pill format
         transformedCondition = transformConditionToDataPills(rawCondition, dataPillBase);
-        labelCacheEntries = await buildConditionLabelCache(
+        var labelCacheResult = await buildConditionLabelCache(
           client, rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
           conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid
         );
       }
 
       steps.condition_transform = { original: rawCondition, transformed: transformedCondition };
-      steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }) };
+      steps.label_cache = {
+        inserts: labelCacheResult.inserts.map(function (e: any) { return e.name; }),
+        updates: labelCacheResult.updates.map(function (e: any) { return e.name; })
+      };
 
       try {
+        // Match the UI's exact format for condition UPDATE (from captured network tab mutation):
+        // - condition input: only name + value (NO displayValue, NO flowLogicDefinition)
+        // - labelCache.insert: record-level pill with full metadata (ensures it exists)
+        // - labelCache.update: field-level pills with minimal name + usedInstances (matching UI)
         var updatePatch: any = {
           flowId: flowId,
-          labelCache: { insert: labelCacheEntries },
+          labelCache: {} as any,
           flowLogics: {
             update: [{
               uiUniqueIdentifier: returnedUuid,
               type: 'flowlogic',
               inputs: [{
                 name: 'condition',
-                displayValue: { value: '' },
                 value: { schemaless: false, schemalessValue: '', value: transformedCondition }
-              }],
-              flowLogicDefinition: {
-                inputs: [{ name: 'condition_name', attributes: 'use_basic_input=true,' }],
-                variables: 'undefined'
-              }
+              }]
             }]
           }
         };
+        if (labelCacheResult.inserts.length > 0) {
+          updatePatch.labelCache.insert = labelCacheResult.inserts;
+        }
+        if (labelCacheResult.updates.length > 0) {
+          updatePatch.labelCache.update = labelCacheResult.updates;
+        }
         // Log the exact GraphQL mutation for debugging
         steps.condition_update_mutation = jsToGraphQL(updatePatch);
         var updateResult = await executeFlowPatchMutation(client, updatePatch, logicResponseFields);
