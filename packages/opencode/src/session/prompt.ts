@@ -45,6 +45,7 @@ import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
+import { UsageReporter } from "@/usage"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -151,6 +152,9 @@ export namespace SessionPrompt {
   export const prompt = fn(PromptInput, async (input) => {
     const session = await Session.get(input.sessionID)
     await SessionRevert.cleanup(session)
+
+    // Initialize TUI usage reporting (lazy, no-op if no enterprise auth)
+    UsageReporter.init()
 
     const message = await createUserMessage(input)
     await Session.touch(input.sessionID)

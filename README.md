@@ -482,6 +482,16 @@ Yes. Snow-Flow connects to any ServiceNow instance via OAuth2 or basic authentic
 
 ---
 
+## Disclaimer
+
+Snow-Flow is an independent, open-source project and is **not affiliated with, endorsed by, or sponsored by ServiceNow, Inc.** ServiceNow is a registered trademark of ServiceNow, Inc.
+
+This tool requires a valid ServiceNow subscription and uses your own credentials to interact with your ServiceNow instance. Some features (including Flow Designer automation) use undocumented ServiceNow APIs that may change without notice.
+
+Licensed under [Elastic License 2.0](LICENSE).
+
+---
+
 <p align="center">
   <b>Join our community</b><br><br>
   <a href="https://snow-flow.dev"><img alt="Website" src="https://img.shields.io/badge/Website-snow--flow.dev-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" /></a>

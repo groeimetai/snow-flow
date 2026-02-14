@@ -31,16 +31,12 @@ const LEGACY_WARNING = `
 ServiceNow Workflow (wf_workflow) is deprecated in favor of Flow Designer.
 Flow Designer provides a modern, visual interface for building automations.
 
-However, Flow Designer is NOT programmable via Snow-Flow at this time.
+Use snow_manage_flow to create and manage Flow Designer flows programmatically.
 
 RECOMMENDATIONS:
-1. For NEW automations → Consider building manually in Flow Designer
+1. For NEW automations → Use snow_manage_flow (action: create)
 2. For EXISTING workflows → This tool can manage legacy workflows
-3. Need Flow Designer specs? → Ask Snow-Flow to generate a Flow Designer
-   specification document with the required triggers, actions, and logic.
-
-To generate a Flow Designer specification, ask:
-"Generate a Flow Designer specification for [describe your automation]"
+3. For MIGRATION → Use snow_manage_flow to recreate workflows as flows
 `;
 
 export const toolDefinition: MCPToolDefinition = {
