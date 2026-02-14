@@ -1204,8 +1204,50 @@ async function getFlowTriggerInfo(
     debug.error = e.message;
   }
 
+  // Fallback: if version payload didn't have trigger, try reading from GraphQL flow state
+  if (!triggerName || !table) {
+    debug.fallback_graphql = 'attempting';
+    try {
+      var gqlQuery = 'query { global { snFlowDesigner { designTimeFlow(sysId: "' + flowId + '") { triggerInstances { name type inputs { name value { value } } } __typename } __typename } __typename } }';
+      var gqlResp = await client.post('/api/now/graphql', { variables: {}, query: gqlQuery });
+      var dtFlow = gqlResp.data?.data?.global?.snFlowDesigner?.designTimeFlow;
+      var gqlTriggers = dtFlow?.triggerInstances || [];
+      debug.fallback_graphql_triggers = gqlTriggers.length;
+      if (gqlTriggers.length > 0) {
+        var gqlTrig = gqlTriggers[0];
+        debug.fallback_graphql_trigger = { name: gqlTrig.name, type: gqlTrig.type, inputCount: gqlTrig.inputs?.length };
+        if (!triggerName && gqlTrig.name) triggerName = gqlTrig.name;
+        if (!table && gqlTrig.inputs) {
+          for (var gi = 0; gi < gqlTrig.inputs.length; gi++) {
+            if (gqlTrig.inputs[gi].name === 'table') {
+              table = gqlTrig.inputs[gi].value?.value || '';
+              break;
+            }
+          }
+        }
+      }
+    } catch (gqlErr: any) {
+      debug.fallback_graphql = 'error: ' + gqlErr.message;
+    }
+  }
+
+  // Fallback 2: look up trigger definition that belongs to this flow
+  if (!triggerName) {
+    debug.fallback_trigdef = 'attempting';
+    try {
+      // Query sys_hub_trigger_type_definition to find triggers available for this flow
+      // The trigger name in the definition matches the data pill prefix
+      var trigResp = await client.get('/api/now/table/sys_hub_flow', {
+        params: { sysparm_query: 'sys_id=' + flowId, sysparm_fields: 'sys_id,name,table', sysparm_limit: 1 }
+      });
+      var flowRec = trigResp.data.result?.[0];
+      debug.fallback_flow_record = { table: flowRec?.table };
+      if (flowRec?.table && !table) table = str(flowRec.table);
+    } catch (_) {}
+  }
+
   // Look up table label for display in label cache
-  if (table) {
+  if (table && !tableLabel) {
     try {
       var labelResp = await client.get('/api/now/table/sys_db_object', {
         params: {
@@ -1218,13 +1260,12 @@ async function getFlowTriggerInfo(
       tableLabel = str(labelResp.data.result?.[0]?.label) || '';
     } catch (_) {}
     if (!tableLabel) {
-      // Fallback: capitalize the table name
       tableLabel = table.charAt(0).toUpperCase() + table.slice(1).replace(/_/g, ' ');
     }
   }
 
   if (!triggerName) {
-    return { dataPillBase: '', triggerName: '', table: table, tableLabel: tableLabel, tableRef: table, error: 'Could not determine trigger name from flow version payload', debug };
+    return { dataPillBase: '', triggerName: '', table: table, tableLabel: tableLabel, tableRef: table, error: 'Could not determine trigger name from flow version payload or GraphQL', debug };
   }
 
   var dataPillBase = triggerName + '_1.current';
@@ -1378,18 +1419,24 @@ async function buildConditionLabelCache(
   triggerName: string,
   table: string,
   tableLabel: string,
-  logicUiId: string
+  logicUiId: string,
+  explicitFields?: string[]
 ): Promise<any[]> {
   if (!dataPillBase) return [];
 
-  var clauses = parseEncodedQuery(conditionValue);
-  if (clauses.length === 0) return [];
+  // Collect unique field names — either from explicit list or by parsing encoded query
+  if (!explicitFields) {
+    var clauses = parseEncodedQuery(conditionValue);
+    if (clauses.length === 0) return [];
+    explicitFields = clauses.map(function (c) { return c.field; }).filter(function (f) { return !!f; });
+  }
+  if (explicitFields.length === 0) return [];
 
-  // Collect unique field names
+  // De-duplicate field names
   var uniqueFields: string[] = [];
   var seen: Record<string, boolean> = {};
-  for (var i = 0; i < clauses.length; i++) {
-    var field = clauses[i].field;
+  for (var i = 0; i < explicitFields.length; i++) {
+    var field = explicitFields[i];
     if (field && !seen[field]) {
       seen[field] = true;
       uniqueFields.push(field);
@@ -1753,15 +1800,24 @@ async function addFlowLogicViaGraphQL(
 
   // ── Detect condition that needs data pill transformation ────────────
   // Flow Designer sets conditions via a SEPARATE UPDATE after the element is created.
-  // The condition format uses record-level data pill: {{TriggerName_1.current}}encodedQuery
-  // Non-standard conditions (JS expressions, fd_data refs) are passed through as-is.
+  // Three paths:
+  // 1. Standard encoded query (category=software) → transform fields to {{dataPillBase.field}}
+  // 2. Contains {{shorthand}} like {{trigger.current.X}} → rewrite to {{dataPillBase.X}} + labelCache
+  // 3. Non-standard (JS expression, fd_data ref) → passthrough
   const uuid = generateUUID();
   var conditionInput = inputResult.inputs.find(function (inp: any) { return inp.name === 'condition'; });
   var rawCondition = conditionInput?.value?.value || '';
   var needsConditionUpdate = false;
   var conditionTriggerInfo: any = null;
 
-  if (rawCondition && rawCondition !== '^EQ' && isStandardEncodedQuery(rawCondition)) {
+  // Shorthand patterns that need rewriting to the real data pill base
+  // e.g. {{trigger.current.category}} → {{Created or Updated_1.current.category}}
+  var PILL_SHORTHANDS = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
+  var hasShorthandPills = rawCondition.includes('{{') && PILL_SHORTHANDS.some(function (sh) {
+    return rawCondition.includes('{{' + sh + '.') || rawCondition.includes('{{' + sh + '}}');
+  });
+
+  if (rawCondition && rawCondition !== '^EQ' && (isStandardEncodedQuery(rawCondition) || hasShorthandPills)) {
     conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
     steps.trigger_info = {
       dataPillBase: conditionTriggerInfo.dataPillBase, triggerName: conditionTriggerInfo.triggerName,
@@ -1770,6 +1826,20 @@ async function addFlowLogicViaGraphQL(
     };
     if (conditionTriggerInfo.dataPillBase) {
       needsConditionUpdate = true;
+
+      // If condition has shorthand pills, rewrite them to real data pill base first
+      if (hasShorthandPills) {
+        var pillBase = conditionTriggerInfo.dataPillBase;
+        for (var si = 0; si < PILL_SHORTHANDS.length; si++) {
+          var sh = PILL_SHORTHANDS[si];
+          // Replace {{trigger.current.field}} → {{Created or Updated_1.current.field}}
+          rawCondition = rawCondition.split('{{' + sh + '.').join('{{' + pillBase + '.');
+          // Replace {{trigger.current}} → {{Created or Updated_1.current}}
+          rawCondition = rawCondition.split('{{' + sh + '}}').join('{{' + pillBase + '}}');
+        }
+        steps.shorthand_rewrite = { original: conditionInput?.value?.value, rewritten: rawCondition };
+      }
+
       // Clear condition in INSERT — it will be set via separate UPDATE with labelCache
       conditionInput.value = { schemaless: false, schemalessValue: '', value: '' };
       steps.condition_strategy = 'two_step';
@@ -1831,11 +1901,34 @@ async function addFlowLogicViaGraphQL(
     // The Flow Designer UI always sets conditions in a separate UPDATE after creating the element.
     if (needsConditionUpdate && conditionTriggerInfo) {
       var dataPillBase = conditionTriggerInfo.dataPillBase;
-      var transformedCondition = transformConditionToDataPills(rawCondition, dataPillBase);
-      var labelCacheEntries = await buildConditionLabelCache(
-        client, rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
-        conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid
-      );
+      var transformedCondition: string;
+      var labelCacheEntries: any[];
+
+      if (rawCondition.includes('{{')) {
+        // Condition already contains data pill references (after shorthand rewrite)
+        // Use as-is and extract field names from {{pill.field}} patterns for labelCache
+        transformedCondition = rawCondition;
+        var pillFields: string[] = [];
+        var pillRx = /\{\{([^}]+)\}\}/g;
+        var pm;
+        while ((pm = pillRx.exec(rawCondition)) !== null) {
+          var pParts = pm[1].split('.');
+          if (pParts.length > 2) pillFields.push(pParts[pParts.length - 1]);
+        }
+        // Build labelCache using extracted field names
+        labelCacheEntries = await buildConditionLabelCache(
+          client, rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
+          conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid,
+          pillFields
+        );
+      } else {
+        // Plain encoded query — transform to data pill format
+        transformedCondition = transformConditionToDataPills(rawCondition, dataPillBase);
+        labelCacheEntries = await buildConditionLabelCache(
+          client, rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
+          conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid
+        );
+      }
 
       steps.condition_transform = { original: rawCondition, transformed: transformedCondition };
       steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }) };
