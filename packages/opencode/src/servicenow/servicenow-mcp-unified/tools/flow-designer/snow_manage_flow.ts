@@ -1512,17 +1512,16 @@ async function buildConditionLabelCache(
   tableLabel: string,
   logicUiId: string,
   explicitFields?: string[]
-): Promise<{ inserts: any[]; updates: any[] }> {
-  var empty = { inserts: [], updates: [] };
-  if (!dataPillBase) return empty;
+): Promise<any[]> {
+  if (!dataPillBase) return [];
 
   // Collect unique field names — either from explicit list or by parsing encoded query
   if (!explicitFields) {
     var clauses = parseEncodedQuery(conditionValue);
-    if (clauses.length === 0) return empty;
+    if (clauses.length === 0) return [];
     explicitFields = clauses.map(function (c) { return c.field; }).filter(function (f) { return !!f; });
   }
-  if (explicitFields.length === 0) return empty;
+  if (explicitFields.length === 0) return [];
 
   // De-duplicate field names
   var uniqueFields: string[] = [];
@@ -1536,51 +1535,16 @@ async function buildConditionLabelCache(
   }
   if (uniqueFields.length === 0) return [];
 
-  // Batch-query sys_dictionary for field metadata (type, label)
-  var fieldMeta: Record<string, { type: string; label: string }> = {};
-  try {
-    var dictResp = await client.get('/api/now/table/sys_dictionary', {
-      params: {
-        sysparm_query: 'name=' + table + '^elementIN' + uniqueFields.join(','),
-        sysparm_fields: 'element,column_label,internal_type',
-        sysparm_display_value: 'false',
-        sysparm_limit: uniqueFields.length + 5
-      }
-    });
-    var dictResults = dictResp.data.result || [];
-    for (var d = 0; d < dictResults.length; d++) {
-      var rec = dictResults[d];
-      var elName = str(rec.element);
-      var intType = str(rec.internal_type?.value || rec.internal_type || 'string');
-      var colLabel = str(rec.column_label);
-      if (elName) fieldMeta[elName] = { type: intType, label: colLabel };
-    }
-  } catch (_) {
-    // Fallback: use "string" type and generated labels if dictionary lookup fails
-  }
-
-  // Build labelCache entries for condition pills, split into INSERT and UPDATE:
-  // - INSERT: record-level pill (must exist for actions; format from processflow XML)
-  // - UPDATE: field-level pills (minimal: name + usedInstances — matching the UI's exact mutation format)
+  // Build labelCache UPDATE entries for condition pills.
+  // Matches the UI's exact mutation format (from if-statement-update.txt):
+  //   labelCache: { update: [{ name: "Created or Updated_1.current.category", usedInstances: [...] }] }
   //
-  // The UI uses labelCache.update for condition pills (captured mutation shows only name + usedInstances).
-  // The record-level pill is INSERTed to ensure it exists (our trigger is created via code, not UI).
-  var inserts: any[] = [];
+  // The record-level pill (e.g. "Created or Updated_1.current") is NOT included here because:
+  // - The ServiceNow backend automatically creates it when the trigger is saved (INSERT → UPDATE)
+  // - Sending a duplicate labelCache.insert for it can cause the entire labelCache block to fail
+  // - The UI's condition mutation never sends a record-level pill insert (confirmed via network capture)
   var updates: any[] = [];
 
-  // Record-level pill entry → INSERT with full metadata (processflow XML format)
-  inserts.push({
-    name: dataPillBase,
-    label: 'Trigger - Record ' + triggerName + '\u279b' + tableLabel + ' Record',
-    reference: table,
-    reference_display: tableLabel,
-    type: 'reference',
-    base_type: 'reference',
-    attributes: {},
-    usedInstances: []
-  });
-
-  // Field-level pill entries → UPDATE with minimal fields (matching UI mutation)
   for (var j = 0; j < uniqueFields.length; j++) {
     var f = uniqueFields[j];
     var pillName = dataPillBase + '.' + f;
@@ -1591,7 +1555,7 @@ async function buildConditionLabelCache(
     });
   }
 
-  return { inserts, updates };
+  return updates;
 }
 
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
@@ -2042,19 +2006,15 @@ async function addFlowLogicViaGraphQL(
       }
 
       steps.condition_transform = { original: rawCondition, transformed: transformedCondition };
-      steps.label_cache = {
-        inserts: labelCacheResult.inserts.map(function (e: any) { return e.name; }),
-        updates: labelCacheResult.updates.map(function (e: any) { return e.name; })
-      };
+      steps.label_cache = labelCacheResult.map(function (e: any) { return e.name; });
 
       try {
-        // Match the UI's exact format for condition UPDATE (from captured network tab mutation):
+        // Match the UI's exact format for condition UPDATE (from if-statement-update.txt):
+        // - labelCache.update: field-level pills with minimal name + usedInstances
+        // - NO labelCache.insert (record-level pill is auto-created by backend during trigger save)
         // - condition input: only name + value (NO displayValue, NO flowLogicDefinition)
-        // - labelCache.insert: record-level pill with full metadata (ensures it exists)
-        // - labelCache.update: field-level pills with minimal name + usedInstances (matching UI)
         var updatePatch: any = {
           flowId: flowId,
-          labelCache: {} as any,
           flowLogics: {
             update: [{
               uiUniqueIdentifier: returnedUuid,
@@ -2066,11 +2026,8 @@ async function addFlowLogicViaGraphQL(
             }]
           }
         };
-        if (labelCacheResult.inserts.length > 0) {
-          updatePatch.labelCache.insert = labelCacheResult.inserts;
-        }
-        if (labelCacheResult.updates.length > 0) {
-          updatePatch.labelCache.update = labelCacheResult.updates;
+        if (labelCacheResult.length > 0) {
+          updatePatch.labelCache = { update: labelCacheResult };
         }
         // Log the exact GraphQL mutation for debugging
         steps.condition_update_mutation = jsToGraphQL(updatePatch);
