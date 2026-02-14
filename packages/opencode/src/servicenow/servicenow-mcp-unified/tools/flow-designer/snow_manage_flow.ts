@@ -1708,6 +1708,13 @@ async function transformActionInputsForRecordAction(
       usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
       steps.record_transform = { original: recordVal, pill: pillRef };
     } else if (isAlreadyPill) {
+      // Check if the pill contains a shorthand that needs rewriting to the full dataPillBase
+      var innerVal = recordVal.replace(/^\{\{/, '').replace(/\}\}$/, '').trim();
+      if (RECORD_PILL_SHORTHANDS.includes(innerVal.toLowerCase())) {
+        var pillRef2 = '{{' + dataPillBase + '}}';
+        recordInput.value = { schemaless: false, schemalessValue: '', value: pillRef2 };
+        steps.record_transform = { original: recordVal, pill: pillRef2 };
+      }
       // UI keeps displayValue empty for pill references
       recordInput.displayValue = { value: '' };
       usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
