@@ -1009,7 +1009,7 @@ async function addActionViaGraphQL(
     inputResult.actionParams, uuid
   );
   steps.record_action = recordActionResult.steps;
-  var hasRecordPills = recordActionResult.labelCacheEntries.length > 0;
+  var hasRecordPills = (recordActionResult.labelCacheUpdates.length + recordActionResult.labelCacheInserts.length) > 0;
 
   // For record actions: clear data pill values from INSERT — they'll be set via separate UPDATE
   // (Flow Designer's GraphQL API ignores labelCache during INSERT, it only works with UPDATE)
@@ -1064,19 +1064,30 @@ async function addActionViaGraphQL(
     if (!actionId) return { success: false, steps, error: 'GraphQL action INSERT returned no ID' };
 
     // Step 2: UPDATE with data pill values + labelCache (separate mutation, matching UI behavior)
-    // The Flow Designer UI always sets data pill references via a separate UPDATE.
+    // The Flow Designer UI uses labelCache UPDATE for existing pills (record-level)
+    // and labelCache INSERT for new pills (field-level in values).
     if (hasRecordPills) {
       var updateInputs: any[] = [];
-      // Collect all inputs that have data pill values
+      // Collect inputs for the UPDATE mutation
       for (var ri = 0; ri < recordActionResult.inputs.length; ri++) {
         var inp = recordActionResult.inputs[ri];
         var val = inp.value?.value || '';
         if (inp.name === 'record' && val.startsWith('{{')) {
           updateInputs.push({ name: 'record', value: { schemaless: false, schemalessValue: '', value: val } });
         } else if (inp.name === 'table_name') {
-          updateInputs.push({ name: 'table_name', displayValue: inp.displayValue || { value: '' }, value: inp.value || { value: '' } });
-        } else if (inp.name === 'values' && val) {
-          updateInputs.push({ name: 'values', value: { schemaless: false, schemalessValue: '', value: val } });
+          // displayValue must use full schemaless format: {schemaless, schemalessValue, value}
+          updateInputs.push({
+            name: 'table_name',
+            displayValue: inp.displayValue || { schemaless: false, schemalessValue: '', value: '' },
+            value: inp.value || { schemaless: false, schemalessValue: '', value: '' }
+          });
+        } else if (inp.name === 'values') {
+          // UI sends {name: "values"} without value property when empty, with value when set
+          if (val) {
+            updateInputs.push({ name: 'values', value: { schemaless: false, schemalessValue: '', value: val } });
+          } else {
+            updateInputs.push({ name: 'values' });
+          }
         }
       }
 
@@ -1084,7 +1095,7 @@ async function addActionViaGraphQL(
         try {
           var updatePatch: any = {
             flowId: flowId,
-            labelCache: { insert: recordActionResult.labelCacheEntries },
+            labelCache: {} as any,
             actions: {
               update: [{
                 uiUniqueIdentifier: uuid,
@@ -1093,6 +1104,14 @@ async function addActionViaGraphQL(
               }]
             }
           };
+          // Record-level pills → labelCache UPDATE (already exist from trigger)
+          if (recordActionResult.labelCacheUpdates.length > 0) {
+            updatePatch.labelCache.update = recordActionResult.labelCacheUpdates;
+          }
+          // Field-level pills → labelCache INSERT (new entries)
+          if (recordActionResult.labelCacheInserts.length > 0) {
+            updatePatch.labelCache.insert = recordActionResult.labelCacheInserts;
+          }
           await executeFlowPatchMutation(client, updatePatch, actionResponseFields);
           steps.record_update = { success: true, inputCount: updateInputs.length };
         } catch (ue: any) {
@@ -1558,31 +1577,29 @@ async function transformActionInputsForRecordAction(
   }
 
   // ── 4. Build labelCache entries for data pills ────────────────────
+  // The record-level pill (e.g. "Created or Updated_1.current") already exists in the
+  // flow's labelCache from the trigger. The UI sends a labelCache UPDATE (not INSERT)
+  // with just name + usedInstances to register this action's usage.
+  // Field-level pills (e.g. "Created or Updated_1.current.assigned_to") are new and need INSERT.
+  var labelCacheUpdates: any[] = [];
+  var labelCacheInserts: any[] = [];
+
   if (dataPillBase && usedInstances.length > 0) {
     var tableRef = triggerInfo.tableRef || triggerInfo.table || '';
     var tblLabel = triggerInfo.tableLabel || '';
 
-    // Record-level data pill entry (for the `record` input — selecting the whole record)
-    labelCacheEntries.push({
+    // Record-level pill — UPDATE existing entry with new usedInstances (minimal: name + usedInstances only)
+    labelCacheUpdates.push({
       name: dataPillBase,
-      label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tblLabel + ' Record',
-      reference: tableRef,
-      reference_display: tblLabel,
-      type: 'reference',
-      base_type: 'reference',
-      parent_table_name: tableRef,
-      column_name: '',
-      usedInstances: usedInstances,
-      choices: {}
+      usedInstances: usedInstances
     });
 
-    // Field-level data pill entries for any field references in the `values` string
+    // Field-level data pill entries for any field references in the `values` string → INSERT (new pills)
     var valuesStr = '';
     var valuesInp = actionInputs.find(function (inp: any) { return inp.name === 'values'; });
     if (valuesInp) valuesStr = valuesInp.value?.value || '';
 
     if (valuesStr && valuesStr.includes('{{')) {
-      // Extract field-level pills from values like "assigned_to={{dataPillBase.assigned_to}}"
       var pillRegex = /\{\{([^}]+)\}\}/g;
       var pillMatch;
       var seenPills: Record<string, boolean> = {};
@@ -1593,12 +1610,10 @@ async function transformActionInputsForRecordAction(
         if (seenPills[fullPillName]) continue;
         seenPills[fullPillName] = true;
 
-        // Extract field name from pill (e.g. "Created or Updated_1.current.assigned_to" → "assigned_to")
         var dotParts = fullPillName.split('.');
         var fieldCol = dotParts.length > 2 ? dotParts[dotParts.length - 1] : '';
 
         if (fieldCol) {
-          // Look up field metadata from sys_dictionary
           var fMeta: { type: string; label: string } = { type: 'string', label: fieldCol.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }) };
           try {
             var dictResp = await client.get('/api/now/table/sys_dictionary', {
@@ -1616,7 +1631,7 @@ async function transformActionInputsForRecordAction(
             }
           } catch (_) {}
 
-          labelCacheEntries.push({
+          labelCacheInserts.push({
             name: fullPillName,
             label: 'Trigger - Record ' + triggerInfo.triggerName + '\u27a1' + tblLabel + ' Record\u27a1' + fMeta.label,
             reference: '',
@@ -1632,10 +1647,14 @@ async function transformActionInputsForRecordAction(
       }
     }
 
-    steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }), usedInstances: usedInstances.length };
+    steps.label_cache = {
+      updates: labelCacheUpdates.map(function (e: any) { return e.name; }),
+      inserts: labelCacheInserts.map(function (e: any) { return e.name; }),
+      usedInstances: usedInstances.length
+    };
   }
 
-  return { inputs: actionInputs, labelCacheEntries, steps };
+  return { inputs: actionInputs, labelCacheUpdates, labelCacheInserts, steps };
 }
 
 // ── FLOW LOGIC (If/Else, For Each, etc.) ─────────────────────────────
