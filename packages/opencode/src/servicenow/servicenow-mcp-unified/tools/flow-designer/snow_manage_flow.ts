@@ -1169,10 +1169,9 @@ async function addActionViaGraphQL(
         var inp = recordActionResult.inputs[ri];
         var val = inp.value?.value || '';
         if (inp.name === 'record' && val.startsWith('{{')) {
-          // Both value and displayValue must be set (matching processflow XML format)
+          // UI only sends `value` for the record pill (no displayValue)
           updateInputs.push({
             name: 'record',
-            displayValue: { schemaless: false, schemalessValue: '', value: val },
             value: { schemaless: false, schemalessValue: '', value: val }
           });
         } else if (inp.name === 'table_name') {
@@ -1702,15 +1701,15 @@ async function transformActionInputsForRecordAction(
 
     if (isShorthand || !recordVal) {
       // Auto-fill with trigger's current record data pill
-      // The processflow XML shows both value AND displayValue must be set to the pill reference
+      // UI only sends the pill in `value`; displayValue stays empty
       var pillRef = '{{' + dataPillBase + '}}';
       recordInput.value = { schemaless: false, schemalessValue: '', value: pillRef };
-      recordInput.displayValue = { schemaless: false, schemalessValue: '', value: pillRef };
+      recordInput.displayValue = { value: '' };
       usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
       steps.record_transform = { original: recordVal, pill: pillRef };
     } else if (isAlreadyPill) {
-      // Also ensure displayValue is set for existing pill references
-      recordInput.displayValue = { schemaless: false, schemalessValue: '', value: recordVal };
+      // UI keeps displayValue empty for pill references
+      recordInput.displayValue = { value: '' };
       usedInstances.push({ uiUniqueIdentifier: uuid, inputName: 'record' });
     }
   }
@@ -1816,7 +1815,8 @@ async function transformActionInputsForRecordAction(
       reference_display: tblLabel,
       type: 'reference',
       base_type: 'reference',
-      attributes: {},
+      attributes: '',
+      choices: {},
       usedInstances: usedInstances
     });
 
@@ -1866,7 +1866,7 @@ async function transformActionInputsForRecordAction(
             base_type: fMeta.type,
             parent_table_name: tableRef,
             column_name: fieldCol,
-            attributes: {},
+            attributes: '',
             usedInstances: [{ uiUniqueIdentifier: uuid, inputName: fieldCol }]
           });
         }
@@ -2174,7 +2174,7 @@ async function addFlowLogicViaGraphQL(
               inputs: [
                 {
                   name: 'condition_name',
-                  value: { schemaless: false, schemalessValue: '', value: 'label' }
+                  value: { schemaless: false, schemalessValue: '', value: inputResult.resolvedInputs['condition_name'] || '' }
                 },
                 {
                   name: 'condition',
