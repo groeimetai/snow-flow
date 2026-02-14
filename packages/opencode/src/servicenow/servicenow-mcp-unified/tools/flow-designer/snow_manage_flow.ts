@@ -1,3 +1,18 @@
+/**
+ * Snow-Flow Flow Designer Tool
+ *
+ * DISCLAIMER:
+ * This tool uses both official and undocumented ServiceNow APIs to interact
+ * with Flow Designer. The GraphQL-based operations (snFlowDesigner) use
+ * internal ServiceNow APIs that are not officially documented and may change
+ * without notice. Use at your own risk.
+ *
+ * This tool is not affiliated with, endorsed by, or sponsored by ServiceNow, Inc.
+ * ServiceNow is a registered trademark of ServiceNow, Inc.
+ *
+ * A valid ServiceNow subscription and credentials are required to use this tool.
+ */
+
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
 import { getAuthenticatedClient } from '../../shared/auth.js';
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
@@ -1149,67 +1164,66 @@ async function getFlowTriggerInfo(
   var debug: any = {};
 
   // PRIMARY: Read flow via ProcessFlow REST API (same endpoint as Flow Designer UI)
-  // This is how the UI loads the flow — returns JSON/XML with full trigger data
+  // This API returns XML (not JSON). We parse trigger info from the XML string.
   try {
     debug.processflow_api = 'attempting';
-    var pfResp = await client.get('/api/now/processflow/flow/' + flowId);
-    var pfData = pfResp.data?.result || pfResp.data;
+    var pfResp = await client.get('/api/now/processflow/flow/' + flowId, {
+      headers: { 'Accept': 'application/xml, application/json' }
+    });
+    var pfRaw = pfResp.data;
     debug.processflow_api = 'success';
-    debug.processflow_type = typeof pfData;
-    debug.processflow_keys = pfData && typeof pfData === 'object' ? Object.keys(pfData).slice(0, 20) : null;
+    debug.processflow_type = typeof pfRaw;
 
-    // The ProcessFlow API returns the flow with trigger instances
-    // Try multiple possible structures for trigger data
-    var pfTriggers = pfData?.triggerInstances || pfData?.trigger_instances || pfData?.triggers || [];
-    if (!Array.isArray(pfTriggers) && pfData?.model?.triggerInstances) {
-      pfTriggers = pfData.model.triggerInstances;
-    }
-    if (!Array.isArray(pfTriggers) && pfData?.definition?.triggerInstances) {
-      pfTriggers = pfData.definition.triggerInstances;
-    }
-    debug.processflow_triggers = Array.isArray(pfTriggers) ? pfTriggers.length : typeof pfTriggers;
+    if (typeof pfRaw === 'string' && pfRaw.indexOf('<triggerInstances>') >= 0) {
+      // Response is XML — parse trigger info with regex
+      debug.processflow_format = 'xml';
 
-    if (Array.isArray(pfTriggers) && pfTriggers.length > 0) {
-      var pfTrig = pfTriggers[0];
-      debug.processflow_trigger_keys = Object.keys(pfTrig);
-      debug.processflow_trigger_name = pfTrig.name;
-      triggerName = pfTrig.name || pfTrig.triggerName || '';
-      if (pfTrig.inputs && Array.isArray(pfTrig.inputs)) {
-        for (var pfi = 0; pfi < pfTrig.inputs.length; pfi++) {
-          if (pfTrig.inputs[pfi].name === 'table') {
-            table = pfTrig.inputs[pfi].value?.value || str(pfTrig.inputs[pfi].value) || '';
-            break;
+      // Extract the triggerInstances block
+      var trigBlockMatch = pfRaw.match(/<triggerInstances>([\s\S]*?)<\/triggerInstances>/);
+      if (trigBlockMatch) {
+        var trigBlock = trigBlockMatch[1];
+
+        // Trigger name: <name>X</name> that appears near <triggerType> at end of block
+        // Structure: ...<name>Created or Updated</name><comment/>...<triggerType>Record</triggerType>
+        var trigNameMatch = trigBlock.match(/<name>([^<]+)<\/name>[\s\S]{0,300}<triggerType>/);
+        if (trigNameMatch) {
+          triggerName = trigNameMatch[1];
+          debug.processflow_trigger_name = triggerName;
+        }
+
+        // Table: find <name>table</name> ... <value>X</value> inside trigger inputs
+        var tableMatch = trigBlock.match(/<name>table<\/name>[\s\S]*?<value>([^<]+)<\/value>/);
+        if (tableMatch) {
+          table = tableMatch[1];
+          debug.processflow_table = table;
+        }
+      }
+    } else if (pfRaw && typeof pfRaw === 'object') {
+      // Response is JSON — traverse object structure
+      debug.processflow_format = 'json';
+      var pfData = pfRaw.result || pfRaw;
+      debug.processflow_keys = pfData && typeof pfData === 'object' ? Object.keys(pfData).slice(0, 20) : null;
+
+      var pfTriggers = pfData?.triggerInstances || pfData?.trigger_instances || pfData?.triggers || [];
+      if (!Array.isArray(pfTriggers) && pfData?.model?.triggerInstances) {
+        pfTriggers = pfData.model.triggerInstances;
+      }
+      if (!Array.isArray(pfTriggers) && pfData?.definition?.triggerInstances) {
+        pfTriggers = pfData.definition.triggerInstances;
+      }
+
+      if (Array.isArray(pfTriggers) && pfTriggers.length > 0) {
+        var pfTrig = pfTriggers[0];
+        triggerName = pfTrig.name || pfTrig.triggerName || '';
+        if (pfTrig.inputs && Array.isArray(pfTrig.inputs)) {
+          for (var pfi = 0; pfi < pfTrig.inputs.length; pfi++) {
+            if (pfTrig.inputs[pfi].name === 'table') {
+              table = pfTrig.inputs[pfi].value?.value || str(pfTrig.inputs[pfi].value) || '';
+              break;
+            }
           }
         }
       }
-    }
-
-    // If trigger not found in expected structure, search recursively in the response
-    if (!triggerName && pfData) {
-      var searchForTrigger = function (obj: any, depth: number): void {
-        if (depth > 4 || triggerName) return;
-        if (!obj || typeof obj !== 'object') return;
-        // Look for objects that have triggerDefinitionId or triggerType + name
-        if (obj.triggerDefinitionId && obj.name) {
-          triggerName = obj.name;
-          debug.processflow_trigger_found_at = 'recursive_search';
-          if (obj.inputs && Array.isArray(obj.inputs)) {
-            for (var ri = 0; ri < obj.inputs.length; ri++) {
-              if (obj.inputs[ri].name === 'table') {
-                table = obj.inputs[ri].value?.value || str(obj.inputs[ri].value) || '';
-                break;
-              }
-            }
-          }
-          return;
-        }
-        if (Array.isArray(obj)) {
-          for (var ai = 0; ai < obj.length; ai++) searchForTrigger(obj[ai], depth + 1);
-        } else {
-          for (var key of Object.keys(obj)) searchForTrigger(obj[key], depth + 1);
-        }
-      };
-      searchForTrigger(pfData, 0);
     }
   } catch (pfErr: any) {
     debug.processflow_api = 'error: ' + pfErr.message;
