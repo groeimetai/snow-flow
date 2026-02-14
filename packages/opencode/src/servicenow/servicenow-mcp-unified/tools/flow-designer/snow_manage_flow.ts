@@ -111,6 +111,26 @@ async function executeFlowPatchMutation(
 }
 
 /**
+ * Acquire the Flow Designer editing lock on a flow.
+ * The UI calls safeEdit(create: flowId) when opening the editor.
+ * This must be called before GraphQL mutations on existing flows.
+ */
+async function acquireFlowEditingLock(client: any, flowId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    var mutation = 'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {create: "' + flowId + '"}) { createResult { canEdit id editingUserDisplayName __typename } __typename } __typename } __typename } }';
+    var resp = await client.post('/api/now/graphql', { variables: {}, query: mutation });
+    var result = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.createResult;
+    if (result?.canEdit === true || result?.canEdit === 'true') {
+      return { success: true };
+    }
+    var editingUser = result?.editingUserDisplayName || 'another user';
+    return { success: false, error: 'Flow is locked by ' + editingUser };
+  } catch (e: any) {
+    return { success: false, error: e.message || 'unknown error' };
+  }
+}
+
+/**
  * Release the Flow Designer editing lock on a flow.
  * The UI calls safeEdit(delete: flowId) when closing the editor.
  * Without this, the flow remains locked to the API user forever.
@@ -3727,22 +3747,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
 
       // ────────────────────────────────────────────────────────────────
-      // OPEN_FLOW — acquire Flow Designer editing lock (processflow GET)
+      // OPEN_FLOW — acquire Flow Designer editing lock (safeEdit create)
       // ────────────────────────────────────────────────────────────────
       case 'open_flow': {
         if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for open_flow');
         var openFlowId = await resolveFlowId(client, args.flow_id);
         var openSummary = summary();
+
+        // Step 1: Load flow data via processflow GET (same as UI)
         try {
-          // The processflow GET is what the Flow Designer UI calls when opening a flow for editing.
-          // This acquires the editing lock so subsequent GraphQL mutations can work.
           await client.get('/api/now/processflow/flow/' + openFlowId);
-          openSummary.success('Flow opened for editing').field('Flow', openFlowId)
+        } catch (_) { /* best-effort — flow data load is not critical for lock acquisition */ }
+
+        // Step 2: Acquire editing lock via safeEdit create mutation (required for GraphQL mutations)
+        var lockResult = await acquireFlowEditingLock(client, openFlowId);
+        if (lockResult.success) {
+          openSummary.success('Flow opened for editing (lock acquired)').field('Flow', openFlowId)
             .line('You can now use add_action, add_flow_logic, etc. Call close_flow when done.');
           return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true }, {}, openSummary.build());
-        } catch (e: any) {
-          openSummary.error('Failed to open flow for editing: ' + (e.message || 'unknown')).field('Flow', openFlowId);
-          return createErrorResult('Failed to open flow for editing: ' + (e.message || 'unknown'));
+        } else {
+          openSummary.error('Cannot open flow: ' + (lockResult.error || 'lock acquisition failed')).field('Flow', openFlowId);
+          return createErrorResult('Cannot open flow for editing: ' + (lockResult.error || 'lock acquisition failed'));
         }
       }
 
