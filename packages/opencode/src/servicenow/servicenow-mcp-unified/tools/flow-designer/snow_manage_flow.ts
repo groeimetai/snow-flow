@@ -241,7 +241,12 @@ async function buildActionInputsForInsert(
     };
   });
 
-  return { inputs, resolvedInputs, actionParams };
+  // Check for mandatory fields that are missing a value
+  var missingMandatory = inputs
+    .filter(function (inp: any) { return inp.parameter?.mandatory && !inp.value?.value; })
+    .map(function (inp: any) { return inp.name + ' (' + (inp.parameter?.label || inp.name) + ')'; });
+
+  return { inputs, resolvedInputs, actionParams, missingMandatory };
 }
 
 /**
@@ -373,7 +378,12 @@ async function buildFlowLogicInputsForInsert(
     variables: '[]'
   };
 
-  return { inputs, flowLogicDefinition, resolvedInputs, inputQueryError: inputQueryError || undefined, defParamsCount: defParams.length };
+  // Check for mandatory fields that are missing a value
+  var missingMandatory = inputs
+    .filter(function (inp: any) { return inp.parameter?.mandatory && !inp.value?.value; })
+    .map(function (inp: any) { return inp.name + ' (' + (inp.parameter?.label || inp.name) + ')'; });
+
+  return { inputs, flowLogicDefinition, resolvedInputs, inputQueryError: inputQueryError || undefined, defParamsCount: defParams.length, missingMandatory };
 }
 
 // Note: reordering of existing elements is NOT possible via Table API because
@@ -1126,6 +1136,12 @@ async function addActionViaGraphQL(
   const inputResult = await buildActionInputsForInsert(client, actionDefId, inputs);
   steps.available_inputs = inputResult.actionParams.map((p: any) => ({ element: p.element, label: p.label }));
   steps.resolved_inputs = inputResult.resolvedInputs;
+
+  // Validate mandatory fields
+  if (inputResult.missingMandatory && inputResult.missingMandatory.length > 0) {
+    steps.missing_mandatory = inputResult.missingMandatory;
+    return { success: false, error: 'Missing required inputs for ' + actionType + ': ' + inputResult.missingMandatory.join(', ') + '. These fields are mandatory in Flow Designer.', steps };
+  }
 
   // Calculate insertion order
   const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
@@ -2016,6 +2032,12 @@ async function addFlowLogicViaGraphQL(
   steps.available_inputs = inputResult.inputs.map((i: any) => ({ name: i.name, label: i.parameter?.label }));
   steps.resolved_inputs = inputResult.resolvedInputs;
   steps.input_query_stats = { defParamsFound: inputResult.defParamsCount, inputsBuilt: inputResult.inputs.length, error: inputResult.inputQueryError };
+
+  // Validate mandatory fields (e.g. condition for IF/ELSEIF)
+  if (inputResult.missingMandatory && inputResult.missingMandatory.length > 0) {
+    steps.missing_mandatory = inputResult.missingMandatory;
+    return { success: false, error: 'Missing required inputs for ' + logicType + ': ' + inputResult.missingMandatory.join(', ') + '. These fields are mandatory in Flow Designer.', steps };
+  }
 
   // ── Detect condition that needs data pill transformation ────────────
   // Flow Designer sets conditions via a SEPARATE UPDATE after the element is created.
