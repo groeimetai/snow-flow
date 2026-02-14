@@ -115,19 +115,62 @@ async function executeFlowPatchMutation(
  * The UI calls safeEdit(create: flowId) when opening the editor.
  * This must be called before GraphQL mutations on existing flows.
  */
-async function acquireFlowEditingLock(client: any, flowId: string): Promise<{ success: boolean; error?: string }> {
+async function acquireFlowEditingLock(client: any, flowId: string): Promise<{ success: boolean; error?: string; debug?: any }> {
+  var debug: any = {};
+
+  // Step 1: Call safeEdit(create) GraphQL mutation (same as UI)
   try {
     var mutation = 'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {create: "' + flowId + '"}) { createResult { canEdit id editingUserDisplayName __typename } __typename } __typename } __typename } }';
     var resp = await client.post('/api/now/graphql', { variables: {}, query: mutation });
     var result = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.createResult;
-    if (result?.canEdit === true || result?.canEdit === 'true') {
-      return { success: true };
+    debug.graphql_response = result;
+    if (result?.canEdit !== true && result?.canEdit !== 'true') {
+      var editingUser = result?.editingUserDisplayName || 'another user';
+      return { success: false, error: 'Flow is locked by ' + editingUser, debug };
     }
-    var editingUser = result?.editingUserDisplayName || 'another user';
-    return { success: false, error: 'Flow is locked by ' + editingUser };
+    debug.graphql_canEdit = true;
   } catch (e: any) {
-    return { success: false, error: e.message || 'unknown error' };
+    debug.graphql_error = e.message;
   }
+
+  // Step 2: Verify a sys_hub_flow_safe_edit record was actually created
+  try {
+    var checkResp = await client.get('/api/now/table/sys_hub_flow_safe_edit', {
+      params: { sysparm_query: 'document_id=' + flowId, sysparm_fields: 'sys_id,document_id,user', sysparm_limit: 1 }
+    });
+    var existing = checkResp.data.result?.[0];
+    if (existing?.sys_id) {
+      debug.safe_edit_record = existing.sys_id;
+      return { success: true, debug };
+    }
+    debug.safe_edit_record = 'not_found_after_graphql';
+  } catch (e: any) {
+    debug.safe_edit_check_error = e.message;
+  }
+
+  // Step 3: Fallback — create the safe_edit record directly via REST API
+  // The GraphQL mutation may return canEdit=true without persisting a record.
+  try {
+    var createResp = await client.post('/api/now/table/sys_hub_flow_safe_edit', {
+      document_id: flowId
+    });
+    var created = createResp.data.result;
+    if (created?.sys_id) {
+      debug.rest_created = created.sys_id;
+      return { success: true, debug };
+    }
+    debug.rest_create_response = created;
+  } catch (e: any) {
+    debug.rest_create_error = e.message;
+  }
+
+  // If GraphQL said canEdit=true, trust it even if we couldn't verify/create the record
+  if (debug.graphql_canEdit) {
+    debug.fallback = 'trusting_graphql_canEdit';
+    return { success: true, debug };
+  }
+
+  return { success: false, error: 'Could not acquire editing lock (GraphQL + REST fallback both failed)', debug };
 }
 
 /**
@@ -1158,6 +1201,62 @@ async function addActionViaGraphQL(
   steps.record_action = recordActionResult.steps;
   var hasRecordPills = (recordActionResult.labelCacheUpdates.length + recordActionResult.labelCacheInserts.length) > 0;
 
+  // ── Rewrite shorthand pills in generic action inputs (e.g. Log "message") ────
+  // Non-record inputs (anything other than record/table_name/values) that contain
+  // {{trigger.current.X}} need rewriting to {{Created or Updated_1.current.X}} + labelCache.
+  var PILL_SHORTHANDS_ACTION = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
+  var RECORD_INPUTS = ['record', 'table_name', 'values'];
+  var genericPillInputs: { name: string; fields: string[]; isRecordLevel: boolean }[] = [];
+  var actionTriggerInfo: any = null;
+
+  for (var gpi = 0; gpi < recordActionResult.inputs.length; gpi++) {
+    var gpInput = recordActionResult.inputs[gpi];
+    if (RECORD_INPUTS.includes(gpInput.name)) continue;
+    var gpVal = gpInput.value?.value || '';
+    if (!gpVal.includes('{{')) continue;
+
+    var gpHasShorthand = PILL_SHORTHANDS_ACTION.some(function (sh) {
+      return gpVal.includes('{{' + sh + '.') || gpVal.includes('{{' + sh + '}}');
+    });
+    if (!gpHasShorthand) continue;
+
+    // Get trigger info if not already fetched
+    if (!actionTriggerInfo) {
+      actionTriggerInfo = await getFlowTriggerInfo(client, flowId);
+      steps.action_trigger_info = {
+        dataPillBase: actionTriggerInfo.dataPillBase, triggerName: actionTriggerInfo.triggerName,
+        table: actionTriggerInfo.table, tableLabel: actionTriggerInfo.tableLabel
+      };
+    }
+    if (!actionTriggerInfo.dataPillBase) continue;
+
+    var gpPillBase = actionTriggerInfo.dataPillBase;
+    var gpOrigVal = gpVal;
+    for (var gsi = 0; gsi < PILL_SHORTHANDS_ACTION.length; gsi++) {
+      var gsh = PILL_SHORTHANDS_ACTION[gsi];
+      gpVal = gpVal.split('{{' + gsh + '.').join('{{' + gpPillBase + '.');
+      gpVal = gpVal.split('{{' + gsh + '}}').join('{{' + gpPillBase + '}}');
+    }
+    gpInput.value.value = gpVal;
+
+    // Extract field names from pills for labelCache
+    var gpPillFields: string[] = [];
+    var gpIsRecordLevel = false;
+    var gpPillRx = /\{\{([^}]+)\}\}/g;
+    var gpm: RegExpExecArray | null;
+    while ((gpm = gpPillRx.exec(gpVal)) !== null) {
+      var gpParts = gpm[1].split('.');
+      if (gpParts.length > 2) {
+        gpPillFields.push(gpParts[gpParts.length - 1]);
+      } else {
+        gpIsRecordLevel = true;
+      }
+    }
+
+    genericPillInputs.push({ name: gpInput.name, fields: gpPillFields, isRecordLevel: gpIsRecordLevel });
+    steps['pill_rewrite_' + gpInput.name] = { original: gpOrigVal, rewritten: gpVal };
+  }
+
   // For record actions: clear data pill values from INSERT — they'll be set via separate UPDATE
   // (Flow Designer's GraphQL API ignores labelCache during INSERT, it only works with UPDATE)
   var insertInputs = recordActionResult.inputs;
@@ -1267,6 +1366,64 @@ async function addActionViaGraphQL(
           steps.record_update = { success: false, error: ue.message };
           // Action was created — update failure is non-fatal
         }
+      }
+    }
+
+    // Step 3: UPDATE labelCache for generic action inputs with data pills (e.g. Log "message")
+    if (genericPillInputs.length > 0 && actionTriggerInfo?.dataPillBase) {
+      try {
+        var gpLabelInserts: any[] = [];
+        var gpBase = actionTriggerInfo.dataPillBase;
+        var gpTrigName = actionTriggerInfo.triggerName;
+        var gpTable = actionTriggerInfo.tableRef || actionTriggerInfo.table;
+        var gpTableLabel = actionTriggerInfo.tableLabel;
+
+        for (var gli = 0; gli < genericPillInputs.length; gli++) {
+          var gpi2 = genericPillInputs[gli];
+
+          // Field-level pills: build labelCache with metadata from sys_dictionary
+          if (gpi2.fields.length > 0) {
+            var gpFieldEntries = await buildConditionLabelCache(
+              client, '', gpBase, gpTrigName, gpTable, gpTableLabel, uuid, gpi2.fields, gpi2.name
+            );
+            gpLabelInserts = gpLabelInserts.concat(gpFieldEntries);
+          }
+
+          // Record-level pill
+          if (gpi2.isRecordLevel) {
+            gpLabelInserts.push({
+              name: gpBase,
+              label: 'Trigger - Record ' + gpTrigName + '\u279b' + gpTableLabel + ' Record\u279b' + gpTableLabel,
+              reference: gpTable,
+              reference_display: gpTableLabel,
+              type: 'reference',
+              base_type: 'reference',
+              parent_table_name: gpTable,
+              column_name: '',
+              attributes: '',
+              choices: {},
+              usedInstances: [{ uiUniqueIdentifier: uuid, inputName: gpi2.name }]
+            });
+          }
+        }
+
+        if (gpLabelInserts.length > 0) {
+          var gpUpdatePatch: any = {
+            flowId: flowId,
+            actions: {
+              update: [{
+                uiUniqueIdentifier: uuid,
+                type: 'action',
+              }]
+            },
+            labelCache: { insert: gpLabelInserts }
+          };
+          steps.generic_pill_label_cache_mutation = jsToGraphQL(gpUpdatePatch);
+          await executeFlowPatchMutation(client, gpUpdatePatch, actionResponseFields);
+          steps.generic_pill_label_cache_update = { success: true, count: gpLabelInserts.length };
+        }
+      } catch (gpe: any) {
+        steps.generic_pill_label_cache_update = { success: false, error: gpe.message };
       }
     }
 
@@ -3895,15 +4052,15 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           await client.get('/api/now/processflow/flow/' + openFlowId);
         } catch (_) { /* best-effort — flow data load is not critical for lock acquisition */ }
 
-        // Step 2: Acquire editing lock via safeEdit create mutation (required for GraphQL mutations)
+        // Step 2: Acquire editing lock via safeEdit create mutation + REST fallback
         var lockResult = await acquireFlowEditingLock(client, openFlowId);
         if (lockResult.success) {
           openSummary.success('Flow opened for editing (lock acquired)').field('Flow', openFlowId)
             .line('You can now use add_action, add_flow_logic, etc. Call close_flow when done.');
-          return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true }, {}, openSummary.build());
+          return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true, lock_debug: lockResult.debug }, {}, openSummary.build());
         } else {
           openSummary.error('Cannot open flow: ' + (lockResult.error || 'lock acquisition failed')).field('Flow', openFlowId);
-          return createErrorResult('Cannot open flow for editing: ' + (lockResult.error || 'lock acquisition failed'));
+          return createErrorResult('Cannot open flow for editing: ' + (lockResult.error || 'lock acquisition failed') + (lockResult.debug ? ' | debug: ' + JSON.stringify(lockResult.debug) : ''));
         }
       }
 
