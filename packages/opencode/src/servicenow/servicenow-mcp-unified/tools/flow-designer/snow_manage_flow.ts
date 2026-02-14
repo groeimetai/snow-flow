@@ -110,6 +110,21 @@ async function executeFlowPatchMutation(
   return resp.data?.data?.global?.snFlowDesigner?.flow || resp.data;
 }
 
+/**
+ * Release the Flow Designer editing lock on a flow.
+ * The UI calls safeEdit(delete: flowId) when closing the editor.
+ * Without this, the flow remains locked to the API user forever.
+ */
+async function releaseFlowEditingLock(client: any, flowId: string): Promise<boolean> {
+  try {
+    var mutation = 'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {delete: "' + flowId + '"}) { deleteResult { deleteSuccess id __typename } __typename } __typename } __typename } }';
+    var resp = await client.post('/api/now/graphql', { variables: {}, query: mutation });
+    return resp.data?.data?.global?.snFlowDesigner?.safeEdit?.deleteResult?.deleteSuccess === true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /** Safely extract a string from a ServiceNow Table API value (handles reference objects like {value, link}). */
 const str = (val: any): string =>
   typeof val === 'object' && val !== null ? (val.display_value || val.value || '') : (val || '');
@@ -1662,7 +1677,7 @@ async function transformActionInputsForRecordAction(
   resolvedInputs: Record<string, string>,
   actionParams: any[],
   uuid: string
-): Promise<{ inputs: any[]; labelCacheEntries: any[]; steps: any }> {
+): Promise<{ inputs: any[]; labelCacheUpdates: any[]; labelCacheInserts: any[]; steps: any }> {
   var steps: any = {};
 
   // Detect if this is a record action: must have both `record` and `table_name` parameters
@@ -1673,7 +1688,7 @@ async function transformActionInputsForRecordAction(
 
   if (!hasRecord || !hasTableName) {
     steps.record_action = false;
-    return { inputs: actionInputs, labelCacheEntries: [], steps };
+    return { inputs: actionInputs, labelCacheUpdates: [], labelCacheInserts: [], steps };
   }
   steps.record_action = true;
 
@@ -2580,7 +2595,18 @@ export const toolDefinition: MCPToolDefinition = {
       },
       logic_type: {
         type: 'string',
-        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Common values: IF, ELSE, FOR_EACH, DO_UNTIL, SWITCH. IMPORTANT: ELSE blocks require connected_to set to the If block\'s uiUniqueIdentifier. IF does NOT require an Else block — only add Else if explicitly requested.'
+        description: 'Flow logic type for add_flow_logic. Looked up dynamically in sys_hub_flow_logic_definition. Available types: ' +
+          'IF, ELSEIF, ELSE — conditional branching. Use ELSEIF (not nested ELSE+IF) for else-if branches. ELSE and ELSEIF require connected_to set to the If block\'s uiUniqueIdentifier. ' +
+          'FOR_EACH, DO_UNTIL — loops. SKIP_ITERATION and EXIT_LOOP can be used inside loops. ' +
+          'PARALLEL — execute branches in parallel. ' +
+          'DECISION — switch/decision table. ' +
+          'TRY — error handling (try/catch). ' +
+          'END — End Flow (stops execution). Always add END as the last element when the flow should terminate cleanly. ' +
+          'TIMER — Wait for a duration of time. ' +
+          'GO_BACK_TO — jump back to a previous step. ' +
+          'SET_FLOW_VARIABLES, APPEND_FLOW_VARIABLES, GET_FLOW_OUTPUT — flow variable management. ' +
+          'WORKFLOW — call a legacy workflow. DYNAMIC_FLOW — dynamically invoke a flow. ' +
+          'Best practice: add an END element at the end of your flow for clean termination.'
       },
       logic_inputs: {
         type: 'object',
@@ -3067,6 +3093,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           }
         }
 
+        // Release Flow Designer editing lock (safeEdit delete) so users can edit the flow in the UI
+        if (flowSysId) {
+          var lockReleased = await releaseFlowEditingLock(client, flowSysId);
+          diagnostics.editing_lock_released = lockReleased;
+        }
+
         return createSuccessResult({
           created: true,
           method: usedMethod,
@@ -3448,6 +3480,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addTrigSummary.error('Failed to add trigger: ' + (addTrigResult.error || 'unknown'));
         }
 
+        await releaseFlowEditingLock(client, addTrigFlowId);
         return addTrigResult.success
           ? createSuccessResult({ action: 'add_trigger', ...addTrigResult }, {}, addTrigSummary.build())
           : createErrorResult(addTrigResult.error || 'Failed to add trigger');
@@ -3511,6 +3544,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           updTrigSummary.error('Failed to update trigger: ' + (updTrigResult.error || 'unknown'));
         }
 
+        await releaseFlowEditingLock(client, updTrigFlowId);
         return updTrigResult.success
           ? createSuccessResult({ action: 'update_trigger', steps: updTrigSteps }, {}, updTrigSummary.build())
           : createErrorResult(updTrigResult.error || 'Failed to update trigger');
@@ -3542,6 +3576,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addActSummary.error('Failed to add action: ' + (addActResult.error || 'unknown'));
         }
 
+        await releaseFlowEditingLock(client, addActFlowId);
         return addActResult.success
           ? createSuccessResult({ action: 'add_action', ...addActResult }, {}, addActSummary.build())
           : createErrorResult(addActResult.error || 'Failed to add action');
@@ -3555,7 +3590,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for add_flow_logic');
         }
         if (!args.logic_type) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'logic_type is required for add_flow_logic (e.g. IF, FOR_EACH, DO_UNTIL, SWITCH)');
+          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'logic_type is required for add_flow_logic (e.g. IF, ELSEIF, ELSE, FOR_EACH, DO_UNTIL, PARALLEL, DECISION, TRY, END, TIMER, SET_FLOW_VARIABLES)');
         }
         var addLogicFlowId = await resolveFlowId(client, args.flow_id);
         var addLogicType = args.logic_type;
@@ -3578,6 +3613,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
         }
 
+        await releaseFlowEditingLock(client, addLogicFlowId);
         return addLogicResult.success
           ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult }, {}, addLogicSummary.build())
           : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
@@ -3612,6 +3648,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addSubSummary.error('Failed to add subflow call: ' + (addSubResult.error || 'unknown'));
         }
 
+        await releaseFlowEditingLock(client, addSubFlowId);
         return addSubResult.success
           ? createSuccessResult({ action: 'add_subflow', ...addSubResult }, {}, addSubSummary.build())
           : createErrorResult(addSubResult.error || 'Failed to add subflow call');
@@ -3637,6 +3674,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         } else {
           updElemSummary.error('Failed to update element: ' + (updElemResult.error || 'unknown'));
         }
+        await releaseFlowEditingLock(client, updElemFlowId);
         return updElemResult.success
           ? createSuccessResult({ action, ...updElemResult }, {}, updElemSummary.build())
           : createErrorResult(updElemResult.error || 'Failed to update element');
@@ -3668,6 +3706,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         } else {
           delSummary.error('Failed to delete element: ' + (delResult.error || 'unknown'));
         }
+        await releaseFlowEditingLock(client, delElemFlowId);
         return delResult.success
           ? createSuccessResult({ action, ...delResult }, {}, delSummary.build())
           : createErrorResult(delResult.error || 'Failed to delete element');
