@@ -1009,12 +1009,30 @@ async function addActionViaGraphQL(
     inputResult.actionParams, uuid
   );
   steps.record_action = recordActionResult.steps;
+  var hasRecordPills = recordActionResult.labelCacheEntries.length > 0;
+
+  // For record actions: clear data pill values from INSERT — they'll be set via separate UPDATE
+  // (Flow Designer's GraphQL API ignores labelCache during INSERT, it only works with UPDATE)
+  var insertInputs = recordActionResult.inputs;
+  if (hasRecordPills) {
+    // Clone inputs and clear data pill values for INSERT
+    insertInputs = recordActionResult.inputs.map(function (inp: any) {
+      if (inp.name === 'record' && inp.value?.value?.startsWith('{{')) {
+        return { ...inp, value: { schemaless: false, schemalessValue: '', value: '' } };
+      }
+      if (inp.name === 'values' && inp.value?.value?.includes('{{')) {
+        return { ...inp, value: { schemaless: false, schemalessValue: '', value: '' } };
+      }
+      return inp;
+    });
+    steps.record_action_strategy = 'two_step';
+  }
 
   const actionResponseFields = 'actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }' +
     ' subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }';
 
-  // Build mutation payload — single INSERT with full inputs (matching UI behavior)
+  // Build mutation payload — INSERT with inputs (data pill values cleared for record actions)
   const flowPatch: any = {
     flowId: flowId,
     actions: {
@@ -1028,15 +1046,10 @@ async function addActionViaGraphQL(
         uiUniqueIdentifier: uuid,
         type: 'action',
         parentUiId: parentUiId || '',
-        inputs: recordActionResult.inputs
+        inputs: insertInputs
       }]
     }
   };
-
-  // Add labelCache entries for data pill references in record actions
-  if (recordActionResult.labelCacheEntries.length > 0) {
-    flowPatch.labelCache = { insert: recordActionResult.labelCacheEntries };
-  }
 
   // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
@@ -1044,9 +1057,51 @@ async function addActionViaGraphQL(
   }
 
   try {
+    // Step 1: INSERT the action element
     const result = await executeFlowPatchMutation(client, flowPatch, actionResponseFields);
     const actionId = result?.actions?.inserts?.[0]?.sysId;
     steps.insert = { success: !!actionId, actionId, uuid };
+    if (!actionId) return { success: false, steps, error: 'GraphQL action INSERT returned no ID' };
+
+    // Step 2: UPDATE with data pill values + labelCache (separate mutation, matching UI behavior)
+    // The Flow Designer UI always sets data pill references via a separate UPDATE.
+    if (hasRecordPills) {
+      var updateInputs: any[] = [];
+      // Collect all inputs that have data pill values
+      for (var ri = 0; ri < recordActionResult.inputs.length; ri++) {
+        var inp = recordActionResult.inputs[ri];
+        var val = inp.value?.value || '';
+        if (inp.name === 'record' && val.startsWith('{{')) {
+          updateInputs.push({ name: 'record', value: { schemaless: false, schemalessValue: '', value: val } });
+        } else if (inp.name === 'table_name') {
+          updateInputs.push({ name: 'table_name', displayValue: inp.displayValue || { value: '' }, value: inp.value || { value: '' } });
+        } else if (inp.name === 'values' && val) {
+          updateInputs.push({ name: 'values', value: { schemaless: false, schemalessValue: '', value: val } });
+        }
+      }
+
+      if (updateInputs.length > 0) {
+        try {
+          var updatePatch: any = {
+            flowId: flowId,
+            labelCache: { insert: recordActionResult.labelCacheEntries },
+            actions: {
+              update: [{
+                uiUniqueIdentifier: uuid,
+                type: 'action',
+                inputs: updateInputs
+              }]
+            }
+          };
+          await executeFlowPatchMutation(client, updatePatch, actionResponseFields);
+          steps.record_update = { success: true, inputCount: updateInputs.length };
+        } catch (ue: any) {
+          steps.record_update = { success: false, error: ue.message };
+          // Action was created — update failure is non-fatal
+        }
+      }
+    }
+
     return { success: true, actionId: actionId || undefined, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
