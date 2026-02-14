@@ -1239,28 +1239,43 @@ function isStandardEncodedQuery(condition: string): boolean {
 /**
  * Transform an encoded query condition into Flow Designer data pill format.
  *
- * The UI format uses a record-level data pill prepended to the encoded query:
- *   "category=inquiry" → "{{Created or Updated_1.current}}category=inquiry"
+ * Uses FIELD-LEVEL data pills — each field reference in the encoded query gets
+ * wrapped with the data pill base:
+ *   "category=software" → "{{Created or Updated_1.current.category}}=software"
+ *   "category=software^priority=1" → "{{Created or Updated_1.current.category}}=software^{{Created or Updated_1.current.priority}}=1"
  *
- * The record pill tells Flow Designer which record/table the condition applies to.
- * The encoded query after the pill is the actual filter.
+ * The field-level pill tells Flow Designer exactly which field the condition applies to.
  */
 function transformConditionToDataPills(conditionValue: string, dataPillBase: string): string {
   if (!conditionValue || !dataPillBase) return conditionValue;
-  // Prepend the record-level data pill to the encoded query
-  return '{{' + dataPillBase + '}}' + conditionValue;
+
+  var clauses = parseEncodedQuery(conditionValue);
+  if (clauses.length === 0) return conditionValue;
+
+  var result = '';
+  for (var i = 0; i < clauses.length; i++) {
+    var clause = clauses[i];
+    result += clause.prefix;
+    result += '{{' + dataPillBase + '.' + clause.field + '}}';
+    result += clause.operator;
+    result += clause.value;
+  }
+
+  return result;
 }
 
 /**
- * Build a single record-level labelCache entry for the data pill used in a condition.
- * The UI registers the record pill with the condition input, matching the captured format:
+ * Build labelCache entries for field-level data pills used in flow logic conditions.
  *
- * { name: "Created or Updated_1.current",
- *   label: "Trigger - Record Created or Updated➛Incident Record",
- *   reference: "incident", type: "reference", base_type: "reference",
- *   usedInstances: [{ uiUniqueIdentifier, inputName: "condition" }] }
+ * Each field referenced in the condition needs a labelCache entry so the Flow Designer UI
+ * can display the data pill correctly. Also registers the record-level parent pill.
+ *
+ * Example for "category=software":
+ * - Record pill: { name: "Created or Updated_1.current", type: "reference", reference: "incident" }
+ * - Field pill: { name: "Created or Updated_1.current.category", type: "string" }
  */
 function buildConditionLabelCache(
+  conditionValue: string,
   dataPillBase: string,
   triggerName: string,
   table: string,
@@ -1269,7 +1284,12 @@ function buildConditionLabelCache(
 ): any[] {
   if (!dataPillBase) return [];
 
-  return [{
+  var clauses = parseEncodedQuery(conditionValue);
+  var entries: any[] = [];
+  var seen: Record<string, boolean> = {};
+
+  // Register the record-level parent pill (always needed as context)
+  entries.push({
     name: dataPillBase,
     label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record',
     reference: table,
@@ -1279,7 +1299,33 @@ function buildConditionLabelCache(
     attributes: '',
     usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
     choices: {}
-  }];
+  });
+  seen[dataPillBase] = true;
+
+  // Register each field-level pill
+  for (var i = 0; i < clauses.length; i++) {
+    var field = clauses[i].field;
+    if (!field) continue;
+    var pillName = dataPillBase + '.' + field;
+    if (seen[pillName]) continue;
+    seen[pillName] = true;
+
+    var fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
+
+    entries.push({
+      name: pillName,
+      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record\u27a1' + fieldLabel,
+      reference: '',
+      reference_display: '',
+      type: 'string',
+      base_type: 'string',
+      attributes: '',
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
+      choices: {}
+    });
+  }
+
+  return entries;
 }
 
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
@@ -1610,7 +1656,7 @@ async function addFlowLogicViaGraphQL(
       var dataPillBase = conditionTriggerInfo.dataPillBase;
       var transformedCondition = transformConditionToDataPills(rawCondition, dataPillBase);
       var labelCacheEntries = buildConditionLabelCache(
-        dataPillBase, conditionTriggerInfo.triggerName,
+        rawCondition, dataPillBase, conditionTriggerInfo.triggerName,
         conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid
       );
 
