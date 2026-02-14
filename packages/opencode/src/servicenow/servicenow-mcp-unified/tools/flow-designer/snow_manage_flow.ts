@@ -2505,9 +2505,10 @@ export const toolDefinition: MCPToolDefinition = {
           'add_trigger', 'update_trigger', 'delete_trigger',
           'add_action', 'update_action', 'delete_action',
           'add_flow_logic', 'update_flow_logic', 'delete_flow_logic',
-          'add_subflow', 'update_subflow', 'delete_subflow'
+          'add_subflow', 'update_subflow', 'delete_subflow',
+          'close_flow'
         ],
-        description: 'Action to perform. add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. update_action/update_flow_logic/update_subflow change input values. delete_* removes elements by element_id.'
+        description: 'Action to perform. add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. update_action/update_flow_logic/update_subflow change input values. delete_* removes elements by element_id. IMPORTANT: When making multiple edits to a flow (add_action, add_flow_logic, etc.), call close_flow as the LAST step to release the editing lock. Without close_flow, the flow stays locked and cannot be edited in the UI. create_flow auto-releases the lock.'
       },
 
       flow_id: {
@@ -3480,7 +3481,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addTrigSummary.error('Failed to add trigger: ' + (addTrigResult.error || 'unknown'));
         }
 
-        await releaseFlowEditingLock(client, addTrigFlowId);
         return addTrigResult.success
           ? createSuccessResult({ action: 'add_trigger', ...addTrigResult }, {}, addTrigSummary.build())
           : createErrorResult(addTrigResult.error || 'Failed to add trigger');
@@ -3544,7 +3544,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           updTrigSummary.error('Failed to update trigger: ' + (updTrigResult.error || 'unknown'));
         }
 
-        await releaseFlowEditingLock(client, updTrigFlowId);
         return updTrigResult.success
           ? createSuccessResult({ action: 'update_trigger', steps: updTrigSteps }, {}, updTrigSummary.build())
           : createErrorResult(updTrigResult.error || 'Failed to update trigger');
@@ -3576,7 +3575,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addActSummary.error('Failed to add action: ' + (addActResult.error || 'unknown'));
         }
 
-        await releaseFlowEditingLock(client, addActFlowId);
         return addActResult.success
           ? createSuccessResult({ action: 'add_action', ...addActResult }, {}, addActSummary.build())
           : createErrorResult(addActResult.error || 'Failed to add action');
@@ -3613,7 +3611,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
         }
 
-        await releaseFlowEditingLock(client, addLogicFlowId);
         return addLogicResult.success
           ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult }, {}, addLogicSummary.build())
           : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
@@ -3648,7 +3645,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addSubSummary.error('Failed to add subflow call: ' + (addSubResult.error || 'unknown'));
         }
 
-        await releaseFlowEditingLock(client, addSubFlowId);
         return addSubResult.success
           ? createSuccessResult({ action: 'add_subflow', ...addSubResult }, {}, addSubSummary.build())
           : createErrorResult(addSubResult.error || 'Failed to add subflow call');
@@ -3674,7 +3670,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         } else {
           updElemSummary.error('Failed to update element: ' + (updElemResult.error || 'unknown'));
         }
-        await releaseFlowEditingLock(client, updElemFlowId);
         return updElemResult.success
           ? createSuccessResult({ action, ...updElemResult }, {}, updElemSummary.build())
           : createErrorResult(updElemResult.error || 'Failed to update element');
@@ -3706,10 +3701,25 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         } else {
           delSummary.error('Failed to delete element: ' + (delResult.error || 'unknown'));
         }
-        await releaseFlowEditingLock(client, delElemFlowId);
         return delResult.success
           ? createSuccessResult({ action, ...delResult }, {}, delSummary.build())
           : createErrorResult(delResult.error || 'Failed to delete element');
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // CLOSE_FLOW — release Flow Designer editing lock (safeEdit)
+      // ────────────────────────────────────────────────────────────────
+      case 'close_flow': {
+        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for close_flow');
+        var closeFlowId = await resolveFlowId(client, args.flow_id);
+        var closed = await releaseFlowEditingLock(client, closeFlowId);
+        var closeSummary = summary();
+        if (closed) {
+          closeSummary.success('Flow editing lock released').field('Flow', closeFlowId);
+        } else {
+          closeSummary.warning('Lock release returned false (flow may not have been locked)').field('Flow', closeFlowId);
+        }
+        return createSuccessResult({ action: 'close_flow', flow_id: closeFlowId, lock_released: closed }, {}, closeSummary.build());
       }
 
       default:
