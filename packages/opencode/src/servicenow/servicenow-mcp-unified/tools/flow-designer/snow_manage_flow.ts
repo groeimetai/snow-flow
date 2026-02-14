@@ -1210,94 +1210,76 @@ function parseEncodedQuery(query: string): { prefix: string; field: string; oper
 }
 
 /**
- * Transform an encoded query condition value to use data pill references.
- * Replaces field names with {{dataPillBase.fieldName}} syntax.
+ * Check if a condition value looks like a standard ServiceNow encoded query.
+ * Standard encoded queries use: field_name=value^field_name2!=value2
  *
- * Example: "category=inquiry" → "{{Created or Updated_1.current.category}}=inquiry"
+ * Returns false for JavaScript expressions, scripts, fd_data references, etc.
+ * which should be passed through as-is without data pill transformation.
  */
-function transformConditionToDataPills(conditionValue: string, dataPillBase: string): string {
-  if (!conditionValue || !dataPillBase) return conditionValue;
-
-  var clauses = parseEncodedQuery(conditionValue);
-  if (clauses.length === 0) return conditionValue;
-
-  var result = '';
-  for (var i = 0; i < clauses.length; i++) {
-    var clause = clauses[i];
-    result += clause.prefix;
-    result += '{{' + dataPillBase + '.' + clause.field + '}}';
-    result += clause.operator;
-    result += clause.value;
-  }
-
-  return result;
+function isStandardEncodedQuery(condition: string): boolean {
+  if (!condition) return false;
+  // Parentheses indicate function calls or grouping expressions
+  if (/[()]/.test(condition)) return false;
+  // Method calls like .toString(, .replace(, .match(
+  if (/\.\w+\(/.test(condition)) return false;
+  // Regex patterns like /[
+  if (/\/\[/.test(condition)) return false;
+  // JS equality operators == or ===
+  if (/===?/.test(condition)) return false;
+  // JS modulo, logical AND/OR
+  if (/%/.test(condition)) return false;
+  if (/&&|\|\|/.test(condition)) return false;
+  // Flow Designer internal variable references
+  if (condition.startsWith('fd_data.')) return false;
+  // Already contains data pill references (already transformed)
+  if (condition.includes('{{')) return false;
+  return true;
 }
 
 /**
- * Build labelCache entries for data pills used in flow logic conditions.
- * Each unique data pill reference needs a labelCache entry so the Flow Designer UI
- * can display the data pill label correctly.
+ * Transform an encoded query condition into Flow Designer data pill format.
  *
- * The entry format matches the captured UI mutation format.
+ * The UI format uses a record-level data pill prepended to the encoded query:
+ *   "category=inquiry" → "{{Created or Updated_1.current}}category=inquiry"
+ *
+ * The record pill tells Flow Designer which record/table the condition applies to.
+ * The encoded query after the pill is the actual filter.
+ */
+function transformConditionToDataPills(conditionValue: string, dataPillBase: string): string {
+  if (!conditionValue || !dataPillBase) return conditionValue;
+  // Prepend the record-level data pill to the encoded query
+  return '{{' + dataPillBase + '}}' + conditionValue;
+}
+
+/**
+ * Build a single record-level labelCache entry for the data pill used in a condition.
+ * The UI registers the record pill with the condition input, matching the captured format:
+ *
+ * { name: "Created or Updated_1.current",
+ *   label: "Trigger - Record Created or Updated➛Incident Record",
+ *   reference: "incident", type: "reference", base_type: "reference",
+ *   usedInstances: [{ uiUniqueIdentifier, inputName: "condition" }] }
  */
 function buildConditionLabelCache(
-  conditionValue: string,
   dataPillBase: string,
   triggerName: string,
   table: string,
   tableLabel: string,
   logicUiId: string
 ): any[] {
-  if (!conditionValue || !dataPillBase) return [];
+  if (!dataPillBase) return [];
 
-  var clauses = parseEncodedQuery(conditionValue);
-  if (clauses.length === 0) return [];
-
-  // Build a label cache entry for each unique field-level data pill
-  var seen: Record<string, boolean> = {};
-  var entries: any[] = [];
-
-  // Also register the record-level data pill (the base: TriggerName_1.current)
-  // This is needed for the condition builder to understand the context
-  if (!seen[dataPillBase]) {
-    seen[dataPillBase] = true;
-    entries.push({
-      name: dataPillBase,
-      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record',
-      reference: table,
-      reference_display: tableLabel,
-      type: 'reference',
-      base_type: 'reference',
-      attributes: '',
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
-      choices: {}
-    });
-  }
-
-  for (var i = 0; i < clauses.length; i++) {
-    var field = clauses[i].field;
-    if (!field) continue;
-    var pillName = dataPillBase + '.' + field;
-    if (seen[pillName]) continue;
-    seen[pillName] = true;
-
-    // Capitalize field name for label
-    var fieldLabel = field.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
-
-    entries.push({
-      name: pillName,
-      label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record\u27a1' + fieldLabel,
-      reference: '',
-      reference_display: '',
-      type: 'string',
-      base_type: 'string',
-      attributes: '',
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
-      choices: {}
-    });
-  }
-
-  return entries;
+  return [{
+    name: dataPillBase,
+    label: 'Trigger - Record ' + triggerName + '\u27a1' + tableLabel + ' Record',
+    reference: table,
+    reference_display: tableLabel,
+    type: 'reference',
+    base_type: 'reference',
+    attributes: '',
+    usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: 'condition' }],
+    choices: {}
+  }];
 }
 
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
@@ -1547,31 +1529,32 @@ async function addFlowLogicViaGraphQL(
   steps.resolved_inputs = inputResult.resolvedInputs;
   steps.input_query_stats = { defParamsFound: inputResult.defParamsCount, inputsBuilt: inputResult.inputs.length, error: inputResult.inputQueryError };
 
-  // ── Data pill transformation for condition inputs ───────────────────
-  // Flow Designer conditions require data pill references ({{TriggerName_1.current.field}})
-  // instead of bare field names. Transform encoded query conditions and build labelCache.
+  // ── Detect condition that needs data pill transformation ────────────
+  // Flow Designer sets conditions via a SEPARATE UPDATE after the element is created.
+  // The condition format uses record-level data pill: {{TriggerName_1.current}}encodedQuery
+  // Non-standard conditions (JS expressions, fd_data refs) are passed through as-is.
   const uuid = generateUUID();
-  var labelCacheEntries: any[] = [];
-
   var conditionInput = inputResult.inputs.find(function (inp: any) { return inp.name === 'condition'; });
   var rawCondition = conditionInput?.value?.value || '';
-  if (rawCondition && rawCondition !== '^EQ') {
-    var triggerInfo = await getFlowTriggerInfo(client, flowId);
-    steps.trigger_info = { dataPillBase: triggerInfo.dataPillBase, triggerName: triggerInfo.triggerName, table: triggerInfo.table, tableLabel: triggerInfo.tableLabel, error: triggerInfo.error };
+  var needsConditionUpdate = false;
+  var conditionTriggerInfo: any = null;
 
-    if (triggerInfo.dataPillBase) {
-      // Transform condition value: "category=inquiry" → "{{Created or Updated_1.current.category}}=inquiry"
-      var transformedCondition = transformConditionToDataPills(rawCondition, triggerInfo.dataPillBase);
-      conditionInput.value = { schemaless: false, schemalessValue: '', value: transformedCondition };
-      steps.condition_transform = { original: rawCondition, transformed: transformedCondition };
-
-      // Build labelCache entries for each data pill used in the condition
-      labelCacheEntries = buildConditionLabelCache(
-        rawCondition, triggerInfo.dataPillBase, triggerInfo.triggerName,
-        triggerInfo.tableRef, triggerInfo.tableLabel, uuid
-      );
-      steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }) };
+  if (rawCondition && rawCondition !== '^EQ' && isStandardEncodedQuery(rawCondition)) {
+    conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
+    steps.trigger_info = {
+      dataPillBase: conditionTriggerInfo.dataPillBase, triggerName: conditionTriggerInfo.triggerName,
+      table: conditionTriggerInfo.table, tableLabel: conditionTriggerInfo.tableLabel, error: conditionTriggerInfo.error
+    };
+    if (conditionTriggerInfo.dataPillBase) {
+      needsConditionUpdate = true;
+      // Clear condition in INSERT — it will be set via separate UPDATE with labelCache
+      conditionInput.value = { schemaless: false, schemalessValue: '', value: '' };
+      steps.condition_strategy = 'two_step';
     }
+  } else if (rawCondition && rawCondition !== '^EQ') {
+    // Non-standard condition (JS expression, fd_data ref, etc.) — pass through as-is
+    steps.condition_strategy = 'passthrough';
+    steps.condition_not_encoded_query = true;
   }
 
   // Calculate insertion order
@@ -1608,22 +1591,54 @@ async function addFlowLogicViaGraphQL(
     }
   };
 
-  // Add labelCache entries for data pill references in conditions
-  if (labelCacheEntries.length > 0) {
-    flowPatch.labelCache = { insert: labelCacheEntries };
-  }
-
   // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
     flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }];
   }
 
   try {
+    // Step 1: INSERT the flow logic element (with empty condition if data pill transform is needed)
     const result = await executeFlowPatchMutation(client, flowPatch, logicResponseFields);
     const logicId = result?.flowLogics?.inserts?.[0]?.sysId;
     const returnedUuid = result?.flowLogics?.inserts?.[0]?.uiUniqueIdentifier || uuid;
     steps.insert = { success: !!logicId, logicId, uuid: returnedUuid };
     if (!logicId) return { success: false, steps, error: 'GraphQL flow logic INSERT returned no ID' };
+
+    // Step 2: UPDATE condition with data pill + labelCache (separate mutation, matching UI behavior)
+    // The Flow Designer UI always sets conditions in a separate UPDATE after creating the element.
+    if (needsConditionUpdate && conditionTriggerInfo) {
+      var dataPillBase = conditionTriggerInfo.dataPillBase;
+      var transformedCondition = transformConditionToDataPills(rawCondition, dataPillBase);
+      var labelCacheEntries = buildConditionLabelCache(
+        dataPillBase, conditionTriggerInfo.triggerName,
+        conditionTriggerInfo.tableRef, conditionTriggerInfo.tableLabel, returnedUuid
+      );
+
+      steps.condition_transform = { original: rawCondition, transformed: transformedCondition };
+      steps.label_cache = { count: labelCacheEntries.length, pills: labelCacheEntries.map(function (e: any) { return e.name; }) };
+
+      try {
+        var updatePatch: any = {
+          flowId: flowId,
+          labelCache: { insert: labelCacheEntries },
+          flowLogics: {
+            update: [{
+              uiUniqueIdentifier: returnedUuid,
+              type: 'flowlogic',
+              inputs: [{
+                name: 'condition',
+                value: { schemaless: false, schemalessValue: '', value: transformedCondition }
+              }]
+            }]
+          }
+        };
+        await executeFlowPatchMutation(client, updatePatch, logicResponseFields);
+        steps.condition_update = { success: true };
+      } catch (ue: any) {
+        steps.condition_update = { success: false, error: ue.message };
+        // Element was created successfully — condition update failure is non-fatal
+      }
+    }
 
     return { success: true, logicId, uiUniqueIdentifier: returnedUuid, steps };
   } catch (e: any) {
