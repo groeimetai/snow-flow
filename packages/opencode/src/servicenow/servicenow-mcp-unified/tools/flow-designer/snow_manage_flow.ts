@@ -896,8 +896,8 @@ async function addTriggerViaGraphQL(
     steps.insert = { success: !!triggerId, triggerId, triggerUiId };
     if (!triggerId) return { success: false, steps, error: 'GraphQL trigger INSERT returned no trigger ID' };
 
-    // Step 2: UPDATE with actual table and condition values (matching UI behavior from trigger-query-2.txt)
-    // The UI sends: table with displayField+displayValue+value, condition with just displayValue
+    // Step 2: UPDATE with actual table and condition values (matching UI behavior)
+    // The UI sends: table with displayField+displayValue+value, condition with displayField+displayValue(empty)+value, metadata with predicates
     if (table) {
       try {
         var tableDisplayName = '';
@@ -911,6 +911,30 @@ async function addTriggerViaGraphQL(
           tableDisplayName = table.charAt(0).toUpperCase() + table.slice(1).replace(/_/g, ' ');
         }
 
+        // Build condition predicates via query_parse API (same as UI)
+        var conditionValue = condition || '^EQ';
+        var predicatesJson = '[]';
+        if (conditionValue && conditionValue !== '^EQ') {
+          try {
+            var qpResp = await client.get('/api/now/ui/query_parse/' + table + '/map', {
+              params: { table: table, sysparm_query: conditionValue }
+            });
+            var qpResult = qpResp.data?.result;
+            if (qpResult) {
+              predicatesJson = typeof qpResult === 'string' ? qpResult : JSON.stringify(qpResult);
+            }
+          } catch (_) {
+            // Fallback: build minimal predicates from parsed condition
+            var parsedClauses = parseEncodedQuery(conditionValue);
+            if (parsedClauses.length > 0) {
+              var minPredicates = parsedClauses.map(function (c) {
+                return { field: c.field, operator: c.operator, value: c.value };
+              });
+              predicatesJson = JSON.stringify(minPredicates);
+            }
+          }
+        }
+
         var trigUpdateInputs: any[] = [
           {
             name: 'table',
@@ -920,7 +944,9 @@ async function addTriggerViaGraphQL(
           },
           {
             name: 'condition',
-            displayValue: { schemaless: false, schemalessValue: '', value: condition || '^EQ' }
+            displayField: '',
+            displayValue: { value: '' },
+            value: { schemaless: false, schemalessValue: '', value: conditionValue }
           }
         ];
 
@@ -929,11 +955,12 @@ async function addTriggerViaGraphQL(
           triggerInstances: {
             update: [{
               id: triggerId,
-              inputs: trigUpdateInputs
+              inputs: trigUpdateInputs,
+              metadata: '{"predicates":' + predicatesJson + '}'
             }]
           }
         }, triggerResponseFields);
-        steps.trigger_update = { success: true, table: table, tableDisplay: tableDisplayName };
+        steps.trigger_update = { success: true, table: table, tableDisplay: tableDisplayName, predicates: predicatesJson };
       } catch (updateErr: any) {
         steps.trigger_update = { success: false, error: updateErr.message };
         // Trigger was created — update failure is non-fatal
@@ -1258,6 +1285,14 @@ async function getFlowTriggerInfo(
       debug.processflow_format = 'json';
       var pfData = pfRaw.result || pfRaw;
       debug.processflow_keys = pfData && typeof pfData === 'object' ? Object.keys(pfData).slice(0, 20) : null;
+
+      // ProcessFlow API wraps actual flow data inside a "data" property
+      // e.g. {data: {triggerInstances: [...]}, errorMessage, errorCode, integrationsPluginActive}
+      if (pfData.data && typeof pfData.data === 'object' && !pfData.triggerInstances) {
+        pfData = pfData.data;
+        debug.processflow_unwrapped = true;
+        debug.processflow_data_keys = typeof pfData === 'object' ? Object.keys(pfData).slice(0, 20) : null;
+      }
 
       var pfTriggers = pfData?.triggerInstances || pfData?.trigger_instances || pfData?.triggers || [];
       if (!Array.isArray(pfTriggers) && pfData?.model?.triggerInstances) {
@@ -1986,6 +2021,13 @@ async function addFlowLogicViaGraphQL(
       [/(\}\})\s+ends\s+with\s+/gi, '$1ENDSWITH'],
       [/(\}\})\s+greater\s+than\s+/gi, '$1>'],
       [/(\}\})\s+less\s+than\s+/gi, '$1<'],
+      // Symbol operators: == / === / != / !== / >= / <= / > / < with optional spaces
+      [/(\}\})\s*===?\s*/g, '$1='],
+      [/(\}\})\s*!==?\s*/g, '$1!='],
+      [/(\}\})\s*>=\s*/g, '$1>='],
+      [/(\}\})\s*<=\s*/g, '$1<='],
+      [/(\}\})\s*>\s*/g, '$1>'],
+      [/(\}\})\s*<\s*/g, '$1<'],
     ];
     var pillWordOriginal = rawCondition;
     for (var pwi = 0; pwi < PILL_WORD_OPS.length; pwi++) {
@@ -2119,26 +2161,26 @@ async function addFlowLogicViaGraphQL(
       steps.label_cache = labelCacheResult.map(function (e: any) { return e.name; });
 
       try {
-        // Match the UI's exact format for condition UPDATE (captured from Flow Designer
-        // when editing a programmatically-created flow):
+        // Match the UI's exact format for condition UPDATE (captured from clean Flow Designer network trace):
         // - labelCache.insert: field-level pills with FULL metadata (type, parent_table_name, etc.)
-        // - condition input: name + value + displayValue
-        // - flowLogicDefinition: with condition_name attributes
+        // - Two inputs: condition_name (label) + condition (pill expression)
+        // - No flowLogicDefinition, no displayValue on condition
         var updatePatch: any = {
           flowId: flowId,
           flowLogics: {
             update: [{
               uiUniqueIdentifier: returnedUuid,
               type: 'flowlogic',
-              inputs: [{
-                name: 'condition',
-                displayValue: { value: '' },
-                value: { schemaless: false, schemalessValue: '', value: transformedCondition }
-              }],
-              flowLogicDefinition: {
-                inputs: [{ name: 'condition_name', attributes: 'use_basic_input=true,' }],
-                variables: 'undefined'
-              }
+              inputs: [
+                {
+                  name: 'condition_name',
+                  value: { schemaless: false, schemalessValue: '', value: 'label' }
+                },
+                {
+                  name: 'condition',
+                  value: { schemaless: false, schemalessValue: '', value: transformedCondition }
+                }
+              ]
             }]
           }
         };
