@@ -296,9 +296,7 @@ export function DialogAuth() {
     },
   ]
 
-  const options = allOptions.filter((o) => o.value !== "select-sn-instance" || isEnterpriseConfigured())
-
-  return <DialogSelect title="ServiceNow Authentication" options={options} />
+  return <DialogSelect title="ServiceNow Authentication" options={allOptions} />
 }
 
 /**
@@ -1291,7 +1289,7 @@ function DialogAuthSelectInstance() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  type SelectStep = "loading" | "select-instance" | "connecting"
+  type SelectStep = "loading" | "not-enterprise" | "select-instance" | "connecting"
 
   const [step, setStep] = createSignal<SelectStep>("loading")
   const [instances, setInstances] = createSignal<
@@ -1411,8 +1409,7 @@ function DialogAuthSelectInstance() {
       const { Auth } = await import("@/auth")
       const entAuth = await Auth.get("enterprise")
       if (!entAuth?.type || entAuth.type !== "enterprise" || !entAuth.token || !entAuth.enterpriseUrl) {
-        toast.show({ variant: "error", message: "Enterprise not configured. Please authenticate first.", duration: 5000 })
-        dialog.replace(() => <DialogAuth />)
+        setStep("not-enterprise")
         return
       }
 
@@ -1459,6 +1456,30 @@ function DialogAuthSelectInstance() {
 
   return (
     <box paddingLeft={2} paddingRight={2} gap={1}>
+      <Show when={step() === "not-enterprise"}>
+        <box gap={1}>
+          <box flexDirection="row" justifyContent="space-between">
+            <text attributes={TextAttributes.BOLD} fg={theme.text}>
+              Select ServiceNow Instance
+            </text>
+            <text fg={theme.textMuted}>esc</text>
+          </box>
+          <text fg={theme.warning} attributes={TextAttributes.BOLD}>
+            Enterprise feature
+          </text>
+          <text fg={theme.textMuted}>
+            This feature requires an active Enterprise Portal connection.
+          </text>
+          <text fg={theme.textMuted}>
+            Please authenticate via "Enterprise Portal" or "Enterprise + ServiceNow" first.
+          </text>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>esc </text>
+            <text fg={theme.textMuted}>back</text>
+          </box>
+        </box>
+      </Show>
+
       <Show when={step() === "loading"}>
         <box gap={1}>
           <text fg={theme.primary} attributes={TextAttributes.BOLD}>
