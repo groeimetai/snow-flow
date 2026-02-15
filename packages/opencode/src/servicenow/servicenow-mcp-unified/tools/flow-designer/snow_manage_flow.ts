@@ -1097,8 +1097,13 @@ async function addTriggerViaGraphQL(
     // Step 1: INSERT with empty table/condition values (matching UI behavior from trigger-query.txt)
     // The UI always inserts the trigger with empty inputs first, then updates with actual values.
     var insertInputs = triggerData.inputs.map(function (inp: any) {
-      if (inp.name === 'table' || inp.name === 'condition') {
+      if (inp.name === 'table') {
+        // UI sends table with plain empty value format
         return { ...inp, value: { value: '' }, displayValue: { value: '' } };
+      }
+      if (inp.name === 'condition') {
+        // UI sends condition with schemaless wrapper and "^EQ" default (not empty string)
+        return { ...inp, value: { schemaless: false, schemalessValue: '', value: '^EQ' }, displayValue: { value: '' } };
       }
       return inp;
     });
@@ -1146,7 +1151,7 @@ async function addTriggerViaGraphQL(
         if (conditionValue && conditionValue !== '^EQ') {
           try {
             var qpResp = await client.get('/api/now/ui/query_parse/' + table + '/map', {
-              params: { table: table, sysparm_query: conditionValue }
+              params: { sysparm_transaction_scope: 'global', table: table, sysparm_query: conditionValue }
             });
             var qpResult = qpResp.data?.result;
             if (qpResult) {
@@ -1251,25 +1256,42 @@ async function addActionViaGraphQL(
     return { success: false, error: '"' + actionType + '" is a flow logic type, not an action. Use add_flow_logic with logic_type: "' + flowLogicType + '" instead of add_action. Flow logic (If/Else, For Each, Do Until, Switch, etc.) creates branching/looping blocks in the flow, while actions are individual steps like Log, Update Record, Send Email.', steps };
   }
 
+  // Auto-default spoke to 'global' for well-known core action types to avoid picking spoke-specific variants
+  var CORE_GLOBAL_ACTIONS = [
+    'update_record', 'create_record', 'lookup_record', 'delete_record',
+    'log', 'create_task', 'update_task', 'create_approval',
+    'send_notification', 'notification', 'field_update', 'wait',
+    'ask_for_approval', 'lookup_records', 'create_catalog_task'
+  ];
+  if (!spoke && CORE_GLOBAL_ACTIONS.includes(actionType.toLowerCase())) {
+    spoke = 'global';
+    steps.spoke_defaulted = 'global';
+  }
+
   // Dynamically look up action definition in sys_hub_action_type_snapshot and sys_hub_action_type_definition
   // Prefer global/core actions over spoke-specific ones (e.g. core "Update Record" vs spoke-specific "Update Record")
   const snapshotFields = 'sys_id,internal_name,name,sys_scope,sys_package';
   let actionDefId: string | null = null;
 
-  // Helper: pick the best match from candidates — prefer spoke filter, then global scope
+  // Helper: pick the best match from candidates — filter by spoke FIRST, then prefer global scope
   const pickBest = (candidates: any[]): any => {
     if (!candidates || candidates.length === 0) return null;
-    if (candidates.length === 1) return candidates[0];
-    // If spoke filter is specified, match against scope or package name
+    // If spoke filter is specified, filter candidates BEFORE the single-result shortcut
     if (spoke) {
       var spokeLC = spoke.toLowerCase();
-      var spokeMatch = candidates.find((c: any) =>
+      var spokeFiltered = candidates.filter((c: any) =>
         str(c.sys_scope).toLowerCase().includes(spokeLC) ||
         str(c.sys_package).toLowerCase().includes(spokeLC) ||
-        str(c.internal_name).toLowerCase().includes(spokeLC)
+        str(c.internal_name).toLowerCase().startsWith(spokeLC + '.')
       );
-      if (spokeMatch) return spokeMatch;
+      if (spokeFiltered.length > 0) {
+        steps.spoke_filter = { spoke: spoke, before: candidates.length, after: spokeFiltered.length };
+        return spokeFiltered[0];
+      }
+      // Spoke filter didn't match anything — fall through to general preference
+      steps.spoke_filter = { spoke: spoke, before: candidates.length, after: 0, warning: 'No candidates matched spoke filter, falling back to general preference' };
     }
+    if (candidates.length === 1) return candidates[0];
     // Prefer global scope
     var global = candidates.find((c: any) => str(c.sys_scope) === 'global' || str(c.sys_scope) === 'rhino.global');
     if (global) return global;
@@ -2264,6 +2286,8 @@ async function transformActionInputsForRecordAction(
 
     // Record-level pill — INSERT with full metadata matching processflow XML format:
     // { name: "Created or Updated_1.current", type: "reference", reference: "incident", reference_display: "Incident", ... }
+    // UI only puts inputName: "record" entries on the record pill, NOT field-level pill usages
+    var recordUsedInstances = usedInstances.filter(function (ui) { return ui.inputName === 'record'; });
     labelCacheInserts.push({
       name: dataPillBase,
       label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record',
@@ -2273,7 +2297,7 @@ async function transformActionInputsForRecordAction(
       base_type: 'reference',
       attributes: '',
       choices: {},
-      usedInstances: usedInstances
+      usedInstances: recordUsedInstances
     });
 
     // Field-level data pill entries for any field references in the `values` string → INSERT (new pills)
@@ -2366,14 +2390,14 @@ async function transformActionInputsForRecordAction(
         labelCacheInserts.push({
           name: pName,
           label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record\u279b' + fMeta.label,
-          reference: tableRef,
+          reference: '',
           reference_display: fMeta.label,
           type: fMeta.type,
           base_type: fMeta.type,
           parent_table_name: tableRef,
           column_name: pEntry.fieldCol,
-          attributes: '',
-          usedInstances: pEntry.usedInstances
+          usedInstances: pEntry.usedInstances,
+          choices: {}
         });
       }
     }
