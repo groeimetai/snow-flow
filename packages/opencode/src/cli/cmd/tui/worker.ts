@@ -136,18 +136,12 @@ export const rpc = {
       directory: input.directory,
       init: InstanceBootstrap,
       fn: async () => {
+        if (Installation.isLocal())
+          return { success: false as const, error: "Cannot update from a local dev build" }
         const method = await Installation.method()
         if (method === "unknown") return { success: false as const, error: "Unknown install method" }
-        const latestErr: string[] = []
-        const latest = await Installation.latest(method).catch((e) => {
-          latestErr.push(e instanceof Error ? e.message : String(e))
-          return undefined
-        })
-        if (!latest)
-          return {
-            success: false as const,
-            error: `Could not check latest version (method=${method}, channel=${Installation.CHANNEL}, err=${latestErr[0] ?? "none"})`,
-          }
+        const latest = await Installation.latest(method).catch(() => undefined)
+        if (!latest) return { success: false as const, error: "Could not check latest version" }
         if (Installation.VERSION === latest)
           return { success: false as const, error: "Already on latest (" + latest + ")" }
         await Installation.upgrade(method, latest)

@@ -465,10 +465,12 @@ function App() {
         if (!_onUpgrade) return
         toast.show({ variant: "info", message: "Checking for updates...", duration: 3000 })
         const result = await _onUpgrade().catch((e: unknown) => ({
-          success: false,
+          success: false as const,
           error: e instanceof Error ? e.message : "Unknown error",
         }))
-        if (!result.success) {
+        if (result.success) {
+          toast.show({ variant: "info", message: `Updated to v${result.version} · restart to apply`, duration: 8000 })
+        } else {
           toast.show({ variant: "warning", message: result.error ?? "Update failed", duration: 5000 })
         }
       },
