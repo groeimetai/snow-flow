@@ -463,11 +463,13 @@ function App() {
       onSelect: async (dialog) => {
         dialog.clear()
         if (!_onUpgrade) return
-        toast.show({ variant: "info", message: "Checking for updates...", duration: 3000 })
-        const result = await _onUpgrade().catch((e: unknown) => ({
-          success: false as const,
-          error: e instanceof Error ? e.message : "Unknown error",
-        }))
+        toast.show({ variant: "info", message: "Checking for updates..." })
+        let result: { success: boolean; version?: string; error?: string }
+        try {
+          result = await _onUpgrade()
+        } catch (e) {
+          result = { success: false, error: e instanceof Error ? e.message : "Update failed" }
+        }
         if (result.success) {
           toast.show({ variant: "info", message: `Updated to v${result.version} · restart to apply`, duration: 8000 })
         } else {
