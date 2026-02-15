@@ -192,6 +192,26 @@ async function releaseFlowEditingLock(client: any, flowId: string): Promise<bool
 const str = (val: any): string =>
   typeof val === 'object' && val !== null ? (val.display_value || val.value || '') : (val || '');
 
+/** Deduplicate labelCache entries by name — merge usedInstances when the same pill appears in multiple inputs. */
+function deduplicateLabelCache(entries: any[]): any[] {
+  var seen: Record<string, any> = {};
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var key = entry.name || '';
+    if (seen[key]) {
+      // Merge usedInstances from duplicate into existing entry
+      var existing = seen[key];
+      var newInstances = entry.usedInstances || [];
+      for (var j = 0; j < newInstances.length; j++) {
+        existing.usedInstances.push(newInstances[j]);
+      }
+    } else {
+      seen[key] = { ...entry, usedInstances: [...(entry.usedInstances || [])] };
+    }
+  }
+  return Object.values(seen);
+}
+
 // Type label mapping for parameter definitions
 const TYPE_LABELS: Record<string, string> = {
   string: 'String', integer: 'Integer', boolean: 'True/False', choice: 'Choice',
@@ -258,6 +278,19 @@ async function buildActionInputsForInsert(
       });
       if (match) resolvedInputs[str(match.element)] = value;
       else resolvedInputs[key] = value;
+    }
+  }
+
+  // Auto-convert object values to ServiceNow encoded strings (e.g. {priority: "2", state: "3"} → "priority=2^state=3")
+  // This handles agents passing field values as JSON objects instead of encoded strings.
+  for (var rk of Object.keys(resolvedInputs)) {
+    var rv = resolvedInputs[rk];
+    if (rv && typeof rv === 'object' && !Array.isArray(rv)) {
+      var pairs: string[] = [];
+      for (var [fk, fv] of Object.entries(rv)) {
+        pairs.push(fk + '=' + String(fv));
+      }
+      resolvedInputs[rk] = pairs.join('^');
     }
   }
 
@@ -1099,10 +1132,23 @@ const ACTION_TYPE_ALIASES: Record<string, string[]> = {
   log: ['log_message', 'Log Message', 'Log'],
   create_record: ['Create Record'],
   update_record: ['Update Record'],
+  lookup_record: ['look_up_record', 'Look Up Record'],
+  look_up: ['look_up_record', 'Look Up Record'],
+  delete_record: ['Delete Record'],
   notification: ['send_notification', 'send_email', 'Send Notification', 'Send Email'],
+  send_email: ['send_notification', 'Send Notification', 'Send Email'],
   field_update: ['set_field_values', 'Set Field Values'],
   wait: ['wait_for', 'Wait For Duration', 'Wait'],
+  wait_for_condition: ['Wait for Condition'],
   approval: ['ask_for_approval', 'create_approval', 'Ask for Approval'],
+};
+
+// Flow logic types that should NOT be used as action types — redirect to add_flow_logic
+const FLOW_LOGIC_NOT_ACTION: Record<string, string> = {
+  if: 'IF', else: 'ELSE', elseif: 'ELSEIF', else_if: 'ELSEIF',
+  for_each: 'FOREACH', foreach: 'FOREACH', do_until: 'DOUNTIL', dountil: 'DOUNTIL',
+  switch: 'SWITCH', parallel: 'PARALLEL', try: 'TRY', end: 'END',
+  break: 'BREAK', continue: 'CONTINUE', while: 'DOUNTIL',
 };
 
 async function addActionViaGraphQL(
@@ -1116,6 +1162,12 @@ async function addActionViaGraphQL(
   spoke?: string
 ): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
   const steps: any = {};
+
+  // Block flow logic types from being used as actions — redirect to add_flow_logic
+  var flowLogicType = FLOW_LOGIC_NOT_ACTION[actionType.toLowerCase()];
+  if (flowLogicType) {
+    return { success: false, error: '"' + actionType + '" is a flow logic type, not an action. Use add_flow_logic with logic_type: "' + flowLogicType + '" instead of add_action. Flow logic (If/Else, For Each, Do Until, Switch, etc.) creates branching/looping blocks in the flow, while actions are individual steps like Log, Update Record, Send Email.', steps };
+  }
 
   // Dynamically look up action definition in sys_hub_action_type_snapshot and sys_hub_action_type_definition
   // Prefer global/core actions over spoke-specific ones (e.g. core "Update Record" vs spoke-specific "Update Record")
@@ -1420,7 +1472,7 @@ async function addActionViaGraphQL(
           };
           // All pills → labelCache INSERT (trigger created by our code, entries may not exist yet)
           if (recordActionResult.labelCacheInserts.length > 0) {
-            updatePatch.labelCache.insert = recordActionResult.labelCacheInserts;
+            updatePatch.labelCache.insert = deduplicateLabelCache(recordActionResult.labelCacheInserts);
           }
           // Log the exact GraphQL mutation for debugging
           steps.record_update_mutation = jsToGraphQL(updatePatch);
@@ -1470,6 +1522,9 @@ async function addActionViaGraphQL(
             });
           }
         }
+
+        // Deduplicate: same pill used in multiple inputs (e.g. number in both subject and body)
+        gpLabelInserts = deduplicateLabelCache(gpLabelInserts);
 
         if (gpLabelInserts.length > 0) {
           var gpUpdatePatch: any = {
@@ -2595,6 +2650,8 @@ async function addFlowLogicViaGraphQL(
             });
           }
         }
+
+        ncLabelInserts = deduplicateLabelCache(ncLabelInserts);
 
         if (ncLabelInserts.length > 0) {
           var ncUpdatePatch: any = {
