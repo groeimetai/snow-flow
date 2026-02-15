@@ -305,7 +305,7 @@ async function buildActionInputsForInsert(
   client: any,
   actionDefId: string,
   userValues?: Record<string, string>
-): Promise<{ inputs: any[]; resolvedInputs: Record<string, string>; actionParams: any[] }> {
+): Promise<{ inputs: any[]; resolvedInputs: Record<string, string>; actionParams: any[]; missingMandatory: string[] }> {
   // Query sys_hub_action_input with full field set
   var actionParams: any[] = [];
   try {
@@ -434,7 +434,7 @@ async function buildFlowLogicInputsForInsert(
   defId: string,
   defRecord: { name?: string; type?: string; description?: string; order?: string; attributes?: string; compilation_class?: string; quiescence?: string; visible?: string; category?: string; connected_to?: string },
   userValues?: Record<string, string>
-): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string>; inputQueryError?: string; defParamsCount: number }> {
+): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string>; inputQueryError?: string; defParamsCount: number; missingMandatory: string[] }> {
   // Query sys_hub_flow_logic_input for this definition's inputs (separate table from sys_hub_action_input)
   // Field names verified from actual sys_hub_flow_logic_input XML schema
   var defParams: any[] = [];
@@ -3622,7 +3622,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           // Create trigger via GraphQL (same method as Flow Designer UI)
           if (!isSubflow && triggerType !== 'manual') {
             try {
-              var taTrigResult = await addTriggerViaGraphQL(client, flowSysId, triggerType, flowTable, triggerCondition);
+              var taTrigResult = await addTriggerViaGraphQL(client, flowSysId!, triggerType, flowTable, triggerCondition);
               triggerCreated = taTrigResult.success;
               diagnostics.trigger_graphql = taTrigResult;
             } catch (triggerError) {
@@ -3634,7 +3634,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           for (var ai = 0; ai < activitiesArg.length; ai++) {
             var activity = activitiesArg[ai];
             try {
-              var taActResult = await addActionViaGraphQL(client, flowSysId, activity.type || 'log', activity.name || ('Action ' + (ai + 1)), activity.inputs || activity.action_inputs || activity.action_config || activity.config, undefined, ai + 1);
+              var taActResult = await addActionViaGraphQL(client, flowSysId!, activity.type || 'log', activity.name || ('Action ' + (ai + 1)), activity.inputs || activity.action_inputs || activity.action_config || activity.config, undefined, ai + 1);
               if (taActResult.success) actionsCreated++;
               diagnostics['action_' + ai] = taActResult;
             } catch (actError) {
