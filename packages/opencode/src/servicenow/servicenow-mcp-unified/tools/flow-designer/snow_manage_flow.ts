@@ -2500,10 +2500,21 @@ async function transformActionInputsForRecordAction(
     } else if (isAlreadyPill) {
       // Check if the pill contains a shorthand that needs rewriting to the full dataPillBase
       var innerVal = recordVal.replace(/^\{\{/, '').replace(/\}\}$/, '').trim();
-      if (PILL_SHORTHANDS.includes(innerVal.toLowerCase())) {
+      var innerLC = innerVal.toLowerCase();
+      if (PILL_SHORTHANDS.includes(innerLC)) {
+        // Exact record-level shorthand: {{trigger.current}} → {{Updated_1.current}}
         var pillRef2 = '{{' + dataPillBase + '}}';
         recordInput.value = { schemaless: false, schemalessValue: '', value: pillRef2 };
         steps.record_transform = { original: recordVal, pill: pillRef2 };
+      } else {
+        // Field-level shorthand: {{trigger.current.sys_id}} → rewrite to record-level pill
+        // The `record` input expects a record reference, not a field reference
+        var fieldShortMatch = PILL_SHORTHANDS.find(function (sh) { return innerLC.startsWith(sh + '.'); });
+        if (fieldShortMatch) {
+          var pillRef3 = '{{' + dataPillBase + '}}';
+          recordInput.value = { schemaless: false, schemalessValue: '', value: pillRef3 };
+          steps.record_transform = { original: recordVal, pill: pillRef3, note: 'field-level shorthand rewritten to record-level' };
+        }
       }
       // UI keeps displayValue empty for pill references
       recordInput.displayValue = { value: '' };
