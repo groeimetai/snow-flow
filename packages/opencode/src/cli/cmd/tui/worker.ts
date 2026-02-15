@@ -7,6 +7,7 @@ import { Rpc } from "@/util/rpc"
 import { upgrade } from "@/cli/upgrade"
 import { Config } from "@/config/config"
 import { GlobalBus } from "@/bus/global"
+import { Bus } from "@/bus"
 import { createOpencodeClient, type Event } from "@opencode-ai/sdk/v2"
 import type { BunWebSocketData } from "hono/bun"
 import { Flag } from "@/flag/flag"
@@ -127,6 +128,23 @@ export const rpc = {
       init: InstanceBootstrap,
       fn: async () => {
         await upgrade().catch(() => {})
+      },
+    })
+  },
+  async manualUpgrade(input: { directory: string }) {
+    return Instance.provide({
+      directory: input.directory,
+      init: InstanceBootstrap,
+      fn: async () => {
+        const method = await Installation.method()
+        if (method === "unknown") return { success: false as const, error: "Unknown install method" }
+        const latest = await Installation.latest(method).catch(() => undefined)
+        if (!latest) return { success: false as const, error: "Could not check latest version" }
+        if (Installation.VERSION === latest)
+          return { success: false as const, error: "Already on latest (" + latest + ")" }
+        await Installation.upgrade(method, latest)
+        await Bus.publish(Installation.Event.Updated, { version: latest })
+        return { success: true as const, version: latest }
       },
     })
   },

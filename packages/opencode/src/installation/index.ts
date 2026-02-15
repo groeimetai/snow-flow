@@ -14,6 +14,7 @@ declare global {
 
 export namespace Installation {
   const log = Log.create({ service: "installation" })
+  const NPM_PACKAGE = "snow-flow"
 
   export type Method = Awaited<ReturnType<typeof method>>
 
@@ -105,7 +106,7 @@ export namespace Installation {
     for (const check of checks) {
       const output = await check.command()
       const installedName =
-        check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : "opencode-ai"
+        check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "opencode" : NPM_PACKAGE
       if (output.includes(installedName)) {
         return check.name
       }
@@ -139,13 +140,13 @@ export namespace Installation {
         })
         break
       case "npm":
-        cmd = $`npm install -g opencode-ai@${target}`
+        cmd = $`npm install -g ${NPM_PACKAGE}@${target}`
         break
       case "pnpm":
-        cmd = $`pnpm install -g opencode-ai@${target}`
+        cmd = $`pnpm install -g ${NPM_PACKAGE}@${target}`
         break
       case "bun":
-        cmd = $`bun install -g opencode-ai@${target}`
+        cmd = $`bun install -g ${NPM_PACKAGE}@${target}`
         break
       case "brew": {
         const formula = await getBrewFormula()
@@ -206,7 +207,7 @@ export namespace Installation {
         return reg.endsWith("/") ? reg.slice(0, -1) : reg
       })
       const channel = CHANNEL
-      return fetch(`${registry}/opencode-ai/${channel}`)
+      return fetch(`${registry}/${NPM_PACKAGE}/${channel}`)
         .then((res) => {
           if (!res.ok) throw new Error(res.statusText)
           return res.json()

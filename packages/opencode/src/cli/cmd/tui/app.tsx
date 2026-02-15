@@ -101,6 +101,8 @@ async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
 
 import type { EventSource } from "./context/sdk"
 
+let _onUpgrade: (() => Promise<{ success: boolean; version?: string; error?: string }>) | undefined
+
 export function tui(input: {
   url: string
   args: Args
@@ -108,7 +110,9 @@ export function tui(input: {
   fetch?: typeof fetch
   events?: EventSource
   onExit?: () => Promise<void>
+  onUpgrade?: () => Promise<{ success: boolean; version?: string; error?: string }>
 }) {
+  _onUpgrade = input.onUpgrade
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
     const mode = await getTerminalBackgroundColor()
@@ -449,6 +453,27 @@ function App() {
       category: "Provider",
     },
     {
+      title: "Update Snow-Flow",
+      value: "app.update",
+      category: "System",
+      slash: {
+        name: "update",
+        aliases: ["upgrade"],
+      },
+      onSelect: async (dialog) => {
+        dialog.clear()
+        if (!_onUpgrade) return
+        toast.show({ variant: "info", message: "Checking for updates...", duration: 3000 })
+        const result = await _onUpgrade().catch((e: unknown) => ({
+          success: false,
+          error: e instanceof Error ? e.message : "Unknown error",
+        }))
+        if (!result.success) {
+          toast.show({ variant: "warning", message: result.error ?? "Update failed", duration: 5000 })
+        }
+      },
+    },
+    {
       title: "View status",
       keybind: "status_view",
       value: "opencode.status",
@@ -676,8 +701,7 @@ function App() {
   sdk.event.on(Installation.Event.UpdateAvailable.type, (evt) => {
     toast.show({
       variant: "info",
-      title: "Update Available",
-      message: `Snow-Flow v${evt.properties.version} is available. Run 'snow-code upgrade' to update manually.`,
+      message: `v${evt.properties.version} available · type /update to install`,
       duration: 10000,
     })
   })

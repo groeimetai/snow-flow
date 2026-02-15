@@ -154,6 +154,9 @@ export const TuiThreadCommand = cmd({
       onExit: async () => {
         await client.call("shutdown", undefined)
       },
+      onUpgrade: async () => {
+        return client.call("manualUpgrade", { directory: cwd })
+      },
     })
 
     setTimeout(() => {

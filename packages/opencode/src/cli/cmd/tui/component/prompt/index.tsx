@@ -31,6 +31,7 @@ import { DialogAlert } from "../../ui/dialog-alert"
 import { useToast } from "../../ui/toast"
 import { useKV } from "../../context/kv"
 import { useTextareaKeybindings } from "../textarea-keybindings"
+import { Installation } from "@/installation"
 
 export type PromptProps = {
   sessionID?: string
@@ -73,6 +74,13 @@ export function Prompt(props: PromptProps) {
   const renderer = useRenderer()
   const { theme, syntax } = useTheme()
   const kv = useKV()
+
+  const [updatedVersion, setUpdatedVersion] = createSignal<string | undefined>()
+  onMount(() => {
+    sdk.event.on(Installation.Event.Updated.type, (evt) => {
+      setUpdatedVersion(evt.properties.version)
+    })
+  })
 
   function promptModelWarning() {
     toast.show({
@@ -970,6 +978,14 @@ export function Prompt(props: PromptProps) {
                 </box>
               </Show>
             </box>
+            <Show when={updatedVersion()}>
+              <box flexDirection="row" gap={1} flexShrink={0}>
+                <text fg={theme.success}>↑</text>
+                <text fg={theme.textMuted}>
+                  Updated to v{updatedVersion()} · restart to apply
+                </text>
+              </box>
+            </Show>
           </box>
         </box>
         <box
