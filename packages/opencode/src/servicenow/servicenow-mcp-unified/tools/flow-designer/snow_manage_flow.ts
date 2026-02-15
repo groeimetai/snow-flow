@@ -272,15 +272,33 @@ async function acquireFlowEditingLock(client: any, flowId: string): Promise<{ su
  * Release the Flow Designer editing lock on a flow.
  * The UI calls safeEdit(delete: flowId) when closing the editor.
  * Without this, the flow remains locked to the API user forever.
+ *
+ * Uses GraphQL safeEdit(delete) as primary, then falls back to directly
+ * deleting sys_hub_flow_safe_edit records via REST (handles ghost locks).
  */
 async function releaseFlowEditingLock(client: any, flowId: string): Promise<boolean> {
+  var graphqlOk = false
+  // Step 1: GraphQL safeEdit(delete) — primary mechanism
   try {
     var mutation = 'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {delete: "' + flowId + '"}) { deleteResult { deleteSuccess id __typename } __typename } __typename } __typename } }';
     var resp = await client.post('/api/now/graphql', { variables: {}, query: mutation });
-    return resp.data?.data?.global?.snFlowDesigner?.safeEdit?.deleteResult?.deleteSuccess === true;
-  } catch (_) {
-    return false;
-  }
+    graphqlOk = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.deleteResult?.deleteSuccess === true;
+  } catch (_) { /* continue to REST fallback */ }
+
+  // Step 2: REST fallback — directly delete any sys_hub_flow_safe_edit records for this flow
+  // This catches ghost locks that GraphQL safeEdit(delete) misses.
+  try {
+    var checkResp = await client.get('/api/now/table/sys_hub_flow_safe_edit', {
+      params: { sysparm_query: 'document_id=' + flowId, sysparm_fields: 'sys_id', sysparm_limit: 10 }
+    });
+    var records = checkResp.data?.result || [];
+    for (var r = 0; r < records.length; r++) {
+      await client.delete('/api/now/table/sys_hub_flow_safe_edit/' + records[r].sys_id);
+    }
+    if (records.length > 0) return true;
+  } catch (_) { /* best-effort */ }
+
+  return graphqlOk;
 }
 
 /** Safely extract a string from a ServiceNow Table API value (handles reference objects like {value, link}). */
@@ -2281,7 +2299,7 @@ async function buildConditionLabelCache(
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
 
 /** Shorthands that users can pass for `record` to mean "the trigger's current record". */
-const RECORD_PILL_SHORTHANDS = ['current', 'trigger.current', 'trigger_record', 'trigger record'];
+const RECORD_PILL_SHORTHANDS = ['current', 'trigger.current', 'trigger_record', 'trigger record', 'trigger.record', 'record'];
 
 /**
  * Post-process action inputs for record-modifying actions (Update Record, Create Record).
@@ -2496,7 +2514,8 @@ async function transformActionInputsForRecordAction(
       reference_display: tblLabel,
       type: 'reference',
       base_type: 'reference',
-      attributes: '',
+      parent_table_name: tableRef,
+      column_name: '',
       choices: {},
       usedInstances: recordUsedInstances
     });
@@ -3424,9 +3443,10 @@ export const toolDefinition: MCPToolDefinition = {
           'add_action', 'update_action', 'delete_action',
           'add_flow_logic', 'update_flow_logic', 'delete_flow_logic',
           'add_subflow', 'update_subflow', 'delete_subflow',
-          'open_flow', 'close_flow'
+          'open_flow', 'close_flow', 'force_unlock'
         ],
         description: 'Action to perform. EDITING WORKFLOW: create_flow keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. IMPORTANT: Always call close_flow as the LAST step when you are done editing to release the lock — if you forget, the flow stays locked and users cannot edit it in the UI. ' +
+          'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
           'add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id. ' +
           'Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action.'
       },
@@ -4335,22 +4355,42 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         var activateSysId = await resolveFlowId(client, args.flow_id);
-        await client.patch('/api/now/table/sys_hub_flow/' + activateSysId, {
-          active: true,
-          status: 'published',
-          validated: true
-        });
+        var activateSummary = summary();
+        var publishSuccess = false;
 
-        var activateSummary = summary()
-          .success('Flow activated and published')
-          .field('sys_id', activateSysId);
+        // Primary: use processflow versioning API (same as Flow Designer UI).
+        // This properly handles the editing lock lifecycle.
+        try {
+          var versionResp = await client.post(
+            '/api/now/processflow/versioning/create_version?sysparm_transaction_scope=global',
+            { item_sys_id: activateSysId, type: 'Activate/Publish', annotation: '', favorite: false }
+          );
+          var versionResult = versionResp.data?.result || versionResp.data;
+          publishSuccess = true;
+          activateSummary.success('Flow published via versioning API').field('sys_id', activateSysId);
+          if (versionResult?.version) activateSummary.field('version', versionResult.version);
+        } catch (publishErr: any) {
+          // Fallback: direct REST PATCH (older instances without processflow versioning)
+          try {
+            await client.patch('/api/now/table/sys_hub_flow/' + activateSysId, {
+              active: true, status: 'published', validated: true
+            });
+            publishSuccess = true;
+            activateSummary.warning('Published via REST fallback (versioning API unavailable)').field('sys_id', activateSysId);
+          } catch (fallbackErr: any) {
+            activateSummary.error('Publish failed: ' + (fallbackErr.message || fallbackErr)).field('sys_id', activateSysId);
+          }
+        }
+
+        // Safety: release any lingering editing lock after publish
+        await releaseFlowEditingLock(client, activateSysId);
 
         return createSuccessResult({
           action: action,
           flow_id: activateSysId,
-          active: true,
-          status: 'published',
-          message: 'Flow activated and published'
+          active: publishSuccess,
+          status: publishSuccess ? 'published' : 'failed',
+          message: publishSuccess ? 'Flow activated and published' : 'Publish failed'
         }, {}, activateSummary.build());
       }
 
@@ -4363,9 +4403,23 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         var deactivateSysId = await resolveFlowId(client, args.flow_id);
-        await client.patch('/api/now/table/sys_hub_flow/' + deactivateSysId, {
-          active: false
-        });
+
+        // Primary: use processflow versioning API with Deactivate type
+        var deactivateOk = false;
+        try {
+          await client.post(
+            '/api/now/processflow/versioning/create_version?sysparm_transaction_scope=global',
+            { item_sys_id: deactivateSysId, type: 'Deactivate', annotation: '', favorite: false }
+          );
+          deactivateOk = true;
+        } catch (_) {
+          // Fallback: direct REST PATCH
+          await client.patch('/api/now/table/sys_hub_flow/' + deactivateSysId, { active: false });
+          deactivateOk = true;
+        }
+
+        // Safety: release any lingering editing lock
+        await releaseFlowEditingLock(client, deactivateSysId);
 
         var deactivateSummary = summary()
           .success('Flow deactivated')
@@ -4718,10 +4772,21 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           openSummary.success('Flow opened for editing (lock acquired)').field('Flow', openFlowId)
             .line('You can now use add_action, add_flow_logic, etc. Call close_flow when done.');
           return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true, lock_debug: lockResult.debug, next_step: 'Flow is open. Add actions/logic, then call close_flow to release the lock.' }, {}, openSummary.build());
-        } else {
-          openSummary.error('Cannot open flow: ' + (lockResult.error || 'lock acquisition failed')).field('Flow', openFlowId);
-          return createErrorResult('Cannot open flow for editing: ' + (lockResult.error || 'lock acquisition failed') + (lockResult.debug ? ' | debug: ' + JSON.stringify(lockResult.debug) : ''));
         }
+
+        // Step 3: Lock failed — auto-release ghost lock and retry once
+        openSummary.line('Lock acquisition failed, attempting ghost lock cleanup...');
+        await releaseFlowEditingLock(client, openFlowId);
+        var retryResult = await acquireFlowEditingLock(client, openFlowId);
+        if (retryResult.success) {
+          openSummary.success('Flow opened for editing (ghost lock cleared)').field('Flow', openFlowId)
+            .line('You can now use add_action, add_flow_logic, etc. Call close_flow when done.');
+          return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true, ghost_lock_cleared: true, lock_debug: retryResult.debug, next_step: 'Flow is open. Add actions/logic, then call close_flow to release the lock.' }, {}, openSummary.build());
+        }
+
+        openSummary.error('Cannot open flow: ' + (retryResult.error || 'lock acquisition failed')).field('Flow', openFlowId)
+          .line('Try force_unlock first, then open_flow again.');
+        return createErrorResult('Cannot open flow for editing: ' + (retryResult.error || 'lock acquisition failed') + (retryResult.debug ? ' | debug: ' + JSON.stringify(retryResult.debug) : ''));
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -4738,6 +4803,68 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           closeSummary.warning('Lock release returned false (flow may not have been locked)').field('Flow', closeFlowId);
         }
         return createSuccessResult({ action: 'close_flow', flow_id: closeFlowId, lock_released: closed }, {}, closeSummary.build());
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // FORCE_UNLOCK — aggressively clear all locks on a flow (ghost lock recovery)
+      // ────────────────────────────────────────────────────────────────
+      case 'force_unlock': {
+        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for force_unlock');
+        var unlockFlowId = await resolveFlowId(client, args.flow_id);
+        var unlockSummary = summary();
+        var unlockSteps: Record<string, any> = {};
+
+        // 1. GraphQL safeEdit(delete)
+        try {
+          var unlockMutation = 'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {delete: "' + unlockFlowId + '"}) { deleteResult { deleteSuccess id __typename } __typename } __typename } __typename } }';
+          var unlockGqlResp = await client.post('/api/now/graphql', { variables: {}, query: unlockMutation });
+          unlockSteps.graphql_delete = unlockGqlResp.data?.data?.global?.snFlowDesigner?.safeEdit?.deleteResult?.deleteSuccess === true;
+        } catch (_) { unlockSteps.graphql_delete = 'error'; }
+
+        // 2. Delete all sys_hub_flow_safe_edit records
+        var deletedRecords = 0;
+        try {
+          var seResp = await client.get('/api/now/table/sys_hub_flow_safe_edit', {
+            params: { sysparm_query: 'document_id=' + unlockFlowId, sysparm_fields: 'sys_id,user', sysparm_limit: 50 }
+          });
+          var seRecords = seResp.data?.result || [];
+          for (var se = 0; se < seRecords.length; se++) {
+            try {
+              await client.delete('/api/now/table/sys_hub_flow_safe_edit/' + seRecords[se].sys_id);
+              deletedRecords++;
+            } catch (_) { /* best-effort */ }
+          }
+          unlockSteps.safe_edit_records_found = seRecords.length;
+          unlockSteps.safe_edit_records_deleted = deletedRecords;
+        } catch (_) { unlockSteps.safe_edit_query = 'error'; }
+
+        // 3. Check sys_hub_flow_lock table (some instances use this)
+        try {
+          var lockResp = await client.get('/api/now/table/sys_hub_flow_lock', {
+            params: { sysparm_query: 'flow=' + unlockFlowId, sysparm_fields: 'sys_id', sysparm_limit: 50 }
+          });
+          var lockRecords = lockResp.data?.result || [];
+          var deletedLocks = 0;
+          for (var lk = 0; lk < lockRecords.length; lk++) {
+            try {
+              await client.delete('/api/now/table/sys_hub_flow_lock/' + lockRecords[lk].sys_id);
+              deletedLocks++;
+            } catch (_) { /* best-effort */ }
+          }
+          unlockSteps.flow_lock_records_found = lockRecords.length;
+          unlockSteps.flow_lock_records_deleted = deletedLocks;
+        } catch (_) { unlockSteps.flow_lock_table = 'not_available'; }
+
+        unlockSummary.success('Force unlock completed').field('Flow', unlockFlowId);
+        if (deletedRecords > 0) unlockSummary.line('Deleted ' + deletedRecords + ' safe_edit record(s)');
+        unlockSummary.line('You can now try open_flow again.');
+
+        return createSuccessResult({
+          action: 'force_unlock',
+          flow_id: unlockFlowId,
+          steps: unlockSteps,
+          next_step: 'Lock cleared. Use open_flow to start editing.'
+        }, {}, unlockSummary.build());
       }
 
       default:
