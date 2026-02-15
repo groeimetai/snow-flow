@@ -146,8 +146,8 @@ export const rpc = {
           return { success: false as const, error: "Already on latest (" + latest + ")" }
         try {
           await Installation.upgrade(method, latest)
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e)
+        } catch (e: any) {
+          const msg = e?.data?.stderr ?? (e instanceof Error ? e.message : String(e))
           return { success: false as const, error: "Upgrade failed: " + msg }
         }
         await Bus.publish(Installation.Event.Updated, { version: latest }).catch(() => {})
