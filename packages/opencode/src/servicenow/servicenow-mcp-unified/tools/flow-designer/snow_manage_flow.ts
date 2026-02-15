@@ -192,6 +192,13 @@ async function releaseFlowEditingLock(client: any, flowId: string): Promise<bool
 const str = (val: any): string =>
   typeof val === 'object' && val !== null ? (val.display_value || val.value || '') : (val || '');
 
+/** Safely convert usedInstances to an array (handles object {}, undefined, null, or already an array). */
+function toArray(val: any): any[] {
+  if (Array.isArray(val)) return val;
+  if (!val) return [];
+  return [];
+}
+
 /** Deduplicate labelCache entries by name — merge usedInstances when the same pill appears in multiple inputs. */
 function deduplicateLabelCache(entries: any[]): any[] {
   var seen: Record<string, any> = {};
@@ -201,12 +208,13 @@ function deduplicateLabelCache(entries: any[]): any[] {
     if (seen[key]) {
       // Merge usedInstances from duplicate into existing entry
       var existing = seen[key];
-      var newInstances = entry.usedInstances || [];
+      var newInstances = toArray(entry.usedInstances);
       for (var j = 0; j < newInstances.length; j++) {
         existing.usedInstances.push(newInstances[j]);
       }
     } else {
-      seen[key] = { ...entry, usedInstances: [...(entry.usedInstances || [])] };
+      var clonedInstances = toArray(entry.usedInstances).slice();
+      seen[key] = Object.assign({}, entry, { usedInstances: clonedInstances });
     }
   }
   return Object.values(seen);
@@ -242,7 +250,7 @@ async function getExistingLabelCachePills(client: any, flowId: string): Promise<
     if (Array.isArray(cache)) {
       for (var i = 0; i < cache.length; i++) {
         var entry = cache[i];
-        if (entry.name) result[entry.name] = entry.usedInstances || [];
+        if (entry.name) result[entry.name] = toArray(entry.usedInstances);
       }
     }
     return result;
@@ -276,7 +284,7 @@ function splitLabelCacheEntries(
         var newInst = entry.usedInstances || [];
         for (var j = 0; j < newInst.length; j++) seenUpdates[name].usedInstances.push(newInst[j]);
       } else {
-        var mergedInstances = [...existingPills[name], ...(entry.usedInstances || [])];
+        var mergedInstances = toArray(existingPills[name]).concat(toArray(entry.usedInstances));
         seenUpdates[name] = { name: name, usedInstances: mergedInstances };
       }
     } else {
@@ -1219,9 +1227,12 @@ const ACTION_TYPE_ALIASES: Record<string, string[]> = {
   notification: ['send_notification', 'send_email', 'Send Notification', 'Send Email'],
   send_email: ['send_notification', 'Send Notification', 'Send Email'],
   field_update: ['set_field_values', 'Set Field Values'],
+  set_field_values: ['field_update', 'Field Update', 'Set Field Values'],
   wait: ['wait_for', 'Wait For Duration', 'Wait'],
   wait_for_condition: ['Wait for Condition'],
   approval: ['ask_for_approval', 'create_approval', 'Ask for Approval'],
+  ask_for_approval: ['create_approval', 'Ask for Approval'],
+  lookup: ['look_up_record', 'lookup_record', 'Look Up Record'],
 };
 
 // Flow logic types that should NOT be used as action types — redirect to add_flow_logic
@@ -1254,6 +1265,17 @@ async function addActionViaGraphQL(
   var flowLogicType = FLOW_LOGIC_NOT_ACTION[actionType.toLowerCase()];
   if (flowLogicType) {
     return { success: false, error: '"' + actionType + '" is a flow logic type, not an action. Use add_flow_logic with logic_type: "' + flowLogicType + '" instead of add_action. Flow logic (If/Else, For Each, Do Until, Switch, etc.) creates branching/looping blocks in the flow, while actions are individual steps like Log, Update Record, Send Email.', steps };
+  }
+
+  // Strip scope prefix from action type (e.g. "sn_fd.log" → "log", "global.update_record" → "update_record")
+  // Agents sometimes pass fully-qualified action names with scope prefix
+  if (actionType.includes('.')) {
+    var dotIdx = actionType.lastIndexOf('.');
+    var stripped = actionType.substring(dotIdx + 1);
+    if (stripped.length > 0) {
+      steps.scope_prefix_stripped = { original: actionType, stripped: stripped };
+      actionType = stripped;
+    }
   }
 
   // Auto-default spoke to 'global' for well-known core action types to avoid picking spoke-specific variants
