@@ -54,17 +54,69 @@ function generateUUID(): string {
 }
 
 /**
- * Get the current max global order from the flow's version payload.
+ * Get the current max global order from the flow's live state.
  *
  * IMPORTANT: Flow Designer elements (actions, flow logic, subflows) are NOT stored as
  * individual records in sys_hub_action_instance / sys_hub_flow_logic / sys_hub_sub_flow_instance.
- * They only exist inside the sys_hub_flow_version.payload (managed by the GraphQL API).
+ * They only exist inside the version payload managed by the GraphQL API.
  * Table API queries on these tables will always return 0 results.
  *
- * This function reads the version payload to determine the current max order.
- * If the payload can't be read/parsed, it returns 0 (caller should use explicit order).
+ * Strategy (most reliable first):
+ * 1. processflow API — always returns real-time state, even right after mutations
+ * 2. sys_hub_flow_version.payload — fallback, may be stale after rapid mutations
+ * 3. Return 0 (caller should use explicit order)
  */
 async function getMaxOrderFromVersion(client: any, flowId: string): Promise<number> {
+  // Helper: recursively extract all "order" values from a nested structure
+  const findMaxOrder = (obj: any): number => {
+    if (!obj || typeof obj !== 'object') return 0;
+    let max = 0;
+    if (obj.order !== undefined) {
+      const o = parseInt(String(obj.order), 10);
+      if (!isNaN(o) && o > max) max = o;
+    }
+    if (Array.isArray(obj)) {
+      for (let i = 0; i < obj.length; i++) {
+        const v = findMaxOrder(obj[i]);
+        if (v > max) max = v;
+      }
+    } else {
+      const vals = Object.values(obj);
+      for (let i = 0; i < vals.length; i++) {
+        const v = findMaxOrder(vals[i]);
+        if (v > max) max = v;
+      }
+    }
+    return max;
+  };
+
+  // Strategy 1: processflow API (real-time, same as Flow Designer UI)
+  try {
+    const pfResp = await client.get('/api/now/processflow/flow/' + flowId);
+    const pfRaw = pfResp.data;
+    if (typeof pfRaw === 'string') {
+      // XML — extract all order="N" and <order>N</order> values
+      let max = 0;
+      const orderAttrRx = /\border="(\d+)"/g;
+      const orderElemRx = /<order>(\d+)<\/order>/g;
+      let m;
+      while ((m = orderAttrRx.exec(pfRaw)) !== null) {
+        const v = parseInt(m[1], 10);
+        if (v > max) max = v;
+      }
+      while ((m = orderElemRx.exec(pfRaw)) !== null) {
+        const v = parseInt(m[1], 10);
+        if (v > max) max = v;
+      }
+      if (max > 0) return max;
+    } else if (pfRaw && typeof pfRaw === 'object') {
+      const data = pfRaw.result?.data || pfRaw.result || pfRaw.data || pfRaw;
+      const max = findMaxOrder(data);
+      if (max > 0) return max;
+    }
+  } catch (_) {}
+
+  // Strategy 2: sys_hub_flow_version.payload (may be stale after rapid mutations)
   try {
     const resp = await client.get('/api/now/table/sys_hub_flow_version', {
       params: {
@@ -74,25 +126,14 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
       }
     });
     const payload = resp.data.result?.[0]?.payload;
-    if (!payload) return 0;
-    // Payload may be JSON containing flow elements with order fields
-    const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
-    // Extract max order from any structure — search recursively for "order" values
-    let maxOrder = 0;
-    const findOrders = (obj: any) => {
-      if (!obj || typeof obj !== 'object') return;
-      if (obj.order !== undefined) {
-        const o = parseInt(String(obj.order), 10);
-        if (!isNaN(o) && o > maxOrder) maxOrder = o;
-      }
-      if (Array.isArray(obj)) obj.forEach(findOrders);
-      else Object.values(obj).forEach(findOrders);
-    };
-    findOrders(parsed);
-    return maxOrder;
-  } catch (_) {
-    return 0;
-  }
+    if (payload) {
+      const parsed = typeof payload === 'string' ? JSON.parse(payload) : payload;
+      const max = findMaxOrder(parsed);
+      if (max > 0) return max;
+    }
+  } catch (_) {}
+
+  return 0;
 }
 
 async function executeFlowPatchMutation(
@@ -1446,6 +1487,8 @@ async function addActionViaGraphQL(
   // ── Rewrite shorthand pills in generic action inputs (e.g. Log "message") ────
   // Non-record inputs (anything other than record/table_name/values) that contain
   // {{trigger.current.X}} need rewriting to {{Created or Updated_1.current.X}} + labelCache.
+  // Also handle inputs that already have full pill references (e.g. {{Created or Updated_1.current.caller_id}})
+  // — these still need labelCache entries or they render as empty grey pills.
   var PILL_SHORTHANDS_ACTION = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
   var RECORD_INPUTS = ['record', 'table_name', 'values'];
   var genericPillInputs: { name: string; fields: string[]; isRecordLevel: boolean }[] = [];
@@ -1460,28 +1503,35 @@ async function addActionViaGraphQL(
     var gpHasShorthand = PILL_SHORTHANDS_ACTION.some(function (sh) {
       return gpVal.includes('{{' + sh + '.') || gpVal.includes('{{' + sh + '}}');
     });
-    if (!gpHasShorthand) continue;
 
-    // Get trigger info if not already fetched
-    if (!actionTriggerInfo) {
-      actionTriggerInfo = await getFlowTriggerInfo(client, flowId);
-      steps.action_trigger_info = {
-        dataPillBase: actionTriggerInfo.dataPillBase, triggerName: actionTriggerInfo.triggerName,
-        table: actionTriggerInfo.table, tableLabel: actionTriggerInfo.tableLabel
-      };
+    // If it has shorthand pills, we need trigger info to rewrite them.
+    // If it has ANY pill references (even non-shorthand), we still need trigger info for labelCache.
+    if (gpHasShorthand || gpVal.includes('{{')) {
+      // Get trigger info if not already fetched
+      if (!actionTriggerInfo) {
+        actionTriggerInfo = await getFlowTriggerInfo(client, flowId);
+        steps.action_trigger_info = {
+          dataPillBase: actionTriggerInfo.dataPillBase, triggerName: actionTriggerInfo.triggerName,
+          table: actionTriggerInfo.table, tableLabel: actionTriggerInfo.tableLabel
+        };
+      }
+      if (!actionTriggerInfo.dataPillBase) continue;
     }
-    if (!actionTriggerInfo.dataPillBase) continue;
 
     var gpPillBase = actionTriggerInfo.dataPillBase;
     var gpOrigVal = gpVal;
-    for (var gsi = 0; gsi < PILL_SHORTHANDS_ACTION.length; gsi++) {
-      var gsh = PILL_SHORTHANDS_ACTION[gsi];
-      gpVal = gpVal.split('{{' + gsh + '.').join('{{' + gpPillBase + '.');
-      gpVal = gpVal.split('{{' + gsh + '}}').join('{{' + gpPillBase + '}}');
-    }
-    gpInput.value.value = gpVal;
 
-    // Extract field names from pills for labelCache
+    // Rewrite shorthand pills to full dataPillBase
+    if (gpHasShorthand) {
+      for (var gsi = 0; gsi < PILL_SHORTHANDS_ACTION.length; gsi++) {
+        var gsh = PILL_SHORTHANDS_ACTION[gsi];
+        gpVal = gpVal.split('{{' + gsh + '.').join('{{' + gpPillBase + '.');
+        gpVal = gpVal.split('{{' + gsh + '}}').join('{{' + gpPillBase + '}}');
+      }
+      gpInput.value.value = gpVal;
+    }
+
+    // Extract field names from ALL pills in the value for labelCache
     var gpPillFields: string[] = [];
     var gpIsRecordLevel = false;
     var gpPillRx = /\{\{([^}]+)\}\}/g;
@@ -1495,8 +1545,14 @@ async function addActionViaGraphQL(
       }
     }
 
-    genericPillInputs.push({ name: gpInput.name, fields: gpPillFields, isRecordLevel: gpIsRecordLevel });
-    steps['pill_rewrite_' + gpInput.name] = { original: gpOrigVal, rewritten: gpVal };
+    if (gpPillFields.length > 0 || gpIsRecordLevel) {
+      genericPillInputs.push({ name: gpInput.name, fields: gpPillFields, isRecordLevel: gpIsRecordLevel });
+      if (gpOrigVal !== gpVal) {
+        steps['pill_rewrite_' + gpInput.name] = { original: gpOrigVal, rewritten: gpVal };
+      } else {
+        steps['pill_labelcache_' + gpInput.name] = { fields: gpPillFields, isRecordLevel: gpIsRecordLevel };
+      }
+    }
   }
 
   // For record actions: clear data pill values from INSERT — they'll be set via separate UPDATE
@@ -2614,11 +2670,12 @@ async function addFlowLogicViaGraphQL(
       [/(\}\})\s+ends\s+with\s+/gi, '$1ENDSWITH'],
       [/(\}\})\s+greater\s+than\s+/gi, '$1>'],
       [/(\}\})\s+less\s+than\s+/gi, '$1<'],
-      // Symbol operators: == / === / != / !== / >= / <= / > / < with optional spaces
-      [/(\}\})\s*===?\s*/g, '$1='],
-      [/(\}\})\s*!==?\s*/g, '$1!='],
+      // Symbol operators: = / == / === / != / !== / >= / <= / > / < with optional spaces
+      // IMPORTANT: >= and <= must come BEFORE single > and < to avoid partial matches
       [/(\}\})\s*>=\s*/g, '$1>='],
       [/(\}\})\s*<=\s*/g, '$1<='],
+      [/(\}\})\s*!={1,2}\s*/g, '$1!='],
+      [/(\}\})\s*={1,3}\s*/g, '$1='],
       [/(\}\})\s*>\s*/g, '$1>'],
       [/(\}\})\s*<\s*/g, '$1<'],
     ];
@@ -2637,8 +2694,11 @@ async function addFlowLogicViaGraphQL(
   var hasShorthandPills = rawCondition.includes('{{') && PILL_SHORTHANDS.some(function (sh) {
     return rawCondition.includes('{{' + sh + '.') || rawCondition.includes('{{' + sh + '}}');
   });
+  // Also detect conditions that already contain full data pill references (non-shorthand)
+  // e.g. {{Created or Updated_1.current.priority}}=1 — these still need two-step + labelCache
+  var hasFullPillRefs = rawCondition.includes('{{') && !hasShorthandPills;
 
-  if (rawCondition && rawCondition !== '^EQ' && (isStandardEncodedQuery(rawCondition) || hasShorthandPills)) {
+  if (rawCondition && rawCondition !== '^EQ' && (isStandardEncodedQuery(rawCondition) || hasShorthandPills || hasFullPillRefs)) {
     conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
     steps.trigger_info = {
       dataPillBase: conditionTriggerInfo.dataPillBase, triggerName: conditionTriggerInfo.triggerName,
@@ -2674,6 +2734,7 @@ async function addFlowLogicViaGraphQL(
   // ── Rewrite shorthand pills in non-condition inputs (e.g. FOR_EACH "items") ────
   // These inputs may contain {{trigger.current}} or {{current.field}} that need rewriting
   // to the full dataPillBase (e.g. {{Created or Updated_1.current}}) + labelCache for rendering.
+  // Also handle inputs that already have full pill references — they still need labelCache.
   var nonConditionPillInputs: { name: string; fields: string[]; isRecordLevel: boolean }[] = [];
   for (var nci = 0; nci < inputResult.inputs.length; nci++) {
     var ncInput = inputResult.inputs[nci];
@@ -2684,9 +2745,8 @@ async function addFlowLogicViaGraphQL(
     var ncHasShorthand = PILL_SHORTHANDS.some(function (sh) {
       return ncVal.includes('{{' + sh + '.') || ncVal.includes('{{' + sh + '}}');
     });
-    if (!ncHasShorthand) continue;
 
-    // Get trigger info if not already fetched
+    // Get trigger info for shorthand rewriting OR for labelCache building (even non-shorthand pills)
     if (!conditionTriggerInfo) {
       conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
       steps.trigger_info = {
@@ -2699,14 +2759,18 @@ async function addFlowLogicViaGraphQL(
 
     var ncPillBase = conditionTriggerInfo.dataPillBase;
     var ncOrigVal = ncVal;
-    for (var si2 = 0; si2 < PILL_SHORTHANDS.length; si2++) {
-      var sh2 = PILL_SHORTHANDS[si2];
-      ncVal = ncVal.split('{{' + sh2 + '.').join('{{' + ncPillBase + '.');
-      ncVal = ncVal.split('{{' + sh2 + '}}').join('{{' + ncPillBase + '}}');
-    }
-    ncInput.value.value = ncVal;
 
-    // Extract field names from pills for labelCache
+    // Rewrite shorthand pills to full dataPillBase
+    if (ncHasShorthand) {
+      for (var si2 = 0; si2 < PILL_SHORTHANDS.length; si2++) {
+        var sh2 = PILL_SHORTHANDS[si2];
+        ncVal = ncVal.split('{{' + sh2 + '.').join('{{' + ncPillBase + '.');
+        ncVal = ncVal.split('{{' + sh2 + '}}').join('{{' + ncPillBase + '}}');
+      }
+      ncInput.value.value = ncVal;
+    }
+
+    // Extract field names from ALL pills in the value for labelCache
     var ncPillFields: string[] = [];
     var ncIsRecordLevel = false;
     var ncPillRx = /\{\{([^}]+)\}\}/g;
@@ -2721,8 +2785,14 @@ async function addFlowLogicViaGraphQL(
       }
     }
 
-    nonConditionPillInputs.push({ name: ncInput.name, fields: ncPillFields, isRecordLevel: ncIsRecordLevel });
-    steps['pill_rewrite_' + ncInput.name] = { original: ncOrigVal, rewritten: ncVal };
+    if (ncPillFields.length > 0 || ncIsRecordLevel) {
+      nonConditionPillInputs.push({ name: ncInput.name, fields: ncPillFields, isRecordLevel: ncIsRecordLevel });
+      if (ncOrigVal !== ncVal) {
+        steps['pill_rewrite_' + ncInput.name] = { original: ncOrigVal, rewritten: ncVal };
+      } else {
+        steps['pill_labelcache_' + ncInput.name] = { fields: ncPillFields, isRecordLevel: ncIsRecordLevel };
+      }
+    }
   }
 
   // Calculate insertion order
