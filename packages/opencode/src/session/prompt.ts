@@ -45,7 +45,7 @@ import { LLM } from "./llm"
 import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
-import { UsageReporter } from "@/usage"
+import { UsageReporter, ActivityReporter } from "@/usage"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -155,6 +155,7 @@ export namespace SessionPrompt {
 
     // Initialize TUI usage reporting (lazy, no-op if no enterprise auth)
     UsageReporter.init()
+    ActivityReporter.init()
 
     const message = await createUserMessage(input)
     await Session.touch(input.sessionID)
