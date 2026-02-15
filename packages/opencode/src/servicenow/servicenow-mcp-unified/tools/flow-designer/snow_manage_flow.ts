@@ -32,6 +32,60 @@ function isSysId(value: string): boolean {
   return /^[a-f0-9]{32}$/.test(value);
 }
 
+/**
+ * Validate and fix common pill syntax issues in input values.
+ * - Removes empty pills: {{}} or {{ }}
+ * - Trims spaces inside pill references: {{ trigger.current.priority }} → {{trigger.current.priority}}
+ * - Normalizes double spaces inside pill names
+ * - Checks for unbalanced {{ / }} and removes broken pills
+ */
+function validateAndFixPills(value: string): string {
+  if (!value || typeof value !== 'string' || !value.includes('{{')) return value;
+
+  // Remove empty pills: {{}} or {{ }} or {{  }}
+  var result = value.replace(/\{\{\s*\}\}/g, '');
+
+  // Trim leading/trailing spaces inside pill references:
+  // {{ trigger.current.priority }} → {{trigger.current.priority}}
+  result = result.replace(/\{\{\s+/g, '{{').replace(/\s+\}\}/g, '}}');
+
+  // Normalize double spaces inside pill names
+  result = result.replace(/\{\{([^}]*)\}\}/g, function (_m: string, inner: string) {
+    return '{{' + inner.replace(/\s{2,}/g, ' ') + '}}';
+  });
+
+  // Check for unbalanced pills: count {{ and }} occurrences
+  var opens = (result.match(/\{\{/g) || []).length;
+  var closes = (result.match(/\}\}/g) || []).length;
+  if (opens !== closes) {
+    // Remove orphaned {{ or }} — strip any {{ without a matching }} and vice versa
+    // Walk through and only keep balanced pairs
+    var balanced = '';
+    var i = 0;
+    while (i < result.length) {
+      if (result[i] === '{' && result[i + 1] === '{') {
+        var closeIdx = result.indexOf('}}', i + 2);
+        if (closeIdx !== -1) {
+          balanced += result.substring(i, closeIdx + 2);
+          i = closeIdx + 2;
+        } else {
+          // Orphaned {{ — skip it
+          i += 2;
+        }
+      } else if (result[i] === '}' && result[i + 1] === '}') {
+        // Orphaned }} — skip it
+        i += 2;
+      } else {
+        balanced += result[i];
+        i++;
+      }
+    }
+    result = balanced;
+  }
+
+  return result;
+}
+
 // ── GraphQL Flow Designer helpers ─────────────────────────────────────
 
 function jsToGraphQL(val: any): string {
@@ -634,13 +688,18 @@ async function calculateInsertOrder(
   _parentUiId?: string,
   explicitOrder?: number
 ): Promise<number> {
-  // Explicit order provided: trust it as the correct global order.
-  // This matches how the Flow Designer UI works — it computes the correct global
-  // order client-side and sends it in the mutation.
-  if (explicitOrder) return explicitOrder;
-
-  // No explicit order: try to find max order from version payload
+  // Always fetch max order so we can validate explicit values and return next_order hints
   const maxOrder = await getMaxOrderFromVersion(client, flowId);
+
+  if (explicitOrder) {
+    // Reject invalid values (negative, zero)
+    if (explicitOrder < 1) return maxOrder > 0 ? maxOrder + 1 : 1;
+    // Auto-fix: if explicit order collides with or is below existing max, bump to max+1
+    if (maxOrder > 0 && explicitOrder <= maxOrder) return maxOrder + 1;
+    return explicitOrder;
+  }
+
+  // No explicit order: use max + 1
   if (maxOrder > 0) return maxOrder + 1;
 
   // Last resort fallback
@@ -1299,7 +1358,7 @@ async function addActionViaGraphQL(
   parentUiId?: string,
   order?: number,
   spoke?: string
-): Promise<{ success: boolean; actionId?: string; steps?: any; error?: string }> {
+): Promise<{ success: boolean; actionId?: string; uiUniqueIdentifier?: string; resolvedOrder?: number; steps?: any; error?: string }> {
   const steps: any = {};
 
   // Block flow logic types from being used as actions — redirect to add_flow_logic
@@ -1497,7 +1556,7 @@ async function addActionViaGraphQL(
   for (var gpi = 0; gpi < recordActionResult.inputs.length; gpi++) {
     var gpInput = recordActionResult.inputs[gpi];
     if (RECORD_INPUTS.includes(gpInput.name)) continue;
-    var gpVal = gpInput.value?.value || '';
+    var gpVal = validateAndFixPills(gpInput.value?.value || '');
     if (!gpVal.includes('{{')) continue;
 
     var gpHasShorthand = PILL_SHORTHANDS_ACTION.some(function (sh) {
@@ -1736,7 +1795,7 @@ async function addActionViaGraphQL(
       }
     }
 
-    return { success: true, actionId: actionId || undefined, steps };
+    return { success: true, actionId: actionId || undefined, uiUniqueIdentifier: uuid, resolvedOrder, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
     return { success: false, steps, error: 'GraphQL action INSERT failed: ' + e.message };
@@ -2213,7 +2272,7 @@ async function transformActionInputsForRecordAction(
   // ── 1. Transform `record` input to data pill ──────────────────────
   var recordInput = actionInputs.find(function (inp: any) { return inp.name === 'record'; });
   if (recordInput && dataPillBase) {
-    var recordVal = recordInput.value?.value || '';
+    var recordVal = validateAndFixPills(recordInput.value?.value || '');
     var isShorthand = RECORD_PILL_SHORTHANDS.includes(recordVal.toLowerCase());
     var isAlreadyPill = recordVal.startsWith('{{');
 
@@ -2499,7 +2558,7 @@ async function addFlowLogicViaGraphQL(
   order?: number,
   parentUiId?: string,
   connectedTo?: string
-): Promise<{ success: boolean; logicId?: string; uiUniqueIdentifier?: string; steps?: any; error?: string }> {
+): Promise<{ success: boolean; logicId?: string; uiUniqueIdentifier?: string; resolvedOrder?: number; steps?: any; error?: string }> {
   const steps: any = {};
 
   // Normalize common aliases to actual ServiceNow flow logic type values
@@ -2507,15 +2566,31 @@ async function addFlowLogicViaGraphQL(
     'FOR_EACH': 'FOREACH',
     'DO_UNTIL': 'DOUNTIL',
     'ELSE_IF': 'ELSEIF',
+    'IF_ELSE': 'ELSEIF',
+    'ELIF': 'ELSEIF',
     'SKIP_ITERATION': 'CONTINUE',
     'EXIT_LOOP': 'BREAK',
     'GO_BACK_TO': 'GOBACKTO',
     'DYNAMIC_FLOW': 'DYNAMICFLOW',
     'END_FLOW': 'END',
+    'STOP': 'END',
+    'TERMINATE': 'END',
     'GET_FLOW_OUTPUT': 'GETFLOWOUTPUT',
     'GET_FLOW_OUTPUTS': 'GETFLOWOUTPUT',
     'SET_FLOW_VARIABLES': 'SETFLOWVARIABLES',
+    'SET_FLOW_VARIABLE': 'SETFLOWVARIABLES',
+    'SET_VARIABLE': 'SETFLOWVARIABLES',
     'APPEND_FLOW_VARIABLES': 'APPENDFLOWVARIABLES',
+    'APPEND_FLOW_VARIABLE': 'APPENDFLOWVARIABLES',
+    'APPEND_VARIABLE': 'APPENDFLOWVARIABLES',
+    'WHILE': 'DOUNTIL',
+    'LOOP': 'DOUNTIL',
+    'SWITCH': 'DECISION',
+    'CASE': 'DECISION',
+    'TRY_CATCH': 'TRY',
+    'ERROR_HANDLER': 'TRY',
+    'WAIT': 'TIMER',
+    'DELAY': 'TIMER',
   };
   var normalizedType = LOGIC_TYPE_ALIASES[logicType.toUpperCase()] || logicType;
   if (normalizedType !== logicType) {
@@ -2596,7 +2671,7 @@ async function addFlowLogicViaGraphQL(
   // 3. Non-standard (JS expression, fd_data ref) → passthrough
   const uuid = generateUUID();
   var conditionInput = inputResult.inputs.find(function (inp: any) { return inp.name === 'condition'; });
-  var rawCondition = conditionInput?.value?.value || '';
+  var rawCondition = validateAndFixPills(conditionInput?.value?.value || '');
   var needsConditionUpdate = false;
   var conditionTriggerInfo: any = null;
 
@@ -2739,7 +2814,7 @@ async function addFlowLogicViaGraphQL(
   for (var nci = 0; nci < inputResult.inputs.length; nci++) {
     var ncInput = inputResult.inputs[nci];
     if (ncInput.name === 'condition' || ncInput.name === 'condition_name') continue;
-    var ncVal = ncInput.value?.value || '';
+    var ncVal = validateAndFixPills(ncInput.value?.value || '');
     if (!ncVal.includes('{{')) continue;
 
     var ncHasShorthand = PILL_SHORTHANDS.some(function (sh) {
@@ -2984,7 +3059,7 @@ async function addFlowLogicViaGraphQL(
       }
     }
 
-    return { success: true, logicId, uiUniqueIdentifier: returnedUuid, steps };
+    return { success: true, logicId, uiUniqueIdentifier: returnedUuid, resolvedOrder, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
     return { success: false, steps, error: 'GraphQL flow logic INSERT failed: ' + e.message };
@@ -3000,7 +3075,7 @@ async function addSubflowCallViaGraphQL(
   inputs?: Record<string, string>,
   order?: number,
   parentUiId?: string
-): Promise<{ success: boolean; callId?: string; steps?: any; error?: string }> {
+): Promise<{ success: boolean; callId?: string; uiUniqueIdentifier?: string; resolvedOrder?: number; steps?: any; error?: string }> {
   const steps: any = {};
 
   // Resolve subflow: look up by sys_id, name, or internal_name in sys_hub_flow
@@ -3095,7 +3170,7 @@ async function addSubflowCallViaGraphQL(
     const callId = result?.subflows?.inserts?.[0]?.sysId;
     steps.insert = { success: !!callId, callId, uuid };
     if (!callId) return { success: false, steps, error: 'GraphQL subflow INSERT returned no ID' };
-    return { success: true, callId, steps };
+    return { success: true, callId, uiUniqueIdentifier: uuid, resolvedOrder, steps };
   } catch (e: any) {
     steps.insert = { success: false, error: e.message };
     return { success: false, steps, error: 'GraphQL subflow INSERT failed: ' + e.message };
@@ -3400,6 +3475,7 @@ export const toolDefinition: MCPToolDefinition = {
           '"trigger.current.priority <= 2" (dot notation), ' +
           '"{{trigger.current.priority}}<=2" (shorthand pill), ' +
           '"category=software^priority!=1" (multi-clause). ' +
+          'Spaces around operators are auto-removed. Single `=` works the same as `==` or `===`. ' +
           'Operators: = != > < >= <= LIKE STARTSWITH ENDSWITH ISEMPTY ISNOTEMPTY. ' +
           'Combine with ^ (AND) or ^OR (OR). Word operators also accepted: "equals", "not equals", "contains", "starts with", "is empty".'
       },
@@ -3409,11 +3485,11 @@ export const toolDefinition: MCPToolDefinition = {
       },
       parent_ui_id: {
         type: 'string',
-        description: 'Parent UI unique identifier for nesting elements inside flow logic blocks. REQUIRED for placing actions/subflows inside an If/Else block — set to the If/Else block\'s uiUniqueIdentifier from its add_flow_logic response.'
+        description: 'Parent UI unique identifier for nesting elements inside flow logic blocks. REQUIRED for placing actions/subflows inside an If/Else block — get this from the `uiUniqueIdentifier` in the add_flow_logic response. The response also includes a `next_step.for_child` hint with the exact value to use.'
       },
       connected_to: {
         type: 'string',
-        description: 'REQUIRED for ELSE blocks: the uiUniqueIdentifier of the If block this Else is connected to. Unlike parent_ui_id (which nests elements inside a block), connected_to links sibling blocks like Else to their If. Get this value from the add_flow_logic response for the If block.'
+        description: 'REQUIRED for ELSE blocks: the uiUniqueIdentifier of the If block this Else is connected to. Unlike parent_ui_id (which nests elements inside a block), connected_to links sibling blocks like Else to their If. Get this from the `connected_to_value` in the IF block\'s add_flow_logic response.'
       },
       subflow_id: {
         type: 'string',
@@ -3425,7 +3501,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       order: {
         type: 'number',
-        description: 'GLOBAL position/order of the element in the flow (for add_* actions). Flow Designer uses global sequential ordering across ALL elements (1, 2, 3...). For nested elements (e.g. action inside If block), the order must be global — not relative to the parent. Example: If block at order 2, first child should be order 3, second child order 4, etc. Each add_* response includes insert_order — use the previous insert_order + 1 for the next element.'
+        description: 'GLOBAL position/order of the element in the flow (for add_* actions). If omitted, auto-calculated from current flow state. Previous response includes `next_order` — use that value. Do NOT guess order numbers. Flow Designer uses global sequential ordering across ALL elements (1, 2, 3...). For nested elements (e.g. action inside If block), the order must be global — not relative to the parent.'
       },
       type: {
         type: 'string',
@@ -3458,7 +3534,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       action_inputs: {
         type: 'object',
-        description: 'Key-value pairs for action inputs (also accepted as "action_config", "inputs", or "config"). Keys are fuzzy-matched to ServiceNow parameter element names — you can use short names like "to" instead of "ah_to", "subject" instead of "ah_subject", "table" instead of "table_name", "message" instead of "log_message". Example: {to: "admin@example.com", subject: "Alert", body: "Incident created"}'
+        description: 'Key-value pairs for action inputs (also accepted as "action_config", "action_field_values", "inputs", or "config"). Keys are fuzzy-matched to ServiceNow parameter element names — you can use short names like "to" instead of "ah_to", "subject" instead of "ah_subject", "table" instead of "table_name", "message" instead of "log_message". Use `next_order` from the previous response for sequential ordering. Example: {to: "admin@example.com", subject: "Alert", body: "Incident created"}'
       },
       update_fields: {
         type: 'object',
@@ -4371,9 +4447,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addActSummary.error('Failed to add action: ' + (addActResult.error || 'unknown'));
         }
 
-        return addActResult.success
-          ? createSuccessResult({ action: 'add_action', ...addActResult, reminder: 'Call close_flow when all steps are added.' }, {}, addActSummary.build())
-          : createErrorResult(addActResult.error || 'Failed to add action');
+        if (addActResult.success) {
+          var addActNextOrder = (addActResult.resolvedOrder || 1) + 1;
+          return createSuccessResult({
+            action: 'add_action',
+            ...addActResult,
+            next_order: addActNextOrder,
+            reminder: 'Call close_flow when all steps are added.',
+          }, {}, addActSummary.build());
+        }
+        return createErrorResult(addActResult.error || 'Failed to add action');
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -4420,15 +4503,21 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
         // For IF/ELSEIF: add a hint about saving uiUniqueIdentifier for ELSE/ELSEIF connected_to
         var logicUpperType = addLogicType.toUpperCase().replace(/[^A-Z]/g, '');
-        var logicHints: any = { reminder: 'Call close_flow when all steps are added.' };
+        var addLogicNextOrder = (addLogicResult.resolvedOrder || 1) + 1;
+        var logicHints: any = { reminder: 'Call close_flow when all steps are added.', next_order: addLogicNextOrder };
         if (logicUpperType === 'IF' || logicUpperType === 'ELSEIF') {
           logicHints.important = 'Save the uiUniqueIdentifier ("' + (addLogicResult.uiUniqueIdentifier || '') + '") — you MUST pass it as connected_to when adding ELSE or ELSEIF blocks for this IF.';
           logicHints.connected_to_value = addLogicResult.uiUniqueIdentifier || '';
+          logicHints.next_step = {
+            for_child: 'To add actions INSIDE this block, use parent_ui_id: "' + (addLogicResult.uiUniqueIdentifier || '') + '" and order: ' + addLogicNextOrder,
+            for_else: 'To add ELSE after this IF, use connected_to: "' + (addLogicResult.uiUniqueIdentifier || '') + '"',
+          };
         }
 
-        return addLogicResult.success
-          ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult, ...logicHints }, {}, addLogicSummary.build())
-          : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
+        if (addLogicResult.success) {
+          return createSuccessResult({ action: 'add_flow_logic', ...addLogicResult, ...logicHints }, {}, addLogicSummary.build());
+        }
+        return createErrorResult(addLogicResult.error || 'Failed to add flow logic');
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -4460,9 +4549,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addSubSummary.error('Failed to add subflow call: ' + (addSubResult.error || 'unknown'));
         }
 
-        return addSubResult.success
-          ? createSuccessResult({ action: 'add_subflow', ...addSubResult }, {}, addSubSummary.build())
-          : createErrorResult(addSubResult.error || 'Failed to add subflow call');
+        if (addSubResult.success) {
+          var addSubNextOrder = (addSubResult.resolvedOrder || 1) + 1;
+          return createSuccessResult({
+            action: 'add_subflow',
+            ...addSubResult,
+            next_order: addSubNextOrder,
+            reminder: 'Call close_flow when all steps are added.',
+          }, {}, addSubSummary.build());
+        }
+        return createErrorResult(addSubResult.error || 'Failed to add subflow call');
       }
 
       // ────────────────────────────────────────────────────────────────
