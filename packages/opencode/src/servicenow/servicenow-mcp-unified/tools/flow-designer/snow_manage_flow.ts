@@ -688,18 +688,13 @@ async function calculateInsertOrder(
   _parentUiId?: string,
   explicitOrder?: number
 ): Promise<number> {
-  // Always fetch max order so we can validate explicit values and return next_order hints
+  // Explicit order provided: trust it as the correct global order.
+  // This matches how the Flow Designer UI works — it computes the correct global
+  // order client-side and sends it in the mutation.
+  if (explicitOrder) return explicitOrder;
+
+  // No explicit order: try to find max order from version payload
   const maxOrder = await getMaxOrderFromVersion(client, flowId);
-
-  if (explicitOrder) {
-    // Reject invalid values (negative, zero)
-    if (explicitOrder < 1) return maxOrder > 0 ? maxOrder + 1 : 1;
-    // Auto-fix: if explicit order collides with or is below existing max, bump to max+1
-    if (maxOrder > 0 && explicitOrder <= maxOrder) return maxOrder + 1;
-    return explicitOrder;
-  }
-
-  // No explicit order: use max + 1
   if (maxOrder > 0) return maxOrder + 1;
 
   // Last resort fallback
