@@ -24,6 +24,7 @@ target
 
 # Build artifacts
 packages/opencode/mcp/
+packages/opencode/src/**/*.js
 
 # Local dev files
 opencode-dev
