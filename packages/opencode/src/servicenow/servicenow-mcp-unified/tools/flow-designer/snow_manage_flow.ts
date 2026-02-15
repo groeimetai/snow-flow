@@ -1593,7 +1593,7 @@ async function addActionViaGraphQL(
     while ((gpm = gpPillRx.exec(gpVal)) !== null) {
       var gpParts = gpm[1].split('.');
       if (gpParts.length > 2) {
-        gpPillFields.push(gpParts[gpParts.length - 1]);
+        gpPillFields.push(gpParts.slice(2).join('.'));
       } else {
         gpIsRecordLevel = true;
       }
@@ -2159,36 +2159,50 @@ async function buildConditionLabelCache(
   }
   if (uniqueFields.length === 0) return [];
 
-  // Batch-query sys_dictionary for field metadata (type, label, reference)
-  var fieldMeta: Record<string, { type: string; label: string; reference: string }> = {};
-  try {
-    var dictResp = await client.get('/api/now/table/sys_dictionary', {
-      params: {
-        sysparm_query: 'name=' + table + '^elementIN' + uniqueFields.join(','),
-        sysparm_fields: 'element,column_label,internal_type,reference',
-        sysparm_display_value: 'false',
-        sysparm_limit: uniqueFields.length + 5
-      }
-    });
-    var dictResults = dictResp.data.result || [];
-    for (var d = 0; d < dictResults.length; d++) {
-      var rec = dictResults[d];
-      var elName = str(rec.element);
-      var intType = str(rec.internal_type?.value || rec.internal_type || 'string');
-      var colLabel = str(rec.column_label);
-      var refTable = str(rec.reference?.value || rec.reference || '');
-      if (elName) fieldMeta[elName] = { type: intType, label: colLabel, reference: refTable };
+  // Split fields into simple fields and dot-walk fields
+  var simpleFields: string[] = [];
+  var dotWalkFields: string[] = [];
+  for (var si = 0; si < uniqueFields.length; si++) {
+    if (uniqueFields[si].includes('.')) {
+      dotWalkFields.push(uniqueFields[si]);
+    } else {
+      simpleFields.push(uniqueFields[si]);
     }
-  } catch (_) {
-    // Fallback: use "string" type and generated labels if dictionary lookup fails
+  }
+
+  // Batch-query sys_dictionary for simple field metadata (type, label, reference)
+  var fieldMeta: Record<string, { type: string; label: string; reference: string }> = {};
+  if (simpleFields.length > 0) {
+    try {
+      var dictResp = await client.get('/api/now/table/sys_dictionary', {
+        params: {
+          sysparm_query: 'name=' + table + '^elementIN' + simpleFields.join(','),
+          sysparm_fields: 'element,column_label,internal_type,reference',
+          sysparm_display_value: 'false',
+          sysparm_limit: simpleFields.length + 5
+        }
+      });
+      var dictResults = dictResp.data.result || [];
+      for (var d = 0; d < dictResults.length; d++) {
+        var rec = dictResults[d];
+        var elName = str(rec.element);
+        var intType = str(rec.internal_type?.value || rec.internal_type || 'string');
+        var colLabel = str(rec.column_label);
+        var refTable = str(rec.reference?.value || rec.reference || '');
+        if (elName) fieldMeta[elName] = { type: intType, label: colLabel, reference: refTable };
+      }
+    } catch (_) {
+      // Fallback: use "string" type and generated labels if dictionary lookup fails
+    }
   }
 
   // Build labelCache INSERT entries with full metadata for each field-level pill.
   // This matches the UI's mutation format when editing a programmatically-created flow.
   var inserts: any[] = [];
 
-  for (var j = 0; j < uniqueFields.length; j++) {
-    var f = uniqueFields[j];
+  // Simple fields — use batch query results
+  for (var j = 0; j < simpleFields.length; j++) {
+    var f = simpleFields[j];
     var pillName = dataPillBase + '.' + f;
     var meta = fieldMeta[f] || { type: 'string', label: f.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }), reference: '' };
 
@@ -2201,6 +2215,61 @@ async function buildConditionLabelCache(
       base_type: meta.type,
       parent_table_name: table,
       column_name: f,
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }],
+      choices: {}
+    });
+  }
+
+  // Dot-walk fields — resolve each segment through reference chain
+  // e.g. "caller_id.vip" → query caller_id on incident → get ref sys_user → query vip on sys_user
+  for (var dw = 0; dw < dotWalkFields.length; dw++) {
+    var dwField = dotWalkFields[dw];
+    var dwPillName = dataPillBase + '.' + dwField;
+    var segments = dwField.split('.');
+    var currentTbl = table;
+    var labelParts: string[] = [];
+    var dwMeta = { type: 'string', label: '', reference: '' };
+
+    for (var sg = 0; sg < segments.length; sg++) {
+      var seg = segments[sg];
+      try {
+        var segResp = await client.get('/api/now/table/sys_dictionary', {
+          params: {
+            sysparm_query: 'name=' + currentTbl + '^element=' + seg,
+            sysparm_fields: 'element,column_label,internal_type,reference',
+            sysparm_display_value: 'false',
+            sysparm_limit: 1
+          }
+        });
+        var segRec = segResp.data.result?.[0];
+        if (segRec) {
+          var segLabel = str(segRec.column_label) || seg.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); });
+          var segType = str(segRec.internal_type?.value || segRec.internal_type || 'string');
+          var segRef = str(segRec.reference?.value || segRec.reference || '');
+          labelParts.push(segLabel);
+          if (sg === segments.length - 1) {
+            dwMeta = { type: segType, label: segLabel, reference: segRef };
+          } else if (segRef) {
+            currentTbl = segRef;
+          }
+        } else {
+          labelParts.push(seg.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }));
+        }
+      } catch (_) {
+        labelParts.push(seg.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }));
+      }
+    }
+
+    var dwLabel = labelParts.join('\u279b');
+    inserts.push({
+      name: dwPillName,
+      label: 'Trigger - Record ' + triggerName + '\u279b' + tableLabel + ' Record\u279b' + dwLabel,
+      reference: dwMeta.reference,
+      reference_display: dwMeta.label || segments[segments.length - 1],
+      type: dwMeta.type,
+      base_type: dwMeta.type,
+      parent_table_name: currentTbl,
+      column_name: segments[segments.length - 1],
       usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }],
       choices: {}
     });
@@ -2463,7 +2532,7 @@ async function transformActionInputsForRecordAction(
           }
 
           var dotParts = fullPillName.split('.');
-          var fieldCol = dotParts.length > 2 ? dotParts[dotParts.length - 1] : '';
+          var fieldCol = dotParts.length > 2 ? dotParts.slice(2).join('.') : '';
 
           if (fieldCol) {
             pillEntryMap[fullPillName] = {
@@ -2862,7 +2931,7 @@ async function addFlowLogicViaGraphQL(
     while ((ncm = ncPillRx.exec(ncVal)) !== null) {
       var ncParts = ncm[1].split('.');
       if (ncParts.length > 2) {
-        ncPillFields.push(ncParts[ncParts.length - 1]);
+        ncPillFields.push(ncParts.slice(2).join('.'));
       } else {
         // Record-level pill like {{Created or Updated_1.current}}
         ncIsRecordLevel = true;
@@ -2941,7 +3010,7 @@ async function addFlowLogicViaGraphQL(
         var pm;
         while ((pm = pillRx.exec(rawCondition)) !== null) {
           var pParts = pm[1].split('.');
-          if (pParts.length > 2) pillFields.push(pParts[pParts.length - 1]);
+          if (pParts.length > 2) pillFields.push(pParts.slice(2).join('.'));
         }
         // Build labelCache using extracted field names
         var labelCacheResult = await buildConditionLabelCache(
