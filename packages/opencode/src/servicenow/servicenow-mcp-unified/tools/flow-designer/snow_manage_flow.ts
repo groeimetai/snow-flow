@@ -474,7 +474,7 @@ async function buildActionInputsForInsert(
   client: any,
   actionDefId: string,
   userValues?: Record<string, string>
-): Promise<{ inputs: any[]; resolvedInputs: Record<string, string>; actionParams: any[]; missingMandatory: string[] }> {
+): Promise<{ inputs: any[]; resolvedInputs: Record<string, string>; actionParams: any[]; missingMandatory: string[]; invalidTable?: { input: string; value: string; message: string; validOptions: string[] } }> {
   // Query sys_hub_action_input with full field set
   var actionParams: any[] = [];
   try {
@@ -588,7 +588,88 @@ async function buildActionInputsForInsert(
     .filter(function (inp: any) { return inp.parameter?.mandatory && !inp.value?.value; })
     .map(function (inp: any) { return inp.name + ' (' + (inp.parameter?.label || inp.name) + ')'; });
 
+  // Validate table inputs that must be a child of a specific parent (e.g. task_table must extend 'task')
+  for (var tblKey of Object.keys(TABLE_INPUT_PARENTS)) {
+    var tblInput = inputs.find(function (inp: any) { return inp.name === tblKey })
+    if (tblInput && tblInput.value?.value) {
+      var tblVal = tblInput.value.value
+      var parentTbl = TABLE_INPUT_PARENTS[tblKey]
+      var tblCheck = await validateTableExtends(client, tblVal, parentTbl)
+      if (!tblCheck.valid) {
+        var optionNames = tblCheck.validOptions.map(function (o: any) { return o.name })
+        return {
+          inputs, resolvedInputs, actionParams, missingMandatory: [],
+          invalidTable: {
+            input: tblKey, value: tblVal,
+            message: "Table '" + tblVal + "' is not valid for " + tblKey + ". " +
+              (tblVal === parentTbl ? "The base '" + parentTbl + "' table cannot be used directly. " : "") +
+              "Valid options: " + optionNames.join(', '),
+            validOptions: optionNames
+          }
+        }
+      }
+      // Set displayValue for valid table
+      if (tblCheck.tableLabel) {
+        tblInput.displayValue = { schemaless: false, schemalessValue: '', value: tblCheck.tableLabel }
+      }
+    }
+  }
+
   return { inputs, resolvedInputs, actionParams, missingMandatory };
+}
+
+// ── Table validation helpers ──────────────────────────────────────────
+
+/** Check if a table exists in sys_db_object. */
+async function validateTableExists(
+  client: any, tableName: string
+): Promise<{ exists: boolean; label: string }> {
+  if (!tableName) return { exists: false, label: '' }
+  try {
+    var resp = await client.get('/api/now/table/sys_db_object', {
+      params: { sysparm_query: 'name=' + tableName, sysparm_fields: 'sys_id,label', sysparm_display_value: 'true', sysparm_limit: 1 }
+    })
+    var rec = resp.data.result?.[0]
+    return rec ? { exists: true, label: str(rec.label) || tableName } : { exists: false, label: '' }
+  } catch (_) {
+    return { exists: false, label: '' }
+  }
+}
+
+/** Check if a table is a child of a parent table (e.g. task_table must be a child of 'task'). */
+async function validateTableExtends(
+  client: any, tableName: string, parentTable: string
+): Promise<{ valid: boolean; validOptions: { name: string; label: string }[]; tableLabel: string }> {
+  try {
+    var parentResp = await client.get('/api/now/table/sys_db_object', {
+      params: { sysparm_query: 'name=' + parentTable, sysparm_fields: 'sys_id', sysparm_limit: 1 }
+    })
+    var parentSysId = str(parentResp.data.result?.[0]?.sys_id)
+    if (!parentSysId) return { valid: false, validOptions: [], tableLabel: '' }
+
+    var childResp = await client.get('/api/now/table/sys_db_object', {
+      params: {
+        sysparm_query: 'super_class=' + parentSysId,
+        sysparm_fields: 'name,label',
+        sysparm_display_value: 'true',
+        sysparm_limit: 100
+      }
+    })
+    var children = (childResp.data.result || [])
+    var validOptions = children.map(function (c: any) {
+      return { name: str(c.name), label: str(c.label) }
+    }).filter(function (c: any) { return c.name })
+
+    var match = children.find(function (c: any) { return str(c.name) === tableName })
+    return { valid: !!match, validOptions: validOptions, tableLabel: match ? str(match.label) : '' }
+  } catch (_) {
+    return { valid: false, validOptions: [], tableLabel: '' }
+  }
+}
+
+// Mapping of action inputs that must be a child of a specific parent table
+const TABLE_INPUT_PARENTS: Record<string, string> = {
+  'task_table': 'task'
 }
 
 /**
@@ -1256,6 +1337,18 @@ async function addTriggerViaGraphQL(
     return { success: false, error: 'Trigger type "' + trigName + '" requires a table parameter (e.g. table: "incident"). Record-based triggers must know which table to watch.', steps };
   }
 
+  // Validate that the trigger table exists in ServiceNow
+  if (table) {
+    var trigTblCheck = await validateTableExists(client, table)
+    if (!trigTblCheck.exists) {
+      return {
+        success: false,
+        error: "Table '" + table + "' does not exist in ServiceNow. Cannot create trigger for non-existent table.",
+        steps: steps
+      }
+    }
+  }
+
   // Build full trigger inputs and outputs from triggerpicker API (matching UI format)
   // Pass empty table/condition — values are set via separate UPDATE (two-step, matching UI)
   var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, trigType, undefined, undefined);
@@ -1589,6 +1682,12 @@ async function addActionViaGraphQL(
     return { success: false, error: 'Missing required inputs for ' + actionType + ': ' + inputResult.missingMandatory.join(', ') + '. These fields are mandatory in Flow Designer.', steps };
   }
 
+  // Validate table inputs (e.g. task_table must be a child of 'task', not the base table itself)
+  if (inputResult.invalidTable) {
+    steps.invalid_table = inputResult.invalidTable;
+    return { success: false, error: inputResult.invalidTable.message, steps, valid_table_options: inputResult.invalidTable.validOptions };
+  }
+
   // Calculate insertion order
   const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order);
   steps.insert_order = resolvedOrder;
@@ -1602,6 +1701,13 @@ async function addActionViaGraphQL(
     inputResult.actionParams, uuid
   );
   steps.record_action = recordActionResult.steps;
+
+  // Validate table_name exists (for record actions like Update Record, Create Record)
+  if (recordActionResult.tableError) {
+    steps.table_error = recordActionResult.tableError;
+    return { success: false, error: recordActionResult.tableError, steps };
+  }
+
   var hasRecordPills = (recordActionResult.labelCacheUpdates.length + recordActionResult.labelCacheInserts.length) > 0;
 
   // ── Rewrite shorthand pills in generic action inputs (e.g. Log "message") ────
@@ -2346,7 +2452,7 @@ async function transformActionInputsForRecordAction(
   resolvedInputs: Record<string, string>,
   actionParams: any[],
   uuid: string
-): Promise<{ inputs: any[]; labelCacheUpdates: any[]; labelCacheInserts: any[]; steps: any }> {
+): Promise<{ inputs: any[]; labelCacheUpdates: any[]; labelCacheInserts: any[]; steps: any; tableError?: string }> {
   var steps: any = {};
 
   // Detect if this is a record action: must have both `record` and `table_name` parameters
@@ -2418,19 +2524,20 @@ async function transformActionInputsForRecordAction(
       tableVal = triggerInfo.table;
     }
     if (tableVal) {
-      // Look up display name for the table
-      var tableDisplayName = triggerInfo.tableLabel || '';
-      if (tableVal !== triggerInfo.table || !tableDisplayName) {
-        // Different table than trigger — look up its label
-        try {
-          var tblResp = await client.get('/api/now/table/sys_db_object', {
-            params: { sysparm_query: 'name=' + tableVal, sysparm_fields: 'label', sysparm_display_value: 'true', sysparm_limit: 1 }
-          });
-          tableDisplayName = str(tblResp.data.result?.[0]?.label) || tableVal.charAt(0).toUpperCase() + tableVal.slice(1).replace(/_/g, ' ');
-        } catch (_) {
-          tableDisplayName = tableVal.charAt(0).toUpperCase() + tableVal.slice(1).replace(/_/g, ' ');
+      // Validate that the table exists before proceeding
+      var tblExists = await validateTableExists(client, tableVal)
+      if (!tblExists.exists) {
+        steps.table_validation_error = "Table '" + tableVal + "' does not exist in ServiceNow."
+        return {
+          inputs: actionInputs, labelCacheUpdates: [], labelCacheInserts: [],
+          steps: steps,
+          tableError: "Table '" + tableVal + "' does not exist. Check the table name and try again."
         }
       }
+      // Use the validated label (or fallback to trigger's label if same table)
+      var tableDisplayName = (tableVal === triggerInfo.table && triggerInfo.tableLabel)
+        ? triggerInfo.tableLabel
+        : (tblExists.label || tableVal.charAt(0).toUpperCase() + tableVal.slice(1).replace(/_/g, ' '))
       tableNameInput.value = { schemaless: false, schemalessValue: '', value: tableVal };
       tableNameInput.displayValue = { schemaless: false, schemalessValue: '', value: tableDisplayName };
       steps.table_name_transform = { value: tableVal, displayValue: tableDisplayName };
@@ -4547,6 +4654,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (args.action_table && !addActInputs.table && !addActInputs.table_name) {
           addActInputs = { ...addActInputs, table: args.action_table };
         }
+        // Early validation: check action_table exists before calling GraphQL
+        if (args.action_table) {
+          var actTblCheck = await validateTableExists(client, args.action_table)
+          if (!actTblCheck.exists) {
+            return createErrorResult(
+              new SnowFlowError(ErrorType.VALIDATION_ERROR,
+                "Table '" + args.action_table + "' does not exist in ServiceNow.")
+            )
+          }
+        }
 
         var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs, args.parent_ui_id, args.order, args.spoke);
 
@@ -4690,6 +4807,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         // Accept action_table as a shorthand — inject into inputs as table/table_name
         if (args.action_table && !updElemInputs.table && !updElemInputs.table_name) {
           updElemInputs = { ...updElemInputs, table: args.action_table };
+        }
+        // Early validation: check action_table exists before calling GraphQL
+        if (args.action_table) {
+          var updActTblCheck = await validateTableExists(client, args.action_table)
+          if (!updActTblCheck.exists) {
+            return createErrorResult(
+              new SnowFlowError(ErrorType.VALIDATION_ERROR,
+                "Table '" + args.action_table + "' does not exist in ServiceNow.")
+            )
+          }
         }
 
         var updElemResult = await updateElementViaGraphQL(client, updElemFlowId, updElemType, args.element_id, updElemInputs);
