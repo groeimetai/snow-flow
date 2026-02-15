@@ -3546,7 +3546,7 @@ export const toolDefinition: MCPToolDefinition = {
           'add_subflow', 'update_subflow', 'delete_subflow',
           'open_flow', 'close_flow', 'force_unlock'
         ],
-        description: 'Action to perform. EDITING WORKFLOW: create_flow keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. IMPORTANT: Always call close_flow as the LAST step when you are done editing to release the lock — if you forget, the flow stays locked and users cannot edit it in the UI. ' +
+        description: 'Action to perform. EDITING WORKFLOW: create keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. IMPORTANT: Always call close_flow as the LAST step when you are done editing to release the lock — if you forget, the flow stays locked and users cannot edit it in the UI. ' +
           'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
           'add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id. ' +
           'Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action.'
