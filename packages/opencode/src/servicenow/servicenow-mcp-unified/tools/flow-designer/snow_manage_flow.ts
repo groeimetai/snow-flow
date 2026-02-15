@@ -1114,6 +1114,24 @@ async function addActionViaGraphQL(
     return candidates[0];
   };
 
+  // Helper: check if a search term is a relevant match for an action definition.
+  // Rejects matches where the term only appears INSIDE another word (e.g. "script" in "description").
+  // Accepts matches where the term appears as a standalone word or at word boundaries.
+  const isRelevantMatch = (record: any, term: string): boolean => {
+    var termLC = term.toLowerCase().replace(/[_\s]+/g, '[_\\s]*');
+    var wordBoundaryRe = new RegExp('(?:^|[_\\s])' + termLC + '(?:$|[_\\s])', 'i');
+    var internalName = str(record.internal_name).toLowerCase();
+    var name = str(record.name).toLowerCase();
+    // Accept if internal_name or name contains the term at a word boundary
+    if (wordBoundaryRe.test(internalName) || wordBoundaryRe.test(name)) return true;
+    // Accept if internal_name starts with or equals the term
+    if (internalName === term.toLowerCase() || internalName.startsWith(term.toLowerCase() + '_')) return true;
+    // Accept if name starts with or equals the term (case-insensitive)
+    var termLCPlain = term.toLowerCase();
+    if (name === termLCPlain || name.startsWith(termLCPlain + ' ') || name.startsWith(termLCPlain + '_')) return true;
+    return false;
+  };
+
   // Helper: search a table for action definitions by exact match and LIKE
   const searchTable = async (tableName: string, searchTerms: string[]): Promise<void> => {
     for (var si = 0; si < searchTerms.length && !actionDefId; si++) {
@@ -1136,7 +1154,7 @@ async function addActionViaGraphQL(
           }
         } catch (_) {}
       }
-      // LIKE search
+      // LIKE search — filter out irrelevant matches where the term is part of another word
       if (!actionDefId) {
         try {
           const resp = await client.get('/api/now/table/' + tableName, {
@@ -1145,9 +1163,15 @@ async function addActionViaGraphQL(
               sysparm_fields: snapshotFields, sysparm_limit: 10
             }
           });
-          const results = resp.data.result || [];
-          if (results.length > 0 && !steps.def_lookup_fallback_candidates) {
-            steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name), scope: str(r.sys_scope), package: str(r.sys_package) }));
+          const rawResults = resp.data.result || [];
+          // Filter: only keep results where the term appears as a real word, not inside another word
+          const results = rawResults.filter(function (r: any) { return isRelevantMatch(r, term); });
+          if (rawResults.length > 0 && !steps.def_lookup_fallback_candidates) {
+            steps.def_lookup_fallback_candidates = rawResults.map((r: any) => ({
+              sys_id: r.sys_id, internal_name: str(r.internal_name), name: str(r.name),
+              scope: str(r.sys_scope), package: str(r.sys_package),
+              relevant: isRelevantMatch(r, term)
+            }));
           }
           const found = pickBest(results);
           if (found?.sys_id) {
@@ -1173,7 +1197,16 @@ async function addActionViaGraphQL(
     await searchTable('sys_hub_action_type_definition', searchTerms);
   }
 
-  if (!actionDefId) return { success: false, error: 'Action definition not found for: ' + actionType + ' (searched snapshot + definition tables with terms: ' + searchTerms.join(', ') + ')', steps };
+  if (!actionDefId) {
+    var notFoundMsg = 'Action definition not found for: ' + actionType + ' (searched snapshot + definition tables with terms: ' + searchTerms.join(', ') + ')';
+    if (steps.def_lookup_fallback_candidates) {
+      var rejected = steps.def_lookup_fallback_candidates.filter(function (c: any) { return !c.relevant; });
+      if (rejected.length > 0) {
+        notFoundMsg += '. LIKE search found ' + rejected.length + ' result(s) but they were rejected as irrelevant (term "' + actionType + '" only matched inside other words). Rejected: ' + rejected.map(function (c: any) { return c.name + ' (' + c.internal_name + ')'; }).join(', ') + '. Use the exact internal_name or name of the action you want.';
+      }
+    }
+    return { success: false, error: notFoundMsg, steps };
+  }
 
   // Build full input objects with parameter definitions (matching UI format)
   const inputResult = await buildActionInputsForInsert(client, actionDefId, inputs);
