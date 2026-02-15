@@ -1128,7 +1128,6 @@ async function addTriggerViaGraphQL(
 
 // Common short-name aliases for action types — maps user-friendly names to ServiceNow internal names
 const ACTION_TYPE_ALIASES: Record<string, string[]> = {
-  script: ['script_step', 'run_script', 'Run Script'],
   log: ['log_message', 'Log Message', 'Log'],
   create_record: ['Create Record'],
   update_record: ['Update Record'],
@@ -1149,6 +1148,12 @@ const FLOW_LOGIC_NOT_ACTION: Record<string, string> = {
   for_each: 'FOREACH', foreach: 'FOREACH', do_until: 'DOUNTIL', dountil: 'DOUNTIL',
   switch: 'SWITCH', parallel: 'PARALLEL', try: 'TRY', end: 'END',
   break: 'BREAK', continue: 'CONTINUE', while: 'DOUNTIL',
+  set_flow_variable: 'SETFLOWVARIABLES', set_flow_variables: 'SETFLOWVARIABLES',
+  setflowvariables: 'SETFLOWVARIABLES', set_variable: 'SETFLOWVARIABLES',
+  append_flow_variable: 'APPENDFLOWVARIABLES', append_flow_variables: 'APPENDFLOWVARIABLES',
+  appendflowvariables: 'APPENDFLOWVARIABLES',
+  get_flow_output: 'GETFLOWOUTPUT', get_flow_outputs: 'GETFLOWOUTPUT',
+  getflowoutput: 'GETFLOWOUTPUT',
 };
 
 async function addActionViaGraphQL(
@@ -2114,7 +2119,20 @@ async function transformActionInputsForRecordAction(
           val = '{{' + dataPillBase + '.' + fieldName + '}}';
           usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
         } else if (val.startsWith('{{')) {
-          // Already a data pill
+          // Already a data pill — rewrite shorthands inside if needed
+          var PILL_SH = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
+          for (var psi = 0; psi < PILL_SH.length; psi++) {
+            val = val.split('{{' + PILL_SH[psi] + '.').join('{{' + dataPillBase + '.');
+            val = val.split('{{' + PILL_SH[psi] + '}}').join('{{' + dataPillBase + '}}');
+          }
+          usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
+        } else if (val.includes('{{')) {
+          // Inline pills mixed with text: "Emergency Change: {{trigger.current.number}}"
+          var INLINE_SH = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
+          for (var isi = 0; isi < INLINE_SH.length; isi++) {
+            val = val.split('{{' + INLINE_SH[isi] + '.').join('{{' + dataPillBase + '.');
+            val = val.split('{{' + INLINE_SH[isi] + '}}').join('{{' + dataPillBase + '}}');
+          }
           usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
         }
       }
@@ -2126,6 +2144,24 @@ async function transformActionInputsForRecordAction(
       var packedValues = fieldPairs.join('^');
       valuesInput.value = { schemaless: false, schemalessValue: '', value: packedValues };
       steps.values_transform = { packed: packedValues, fieldCount: fieldPairs.length };
+    }
+
+    // ── 3b. Rewrite any remaining shorthand pills in the packed values string ──
+    // Covers pre-built values strings passed by the agent that weren't processed per-field
+    if (dataPillBase) {
+      var vStr = valuesInput.value?.value || '';
+      if (vStr.includes('{{')) {
+        var VALS_SH = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
+        var vOriginal = vStr;
+        for (var vshi = 0; vshi < VALS_SH.length; vshi++) {
+          vStr = vStr.split('{{' + VALS_SH[vshi] + '.').join('{{' + dataPillBase + '.');
+          vStr = vStr.split('{{' + VALS_SH[vshi] + '}}').join('{{' + dataPillBase + '}}');
+        }
+        if (vStr !== vOriginal) {
+          valuesInput.value.value = vStr;
+          steps.values_pill_rewrite = { original: vOriginal, rewritten: vStr };
+        }
+      }
     }
   }
 
@@ -2156,55 +2192,104 @@ async function transformActionInputsForRecordAction(
     });
 
     // Field-level data pill entries for any field references in the `values` string → INSERT (new pills)
+    // Parse values by ^-separated segments so we can track which TARGET field uses each pill
     var valuesStr = '';
     var valuesInp = actionInputs.find(function (inp: any) { return inp.name === 'values'; });
     if (valuesInp) valuesStr = valuesInp.value?.value || '';
 
     if (valuesStr && valuesStr.includes('{{')) {
-      var pillRegex = /\{\{([^}]+)\}\}/g;
-      var pillMatch;
-      var seenPills: Record<string, boolean> = {};
-      seenPills[dataPillBase] = true;
+      var pillEntryMap: Record<string, any> = {};
+      var valSegments = valuesStr.split('^');
 
-      while ((pillMatch = pillRegex.exec(valuesStr)) !== null) {
-        var fullPillName = pillMatch[1];
-        if (seenPills[fullPillName]) continue;
-        seenPills[fullPillName] = true;
+      for (var vsi2 = 0; vsi2 < valSegments.length; vsi2++) {
+        var seg = valSegments[vsi2];
+        var eqIdx = seg.indexOf('=');
+        if (eqIdx < 0) continue;
+        var targetField = seg.substring(0, eqIdx);
+        var segValue = seg.substring(eqIdx + 1);
+        if (!segValue.includes('{{')) continue;
 
-        var dotParts = fullPillName.split('.');
-        var fieldCol = dotParts.length > 2 ? dotParts[dotParts.length - 1] : '';
+        var segPillRx = /\{\{([^}]+)\}\}/g;
+        var segMatch;
+        while ((segMatch = segPillRx.exec(segValue)) !== null) {
+          var fullPillName = segMatch[1];
+          if (fullPillName === dataPillBase) continue;
 
-        if (fieldCol) {
-          var fMeta: { type: string; label: string } = { type: 'string', label: fieldCol.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }) };
-          try {
-            var dictResp = await client.get('/api/now/table/sys_dictionary', {
-              params: {
-                sysparm_query: 'name=' + tableRef + '^element=' + fieldCol,
-                sysparm_fields: 'element,column_label,internal_type',
-                sysparm_display_value: 'false',
-                sysparm_limit: 1
-              }
-            });
-            var dictRec = dictResp.data.result?.[0];
-            if (dictRec) {
-              fMeta.type = str(dictRec.internal_type?.value || dictRec.internal_type || 'string');
-              fMeta.label = str(dictRec.column_label) || fMeta.label;
-            }
-          } catch (_) {}
+          if (pillEntryMap[fullPillName]) {
+            // Same pill used in another field — add usedInstance
+            pillEntryMap[fullPillName].usedInstances.push({ uiUniqueIdentifier: uuid, inputName: targetField });
+            continue;
+          }
 
-          labelCacheInserts.push({
-            name: fullPillName,
-            label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record\u279b' + fMeta.label,
-            reference: tableRef,
-            reference_display: fMeta.label,
-            type: fMeta.type,
-            base_type: fMeta.type,
-            parent_table_name: tableRef,
-            column_name: fieldCol,
-            attributes: '',
-            usedInstances: [{ uiUniqueIdentifier: uuid, inputName: fieldCol }]
-          });
+          var dotParts = fullPillName.split('.');
+          var fieldCol = dotParts.length > 2 ? dotParts[dotParts.length - 1] : '';
+
+          if (fieldCol) {
+            pillEntryMap[fullPillName] = {
+              fieldCol: fieldCol,
+              targetField: targetField,
+              usedInstances: [{ uiUniqueIdentifier: uuid, inputName: targetField }]
+            };
+          }
         }
+      }
+
+      // Batch-collect unique source field columns for sys_dictionary lookup
+      var pillNames = Object.keys(pillEntryMap);
+      var uniqueCols: string[] = [];
+      var colSeen: Record<string, boolean> = {};
+      for (var pni = 0; pni < pillNames.length; pni++) {
+        var col = pillEntryMap[pillNames[pni]].fieldCol;
+        if (col && !colSeen[col]) { colSeen[col] = true; uniqueCols.push(col); }
+      }
+
+      // Single batch lookup for field metadata
+      var fieldMetaMap: Record<string, { type: string; label: string }> = {};
+      if (uniqueCols.length > 0) {
+        try {
+          var dictResp = await client.get('/api/now/table/sys_dictionary', {
+            params: {
+              sysparm_query: 'name=' + tableRef + '^elementIN' + uniqueCols.join(','),
+              sysparm_fields: 'element,column_label,internal_type',
+              sysparm_display_value: 'false',
+              sysparm_limit: uniqueCols.length + 5
+            }
+          });
+          var dictResults = dictResp.data.result || [];
+          for (var di = 0; di < dictResults.length; di++) {
+            var dRec = dictResults[di];
+            var dEl = str(dRec.element);
+            if (dEl) {
+              fieldMetaMap[dEl] = {
+                type: str(dRec.internal_type?.value || dRec.internal_type || 'string'),
+                label: str(dRec.column_label) || dEl.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); })
+              };
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Build labelCache entries with correct metadata and target field names
+      for (var pni2 = 0; pni2 < pillNames.length; pni2++) {
+        var pName = pillNames[pni2];
+        var pEntry = pillEntryMap[pName];
+        var fMeta = fieldMetaMap[pEntry.fieldCol] || {
+          type: 'string',
+          label: pEntry.fieldCol.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); })
+        };
+
+        labelCacheInserts.push({
+          name: pName,
+          label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record\u279b' + fMeta.label,
+          reference: tableRef,
+          reference_display: fMeta.label,
+          type: fMeta.type,
+          base_type: fMeta.type,
+          parent_table_name: tableRef,
+          column_name: pEntry.fieldCol,
+          attributes: '',
+          usedInstances: pEntry.usedInstances
+        });
       }
     }
 
@@ -2963,8 +3048,9 @@ export const toolDefinition: MCPToolDefinition = {
           'add_subflow', 'update_subflow', 'delete_subflow',
           'open_flow', 'close_flow'
         ],
-        description: 'Action to perform. EDITING WORKFLOW: create_flow keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. Always call close_flow as the LAST step to release the lock so users can edit in the UI. ' +
-          'add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id.'
+        description: 'Action to perform. EDITING WORKFLOW: create_flow keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. IMPORTANT: Always call close_flow as the LAST step when you are done editing to release the lock — if you forget, the flow stays locked and users cannot edit it in the UI. ' +
+          'add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id. ' +
+          'Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action.'
       },
 
       flow_id: {
@@ -3013,7 +3099,7 @@ export const toolDefinition: MCPToolDefinition = {
             name: { type: 'string', description: 'Step name' },
             type: {
               type: 'string',
-              description: 'Action type - looked up dynamically in sys_hub_action_type_snapshot by internal_name or name. Common values: log, create_record, update_record, send_notification, script, field_update, wait, create_approval'
+              description: 'Action type - looked up dynamically in sys_hub_action_type_snapshot by internal_name or name. Common values: log, create_record, update_record, lookup_record, delete_record, send_notification, field_update, wait, create_approval. Note: there is NO generic "script" action in Flow Designer — use a subflow or business rule for custom scripts.'
             },
             inputs: { type: 'object', description: 'Step-specific input values' }
           }
@@ -3108,7 +3194,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       action_type: {
         type: 'string',
-        description: 'Action type to add (for add_action). Looked up dynamically by internal_name or name in sys_hub_action_type_snapshot and sys_hub_action_type_definition. Common short names: log, script, create_record, update_record, notification, field_update, wait, approval. You can also use the exact ServiceNow internal name (e.g. "sn_fd.script_step", "global.update_record") or display name (e.g. "Run Script", "Update Record").',
+        description: 'Action type to add (for add_action). Looked up dynamically by internal_name or name in sys_hub_action_type_snapshot and sys_hub_action_type_definition. Common short names: log, create_record, update_record, lookup_record, delete_record, notification, field_update, wait, approval. You can also use the exact ServiceNow internal name (e.g. "global.update_record") or display name (e.g. "Update Record"). NOTE: there is NO generic "script" or "run_script" action — use a subflow for custom logic. Flow variable operations (set_flow_variable, append_flow_variable, get_flow_output) are flow LOGIC — use add_flow_logic instead.',
         default: 'log'
       },
       action_name: {
@@ -3576,7 +3662,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           activities_requested: activitiesArg.length,
           variables_created: varsCreated,
           warnings: factoryWarnings.length > 0 ? factoryWarnings : undefined,
-          diagnostics: diagnostics
+          diagnostics: diagnostics,
+          next_step: 'Flow is now open for editing. Add actions with add_action, flow logic with add_flow_logic. When DONE, call close_flow with this flow_id to release the editing lock.'
         }, {}, createSummary.build());
       }
 
@@ -4030,7 +4117,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         return addActResult.success
-          ? createSuccessResult({ action: 'add_action', ...addActResult }, {}, addActSummary.build())
+          ? createSuccessResult({ action: 'add_action', ...addActResult, reminder: 'Call close_flow when all steps are added.' }, {}, addActSummary.build())
           : createErrorResult(addActResult.error || 'Failed to add action');
       }
 
@@ -4046,7 +4133,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         var addLogicFlowId = await resolveFlowId(client, args.flow_id);
         var addLogicType = args.logic_type;
-        var addLogicInputs = args.logic_inputs || {};
+        var addLogicInputs = args.logic_inputs || args.inputs || args.action_inputs || args.config || {};
         var addLogicOrder = args.order;
         var addLogicParentUiId = args.parent_ui_id || '';
         var addLogicConnectedTo = args.connected_to || '';
@@ -4066,7 +4153,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         return addLogicResult.success
-          ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult }, {}, addLogicSummary.build())
+          ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult, reminder: 'Call close_flow when all steps are added.' }, {}, addLogicSummary.build())
           : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
       }
 
@@ -4178,7 +4265,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (lockResult.success) {
           openSummary.success('Flow opened for editing (lock acquired)').field('Flow', openFlowId)
             .line('You can now use add_action, add_flow_logic, etc. Call close_flow when done.');
-          return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true, lock_debug: lockResult.debug }, {}, openSummary.build());
+          return createSuccessResult({ action: 'open_flow', flow_id: openFlowId, editing_session: true, lock_debug: lockResult.debug, next_step: 'Flow is open. Add actions/logic, then call close_flow to release the lock.' }, {}, openSummary.build());
         } else {
           openSummary.error('Cannot open flow: ' + (lockResult.error || 'lock acquisition failed')).field('Flow', openFlowId);
           return createErrorResult('Cannot open flow for editing: ' + (lockResult.error || 'lock acquisition failed') + (lockResult.debug ? ' | debug: ' + JSON.stringify(lockResult.debug) : ''));
