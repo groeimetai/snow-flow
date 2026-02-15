@@ -86,6 +86,40 @@ function validateAndFixPills(value: string): string {
   return result;
 }
 
+/** Canonical list of shorthand prefixes that reference the trigger's current record.
+ *  Single source of truth — used by rewriteShorthandPills() and hasShorthandPills(). */
+const PILL_SHORTHANDS = ['trigger.current', 'current', 'trigger_record', 'trigger record', 'trigger.record', 'record'];
+
+/**
+ * Rewrite shorthand pill references to use the canonical data pill base.
+ * e.g. "{{trigger.current.priority}}" → "{{Created or Updated_1.current.priority}}"
+ *      "{{current}}" → "{{Created or Updated_1.current}}"
+ * Also normalizes bare trigger.record → trigger.current for non-pill values.
+ */
+function rewriteShorthandPills(value: string, dataPillBase: string): string {
+  if (!value || !dataPillBase) return value;
+  // Normalize bare trigger.record/trigger_record → trigger.current (non-pill values only)
+  if (!value.includes('{{')) {
+    value = value.replace(/\btrigger\.record\./g, 'trigger.current.');
+    value = value.replace(/\btrigger_record\./g, 'trigger.current.');
+  }
+  // Rewrite pill-wrapped shorthand references
+  for (var i = 0; i < PILL_SHORTHANDS.length; i++) {
+    var sh = PILL_SHORTHANDS[i];
+    value = value.split('{{' + sh + '.').join('{{' + dataPillBase + '.');
+    value = value.split('{{' + sh + '}}').join('{{' + dataPillBase + '}}');
+  }
+  return value;
+}
+
+/** Check if a string contains any shorthand pill references that need rewriting. */
+function hasShorthandPills(value: string): boolean {
+  if (!value || !value.includes('{{')) return false;
+  return PILL_SHORTHANDS.some(function (sh) {
+    return value.includes('{{' + sh + '.') || value.includes('{{' + sh + '}}');
+  });
+}
+
 // ── GraphQL Flow Designer helpers ─────────────────────────────────────
 
 function jsToGraphQL(val: any): string {
@@ -331,6 +365,20 @@ function deduplicateLabelCache(entries: any[]): any[] {
     }
   }
   return Object.values(seen);
+}
+
+/** Build a standardized labelCache entry. All pill entries should use this factory to ensure consistent shape. */
+function buildLabelCacheEntry(opts: {
+  name: string; label: string; reference: string; reference_display: string;
+  type: string; base_type: string; parent_table_name: string; column_name: string;
+  usedInstances: { uiUniqueIdentifier: string; inputName: string }[];
+}): any {
+  return {
+    name: opts.name, label: opts.label, reference: opts.reference,
+    reference_display: opts.reference_display, type: opts.type, base_type: opts.base_type,
+    parent_table_name: opts.parent_table_name, column_name: opts.column_name,
+    usedInstances: opts.usedInstances, choices: {}
+  };
 }
 
 /**
@@ -1561,7 +1609,6 @@ async function addActionViaGraphQL(
   // {{trigger.current.X}} need rewriting to {{Created or Updated_1.current.X}} + labelCache.
   // Also handle inputs that already have full pill references (e.g. {{Created or Updated_1.current.caller_id}})
   // — these still need labelCache entries or they render as empty grey pills.
-  var PILL_SHORTHANDS_ACTION = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
   var RECORD_INPUTS = ['record', 'table_name', 'values'];
   var genericPillInputs: { name: string; fields: string[]; isRecordLevel: boolean }[] = [];
   var actionTriggerInfo: any = null;
@@ -1572,9 +1619,7 @@ async function addActionViaGraphQL(
     var gpVal = validateAndFixPills(gpInput.value?.value || '');
     if (!gpVal.includes('{{')) continue;
 
-    var gpHasShorthand = PILL_SHORTHANDS_ACTION.some(function (sh) {
-      return gpVal.includes('{{' + sh + '.') || gpVal.includes('{{' + sh + '}}');
-    });
+    var gpHasShorthand = hasShorthandPills(gpVal);
 
     // If it has shorthand pills, we need trigger info to rewrite them.
     // If it has ANY pill references (even non-shorthand), we still need trigger info for labelCache.
@@ -1595,11 +1640,7 @@ async function addActionViaGraphQL(
 
     // Rewrite shorthand pills to full dataPillBase
     if (gpHasShorthand) {
-      for (var gsi = 0; gsi < PILL_SHORTHANDS_ACTION.length; gsi++) {
-        var gsh = PILL_SHORTHANDS_ACTION[gsi];
-        gpVal = gpVal.split('{{' + gsh + '.').join('{{' + gpPillBase + '.');
-        gpVal = gpVal.split('{{' + gsh + '}}').join('{{' + gpPillBase + '}}');
-      }
+      gpVal = rewriteShorthandPills(gpVal, gpPillBase);
       gpInput.value.value = gpVal;
     }
 
@@ -1765,19 +1806,14 @@ async function addActionViaGraphQL(
 
           // Record-level pill
           if (gpi2.isRecordLevel) {
-            gpLabelInserts.push({
+            gpLabelInserts.push(buildLabelCacheEntry({
               name: gpBase,
               label: 'Trigger - Record ' + gpTrigName + '\u279b' + gpTableLabel + ' Record\u279b' + gpTableLabel,
-              reference: gpTable,
-              reference_display: gpTableLabel,
-              type: 'reference',
-              base_type: 'reference',
-              parent_table_name: gpTable,
-              column_name: '',
-              attributes: '',
-              choices: {},
+              reference: gpTable, reference_display: gpTableLabel,
+              type: 'reference', base_type: 'reference',
+              parent_table_name: gpTable, column_name: '',
               usedInstances: [{ uiUniqueIdentifier: uuid, inputName: gpi2.name }]
-            });
+            }));
           }
         }
 
@@ -2224,18 +2260,14 @@ async function buildConditionLabelCache(
     var pillName = dataPillBase + '.' + f;
     var meta = fieldMeta[f] || { type: 'string', label: f.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); }), reference: '' };
 
-    inserts.push({
+    inserts.push(buildLabelCacheEntry({
       name: pillName,
       label: 'Trigger - Record ' + triggerName + '\u279b' + tableLabel + ' Record\u279b' + meta.label,
-      reference: meta.reference,
-      reference_display: meta.label,
-      type: meta.type,
-      base_type: meta.type,
-      parent_table_name: table,
-      column_name: f,
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }],
-      choices: {}
-    });
+      reference: meta.reference, reference_display: meta.label,
+      type: meta.type, base_type: meta.type,
+      parent_table_name: table, column_name: f,
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }]
+    }));
   }
 
   // Dot-walk fields — resolve each segment through reference chain
@@ -2279,27 +2311,20 @@ async function buildConditionLabelCache(
     }
 
     var dwLabel = labelParts.join('\u279b');
-    inserts.push({
+    inserts.push(buildLabelCacheEntry({
       name: dwPillName,
       label: 'Trigger - Record ' + triggerName + '\u279b' + tableLabel + ' Record\u279b' + dwLabel,
-      reference: dwMeta.reference,
-      reference_display: dwMeta.label || segments[segments.length - 1],
-      type: dwMeta.type,
-      base_type: dwMeta.type,
-      parent_table_name: currentTbl,
-      column_name: segments[segments.length - 1],
-      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }],
-      choices: {}
-    });
+      reference: dwMeta.reference, reference_display: dwMeta.label || segments[segments.length - 1],
+      type: dwMeta.type, base_type: dwMeta.type,
+      parent_table_name: currentTbl, column_name: segments[segments.length - 1],
+      usedInstances: [{ uiUniqueIdentifier: logicUiId, inputName: inputName || 'condition' }]
+    }));
   }
 
   return inserts;
 }
 
 // ── DATA PILL SUPPORT FOR RECORD ACTIONS (Update/Create Record) ──────
-
-/** Shorthands that users can pass for `record` to mean "the trigger's current record". */
-const RECORD_PILL_SHORTHANDS = ['current', 'trigger.current', 'trigger_record', 'trigger record', 'trigger.record', 'record'];
 
 /**
  * Post-process action inputs for record-modifying actions (Update Record, Create Record).
@@ -2355,7 +2380,7 @@ async function transformActionInputsForRecordAction(
   var recordInput = actionInputs.find(function (inp: any) { return inp.name === 'record'; });
   if (recordInput && dataPillBase) {
     var recordVal = validateAndFixPills(recordInput.value?.value || '');
-    var isShorthand = RECORD_PILL_SHORTHANDS.includes(recordVal.toLowerCase());
+    var isShorthand = PILL_SHORTHANDS.includes(recordVal.toLowerCase());
     var isAlreadyPill = recordVal.startsWith('{{');
 
     if (isShorthand || !recordVal) {
@@ -2369,7 +2394,7 @@ async function transformActionInputsForRecordAction(
     } else if (isAlreadyPill) {
       // Check if the pill contains a shorthand that needs rewriting to the full dataPillBase
       var innerVal = recordVal.replace(/^\{\{/, '').replace(/\}\}$/, '').trim();
-      if (RECORD_PILL_SHORTHANDS.includes(innerVal.toLowerCase())) {
+      if (PILL_SHORTHANDS.includes(innerVal.toLowerCase())) {
         var pillRef2 = '{{' + dataPillBase + '}}';
         recordInput.value = { schemaless: false, schemalessValue: '', value: pillRef2 };
         steps.record_transform = { original: recordVal, pill: pillRef2 };
@@ -2435,7 +2460,7 @@ async function transformActionInputsForRecordAction(
       // Check if value should be a data pill reference
       if (val && dataPillBase) {
         var valLower = val.toLowerCase();
-        if (RECORD_PILL_SHORTHANDS.includes(valLower)) {
+        if (PILL_SHORTHANDS.includes(valLower)) {
           // Shorthand → record-level data pill
           val = '{{' + dataPillBase + '}}';
           usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
@@ -2444,21 +2469,9 @@ async function transformActionInputsForRecordAction(
           var fieldName = valLower.startsWith('trigger.current.') ? val.substring(16) : val.substring(8);
           val = '{{' + dataPillBase + '.' + fieldName + '}}';
           usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
-        } else if (val.startsWith('{{')) {
-          // Already a data pill — rewrite shorthands inside if needed
-          var PILL_SH = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
-          for (var psi = 0; psi < PILL_SH.length; psi++) {
-            val = val.split('{{' + PILL_SH[psi] + '.').join('{{' + dataPillBase + '.');
-            val = val.split('{{' + PILL_SH[psi] + '}}').join('{{' + dataPillBase + '}}');
-          }
-          usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
-        } else if (val.includes('{{')) {
-          // Inline pills mixed with text: "Emergency Change: {{trigger.current.number}}"
-          var INLINE_SH = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
-          for (var isi = 0; isi < INLINE_SH.length; isi++) {
-            val = val.split('{{' + INLINE_SH[isi] + '.').join('{{' + dataPillBase + '.');
-            val = val.split('{{' + INLINE_SH[isi] + '}}').join('{{' + dataPillBase + '}}');
-          }
+        } else if (val.startsWith('{{') || val.includes('{{')) {
+          // Already a data pill or inline pills — rewrite shorthands
+          val = rewriteShorthandPills(val, dataPillBase);
           usedInstances.push({ uiUniqueIdentifier: uuid, inputName: key });
         }
       }
@@ -2477,12 +2490,8 @@ async function transformActionInputsForRecordAction(
     if (dataPillBase) {
       var vStr = valuesInput.value?.value || '';
       if (vStr.includes('{{')) {
-        var VALS_SH = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
         var vOriginal = vStr;
-        for (var vshi = 0; vshi < VALS_SH.length; vshi++) {
-          vStr = vStr.split('{{' + VALS_SH[vshi] + '.').join('{{' + dataPillBase + '.');
-          vStr = vStr.split('{{' + VALS_SH[vshi] + '}}').join('{{' + dataPillBase + '}}');
-        }
+        vStr = rewriteShorthandPills(vStr, dataPillBase);
         if (vStr !== vOriginal) {
           valuesInput.value.value = vStr;
           steps.values_pill_rewrite = { original: vOriginal, rewritten: vStr };
@@ -2507,18 +2516,14 @@ async function transformActionInputsForRecordAction(
     // { name: "Created or Updated_1.current", type: "reference", reference: "incident", reference_display: "Incident", ... }
     // UI only puts inputName: "record" entries on the record pill, NOT field-level pill usages
     var recordUsedInstances = usedInstances.filter(function (ui) { return ui.inputName === 'record'; });
-    labelCacheInserts.push({
+    labelCacheInserts.push(buildLabelCacheEntry({
       name: dataPillBase,
       label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record',
-      reference: tableRef,
-      reference_display: tblLabel,
-      type: 'reference',
-      base_type: 'reference',
-      parent_table_name: tableRef,
-      column_name: '',
-      choices: {},
+      reference: tableRef, reference_display: tblLabel,
+      type: 'reference', base_type: 'reference',
+      parent_table_name: tableRef, column_name: '',
       usedInstances: recordUsedInstances
-    });
+    }));
 
     // Field-level data pill entries for any field references in the `values` string → INSERT (new pills)
     // Parse values by ^-separated segments so we can track which TARGET field uses each pill
@@ -2607,18 +2612,14 @@ async function transformActionInputsForRecordAction(
           label: pEntry.fieldCol.replace(/_/g, ' ').replace(/\b\w/g, function (c: string) { return c.toUpperCase(); })
         };
 
-        labelCacheInserts.push({
+        labelCacheInserts.push(buildLabelCacheEntry({
           name: pName,
           label: 'Trigger - Record ' + triggerInfo.triggerName + '\u279b' + tblLabel + ' Record\u279b' + fMeta.label,
-          reference: '',
-          reference_display: fMeta.label,
-          type: fMeta.type,
-          base_type: fMeta.type,
-          parent_table_name: tableRef,
-          column_name: pEntry.fieldCol,
-          usedInstances: pEntry.usedInstances,
-          choices: {}
-        });
+          reference: '', reference_display: fMeta.label,
+          type: fMeta.type, base_type: fMeta.type,
+          parent_table_name: tableRef, column_name: pEntry.fieldCol,
+          usedInstances: pEntry.usedInstances
+        }));
       }
     }
 
@@ -2862,15 +2863,12 @@ async function addFlowLogicViaGraphQL(
 
   // Shorthand patterns that need rewriting to the real data pill base
   // e.g. {{trigger.current.category}} → {{Created or Updated_1.current.category}}
-  var PILL_SHORTHANDS = ['trigger.current', 'current', 'trigger_record', 'trigger.record'];
-  var hasShorthandPills = rawCondition.includes('{{') && PILL_SHORTHANDS.some(function (sh) {
-    return rawCondition.includes('{{' + sh + '.') || rawCondition.includes('{{' + sh + '}}');
-  });
+  var condHasShorthand = hasShorthandPills(rawCondition);
   // Also detect conditions that already contain full data pill references (non-shorthand)
   // e.g. {{Created or Updated_1.current.priority}}=1 — these still need two-step + labelCache
-  var hasFullPillRefs = rawCondition.includes('{{') && !hasShorthandPills;
+  var hasFullPillRefs = rawCondition.includes('{{') && !condHasShorthand;
 
-  if (rawCondition && rawCondition !== '^EQ' && (isStandardEncodedQuery(rawCondition) || hasShorthandPills || hasFullPillRefs)) {
+  if (rawCondition && rawCondition !== '^EQ' && (isStandardEncodedQuery(rawCondition) || condHasShorthand || hasFullPillRefs)) {
     conditionTriggerInfo = await getFlowTriggerInfo(client, flowId);
     steps.trigger_info = {
       dataPillBase: conditionTriggerInfo.dataPillBase, triggerName: conditionTriggerInfo.triggerName,
@@ -2881,15 +2879,8 @@ async function addFlowLogicViaGraphQL(
       needsConditionUpdate = true;
 
       // If condition has shorthand pills, rewrite them to real data pill base first
-      if (hasShorthandPills) {
-        var pillBase = conditionTriggerInfo.dataPillBase;
-        for (var si = 0; si < PILL_SHORTHANDS.length; si++) {
-          var sh = PILL_SHORTHANDS[si];
-          // Replace {{trigger.current.field}} → {{Created or Updated_1.current.field}}
-          rawCondition = rawCondition.split('{{' + sh + '.').join('{{' + pillBase + '.');
-          // Replace {{trigger.current}} → {{Created or Updated_1.current}}
-          rawCondition = rawCondition.split('{{' + sh + '}}').join('{{' + pillBase + '}}');
-        }
+      if (condHasShorthand) {
+        rawCondition = rewriteShorthandPills(rawCondition, conditionTriggerInfo.dataPillBase);
         steps.shorthand_rewrite = { original: conditionInput?.value?.value, rewritten: rawCondition };
       }
 
@@ -2914,9 +2905,7 @@ async function addFlowLogicViaGraphQL(
     var ncVal = validateAndFixPills(ncInput.value?.value || '');
     if (!ncVal.includes('{{')) continue;
 
-    var ncHasShorthand = PILL_SHORTHANDS.some(function (sh) {
-      return ncVal.includes('{{' + sh + '.') || ncVal.includes('{{' + sh + '}}');
-    });
+    var ncHasShorthand = hasShorthandPills(ncVal);
 
     // Get trigger info for shorthand rewriting OR for labelCache building (even non-shorthand pills)
     if (!conditionTriggerInfo) {
@@ -2934,11 +2923,7 @@ async function addFlowLogicViaGraphQL(
 
     // Rewrite shorthand pills to full dataPillBase
     if (ncHasShorthand) {
-      for (var si2 = 0; si2 < PILL_SHORTHANDS.length; si2++) {
-        var sh2 = PILL_SHORTHANDS[si2];
-        ncVal = ncVal.split('{{' + sh2 + '.').join('{{' + ncPillBase + '.');
-        ncVal = ncVal.split('{{' + sh2 + '}}').join('{{' + ncPillBase + '}}');
-      }
+      ncVal = rewriteShorthandPills(ncVal, ncPillBase);
       ncInput.value.value = ncVal;
     }
 
@@ -3113,7 +3098,7 @@ async function addFlowLogicViaGraphQL(
 
           // Record-level pill (e.g. {{Created or Updated_1.current}}) — add record-level labelCache entry
           if (ncpi.isRecordLevel) {
-            ncLabelInserts.push({
+            ncLabelInserts.push(buildLabelCacheEntry({
               name: dPillBase,
               label: 'Trigger - Record ' + dTriggerName + '\u279b' + dTableLabel + ' Record\u279b' + dTableLabel,
               reference: dTable,
@@ -3122,10 +3107,8 @@ async function addFlowLogicViaGraphQL(
               base_type: 'reference',
               parent_table_name: dTable,
               column_name: '',
-              attributes: '',
-              choices: {},
               usedInstances: [{ uiUniqueIdentifier: returnedUuid, inputName: ncpi.name }]
-            });
+            }));
           }
         }
 
@@ -4872,6 +4855,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     }
 
   } catch (error: any) {
+    // Safety: release lock on unexpected errors during mutation actions
+    var MUTATION_ACTIONS = [
+      'add_action', 'add_flow_logic', 'add_subflow',
+      'update_action', 'update_flow_logic', 'update_subflow',
+      'delete_action', 'delete_flow_logic', 'delete_subflow', 'delete_trigger'
+    ];
+    if (client && args.flow_id && MUTATION_ACTIONS.indexOf(action) !== -1 && !(error instanceof SnowFlowError)) {
+      try { await releaseFlowEditingLock(client, await resolveFlowId(client, args.flow_id)); } catch (_) {}
+    }
+
     if (error instanceof SnowFlowError) {
       return createErrorResult(error);
     }
