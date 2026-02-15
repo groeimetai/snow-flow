@@ -212,6 +212,83 @@ function deduplicateLabelCache(entries: any[]): any[] {
   return Object.values(seen);
 }
 
+/**
+ * Fetch the existing labelCache pills from the flow's processflow data.
+ * Returns a map: pill name → existing usedInstances[].
+ * Used to determine whether to INSERT (new pill) or UPDATE (existing pill) in mutations.
+ */
+async function getExistingLabelCachePills(client: any, flowId: string): Promise<Record<string, any[]>> {
+  try {
+    var resp = await client.get('/api/now/processflow/flow/' + flowId);
+    var raw = resp.data;
+    var jsonStr = '';
+
+    if (typeof raw === 'string') {
+      // XML response — extract labelCacheAsJsonString
+      var match = raw.match(/<labelCacheAsJsonString[^>]*>([\s\S]*?)<\/labelCacheAsJsonString>/);
+      if (match) jsonStr = match[1];
+    } else if (raw && typeof raw === 'object') {
+      var data = raw.result?.data || raw.data || raw;
+      if (data.labelCacheAsJsonString) jsonStr = data.labelCacheAsJsonString;
+      else if (data.model?.labelCacheAsJsonString) jsonStr = data.model.labelCacheAsJsonString;
+    }
+
+    if (!jsonStr) return {};
+
+    // Unescape XML entities if needed
+    jsonStr = jsonStr.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    var cache = JSON.parse(jsonStr);
+    var result: Record<string, any[]> = {};
+    if (Array.isArray(cache)) {
+      for (var i = 0; i < cache.length; i++) {
+        var entry = cache[i];
+        if (entry.name) result[entry.name] = entry.usedInstances || [];
+      }
+    }
+    return result;
+  } catch (_) {
+    return {};
+  }
+}
+
+/**
+ * Split labelCache entries into inserts (new pills) and updates (existing pills).
+ * For updates: merges new usedInstances with the existing ones.
+ * For inserts: uses full metadata as-is.
+ */
+function splitLabelCacheEntries(
+  entries: any[],
+  existingPills: Record<string, any[]>
+): { inserts: any[]; updates: any[] } {
+  var inserts: any[] = [];
+  var updates: any[] = [];
+  var seenUpdates: Record<string, any> = {};
+
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i];
+    var name = entry.name || '';
+    if (!name) continue;
+
+    if (existingPills[name]) {
+      // Pill already exists — UPDATE with merged usedInstances
+      if (seenUpdates[name]) {
+        // Multiple new uses of the same existing pill — merge into one update
+        var newInst = entry.usedInstances || [];
+        for (var j = 0; j < newInst.length; j++) seenUpdates[name].usedInstances.push(newInst[j]);
+      } else {
+        var mergedInstances = [...existingPills[name], ...(entry.usedInstances || [])];
+        seenUpdates[name] = { name: name, usedInstances: mergedInstances };
+      }
+    } else {
+      // New pill — INSERT with full metadata
+      inserts.push(entry);
+    }
+  }
+
+  updates = Object.values(seenUpdates);
+  return { inserts: deduplicateLabelCache(inserts), updates: updates };
+}
+
 // Type label mapping for parameter definitions
 const TYPE_LABELS: Record<string, string> = {
   string: 'String', integer: 'Integer', boolean: 'True/False', choice: 'Choice',
@@ -1475,9 +1552,13 @@ async function addActionViaGraphQL(
               }]
             }
           };
-          // All pills → labelCache INSERT (trigger created by our code, entries may not exist yet)
+          // Split pills into INSERT (new) vs UPDATE (already in flow's labelCache)
           if (recordActionResult.labelCacheInserts.length > 0) {
-            updatePatch.labelCache.insert = deduplicateLabelCache(recordActionResult.labelCacheInserts);
+            var existingPills = await getExistingLabelCachePills(client, flowId);
+            var splitResult = splitLabelCacheEntries(recordActionResult.labelCacheInserts, existingPills);
+            if (splitResult.inserts.length > 0) updatePatch.labelCache.insert = splitResult.inserts;
+            if (splitResult.updates.length > 0) updatePatch.labelCache.update = splitResult.updates;
+            steps.label_cache_split = { inserts: splitResult.inserts.length, updates: splitResult.updates.length };
           }
           // Log the exact GraphQL mutation for debugging
           steps.record_update_mutation = jsToGraphQL(updatePatch);
@@ -1532,6 +1613,8 @@ async function addActionViaGraphQL(
         gpLabelInserts = deduplicateLabelCache(gpLabelInserts);
 
         if (gpLabelInserts.length > 0) {
+          var gpExisting = await getExistingLabelCachePills(client, flowId);
+          var gpSplit = splitLabelCacheEntries(gpLabelInserts, gpExisting);
           var gpUpdatePatch: any = {
             flowId: flowId,
             actions: {
@@ -1540,11 +1623,13 @@ async function addActionViaGraphQL(
                 type: 'action',
               }]
             },
-            labelCache: { insert: gpLabelInserts }
+            labelCache: {} as any
           };
+          if (gpSplit.inserts.length > 0) gpUpdatePatch.labelCache.insert = gpSplit.inserts;
+          if (gpSplit.updates.length > 0) gpUpdatePatch.labelCache.update = gpSplit.updates;
           steps.generic_pill_label_cache_mutation = jsToGraphQL(gpUpdatePatch);
           await executeFlowPatchMutation(client, gpUpdatePatch, actionResponseFields);
-          steps.generic_pill_label_cache_update = { success: true, count: gpLabelInserts.length };
+          steps.generic_pill_label_cache_update = { success: true, inserts: gpSplit.inserts.length, updates: gpSplit.updates.length };
         }
       } catch (gpe: any) {
         steps.generic_pill_label_cache_update = { success: false, error: gpe.message };
@@ -2701,7 +2786,12 @@ async function addFlowLogicViaGraphQL(
           }
         };
         if (labelCacheResult.length > 0) {
-          updatePatch.labelCache = { insert: labelCacheResult };
+          var condExisting = await getExistingLabelCachePills(client, flowId);
+          var condSplit = splitLabelCacheEntries(labelCacheResult, condExisting);
+          updatePatch.labelCache = {} as any;
+          if (condSplit.inserts.length > 0) updatePatch.labelCache.insert = condSplit.inserts;
+          if (condSplit.updates.length > 0) updatePatch.labelCache.update = condSplit.updates;
+          steps.condition_label_cache_split = { inserts: condSplit.inserts.length, updates: condSplit.updates.length };
         }
         // Log the exact GraphQL mutation for debugging
         steps.condition_update_mutation = jsToGraphQL(updatePatch);
@@ -2754,6 +2844,8 @@ async function addFlowLogicViaGraphQL(
         ncLabelInserts = deduplicateLabelCache(ncLabelInserts);
 
         if (ncLabelInserts.length > 0) {
+          var ncExisting = await getExistingLabelCachePills(client, flowId);
+          var ncSplit = splitLabelCacheEntries(ncLabelInserts, ncExisting);
           var ncUpdatePatch: any = {
             flowId: flowId,
             flowLogics: {
@@ -2762,11 +2854,13 @@ async function addFlowLogicViaGraphQL(
                 type: 'flowlogic',
               }]
             },
-            labelCache: { insert: ncLabelInserts }
+            labelCache: {} as any
           };
+          if (ncSplit.inserts.length > 0) ncUpdatePatch.labelCache.insert = ncSplit.inserts;
+          if (ncSplit.updates.length > 0) ncUpdatePatch.labelCache.update = ncSplit.updates;
           steps.nc_pill_label_cache_mutation = jsToGraphQL(ncUpdatePatch);
           await executeFlowPatchMutation(client, ncUpdatePatch, logicResponseFields);
-          steps.nc_pill_label_cache_update = { success: true, count: ncLabelInserts.length };
+          steps.nc_pill_label_cache_update = { success: true, inserts: ncSplit.inserts.length, updates: ncSplit.updates.length };
         }
       } catch (nce: any) {
         steps.nc_pill_label_cache_update = { success: false, error: nce.message };
