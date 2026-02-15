@@ -966,6 +966,17 @@ async function addTriggerViaGraphQL(
   }
   if (!trigDefId) return { success: false, error: 'Trigger definition not found for: ' + triggerType, steps };
 
+  // Validate: record-based triggers REQUIRE a table parameter
+  var trigNameLC = trigName.toLowerCase();
+  var trigTypeLC = trigType.toLowerCase();
+  var trigCategoryLC = trigCategory.toLowerCase();
+  var isRecordTrigger = ['record', 'crud'].some(function (kw) {
+    return trigNameLC.includes(kw) || trigTypeLC.includes(kw) || trigCategoryLC.includes(kw);
+  });
+  if (isRecordTrigger && !table) {
+    return { success: false, error: 'Trigger type "' + trigName + '" requires a table parameter (e.g. table: "incident"). Record-based triggers must know which table to watch.', steps };
+  }
+
   // Build full trigger inputs and outputs from triggerpicker API (matching UI format)
   // Pass empty table/condition — values are set via separate UPDATE (two-step, matching UI)
   var triggerData = await buildTriggerInputsForInsert(client, trigDefId!, trigType, undefined, undefined);
