@@ -223,18 +223,38 @@ async function buildActionInputsForInsert(
     actionParams = resp.data.result || [];
   } catch (_) {}
 
-  // Fuzzy-match user-provided values to actual field names
+  // Fuzzy-match user-provided values to actual field names.
+  // ServiceNow action parameters often have prefixed element names:
+  //   ah_to, ah_subject, sn_table, log_message, etc.
+  // Users/agents commonly pass the short form: to, subject, table, message.
   var resolvedInputs: Record<string, string> = {};
   if (userValues) {
     var paramElements = actionParams.map(function (p: any) { return str(p.element); });
     for (var [key, value] of Object.entries(userValues)) {
+      // 1. Exact match on element name
       if (paramElements.includes(key)) {
         resolvedInputs[key] = value;
         continue;
       }
+      // 2. Fuzzy match: suffix/prefix matching, label matching, stripped prefix matching
+      var keyLC = key.toLowerCase().replace(/[\s-]/g, '_');
       var match = actionParams.find(function (p: any) {
         var el = str(p.element);
-        return el.endsWith('_' + key) || el.startsWith(key + '_') || el === key || str(p.label).toLowerCase() === key.toLowerCase();
+        var elLC = el.toLowerCase();
+        // Suffix: ah_to matches key "to"
+        if (elLC.endsWith('_' + keyLC)) return true;
+        // Prefix: table_name matches key "table"
+        if (elLC.startsWith(keyLC + '_')) return true;
+        // Exact (case-insensitive)
+        if (elLC === keyLC) return true;
+        // Label match (case-insensitive)
+        if (str(p.label).toLowerCase() === keyLC) return true;
+        // Strip common ServiceNow prefixes and compare
+        var stripped = elLC.replace(/^(ah_|sn_|sc_|rp_|fb_|kb_)/, '');
+        if (stripped === keyLC) return true;
+        // key without underscores vs element without underscores (e.g. "logmessage" vs "log_message")
+        if (elLC.replace(/_/g, '') === keyLC.replace(/_/g, '')) return true;
+        return false;
       });
       if (match) resolvedInputs[str(match.element)] = value;
       else resolvedInputs[key] = value;
@@ -3033,7 +3053,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       action_inputs: {
         type: 'object',
-        description: 'Key-value pairs for action inputs (e.g. {log_message: "test", log_level: "info"})'
+        description: 'Key-value pairs for action inputs (also accepted as "action_config", "inputs", or "config"). Keys are fuzzy-matched to ServiceNow parameter element names — you can use short names like "to" instead of "ah_to", "subject" instead of "ah_subject", "table" instead of "table_name", "message" instead of "log_message". Example: {to: "admin@example.com", subject: "Alert", body: "Incident created"}'
       },
       update_fields: {
         type: 'object',
@@ -3183,7 +3203,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           for (var pfai = 0; pfai < activitiesArg.length; pfai++) {
             try {
               var pfAct = activitiesArg[pfai];
-              var pfActResult = await addActionViaGraphQL(client, flowSysId, pfAct.type || 'log', pfAct.name || ('Action ' + (pfai + 1)), pfAct.inputs, undefined, pfai + 1);
+              var pfActResult = await addActionViaGraphQL(client, flowSysId, pfAct.type || 'log', pfAct.name || ('Action ' + (pfai + 1)), pfAct.inputs || pfAct.action_inputs || pfAct.action_config || pfAct.config, undefined, pfai + 1);
               if (pfActResult.success) actionsCreated++;
               diagnostics['action_' + pfai] = pfActResult;
             } catch (_) { /* best-effort */ }
@@ -3301,7 +3321,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           for (var ai = 0; ai < activitiesArg.length; ai++) {
             var activity = activitiesArg[ai];
             try {
-              var taActResult = await addActionViaGraphQL(client, flowSysId, activity.type || 'log', activity.name || ('Action ' + (ai + 1)), activity.inputs, undefined, ai + 1);
+              var taActResult = await addActionViaGraphQL(client, flowSysId, activity.type || 'log', activity.name || ('Action ' + (ai + 1)), activity.inputs || activity.action_inputs || activity.action_config || activity.config, undefined, ai + 1);
               if (taActResult.success) actionsCreated++;
               diagnostics['action_' + ai] = taActResult;
             } catch (actError) {
@@ -3925,7 +3945,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addActFlowId = await resolveFlowId(client, args.flow_id);
         var addActType = args.action_type || 'log';
         var addActName = args.action_name || args.name || addActType;
-        var addActInputs = args.action_inputs || args.inputs || {};
+        var addActInputs = args.action_inputs || args.action_config || args.inputs || args.config || {};
 
         var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs, args.parent_ui_id, args.order, args.spoke);
 
@@ -3994,7 +4014,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         var addSubFlowId = await resolveFlowId(client, args.flow_id);
         var addSubSubflowId = args.subflow_id;
-        var addSubInputs = args.action_inputs || args.inputs || {};
+        var addSubInputs = args.action_inputs || args.action_config || args.inputs || args.config || {};
         var addSubOrder = args.order;
         var addSubParentUiId = args.parent_ui_id || '';
 
@@ -4026,7 +4046,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (!args.element_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'element_id is required (sys_id or uiUniqueIdentifier of the element)');
         var updElemFlowId = await resolveFlowId(client, args.flow_id);
         var updElemType = action === 'update_action' ? 'action' : action === 'update_flow_logic' ? 'flowlogic' : 'subflow';
-        var updElemInputs = args.action_inputs || args.logic_inputs || args.inputs || {};
+        var updElemInputs = args.action_inputs || args.action_config || args.logic_inputs || args.inputs || args.config || {};
 
         var updElemResult = await updateElementViaGraphQL(client, updElemFlowId, updElemType, args.element_id, updElemInputs);
 
