@@ -2413,6 +2413,21 @@ async function addFlowLogicViaGraphQL(
   var needsConditionUpdate = false;
   var conditionTriggerInfo: any = null;
 
+  // Pre-process: detect bare field conditions and add trigger.current. prefix
+  // e.g. "priority <= 2" → "trigger.current.priority <= 2"
+  // e.g. "priority<=2^category=software" → "trigger.current.priority<=2^trigger.current.category=software"
+  // Only applies when there's no dot-notation prefix and no pill references
+  if (rawCondition && !rawCondition.includes('{{') && !rawCondition.includes('.') && !rawCondition.startsWith('fd_data')) {
+    var BARE_FIELD_RE = /(\w+)\s*(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*/g;
+    if (BARE_FIELD_RE.test(rawCondition)) {
+      BARE_FIELD_RE.lastIndex = 0;
+      rawCondition = rawCondition.replace(BARE_FIELD_RE, function (_m: string, field: string, op: string) {
+        return 'trigger.current.' + field + op;
+      });
+      steps.bare_field_rewrite = { original: conditionInput?.value?.value, rewritten: rawCondition };
+    }
+  }
+
   // Pre-process: detect dot notation conditions and convert to shorthand pill format.
   // Supports both symbol operators and word operators:
   //   "trigger.current.category = software"          → "{{trigger.current.category}}=software"
@@ -2440,7 +2455,7 @@ async function addFlowLogicViaGraphQL(
       return prefix + WORD_OP_MAP[wordOp];
     });
   }
-  var DOT_NOTATION_RE = /((?:trigger\.)?current)\.(\w+)(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*(?:'([^']*)'|"([^"]*)"|(\S*))/g;
+  var DOT_NOTATION_RE = /((?:trigger\.)?current)\.(\w+)\s*(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*(?:'([^']*)'|"([^"]*)"|(\S*))/g;
   if (DOT_NOTATION_RE.test(dotProcessed)) {
     DOT_NOTATION_RE.lastIndex = 0;
     rawCondition = dotProcessed.replace(DOT_NOTATION_RE, function (_m: string, prefix: string, field: string, op: string, qv1: string, qv2: string, uv: string) {
@@ -3154,7 +3169,21 @@ export const toolDefinition: MCPToolDefinition = {
       },
       logic_inputs: {
         type: 'object',
-        description: 'Input values for the flow logic block (e.g. {condition: "expression", condition_name: "My Condition"})'
+        description: 'Input values for the flow logic block. For IF/ELSEIF, prefer using the dedicated condition parameter instead.'
+      },
+      condition: {
+        type: 'string',
+        description: 'Condition for IF/ELSEIF flow logic. Accepts multiple formats (all auto-converted to Flow Designer pill format): ' +
+          '"priority<=2" (encoded query), ' +
+          '"trigger.current.priority <= 2" (dot notation), ' +
+          '"{{trigger.current.priority}}<=2" (shorthand pill), ' +
+          '"category=software^priority!=1" (multi-clause). ' +
+          'Operators: = != > < >= <= LIKE STARTSWITH ENDSWITH ISEMPTY ISNOTEMPTY. ' +
+          'Combine with ^ (AND) or ^OR (OR). Word operators also accepted: "equals", "not equals", "contains", "starts with", "is empty".'
+      },
+      condition_name: {
+        type: 'string',
+        description: 'Display label for the IF/ELSEIF condition shown in Flow Designer UI (e.g. "Check if P1 or P2 Incident")'
       },
       parent_ui_id: {
         type: 'string',
@@ -4133,7 +4162,18 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         var addLogicFlowId = await resolveFlowId(client, args.flow_id);
         var addLogicType = args.logic_type;
-        var addLogicInputs = args.logic_inputs || args.inputs || args.action_inputs || args.config || {};
+        var addLogicInputs = args.logic_inputs || args.logic_config || args.inputs || args.action_inputs || args.config || {};
+        // Accept condition and condition_name at top level (most natural for the agent)
+        if (args.condition && !addLogicInputs.condition) {
+          addLogicInputs = { ...addLogicInputs, condition: args.condition };
+        }
+        if (args.condition_name && !addLogicInputs.condition_name) {
+          addLogicInputs = { ...addLogicInputs, condition_name: args.condition_name };
+        }
+        // Also accept logic_name as alias for condition_name
+        if (args.logic_name && !addLogicInputs.condition_name) {
+          addLogicInputs = { ...addLogicInputs, condition_name: args.logic_name };
+        }
         var addLogicOrder = args.order;
         var addLogicParentUiId = args.parent_ui_id || '';
         var addLogicConnectedTo = args.connected_to || '';
