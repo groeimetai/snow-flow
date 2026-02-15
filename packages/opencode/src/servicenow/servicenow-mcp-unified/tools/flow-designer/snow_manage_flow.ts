@@ -3182,7 +3182,19 @@ export const toolDefinition: MCPToolDefinition = {
       },
       table: {
         type: 'string',
-        description: 'Table for record-based triggers (e.g. "incident") or list filter'
+        description: 'Table for record-based triggers (e.g. "incident") or list filter. Also accepted as "trigger_table".'
+      },
+      trigger_table: {
+        type: 'string',
+        description: 'Alias for "table" — table for record-based triggers (e.g. "incident")'
+      },
+      action_table: {
+        type: 'string',
+        description: 'Shorthand for setting the table input on an action (e.g. "incident" for create_record/update_record/lookup_record). Injected as the "table" input.'
+      },
+      action_field_values: {
+        type: 'object',
+        description: 'Alias for "action_inputs" — key-value pairs for action inputs. Same behavior as action_inputs.'
       },
       trigger_condition: {
         type: 'string',
@@ -3370,7 +3382,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var isSubflow = action === 'create_subflow';
         var flowDescription = args.description || flowName;
         var triggerType = isSubflow ? 'manual' : (args.trigger_type || 'manual');
-        var flowTable = args.table || '';
+        var flowTable = args.table || args.trigger_table || '';
         var triggerCondition = args.trigger_condition || '';
         var flowCategory = args.category || 'custom';
         var flowRunAs = isSubflow ? 'user_who_calls' : (args.run_as || 'user');
@@ -4128,7 +4140,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         var addTrigFlowId = await resolveFlowId(client, args.flow_id);
         var addTrigType = args.trigger_type || 'record_create_or_update';
-        var addTrigTable = args.table || '';
+        var addTrigTable = args.table || args.trigger_table || '';
         var addTrigCondition = args.trigger_condition || '';
 
         var addTrigResult = await addTriggerViaGraphQL(client, addTrigFlowId, addTrigType, addTrigTable, addTrigCondition);
@@ -4159,7 +4171,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         var updTrigFlowId = await resolveFlowId(client, args.flow_id);
         var updTrigType = args.trigger_type || 'record_create_or_update';
-        var updTrigTable = args.table || '';
+        var updTrigTable = args.table || args.trigger_table || '';
         var updTrigCondition = args.trigger_condition || '';
         var updTrigSteps: any = {};
 
@@ -4223,7 +4235,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addActFlowId = await resolveFlowId(client, args.flow_id);
         var addActType = args.action_type || 'log';
         var addActName = args.action_name || args.name || addActType;
-        var addActInputs = args.action_inputs || args.action_config || args.inputs || args.config || {};
+        var addActInputs = args.action_inputs || args.action_config || args.action_field_values || args.field_values || args.inputs || args.config || {};
+        // Accept action_table as a shorthand — inject into inputs as table/table_name
+        if (args.action_table && !addActInputs.table && !addActInputs.table_name) {
+          addActInputs = { ...addActInputs, table: args.action_table };
+        }
 
         var addActResult = await addActionViaGraphQL(client, addActFlowId, addActType, addActName, addActInputs, args.parent_ui_id, args.order, args.spoke);
 
@@ -4286,8 +4302,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
         }
 
+        // For IF/ELSEIF: add a hint about saving uiUniqueIdentifier for ELSE/ELSEIF connected_to
+        var logicUpperType = addLogicType.toUpperCase().replace(/[^A-Z]/g, '');
+        var logicHints: any = { reminder: 'Call close_flow when all steps are added.' };
+        if (logicUpperType === 'IF' || logicUpperType === 'ELSEIF') {
+          logicHints.important = 'Save the uiUniqueIdentifier ("' + (addLogicResult.uiUniqueIdentifier || '') + '") — you MUST pass it as connected_to when adding ELSE or ELSEIF blocks for this IF.';
+          logicHints.connected_to_value = addLogicResult.uiUniqueIdentifier || '';
+        }
+
         return addLogicResult.success
-          ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult, reminder: 'Call close_flow when all steps are added.' }, {}, addLogicSummary.build())
+          ? createSuccessResult({ action: 'add_flow_logic', ...addLogicResult, ...logicHints }, {}, addLogicSummary.build())
           : createErrorResult(addLogicResult.error || 'Failed to add flow logic');
       }
 
@@ -4303,7 +4327,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
         var addSubFlowId = await resolveFlowId(client, args.flow_id);
         var addSubSubflowId = args.subflow_id;
-        var addSubInputs = args.action_inputs || args.action_config || args.inputs || args.config || {};
+        var addSubInputs = args.action_inputs || args.action_config || args.action_field_values || args.field_values || args.inputs || args.config || {};
         var addSubOrder = args.order;
         var addSubParentUiId = args.parent_ui_id || '';
 
@@ -4335,7 +4359,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (!args.element_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'element_id is required (sys_id or uiUniqueIdentifier of the element)');
         var updElemFlowId = await resolveFlowId(client, args.flow_id);
         var updElemType = action === 'update_action' ? 'action' : action === 'update_flow_logic' ? 'flowlogic' : 'subflow';
-        var updElemInputs = args.action_inputs || args.action_config || args.logic_inputs || args.inputs || args.config || {};
+        var updElemInputs = args.action_inputs || args.action_config || args.action_field_values || args.field_values || args.logic_inputs || args.inputs || args.config || {};
+        // Accept action_table as a shorthand — inject into inputs as table/table_name
+        if (args.action_table && !updElemInputs.table && !updElemInputs.table_name) {
+          updElemInputs = { ...updElemInputs, table: args.action_table };
+        }
 
         var updElemResult = await updateElementViaGraphQL(client, updElemFlowId, updElemType, args.element_id, updElemInputs);
 
