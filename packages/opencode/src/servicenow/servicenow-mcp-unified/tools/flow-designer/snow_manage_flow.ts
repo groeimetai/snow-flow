@@ -2670,6 +2670,20 @@ async function addFlowLogicViaGraphQL(
   var needsConditionUpdate = false;
   var conditionTriggerInfo: any = null;
 
+  // Pre-process: normalize trigger.record / record / trigger_record → trigger.current
+  // The agent often uses "trigger.record.X" or "record.X" but Flow Designer internally uses "current"
+  // This must happen BEFORE all other condition processing so downstream regexes can match uniformly
+  if (rawCondition && !rawCondition.includes('{{')) {
+    var prefixNormalized = rawCondition
+      .replace(/\btrigger\.record\./g, 'trigger.current.')
+      .replace(/\btrigger_record\./g, 'trigger.current.')
+      .replace(/\brecord\./g, 'trigger.current.');
+    if (prefixNormalized !== rawCondition) {
+      steps.prefix_normalization = { original: rawCondition, normalized: prefixNormalized };
+      rawCondition = prefixNormalized;
+    }
+  }
+
   // Pre-process: detect bare field conditions and add trigger.current. prefix
   // e.g. "priority <= 2" → "trigger.current.priority <= 2"
   // e.g. "priority<=2^category=software" → "trigger.current.priority<=2^trigger.current.category=software"
