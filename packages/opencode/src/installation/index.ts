@@ -206,7 +206,7 @@ export namespace Installation {
         const reg = r || "https://registry.npmjs.org"
         return reg.endsWith("/") ? reg.slice(0, -1) : reg
       })
-      const channel = CHANNEL === "local" ? "latest" : CHANNEL
+      const channel = CHANNEL === "dev" ? "dev" : "latest"
       return fetch(`${registry}/${NPM_PACKAGE}/${channel}`)
         .then((res) => {
           if (!res.ok) throw new Error(res.statusText)
