@@ -40,6 +40,7 @@ export namespace Skill {
 
   const OPENCODE_SKILL_GLOB = new Bun.Glob("{skill,skills}/**/SKILL.md")
   const CLAUDE_SKILL_GLOB = new Bun.Glob("skills/**/SKILL.md")
+  const BUNDLED_SKILL_GLOB = new Bun.Glob("**/SKILL.md")
 
   export const state = Instance.state(async () => {
     const skills: Record<string, Info> = {}
@@ -72,6 +73,19 @@ export namespace Skill {
         name: parsed.data.name,
         description: parsed.data.description,
         location: match,
+      }
+    }
+
+    // Scan bundled skills (lowest priority - user skills override these)
+    const bundledDir = path.resolve(import.meta.dir, "../bundled-skills")
+    if (await Filesystem.isDir(bundledDir)) {
+      for await (const match of BUNDLED_SKILL_GLOB.scan({
+        cwd: bundledDir,
+        absolute: true,
+        onlyFiles: true,
+        followSymlinks: true,
+      })) {
+        await addSkill(match)
       }
     }
 
