@@ -346,7 +346,7 @@ export function Autocomplete(props: {
 
     for (const serverCommand of sync.data.command) {
       results.push({
-        display: "/" + serverCommand.name + (serverCommand.mcp ? " (MCP)" : ""),
+        display: "/" + serverCommand.name + (serverCommand.source === "mcp" ? " (MCP)" : serverCommand.source === "skill" ? " (Skill)" : ""),
         description: serverCommand.description,
         onSelect: () => {
           const newText = "/" + serverCommand.name + " "

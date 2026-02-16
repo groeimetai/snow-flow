@@ -1,8 +1,8 @@
 import path from "path"
+import { pathToFileURL } from "url"
 import z from "zod"
 import { Tool } from "./tool"
 import { Skill } from "../skill"
-import { ConfigMarkdown } from "../config/markdown"
 import { PermissionNext } from "../permission/next"
 
 export const SkillTool = Tool.define("skill", async (ctx) => {
@@ -30,10 +30,11 @@ export const SkillTool = Tool.define("skill", async (ctx) => {
             `  <skill>`,
             `    <name>${skill.name}</name>`,
             `    <description>${skill.description}</description>`,
+            `    <location>${pathToFileURL(skill.location).href}</location>`,
             `  </skill>`,
           ]),
           "</available_skills>",
-        ].join(" ")
+        ].join("\n")
 
   const examples = accessibleSkills
     .map((skill) => `'${skill.name}'`)
@@ -62,12 +63,16 @@ export const SkillTool = Tool.define("skill", async (ctx) => {
         always: [params.name],
         metadata: {},
       })
-      // Load and parse skill content
-      const parsed = await ConfigMarkdown.parse(skill.location)
+
       const dir = path.dirname(skill.location)
 
-      // Format output similar to plugin pattern
-      const output = [`## Skill: ${skill.name}`, "", `**Base directory**: ${dir}`, "", parsed.content.trim()].join("\n")
+      const output = [
+        `<skill_content name="${skill.name}">`,
+        `<location>${pathToFileURL(skill.location).href}</location>`,
+        `<base_directory>${dir}</base_directory>`,
+        skill.content.trim(),
+        `</skill_content>`,
+      ].join("\n")
 
       return {
         title: `Loaded skill: ${skill.name}`,
