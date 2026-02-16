@@ -1377,6 +1377,11 @@ function DialogAuthSelectInstance() {
         clientSecret: creds.clientSecret,
       })
 
+      // Read back the saved auth to include any existing tokens
+      const savedAuth = await Auth.get("servicenow")
+      const accessToken = savedAuth?.type === "servicenow-oauth" ? savedAuth.accessToken : undefined
+      const refreshToken = savedAuth?.type === "servicenow-oauth" ? savedAuth.refreshToken : undefined
+
       await MCP.add("servicenow-unified", {
         type: "local",
         command: Config.getMcpServerCommand("servicenow-unified"),
@@ -1384,6 +1389,9 @@ function DialogAuthSelectInstance() {
           SERVICENOW_INSTANCE_URL: creds.instanceUrl,
           SERVICENOW_CLIENT_ID: creds.clientId,
           SERVICENOW_CLIENT_SECRET: creds.clientSecret,
+          SNOW_LAZY_TOOLS: "true",
+          ...(accessToken && { SERVICENOW_ACCESS_TOKEN: accessToken }),
+          ...(refreshToken && { SERVICENOW_REFRESH_TOKEN: refreshToken }),
         },
         enabled: true,
       })

@@ -927,19 +927,24 @@ export class ServiceNowUnifiedServer {
     mcpDebug('[Server] ========================================');
 
     try {
-      // STEP 0: Try enterprise portal fetch FIRST (secure mode - no local secrets!)
-      // This takes priority over local credentials if enterprise auth is available
-      if (!this.hasValidCredentials() || this.loadEnterpriseAuth()) {
-        mcpDebug('[Server] Checking enterprise portal for credentials...');
-        const enterpriseContext = await this.loadFromEnterprisePortal();
-        if (enterpriseContext) {
-          this.context = enterpriseContext;
-          mcpDebug('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
-          mcpDebug('[Server]    No ServiceNow secrets stored locally!');
-        } else if (!this.hasValidCredentials()) {
-          mcpDebug('[Server] No credentials available from enterprise portal');
-          mcpDebug('[Server] Falling back to local credentials (if any)...');
+      // STEP 0: Try enterprise portal fetch if no valid credentials from env vars
+      // When env vars are explicitly set (e.g., from /auth instance switch), they take priority.
+      // Enterprise portal fetch is only used when no local credentials are available.
+      if (!this.hasValidCredentials()) {
+        if (this.loadEnterpriseAuth()) {
+          mcpDebug('[Server] Checking enterprise portal for credentials...');
+          const enterpriseContext = await this.loadFromEnterprisePortal();
+          if (enterpriseContext) {
+            this.context = enterpriseContext;
+            mcpDebug('[Server] ✅ Using SECURE enterprise credentials (fetched at runtime)');
+            mcpDebug('[Server]    No ServiceNow secrets stored locally!');
+          } else {
+            mcpDebug('[Server] No credentials available from enterprise portal');
+            mcpDebug('[Server] Falling back to local credentials (if any)...');
+          }
         }
+      } else {
+        mcpDebug('[Server] Using credentials from environment/config (instance switch or explicit config)');
       }
 
       mcpDebug('[Server] Instance:', this.context.instanceUrl || 'NOT CONFIGURED');
