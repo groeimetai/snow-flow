@@ -612,7 +612,7 @@ Enterprise third-party tools are **always loaded** and ready to use. Call them d
 
 | Integration | Example Tools (call directly) |
 |-------------|-------------------------------|
-| **Jira** | \`jira_search_issues\`, \`jira_get_issue\`, \`jira_add_comment\`, \`jira_get_current_user\`, \`jira_transition_issue\`, \`jira_add_worklog\` |
+| **Jira** | \`jira_search_issues\`, \`jira_get_issue\`, \`jira_add_comment\`, \`jira_delete_comment\`, \`jira_get_current_user\`, \`jira_transition_issue\`, \`jira_add_worklog\`, \`jira_delete_worklog\` |
 | **Azure DevOps** | \`azdo_search_work_items\`, \`azdo_get_work_item\`, \`azdo_update_work_item\`, \`azdo_add_comment\` |
 | **Confluence** | \`confluence_create_page\`, \`confluence_update_page\`, \`confluence_get_page\`, \`confluence_search_content\` |
 | **GitHub** | \`github_list_issues\`, \`github_create_issue\`, \`github_create_pr\`, \`github_merge_pr\`, \`github_get_content\`, \`github_discover_configuration\` |
@@ -1109,7 +1109,9 @@ jira_transition_issue({
 | Update issues | \`jira_update_issue\` |
 | Transition issues | \`jira_transition_issue\` |
 | Add comments | \`jira_add_comment\` |
+| Delete comments | \`jira_delete_comment\` |
 | Log work time | \`jira_add_worklog\` |
+| Delete worklogs | \`jira_delete_worklog\` |
 | Link issues | \`jira_link_issues\` |
 
 ---
