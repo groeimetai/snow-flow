@@ -17,6 +17,17 @@ tools:
 
 Flow Designer is the modern automation engine in ServiceNow, replacing legacy Workflows for new development.
 
+## Using the Flow Designer Tool
+
+To create and manage flows programmatically, use the **`snow_manage_flow`** tool (find it via `tool_search` with query `"flow designer"`). This tool handles all GraphQL mutations for the full flow lifecycle.
+
+**CRITICAL — IF/ELSE/ELSEIF placement rules:**
+- Actions **inside** an IF branch: `parent_ui_id` = IF's `uiUniqueIdentifier`
+- **ELSE/ELSEIF** blocks: must be at the **same level** as IF, NOT nested inside it
+  - `parent_ui_id` = the **same parent** you used for the IF block
+  - `connected_to` = IF's `logicId` (the sysId returned when creating the IF)
+- Getting this wrong causes "Unsupported flowLogic type" errors when saving the flow
+
 ## Flow Designer Components
 
 | Component | Purpose | Reusable |

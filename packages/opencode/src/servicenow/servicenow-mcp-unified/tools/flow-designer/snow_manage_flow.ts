@@ -2821,12 +2821,14 @@ async function addFlowLogicViaGraphQL(
     logicType = normalizedType;
   }
 
-  // ELSE/ELSEIF blocks MUST be connected to their IF block via connectedTo (the IF block's sysId/logicId).
-  // They are CHILDREN of the IF block: parent/parentUiId = IF's uiUniqueIdentifier.
-  // connectedTo = IF's sysId (logicId, the record ID returned by GraphQL — NOT the uiUniqueIdentifier).
+  // ELSE/ELSEIF blocks sit at the SAME LEVEL as their IF block (same parent), NOT nested inside IF.
+  // - parent/parentUiId = the SAME parent as the IF block (e.g. flow scope or enclosing block)
+  // - connectedTo = IF's sysId/logicId (the record ID returned by GraphQL, NOT the uiUniqueIdentifier)
+  // Actions INSIDE the IF branch use parent_ui_id = IF's uiUniqueIdentifier.
+  // ELSE/ELSEIF use parent_ui_id = IF's PARENT. This is a critical distinction.
   var isElseVariant = ['ELSE', 'ELSEIF'].includes(logicType.toUpperCase());
   if (isElseVariant && !connectedTo) {
-    return { success: false, error: logicType.toUpperCase() + ' blocks require connected_to set to the If block\'s logicId (sysId returned from add_flow_logic). They also require parent_ui_id set to the If block\'s uiUniqueIdentifier.', steps };
+    return { success: false, error: logicType.toUpperCase() + ' blocks require connected_to set to the If block\'s logicId (sysId from the add_flow_logic response, NOT the uiUniqueIdentifier). They must also use the SAME parent_ui_id as the IF block (same level), NOT the IF\'s own uiUniqueIdentifier (that would nest them INSIDE the IF branch).', steps };
   }
 
   // Dynamically look up flow logic definition in sys_hub_flow_logic_definition
@@ -4827,19 +4829,23 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
         }
 
-        // For IF/ELSEIF: hint about saving BOTH logicId AND uiUniqueIdentifier for ELSE/ELSEIF
-        // UI evidence: ELSE/ELSEIF are CHILDREN of IF (parent=IF's uiUniqueIdentifier)
-        // and linked via connectedTo (= IF's sysId/logicId, NOT uiUniqueIdentifier).
+        // For IF/ELSEIF: hint about ELSE/ELSEIF placement
+        // CRITICAL: ELSE/ELSEIF sit at the SAME level as IF (same parent), NOT inside the IF branch.
+        // - Actions INSIDE IF use parent_ui_id = IF's uiUniqueIdentifier
+        // - ELSE/ELSEIF use parent_ui_id = IF's PARENT (same level as IF) + connected_to = IF's logicId
         var logicUpperType = addLogicType.toUpperCase().replace(/[^A-Z]/g, '');
         var addLogicNextOrder = (addLogicResult.resolvedOrder || 1) + 1;
         var logicHints: any = { reminder: 'Call close_flow when all steps are added.', next_order: addLogicNextOrder };
         if (logicUpperType === 'IF' || logicUpperType === 'ELSEIF') {
-          logicHints.important = 'Save BOTH logicId and uiUniqueIdentifier for this IF block. When adding ELSE/ELSEIF: set connected_to to the IF logicId ("' + (addLogicResult.logicId || '') + '") and parent_ui_id to the IF uiUniqueIdentifier ("' + (addLogicResult.uiUniqueIdentifier || '') + '").';
+          logicHints.important = 'ELSE/ELSEIF must be at the SAME level as this IF (same parent_ui_id), NOT nested inside it. ' +
+            'Use connected_to: "' + (addLogicResult.logicId || '') + '" to link them to this IF, ' +
+            'and parent_ui_id: "' + (addLogicParentUiId || '') + '" (the SAME parent as this IF block).';
           logicHints.connected_to_value = addLogicResult.logicId || '';
-          logicHints.parent_ui_id_value = addLogicResult.uiUniqueIdentifier || '';
+          logicHints.parent_ui_id_for_else = addLogicParentUiId || '';
+          logicHints.parent_ui_id_for_children = addLogicResult.uiUniqueIdentifier || '';
           logicHints.next_step = {
-            for_child: 'To add actions INSIDE this block, use parent_ui_id: "' + (addLogicResult.uiUniqueIdentifier || '') + '" and order: ' + addLogicNextOrder,
-            for_else: 'To add ELSE/ELSEIF after this IF, use connected_to: "' + (addLogicResult.logicId || '') + '" AND parent_ui_id: "' + (addLogicResult.uiUniqueIdentifier || '') + '"',
+            for_child: 'To add actions INSIDE this IF branch, use parent_ui_id: "' + (addLogicResult.uiUniqueIdentifier || '') + '" and order: ' + addLogicNextOrder,
+            for_else: 'To add ELSE/ELSEIF at the SAME level as this IF, use connected_to: "' + (addLogicResult.logicId || '') + '" AND parent_ui_id: "' + (addLogicParentUiId || '') + '" (NOT the IF\'s uiUniqueIdentifier!)',
           };
         }
 
