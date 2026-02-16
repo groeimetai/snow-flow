@@ -19,7 +19,7 @@ Flow Designer is the modern automation engine in ServiceNow, replacing legacy Wo
 
 ## Using the Flow Designer Tool
 
-To create and manage flows programmatically, use the **`snow_manage_flow`** tool (find it via `tool_search` with query `"flow designer"`). This tool handles all GraphQL mutations for the full flow lifecycle.
+To create and manage flows programmatically, first discover the Flow Designer tool via `tool_search({query: "flow designer"})`. The discovered tool handles all GraphQL mutations for the full flow lifecycle.
 
 **CRITICAL — IF/ELSE/ELSEIF placement rules:**
 - Actions **inside** an IF branch: `parent_ui_id` = IF's `uiUniqueIdentifier`

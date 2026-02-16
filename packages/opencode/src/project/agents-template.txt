@@ -98,11 +98,11 @@ When a user asks to create, modify, or manage **flows, subflows, or automations*
 | Flow Designer | `tool_search` | `tool_search({query: "flow designer"})` |
 
 **How it works:**
-1. Call `tool_search({query: "flow designer"})` — returns `snow_manage_flow` with its schema, auto-enables it
-2. Call `snow_manage_flow` directly with the desired `action` parameter — works for the rest of the session
+1. Call `tool_search({query: "flow designer"})` — returns the Flow Designer tool with its schema, auto-enables it
+2. Call the discovered tool directly with the desired `action` parameter — works for the rest of the session
 3. The tool supports the full flow lifecycle: creating flows, adding triggers, actions, flow logic (IF/ELSE/FOR_EACH/etc.), subflow calls, and publishing
 
-**Do NOT** create flows via background scripts, GlideRecord, or REST API calls to sys_hub tables — always use `snow_manage_flow` which handles the GraphQL mutations correctly.
+**Do NOT** create flows via background scripts, GlideRecord, or REST API calls to sys_hub tables — always discover and use the Flow Designer tool via `tool_search` which handles the GraphQL mutations correctly.
 
 | Action | Purpose |
 |--------|---------|
