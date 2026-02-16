@@ -86,6 +86,23 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow ITSM**: Incident, change, problem management
 - **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (discovered via `enterprise_tool_search` on demand, same lazy pattern as ServiceNow tools)
 
+### Flow Designer — Automated Flow Creation
+
+When a user asks to create, modify, or manage **flows, subflows, or automations** in ServiceNow, use the **Flow Designer tool** (`snow_manage_flow`). This tool supports the full flow lifecycle: creating flows, adding triggers, actions, flow logic (IF/ELSE/FOR_EACH/etc.), subflow calls, and publishing.
+
+**How to find it:** Search for `"flow designer"` via `tool_search` — the tool is called `snow_manage_flow`.
+
+**Typical workflow:**
+1. `create` — Create a new flow (returns flow_id)
+2. `open_flow` — Open the flow for editing
+3. `add_trigger` — Add a trigger (e.g., record created/updated)
+4. `add_action` — Add actions (e.g., Update Record, Create Task, Send Email)
+5. `add_flow_logic` — Add logic blocks (IF, ELSE, FOR_EACH, etc.)
+6. `close_flow` — Save and close the flow
+7. `activate` / `publish` — Activate or publish the flow
+
+**Do NOT** try to create flows via background scripts, GlideRecord, or REST API calls to sys_hub tables — always use the Flow Designer tool which handles the GraphQL mutations correctly.
+
 ---
 
 ### Enterprise Tool Discovery
