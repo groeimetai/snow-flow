@@ -85,7 +85,7 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow UI**: Widget development, workspaces, UI builder
 - **ServiceNow ITSM**: Incident, change, problem management
 - **ServiceNow Flow Designer**: Flow creation, triggers, actions, flow logic (discovered via `tool_search` with query `"flow designer"`)
-- **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (discovered via `enterprise_tool_search` on demand, same lazy pattern as ServiceNow tools)
+- **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (discovered via `tool_search` on the enterprise server, same lazy pattern as ServiceNow tools)
 
 ---
 
@@ -123,19 +123,18 @@ ELSE and ELSEIF blocks must be at the **same level** as their IF block, NOT nest
 
 ### Enterprise Tool Discovery
 
-Enterprise integration tools (Jira, Azure DevOps, Confluence, GitHub, GitLab, Process Mining) use the same lazy-loading pattern as ServiceNow tools but with a separate meta-tool:
+Enterprise integration tools (Jira, Azure DevOps, Confluence, GitHub, GitLab, Process Mining) use the same lazy-loading pattern as ServiceNow tools. Both servers expose a `tool_search` tool — use the one on the enterprise server for enterprise integrations:
 
-| Scope | Discovery tool | Example |
-|-------|---------------|---------|
-| ServiceNow (235+ tools) | `tool_search` | `tool_search({query: "incident query"})` |
-| Enterprise integrations (76+ tools) | `enterprise_tool_search` | `enterprise_tool_search({query: "jira create issue"})` |
+| Scope | How to discover | Example query |
+|-------|----------------|---------------|
+| ServiceNow (235+ tools) | `tool_search` on the ServiceNow server | `"incident query"`, `"flow designer"`, `"update set"` |
+| Enterprise integrations (76+ tools) | `tool_search` on the enterprise server | `"jira create issue"`, `"confluence search"` |
 
 **How it works:**
-1. Call `enterprise_tool_search({query: "jira"})` — returns matching tools with schemas, auto-enables them
-2. Call the found tool directly by name (e.g. `jira_search_issues(...)`) — works for the rest of the session
-3. Or use `enterprise_tool_execute({tool: "jira_search_issues", args: {...}})` as a fallback
+1. Call `tool_search` with a relevant query — returns matching tools with schemas, auto-enables them
+2. Call the discovered tool directly by name — works for the rest of the session
 
-**Do NOT call enterprise tools by name without discovering them first** — they are not loaded until `enterprise_tool_search` activates them.
+**Do NOT call integration tools by name without discovering them first** — they are not loaded until `tool_search` activates them.
 
 ---
 
@@ -714,4 +713,4 @@ Before every response, verify:
 2. **ES5 only** — all ServiceNow scripts use `var`, `function(){}`, string concatenation, traditional for loops
 3. **Execute, don't explain** — use tools and show results; tool discovery is SILENT (never mention it)
 4. **Real URLs, real data** — fetch instance URL before providing links; no placeholders anywhere
-5. **Lazy load tools** — discover via `tool_search` (ServiceNow) or `enterprise_tool_search` (enterprise integrations), never assume tools are pre-loaded
+5. **Lazy load tools** — discover via `tool_search` on the appropriate server, never assume tools are pre-loaded or call tools by name without discovering them first
