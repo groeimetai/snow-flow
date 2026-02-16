@@ -682,7 +682,7 @@ const TABLE_INPUT_PARENTS: Record<string, string> = {
 async function buildFlowLogicInputsForInsert(
   client: any,
   defId: string,
-  defRecord: { name?: string; type?: string; description?: string; order?: string; attributes?: string; compilation_class?: string; quiescence?: string; visible?: string; category?: string; connected_to?: string },
+  defRecord: any,
   userValues?: Record<string, string>
 ): Promise<{ inputs: any[]; flowLogicDefinition: any; resolvedInputs: Record<string, string>; inputQueryError?: string; defParamsCount: number; missingMandatory: string[] }> {
   // Query sys_hub_flow_logic_input for this definition's inputs (separate table from sys_hub_action_input)
@@ -784,13 +784,14 @@ async function buildFlowLogicInputsForInsert(
   });
 
   // Build flowLogicDefinition object (matching UI format)
+  // Try multiple field name variations — ServiceNow column names may differ from expected snake_case
   var flowLogicDefinition: any = {
     id: defId,
     name: defRecord.name || '',
     description: str(defRecord.description),
-    connectedTo: str(defRecord.connected_to),
+    connectedTo: str(defRecord.connected_to) || str(defRecord.connectedTo) || str(defRecord.connectedto) || '',
     quiescence: str(defRecord.quiescence) || 'never',
-    compilationClass: str(defRecord.compilation_class),
+    compilationClass: str(defRecord.compilation_class) || str(defRecord.compilationClass) || str(defRecord.compilationclass) || '',
     order: parseInt(str(defRecord.order) || '1', 10),
     type: str(defRecord.type) || '',
     visible: str(defRecord.visible) !== 'false',
@@ -2800,41 +2801,35 @@ async function addFlowLogicViaGraphQL(
     logicType = normalizedType;
   }
 
-  // ELSE and ELSEIF are variants of IF in ServiceNow's GraphQL API.
-  // They share the IF definition — the distinction is made through connectedTo + condition.
-  // The GraphQL API rejects flowLogicDefinition.type='ELSEIF'/'ELSE' with
-  // "Unsupported flowLogic type", so we must always look up the IF definition.
-  var requestedLogicType = logicType;
-  var isElseVariant = ['ELSE', 'ELSEIF'].includes(logicType.toUpperCase());
-  var defLookupType = isElseVariant ? 'IF' : logicType;
-
   // ELSE/ELSEIF blocks MUST be connected to an If block via connectedTo (the If block's uiUniqueIdentifier)
   // Unlike other flow logic, Else is NOT a child (parent="") — it uses connectedTo to link to the If block.
+  var isElseVariant = ['ELSE', 'ELSEIF'].includes(logicType.toUpperCase());
   if (isElseVariant && !connectedTo) {
-    return { success: false, error: requestedLogicType.toUpperCase() + ' blocks require connected_to set to the If block\'s uiUniqueIdentifier (returned from the add_flow_logic response for the If block). Else is NOT a child of If — it uses connectedTo to link to it.', steps };
+    return { success: false, error: logicType.toUpperCase() + ' blocks require connected_to set to the If block\'s uiUniqueIdentifier (returned from the add_flow_logic response for the If block). Else is NOT a child of If — it uses connectedTo to link to it.', steps };
   }
 
   // Dynamically look up flow logic definition in sys_hub_flow_logic_definition
-  // Fetch extra fields needed for the flowLogicDefinition object in the mutation
-  const defFields = 'sys_id,type,name,description,order,attributes,compilation_class,quiescence,visible,category,connected_to';
+  // Do NOT limit sysparm_fields — fetch ALL fields to avoid missing fields with unexpected column names
+  // (e.g. compilation_class vs compilationclass). The flowLogicDefinition in the GraphQL mutation
+  // requires precise values for compilationClass, connectedTo, attributes, etc.
   let defId: string | null = null;
   let defName = '';
-  let defType = defLookupType;
+  let defType = logicType;
   let defRecord: any = {};
-  // Try exact match on type (IF, FOREACH, DOUNTIL, etc.), then name
+  // Try exact match on type (IF, ELSE, ELSEIF, FOREACH, DOUNTIL, etc.), then name
   for (const field of ['type', 'name']) {
     if (defId) break;
     try {
       const resp = await client.get('/api/now/table/sys_hub_flow_logic_definition', {
-        params: { sysparm_query: field + '=' + defLookupType, sysparm_fields: defFields, sysparm_limit: 1 }
+        params: { sysparm_query: field + '=' + logicType, sysparm_limit: 1 }
       });
       const found = resp.data.result?.[0];
       if (found?.sys_id) {
         defId = found.sys_id;
-        defName = found.name || defLookupType;
-        defType = found.type || defLookupType;
+        defName = found.name || logicType;
+        defType = found.type || logicType;
         defRecord = found;
-        steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, matched: field + '=' + defLookupType, requested: requestedLogicType };
+        steps.def_lookup = { id: found.sys_id, type: found.type, name: found.name, matched: field + '=' + logicType };
       }
     } catch (_) {}
   }
@@ -2843,25 +2838,24 @@ async function addFlowLogicViaGraphQL(
     try {
       const resp = await client.get('/api/now/table/sys_hub_flow_logic_definition', {
         params: {
-          sysparm_query: 'typeLIKE' + defLookupType + '^ORnameLIKE' + defLookupType,
-          sysparm_fields: defFields, sysparm_limit: 5
+          sysparm_query: 'typeLIKE' + logicType + '^ORnameLIKE' + logicType,
+          sysparm_limit: 5
         }
       });
       const results = resp.data.result || [];
       steps.def_lookup_fallback_candidates = results.map((r: any) => ({ sys_id: r.sys_id, type: r.type, name: r.name }));
       if (results[0]?.sys_id) {
         defId = results[0].sys_id;
-        defName = results[0].name || defLookupType;
-        defType = results[0].type || defLookupType;
+        defName = results[0].name || logicType;
+        defType = results[0].type || logicType;
         defRecord = results[0];
-        steps.def_lookup = { id: results[0].sys_id, type: results[0].type, name: results[0].name, matched: 'LIKE ' + defLookupType };
+        steps.def_lookup = { id: results[0].sys_id, type: results[0].type, name: results[0].name, matched: 'LIKE ' + logicType };
       }
     } catch (_) {}
   }
-  if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + requestedLogicType, steps };
-  if (isElseVariant) {
-    steps.else_variant = { requested: requestedLogicType, using_definition: defType, note: 'ELSE/ELSEIF use IF definition in GraphQL API' };
-  }
+  if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
+  // Log raw definition record fields for diagnostics (helps debug missing/wrong field names)
+  steps.def_record_fields = Object.keys(defRecord).filter(function (k) { return k !== 'sys_id'; });
 
   // Build full input objects with parameter definitions (matching UI format)
   const inputResult = await buildFlowLogicInputsForInsert(client, defId, defRecord, inputs);
@@ -2870,14 +2864,14 @@ async function addFlowLogicViaGraphQL(
   steps.input_query_stats = { defParamsFound: inputResult.defParamsCount, inputsBuilt: inputResult.inputs.length, error: inputResult.inputQueryError };
 
   // Validate mandatory fields (e.g. condition for IF/ELSEIF)
-  // ELSE blocks use the IF definition but don't need a condition — skip mandatory check for condition
+  // ELSE blocks have no condition — skip mandatory check for condition fields
   var effectiveMissing = inputResult.missingMandatory
-  if (requestedLogicType.toUpperCase() === 'ELSE' && effectiveMissing.length > 0) {
+  if (logicType.toUpperCase() === 'ELSE' && effectiveMissing.length > 0) {
     effectiveMissing = effectiveMissing.filter(function (m: string) { return !m.startsWith('condition'); })
   }
   if (effectiveMissing.length > 0) {
     steps.missing_mandatory = effectiveMissing;
-    return { success: false, error: 'Missing required inputs for ' + requestedLogicType + ': ' + effectiveMissing.join(', ') + '. These fields are mandatory in Flow Designer.', steps };
+    return { success: false, error: 'Missing required inputs for ' + logicType + ': ' + effectiveMissing.join(', ') + '. These fields are mandatory in Flow Designer.', steps };
   }
 
   // ── Detect condition that needs data pill transformation ────────────
