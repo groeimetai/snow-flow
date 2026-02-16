@@ -84,29 +84,40 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow Development**: Update sets, deployment, artifact management
 - **ServiceNow UI**: Widget development, workspaces, UI builder
 - **ServiceNow ITSM**: Incident, change, problem management
+- **ServiceNow Flow Designer**: Flow creation, triggers, actions, flow logic (discovered via `tool_search` with query `"flow designer"`)
 - **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (discovered via `enterprise_tool_search` on demand, same lazy pattern as ServiceNow tools)
 
-### Flow Designer — Automated Flow Creation
+---
 
-When a user asks to create, modify, or manage **flows, subflows, or automations** in ServiceNow, use the **Flow Designer tool** (`snow_manage_flow`). This tool supports the full flow lifecycle: creating flows, adding triggers, actions, flow logic (IF/ELSE/FOR_EACH/etc.), subflow calls, and publishing.
+### Flow Designer Tool Discovery
 
-**How to find it:** Search for `"flow designer"` via `tool_search` — the tool is called `snow_manage_flow`.
+When a user asks to create, modify, or manage **flows, subflows, or automations** in ServiceNow, use the Flow Designer tool. It is discovered via `tool_search`, the same lazy-loading pattern as other ServiceNow tools:
 
-**Typical workflow:**
-1. `create` — Create a new flow (returns flow_id)
-2. `open_flow` — Open the flow for editing
-3. `add_trigger` — Add a trigger (e.g., record created/updated)
-4. `add_action` — Add actions (e.g., Update Record, Create Task, Send Email)
-5. `add_flow_logic` — Add logic blocks (IF, ELSE, FOR_EACH, etc.)
-6. `close_flow` — Save and close the flow
-7. `activate` / `publish` — Activate or publish the flow
+| Scope | Discovery tool | Example |
+|-------|---------------|---------|
+| Flow Designer | `tool_search` | `tool_search({query: "flow designer"})` |
 
-**Do NOT** try to create flows via background scripts, GlideRecord, or REST API calls to sys_hub tables — always use the Flow Designer tool which handles the GraphQL mutations correctly.
+**How it works:**
+1. Call `tool_search({query: "flow designer"})` — returns `snow_manage_flow` with its schema, auto-enables it
+2. Call `snow_manage_flow` directly with the desired `action` parameter — works for the rest of the session
+3. The tool supports the full flow lifecycle: creating flows, adding triggers, actions, flow logic (IF/ELSE/FOR_EACH/etc.), subflow calls, and publishing
 
-**CRITICAL — IF/ELSE/ELSEIF placement:**
-ELSE and ELSEIF blocks must be at the **same level** as their IF block, NOT nested inside the IF branch. The tool returns the correct values after creating an IF:
-- **Actions inside IF branch**: use `parent_ui_id` = IF's `uiUniqueIdentifier`
-- **ELSE/ELSEIF (same level as IF)**: use `parent_ui_id` = IF's **parent** (same as what you used for the IF) + `connected_to` = IF's `logicId`
+**Do NOT** create flows via background scripts, GlideRecord, or REST API calls to sys_hub tables — always use `snow_manage_flow` which handles the GraphQL mutations correctly.
+
+| Action | Purpose |
+|--------|---------|
+| `create` | Create a new flow (returns flow_id) |
+| `open_flow` | Open an existing flow for editing |
+| `add_trigger` | Add a trigger (e.g., record created/updated) |
+| `add_action` | Add actions (e.g., Update Record, Create Task) |
+| `add_flow_logic` | Add logic blocks (IF, ELSE, FOR_EACH, etc.) |
+| `close_flow` | Save and close the flow |
+| `activate` / `publish` | Activate or publish the flow |
+
+**⚠️ IF/ELSE/ELSEIF placement:**
+ELSE and ELSEIF blocks must be at the **same level** as their IF block, NOT nested inside the IF branch:
+- **Actions inside IF branch**: `parent_ui_id` = IF's `uiUniqueIdentifier`
+- **ELSE/ELSEIF (same level as IF)**: `parent_ui_id` = IF's **parent** (same as what you used for the IF) + `connected_to` = IF's `logicId`
 
 ---
 
