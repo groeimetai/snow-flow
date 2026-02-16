@@ -397,6 +397,8 @@ export namespace MCP {
         log.error("Failed to close existing MCP client", { name, error })
       })
     }
+    // Clear stale lazy tool cache entry so next MCP.tools() call fetches fresh tools
+    lazyToolCache.delete(name)
     s.clients[name] = result.mcpClient
     s.status[name] = result.status
 
