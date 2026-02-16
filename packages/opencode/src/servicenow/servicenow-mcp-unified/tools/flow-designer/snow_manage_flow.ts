@@ -310,14 +310,34 @@ async function acquireFlowEditingLock(client: any, flowId: string): Promise<{ su
  * Uses GraphQL safeEdit(delete) as primary, then falls back to directly
  * deleting sys_hub_flow_safe_edit records via REST (handles ghost locks).
  */
-async function releaseFlowEditingLock(client: any, flowId: string): Promise<boolean> {
+async function releaseFlowEditingLock(client: any, flowId: string): Promise<{ success: boolean; error?: string; compilationError?: string; debug?: any }> {
   var graphqlOk = false
+  var compilationError: string | undefined;
+  var debug: any = {};
   // Step 1: GraphQL safeEdit(delete) — primary mechanism
+  // This triggers flow compilation and version creation on the server side.
+  // If the flow has invalid elements (e.g. unsupported flowLogic type), the compilation
+  // fails and returns an error like "Unsupported flowLogic type: ELSE. A version was not created."
   try {
     var mutation = 'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {delete: "' + flowId + '"}) { deleteResult { deleteSuccess id __typename } __typename } __typename } __typename } }';
     var resp = await client.post('/api/now/graphql', { variables: {}, query: mutation });
-    graphqlOk = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.deleteResult?.deleteSuccess === true;
-  } catch (_) { /* continue to REST fallback */ }
+    var deleteResult = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.deleteResult;
+    graphqlOk = deleteResult?.deleteSuccess === true;
+    debug.deleteResult = deleteResult;
+    // Check for GraphQL-level errors
+    var gqlErrors = resp.data?.errors;
+    if (gqlErrors && gqlErrors.length > 0) {
+      compilationError = gqlErrors.map(function (e: any) { return e.message || JSON.stringify(e); }).join('; ');
+      debug.graphql_errors = gqlErrors;
+    }
+    // If deleteSuccess is false but no GraphQL error, check the result for messages
+    if (!graphqlOk && !compilationError) {
+      compilationError = 'safeEdit(delete) returned deleteSuccess=false. The flow may have compilation errors.';
+    }
+  } catch (e: any) {
+    compilationError = e.message || 'safeEdit(delete) threw an exception';
+    debug.graphql_exception = e.message;
+  }
 
   // Step 2: REST fallback — directly delete any sys_hub_flow_safe_edit records for this flow
   // This catches ghost locks that GraphQL safeEdit(delete) misses.
@@ -329,10 +349,10 @@ async function releaseFlowEditingLock(client: any, flowId: string): Promise<bool
     for (var r = 0; r < records.length; r++) {
       await client.delete('/api/now/table/sys_hub_flow_safe_edit/' + records[r].sys_id);
     }
-    if (records.length > 0) return true;
+    debug.safe_edit_records_cleaned = records.length;
   } catch (_) { /* best-effort */ }
 
-  return graphqlOk;
+  return { success: graphqlOk, compilationError, debug };
 }
 
 /** Safely extract a string from a ServiceNow Table API value (handles reference objects like {value, link}). */
@@ -2801,11 +2821,12 @@ async function addFlowLogicViaGraphQL(
     logicType = normalizedType;
   }
 
-  // ELSE/ELSEIF blocks MUST be connected to an If block via connectedTo (the If block's uiUniqueIdentifier)
-  // Unlike other flow logic, Else is NOT a child (parent="") — it uses connectedTo to link to the If block.
+  // ELSE/ELSEIF blocks MUST be connected to their IF block via connectedTo (the IF block's sysId/logicId).
+  // They are CHILDREN of the IF block: parent/parentUiId = IF's uiUniqueIdentifier.
+  // connectedTo = IF's sysId (logicId, the record ID returned by GraphQL — NOT the uiUniqueIdentifier).
   var isElseVariant = ['ELSE', 'ELSEIF'].includes(logicType.toUpperCase());
   if (isElseVariant && !connectedTo) {
-    return { success: false, error: logicType.toUpperCase() + ' blocks require connected_to set to the If block\'s uiUniqueIdentifier (returned from the add_flow_logic response for the If block). Else is NOT a child of If — it uses connectedTo to link to it.', steps };
+    return { success: false, error: logicType.toUpperCase() + ' blocks require connected_to set to the If block\'s logicId (sysId returned from add_flow_logic). They also require parent_ui_id set to the If block\'s uiUniqueIdentifier.', steps };
   }
 
   // Dynamically look up flow logic definition in sys_hub_flow_logic_definition
@@ -2854,14 +2875,44 @@ async function addFlowLogicViaGraphQL(
     } catch (_) {}
   }
   if (!defId) return { success: false, error: 'Flow logic definition not found for: ' + logicType, steps };
-  // Log raw definition record fields for diagnostics (helps debug missing/wrong field names)
+  // Log raw definition record fields AND values for diagnostics
   steps.def_record_fields = Object.keys(defRecord).filter(function (k) { return k !== 'sys_id'; });
+  // Log actual values of critical fields (for comparison with UI network traces)
+  steps.def_record_values = {
+    type: str(defRecord.type),
+    name: defRecord.name || '',
+    compilation_class: str(defRecord.compilation_class),
+    connected_to: str(defRecord.connected_to),
+    order: str(defRecord.order),
+    quiescence: str(defRecord.quiescence),
+    visible: str(defRecord.visible),
+    attributes: str(defRecord.attributes),
+    category: str(defRecord.category),
+    description: str(defRecord.description) ? '(present)' : '(empty)',
+  };
 
   // Build full input objects with parameter definitions (matching UI format)
   const inputResult = await buildFlowLogicInputsForInsert(client, defId, defRecord, inputs);
   steps.available_inputs = inputResult.inputs.map((i: any) => ({ name: i.name, label: i.parameter?.label }));
   steps.resolved_inputs = inputResult.resolvedInputs;
   steps.input_query_stats = { defParamsFound: inputResult.defParamsCount, inputsBuilt: inputResult.inputs.length, error: inputResult.inputQueryError };
+
+  // Log the actual flowLogicDefinition VALUES being sent in the GraphQL mutation
+  var fld = inputResult.flowLogicDefinition;
+  steps.flowLogicDefinition_values = {
+    id: fld.id,
+    type: fld.type,
+    name: fld.name,
+    compilationClass: fld.compilationClass,
+    connectedTo: fld.connectedTo,
+    quiescence: fld.quiescence,
+    order: fld.order,
+    visible: fld.visible,
+    attributes: fld.attributes ? '(present, ' + String(fld.attributes).length + ' chars)' : '(empty)',
+    category: fld.category,
+    inputsCount: (fld.inputs || []).length,
+    variables: fld.variables,
+  };
 
   // Validate mandatory fields (e.g. condition for IF/ELSEIF)
   // ELSE blocks have no condition — skip mandatory check for condition fields
@@ -3106,6 +3157,22 @@ async function addFlowLogicViaGraphQL(
     insertObj.connectedTo = connectedTo;
   }
 
+  // Log the insertObj key values for diagnostics (compare with UI network trace)
+  steps.insertObj_values = {
+    order: insertObj.order,
+    uiUniqueIdentifier: insertObj.uiUniqueIdentifier,
+    parent: insertObj.parent,
+    parentUiId: insertObj.parentUiId,
+    connectedTo: insertObj.connectedTo || '(not set)',
+    definitionId: insertObj.definitionId,
+    type: insertObj.type,
+    flowSysId: insertObj.flowSysId,
+    metadata: insertObj.metadata,
+    generationSource: insertObj.generationSource,
+    inputsCount: (insertObj.inputs || []).length,
+    outputsToAssignCount: (insertObj.outputsToAssign || []).length,
+  };
+
   var flowPatch: any = {
     flowId: flowId,
     flowLogics: {
@@ -3117,6 +3184,13 @@ async function addFlowLogicViaGraphQL(
   if (parentUiId) {
     flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: 'flowlogic' }];
   }
+
+  // Log the full serialized GraphQL mutation for direct comparison with UI network traces
+  var mutationPreview = 'mutation { global { snFlowDesigner { flow(flowPatch: ' +
+    jsToGraphQL(flowPatch) + ') { id ... } } } }';
+  steps.graphql_mutation_preview = mutationPreview.length > 5000
+    ? mutationPreview.substring(0, 5000) + '... (truncated)'
+    : mutationPreview;
 
   try {
     // Step 1: INSERT the flow logic element (with empty condition if data pill transform is needed)
@@ -4753,16 +4827,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addLogicSummary.error('Failed to add flow logic: ' + (addLogicResult.error || 'unknown'));
         }
 
-        // For IF/ELSEIF: add a hint about saving uiUniqueIdentifier for ELSE/ELSEIF connected_to
+        // For IF/ELSEIF: hint about saving BOTH logicId AND uiUniqueIdentifier for ELSE/ELSEIF
+        // UI evidence: ELSE/ELSEIF are CHILDREN of IF (parent=IF's uiUniqueIdentifier)
+        // and linked via connectedTo (= IF's sysId/logicId, NOT uiUniqueIdentifier).
         var logicUpperType = addLogicType.toUpperCase().replace(/[^A-Z]/g, '');
         var addLogicNextOrder = (addLogicResult.resolvedOrder || 1) + 1;
         var logicHints: any = { reminder: 'Call close_flow when all steps are added.', next_order: addLogicNextOrder };
         if (logicUpperType === 'IF' || logicUpperType === 'ELSEIF') {
-          logicHints.important = 'Save the uiUniqueIdentifier ("' + (addLogicResult.uiUniqueIdentifier || '') + '") — you MUST pass it as connected_to when adding ELSE or ELSEIF blocks for this IF.';
-          logicHints.connected_to_value = addLogicResult.uiUniqueIdentifier || '';
+          logicHints.important = 'Save BOTH logicId and uiUniqueIdentifier for this IF block. When adding ELSE/ELSEIF: set connected_to to the IF logicId ("' + (addLogicResult.logicId || '') + '") and parent_ui_id to the IF uiUniqueIdentifier ("' + (addLogicResult.uiUniqueIdentifier || '') + '").';
+          logicHints.connected_to_value = addLogicResult.logicId || '';
+          logicHints.parent_ui_id_value = addLogicResult.uiUniqueIdentifier || '';
           logicHints.next_step = {
             for_child: 'To add actions INSIDE this block, use parent_ui_id: "' + (addLogicResult.uiUniqueIdentifier || '') + '" and order: ' + addLogicNextOrder,
-            for_else: 'To add ELSE after this IF, use connected_to: "' + (addLogicResult.uiUniqueIdentifier || '') + '"',
+            for_else: 'To add ELSE/ELSEIF after this IF, use connected_to: "' + (addLogicResult.logicId || '') + '" AND parent_ui_id: "' + (addLogicResult.uiUniqueIdentifier || '') + '"',
           };
         }
 
@@ -4925,14 +5002,24 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case 'close_flow': {
         if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, 'flow_id is required for close_flow');
         var closeFlowId = await resolveFlowId(client, args.flow_id);
-        var closed = await releaseFlowEditingLock(client, closeFlowId);
+        var closeResult = await releaseFlowEditingLock(client, closeFlowId);
         var closeSummary = summary();
-        if (closed) {
-          closeSummary.success('Flow editing lock released').field('Flow', closeFlowId);
+        if (closeResult.success) {
+          closeSummary.success('Flow saved and editing lock released').field('Flow', closeFlowId);
+        } else if (closeResult.compilationError) {
+          closeSummary.error('Flow compilation/save failed: ' + closeResult.compilationError).field('Flow', closeFlowId);
         } else {
           closeSummary.warning('Lock release returned false (flow may not have been locked)').field('Flow', closeFlowId);
         }
-        return createSuccessResult({ action: 'close_flow', flow_id: closeFlowId, lock_released: closed }, {}, closeSummary.build());
+        var closeData: any = { action: 'close_flow', flow_id: closeFlowId, lock_released: closeResult.success };
+        if (closeResult.compilationError) {
+          closeData.compilation_error = closeResult.compilationError;
+          closeData.debug = closeResult.debug;
+        }
+        if (!closeResult.success && closeResult.compilationError) {
+          return createErrorResult('Flow compilation/save failed: ' + closeResult.compilationError, closeData);
+        }
+        return createSuccessResult(closeData, {}, closeSummary.build());
       }
 
       // ────────────────────────────────────────────────────────────────
