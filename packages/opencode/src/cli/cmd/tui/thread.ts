@@ -199,5 +199,6 @@ export const TuiThreadCommand = cmd({
       onExit,
       onUpgrade,
     })
+    process.exit(0)
   },
 })
