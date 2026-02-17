@@ -60,17 +60,37 @@ export namespace AnonymousTelemetry {
         }),
       ]
 
-      // Check config-based opt-out (async)
-      Config.get().then((config) => {
+      // Check config-based opt-out, then send session-start ping
+      Config.get().then(async (config) => {
         if (config.telemetry === false) {
           log.info("anonymous telemetry disabled (config)")
           for (const unsub of unsubs) unsub()
           unsubs.length = 0
-        } else {
-          log.info("anonymous telemetry active")
+          return
+        }
+        log.info("anonymous telemetry active")
+
+        // Send a session-start ping immediately so we have instant visibility
+        try {
+          await fetch(`${PORTAL_URL}/api/telemetry/ping`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              machineId,
+              version: Installation.VERSION,
+              channel: Installation.CHANNEL,
+              os: process.platform,
+              arch: process.arch,
+              sessionDurationSec: 0,
+              messageCount: 0,
+              timestamp: Date.now(),
+            }),
+            signal: AbortSignal.timeout(5_000),
+          })
+        } catch {
+          // Fire-and-forget
         }
       }).catch(() => {
-        // Config not available yet — keep telemetry active
         log.info("anonymous telemetry active (config unavailable)")
       })
 
