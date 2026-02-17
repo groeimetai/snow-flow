@@ -38,6 +38,7 @@ import { ArgsProvider, useArgs, type Args } from "./context/args"
 import open from "open"
 import { writeHeapSnapshot } from "v8"
 import { PromptRefProvider, usePromptRef } from "./context/prompt"
+import { Config } from "@/config/config"
 
 async function getTerminalBackgroundColor(): Promise<"dark" | "light"> {
   // can't set raw mode if not a TTY
@@ -631,6 +632,26 @@ function App() {
       onSelect: (dialog) => {
         const current = kv.get("diff_wrap_mode", "word")
         kv.set("diff_wrap_mode", current === "word" ? "none" : "word")
+        dialog.clear()
+      },
+    },
+    {
+      title: kv.get("telemetry_enabled", true) ? "Disable anonymous telemetry" : "Enable anonymous telemetry",
+      value: "app.toggle.telemetry",
+      category: "System",
+      slash: {
+        name: "telemetry",
+      },
+      onSelect: async (dialog) => {
+        const enabled = kv.get("telemetry_enabled", true)
+        kv.set("telemetry_enabled", !enabled)
+        await Config.updateGlobal({ telemetry: !enabled }).catch(() => {})
+        toast.show({
+          message: enabled
+            ? "Telemetry disabled. Takes effect next session."
+            : "Telemetry enabled. Thank you!",
+          variant: "info",
+        })
         dialog.clear()
       },
     },

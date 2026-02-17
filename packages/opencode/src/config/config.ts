@@ -1301,6 +1301,10 @@ export namespace Config {
           url: z.string().optional().describe("Enterprise URL"),
         })
         .optional(),
+      telemetry: z
+        .boolean()
+        .optional()
+        .describe("Enable anonymous usage telemetry (default: true). Set to false to disable."),
       compaction: z
         .object({
           auto: z.boolean().optional().describe("Enable automatic compaction when context is full (default: true)"),
