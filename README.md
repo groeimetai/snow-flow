@@ -92,7 +92,7 @@ Snow-Flow is an AI-powered, multi-agent development framework built specifically
 <td width="33%" valign="top">
 
 **Open Source**<br>
-<sub>MIT licensed. Fully transparent. Community-driven.</sub>
+<sub>Elastic License 2.0. Fully transparent. Community-driven.</sub>
 
 </td>
 </tr>
@@ -452,7 +452,7 @@ Snow-Flow is an autonomous ServiceNow development agent. It connects AI models t
 
 Snow-Flow is purpose-built for ServiceNow:
 
-- **Open source** — MIT licensed, fully transparent
+- **Open source** — Elastic License 2.0, fully transparent
 - **ServiceNow-native** — 200+ MCP tools and 54 domain skills designed for ServiceNow
 - **Provider-agnostic** — Works with 20+ AI providers, not locked to one vendor
 - **Built-in LSP** — Language server support for intelligent code assistance
