@@ -655,6 +655,24 @@ function App() {
         dialog.clear()
       },
     },
+    {
+      title: kv.get("autoupdate_enabled", true) ? "Disable auto-update" : "Enable auto-update",
+      value: "app.toggle.autoupdate",
+      category: "System",
+      slash: {
+        name: "auto-update",
+      },
+      onSelect: async (dialog) => {
+        const enabled = kv.get("autoupdate_enabled", true)
+        kv.set("autoupdate_enabled", !enabled)
+        await Config.updateGlobal({ autoupdate: !enabled }).catch(() => {})
+        toast.show({
+          message: enabled ? "Auto-update disabled" : "Auto-update enabled",
+          variant: "info",
+        })
+        dialog.clear()
+      },
+    },
   ])
 
   createEffect(() => {
