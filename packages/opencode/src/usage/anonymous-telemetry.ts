@@ -34,11 +34,11 @@ async function sendPing(payload: Record<string, unknown>): Promise<void> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(5_000),
+      signal: AbortSignal.timeout(3_000),
     })
-    log.info("telemetry ping sent", { status: response.status })
+    log.info("telemetry ping sent", { status: response.status, type: payload.type })
   } catch (error) {
-    log.info("telemetry ping failed", { error: String(error) })
+    log.info("telemetry ping failed", { error: String(error), type: payload.type })
   }
 }
 
@@ -59,6 +59,7 @@ export namespace AnonymousTelemetry {
       let messageCount = 0
       let configDisabled = false
       const startTime = Date.now()
+      const sessionId = crypto.randomUUID()
 
       const unsubs = [
         Bus.subscribe(MessageV2.Event.Updated, (event) => {
@@ -66,22 +67,17 @@ export namespace AnonymousTelemetry {
         }),
       ]
 
-      // Send start ping immediately, don't wait for Config
-      const startPayload = {
+      const basePayload = {
         machineId,
+        sessionId,
         version: Installation.VERSION,
         channel: Installation.CHANNEL,
         os: process.platform,
         arch: process.arch,
-        sessionDurationSec: 0,
-        messageCount: 0,
-        timestamp: Date.now(),
       }
 
       log.info("anonymous telemetry initializing", { machineId: machineId.slice(0, 8) + "..." })
 
-      // Check config opt-out in background, send start ping regardless
-      // (if config says disabled, we skip the dispose ping)
       Config.get()
         .then((config) => {
           if (config.telemetry === false) {
@@ -92,12 +88,11 @@ export namespace AnonymousTelemetry {
             return
           }
           log.info("anonymous telemetry active, sending start ping")
-          sendPing(startPayload)
+          sendPing({ ...basePayload, type: "start", sessionDurationSec: 0, messageCount: 0, timestamp: Date.now() })
         })
         .catch(() => {
-          // Config unavailable — send ping anyway (opt-in by default)
           log.info("anonymous telemetry active (config unavailable), sending start ping")
-          sendPing(startPayload)
+          sendPing({ ...basePayload, type: "start", sessionDurationSec: 0, messageCount: 0, timestamp: Date.now() })
         })
 
       return {
@@ -105,8 +100,14 @@ export namespace AnonymousTelemetry {
         unsubs,
         startTime,
         machineId,
-        get messageCount() { return messageCount },
-        get configDisabled() { return configDisabled },
+        sessionId,
+        basePayload,
+        get messageCount() {
+          return messageCount
+        },
+        get configDisabled() {
+          return configDisabled
+        },
       }
     },
     async (current) => {
@@ -115,16 +116,9 @@ export namespace AnonymousTelemetry {
 
       const sessionDurationSec = Math.round((Date.now() - current.startTime) / 1000)
 
-      // Re-check config opt-out before sending dispose ping
-      const config = await Config.get().catch(() => undefined)
-      if (config?.telemetry === false) return
-
       await sendPing({
-        machineId: current.machineId,
-        version: Installation.VERSION,
-        channel: Installation.CHANNEL,
-        os: process.platform,
-        arch: process.arch,
+        ...current.basePayload,
+        type: "end",
         sessionDurationSec,
         messageCount: current.messageCount,
         timestamp: Date.now(),
