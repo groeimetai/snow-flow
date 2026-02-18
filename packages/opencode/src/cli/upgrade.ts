@@ -18,8 +18,11 @@ export async function upgrade() {
     return
   }
 
-  if (method === "unknown") return
+  if (method === "unknown") {
+    await Bus.publish(Installation.Event.UpdateAvailable, { version: latest })
+    return
+  }
   await Installation.upgrade(method, latest)
     .then(() => Bus.publish(Installation.Event.Updated, { version: latest }))
-    .catch(() => {})
+    .catch(() => Bus.publish(Installation.Event.UpdateAvailable, { version: latest }))
 }

@@ -464,8 +464,11 @@ function App() {
       },
       onSelect: async (dialog) => {
         dialog.clear()
-        if (!_onUpgrade) return
-        toast.show({ variant: "info", message: "Checking for updates..." })
+        if (!_onUpgrade) {
+          toast.show({ variant: "warning", message: "Update not available in this mode", duration: 5000 })
+          return
+        }
+        toast.show({ variant: "info", message: "Checking for updates...", duration: 10000 })
         let result: { success: boolean; version?: string; error?: string }
         try {
           result = await _onUpgrade()
@@ -758,6 +761,14 @@ function App() {
     toast.show({
       variant: "info",
       message: `v${evt.properties.version} available · type /update to install`,
+      duration: 10000,
+    })
+  })
+
+  sdk.event.on(Installation.Event.Updated.type, (evt) => {
+    toast.show({
+      variant: "info",
+      message: `Updated to v${evt.properties.version} · restart to apply`,
       duration: 10000,
     })
   })
