@@ -393,4 +393,45 @@ export function registerEnterpriseCommands(program: Command): void {
     });
 }
 
+/**
+ * Get subscription status and features from the portal auth store.
+ * Falls back to the legacy ~/.snow-flow/auth.json if portal auth is not available.
+ */
+export async function getSubscriptionStatus(): Promise<{
+  status?: string;
+  trialEndsAt?: number;
+  features: string[];
+} | null> {
+  // Try portal auth store first (new device auth flow)
+  try {
+    const { Auth } = await import('../../auth/index.js');
+    const enterprise = await Auth.get('enterprise');
+    if (enterprise?.type === 'enterprise') {
+      return {
+        status: enterprise.subscriptionStatus,
+        trialEndsAt: enterprise.trialEndsAt,
+        features: enterprise.features || [],
+      };
+    }
+  } catch {
+    // Fall through to legacy auth
+  }
+
+  // Fallback: legacy auth.json
+  const auth = await loadAuth();
+  if (auth?.customer) {
+    return {
+      features: auth.customer.features || [],
+    };
+  }
+  return null;
+}
+
+/**
+ * Check if a specific feature is enabled in the user's subscription.
+ */
+export function isFeatureEnabled(features: string[], feature: string): boolean {
+  return features.includes(feature);
+}
+
 export const ENTERPRISE_MCP_SERVER_URL = MCP_SERVER_URL;

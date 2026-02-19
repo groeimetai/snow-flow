@@ -82,6 +82,10 @@ export namespace Auth {
       azureOrg: z.string().optional(),
       azureProject: z.string().optional(),
       azurePat: z.string().optional(),
+      // Subscription & feature gating (set after device/verify)
+      features: z.array(z.string()).optional(),
+      subscriptionStatus: z.string().optional(),
+      trialEndsAt: z.number().optional(),
     })
     .meta({ ref: "Enterprise" })
 

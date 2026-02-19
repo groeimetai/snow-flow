@@ -1054,6 +1054,9 @@ function DialogAuthEnterprise() {
         username: data.user?.username || data.user?.email,
         email: data.user?.email,
         role: data.user?.role,
+        features: data.features || [],
+        subscriptionStatus: data.subscription?.status,
+        trialEndsAt: data.subscription?.trialEndsAt,
       })
 
       // Also save to ~/.snow-code/enterprise.json for the enterprise proxy
@@ -1183,6 +1186,50 @@ function DialogAuthEnterprise() {
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
         console.error('[Enterprise] Failed to update documentation:', docError)
+      }
+
+      // Show trial/subscription status toast
+      try {
+        const subStatus = data.subscription?.status
+        const trialEnd = data.subscription?.trialEndsAt
+        const featureCount = (data.features || []).length
+
+        if (subStatus === "trialing" && trialEnd) {
+          const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / (24 * 60 * 60 * 1000)))
+          if (daysLeft <= 0) {
+            toast.show({
+              variant: "error",
+              message: "Trial ended — visit portal.snow-flow.dev/portal/billing to activate features",
+              duration: 8000,
+            })
+          } else if (daysLeft <= 3) {
+            toast.show({
+              variant: "warning",
+              message: `Trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"} — all features enabled`,
+              duration: 6000,
+            })
+          } else {
+            toast.show({
+              variant: "info",
+              message: `Trial active — all features enabled (${daysLeft} days remaining)`,
+              duration: 4000,
+            })
+          }
+        } else if (subStatus === "past_due") {
+          toast.show({
+            variant: "error",
+            message: "Trial ended — visit portal.snow-flow.dev/portal/billing to activate features",
+            duration: 8000,
+          })
+        } else if (subStatus === "active" && featureCount > 0) {
+          toast.show({
+            variant: "info",
+            message: `Enterprise connected — ${featureCount} feature${featureCount === 1 ? "" : "s"} enabled`,
+            duration: 4000,
+          })
+        }
+      } catch {
+        // Non-critical, skip toast on error
       }
 
       dialog.clear()
