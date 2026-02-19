@@ -11,6 +11,7 @@ import { ProviderTransform } from "../provider/transform"
 import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
+import PROMPT_REVIEW from "./prompt/review.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import { PermissionNext } from "@/permission/next"
@@ -60,6 +61,8 @@ export namespace Agent {
       question: "deny",
       plan_enter: "deny",
       plan_exit: "deny",
+      review_enter: "deny",
+      review_exit: "deny",
       // mirrors github.com/github/gitignore Node.gitignore pattern for .env files
       read: {
         "*": "allow",
@@ -80,6 +83,7 @@ export namespace Agent {
           PermissionNext.fromConfig({
             question: "allow",
             plan_enter: "allow",
+            review_enter: "allow",
           }),
           user,
         ),
@@ -108,6 +112,33 @@ export namespace Agent {
         ),
         mode: "primary",
         native: true,
+      },
+      review: {
+        name: "review",
+        description: "Code reuse review mode. Analyzes ServiceNow artifacts for reuse opportunities. Enterprise only.",
+        options: {},
+        temperature: 0.3,
+        color: "#a855f7",
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+            grep: "allow",
+            glob: "allow",
+            list: "allow",
+            read: "allow",
+            bash: { "*": "deny", "git log*": "allow", "git diff*": "allow", "git status*": "allow" },
+            webfetch: "allow",
+            websearch: "allow",
+            codesearch: "allow",
+            review_exit: "allow",
+          }),
+          user,
+        ),
+        prompt: PROMPT_REVIEW,
+        mode: "primary",
+        native: true,
+        hidden: true,
       },
       general: {
         name: "general",
@@ -225,6 +256,14 @@ export namespace Agent {
       item.steps = value.steps ?? item.steps
       item.options = mergeDeep(item.options, value.options ?? {})
       item.permission = PermissionNext.merge(item.permission, PermissionNext.fromConfig(value.permission ?? {}))
+    }
+
+    // Unhide review agent for enterprise users
+    const enterpriseAuth = await Auth.all().then((all) =>
+      Object.values(all).find((e) => e.type === "enterprise" && e.licenseKey),
+    )
+    if (enterpriseAuth && result.review) {
+      result.review.hidden = false
     }
 
     // Ensure Truncate.DIR is allowed unless explicitly configured
