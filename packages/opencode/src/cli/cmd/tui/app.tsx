@@ -765,6 +765,14 @@ function App() {
     })
   })
 
+  sdk.event.on(Installation.Event.Updating.type, (evt) => {
+    toast.show({
+      variant: "info",
+      message: `Updating to v${evt.properties.version} in the background...`,
+      duration: 10000,
+    })
+  })
+
   sdk.event.on(Installation.Event.Updated.type, (evt) => {
     toast.show({
       variant: "info",

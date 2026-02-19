@@ -31,6 +31,12 @@ export namespace Installation {
         version: z.string(),
       }),
     ),
+    Updating: BusEvent.define(
+      "installation.updating",
+      z.object({
+        version: z.string(),
+      }),
+    ),
   }
 
   export const Info = z

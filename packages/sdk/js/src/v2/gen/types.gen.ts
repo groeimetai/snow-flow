@@ -18,6 +18,13 @@ export type EventInstallationUpdateAvailable = {
   }
 }
 
+export type EventInstallationUpdating = {
+  type: "installation.updating"
+  properties: {
+    version: string
+  }
+}
+
 export type Project = {
   id: string
   worktree: string
@@ -884,6 +891,7 @@ export type EventWorktreeFailed = {
 export type Event =
   | EventInstallationUpdated
   | EventInstallationUpdateAvailable
+  | EventInstallationUpdating
   | EventProjectUpdated
   | EventServerInstanceDisposed
   | EventServerConnected

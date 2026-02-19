@@ -22,6 +22,7 @@ export async function upgrade() {
     await Bus.publish(Installation.Event.UpdateAvailable, { version: latest })
     return
   }
+  await Bus.publish(Installation.Event.Updating, { version: latest })
   await Installation.upgrade(method, latest)
     .then(() => Bus.publish(Installation.Event.Updated, { version: latest }))
     .catch(() => Bus.publish(Installation.Event.UpdateAvailable, { version: latest }))
