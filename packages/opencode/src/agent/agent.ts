@@ -271,12 +271,22 @@ export namespace Agent {
       item.permission = PermissionNext.merge(item.permission, PermissionNext.fromConfig(value.permission ?? {}))
     }
 
-    // Unhide review agent for enterprise users
+    // Unhide review agent for enterprise users with the code-review module
     const enterpriseAuth = await Auth.all().then((all) =>
       Object.values(all).find((e) => e.type === "enterprise" && (e.licenseKey || e.token)),
     )
-    if (enterpriseAuth && result.review) {
-      result.review.hidden = false
+    if (enterpriseAuth && result.review && enterpriseAuth.type === "enterprise") {
+      const jwt = enterpriseAuth.token
+      if (jwt) {
+        try {
+          const payload = JSON.parse(Buffer.from(jwt.split(".")[1], "base64").toString())
+          if (Array.isArray(payload.features) && payload.features.includes("code-review")) {
+            result.review.hidden = false
+          }
+        } catch {
+          // malformed token — keep review agent hidden
+        }
+      }
     }
 
     // Ensure Truncate.DIR is allowed unless explicitly configured
