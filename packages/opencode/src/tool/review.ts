@@ -87,11 +87,11 @@ export const ReviewEnterTool = Tool.define("review_enter", {
       sessionID: ctx.sessionID,
       questions: [
         {
-          question: `Activity is ready for code reuse review. Would you like to switch to the review agent and save findings to ${reviewFile}?`,
+          question: `Activity is ready for review. Would you like to switch to the review agent and save findings to ${reviewFile}?`,
           header: "Review Mode",
           custom: false,
           options: [
-            { label: "Yes", description: "Switch to review agent for code reuse analysis" },
+            { label: "Yes", description: "Switch to review agent for code review and analysis" },
             { label: "No", description: "Stay with build agent and skip review" },
           ],
         },
@@ -117,7 +117,7 @@ export const ReviewEnterTool = Tool.define("review_enter", {
     await Session.updateMessage(userMsg)
 
     const context = [
-      "User has requested to enter review mode. Switch to review mode and begin code reuse analysis.",
+      "User has requested to enter review mode. Switch to review mode and begin code review.",
       `The review file will be at ${reviewFile}.`,
       params.activityId ? `Activity ID: ${params.activityId}` : "",
       params.updateSetName ? `Update Set: ${params.updateSetName}` : "",
@@ -137,7 +137,7 @@ export const ReviewEnterTool = Tool.define("review_enter", {
 
     return {
       title: "Switching to review agent",
-      output: `User confirmed to switch to review mode. A new message has been created to switch you to review mode. The review file will be at ${reviewFile}. Begin code reuse analysis.`,
+      output: `User confirmed to switch to review mode. A new message has been created to switch you to review mode. The review file will be at ${reviewFile}. Begin code review.`,
       metadata: {},
     }
   },

@@ -1,8 +1,8 @@
-Use this tool to switch to the review agent for automated code reuse review of ServiceNow artifacts.
+Use this tool to switch to the review agent for automated review of ServiceNow artifacts.
 
 Call this tool when:
 - An activity has been set to 'review' status (activity_update response contains reviewAvailable: true)
-- The user explicitly requests a code reuse review
+- The user explicitly requests a code review
 - Artifacts are ready to be analyzed before completion
 
 This tool will ask the user if they want to switch to the review agent.

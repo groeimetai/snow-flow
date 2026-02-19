@@ -1364,8 +1364,8 @@ NOTE: At any point in time through this workflow you should feel free to ask the
         type: "text",
         text: `<system-reminder>
 Review mode is active. You are in READ-ONLY analysis mode (except for the review file).
-Your role is to analyze ServiceNow artifacts for code reuse opportunities.
-Use snow_analyze_artifact, snow_find_artifact, snow_comprehensive_search, and snow_query_table.
+Your role is to analyze ServiceNow artifacts for quality, security, coherence, and reuse opportunities.
+Use the tool_search tool to discover available ServiceNow tools for analysis.
 
 ## Review File Info:
 ${reviewExists ? `A review file already exists at ${reviewPath}. You can read it and make incremental edits using the edit tool.` : `No review file exists yet. You should create your review at ${reviewPath} using the write tool.`}

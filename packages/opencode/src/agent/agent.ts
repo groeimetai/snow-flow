@@ -115,7 +115,7 @@ export namespace Agent {
       },
       review: {
         name: "review",
-        description: "Code reuse review mode. Analyzes ServiceNow artifacts for reuse opportunities. Enterprise only.",
+        description: "Review mode. Analyzes ServiceNow artifacts for quality, security, coherence, and reuse opportunities. Enterprise only.",
         options: {},
         temperature: 0.3,
         color: "#a855f7",

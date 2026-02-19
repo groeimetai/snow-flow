@@ -1,10 +1,10 @@
-Use this tool when you have completed the code reuse review and are ready to exit review mode.
+Use this tool when you have completed the review and are ready to exit review mode.
 
 This tool will ask the user if they want to switch back to the build agent.
 
 Call this tool:
-- After you have completed the code reuse analysis
-- After you have generated a JSON review report with your findings
+- After you have completed the code review and analysis
+- After you have generated a review report with your findings
 - When you are confident the review is thorough and complete
 
 Do NOT call this tool:
