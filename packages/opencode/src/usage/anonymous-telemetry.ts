@@ -37,8 +37,14 @@ async function sendPing(payload: Record<string, unknown>): Promise<void> {
       signal: AbortSignal.timeout(3_000),
     })
     log.info("telemetry ping sent", { status: response.status, type: payload.type })
+    if (process.env.SNOW_FLOW_DEBUG_TELEMETRY) {
+      console.error(`[telemetry] ping OK (${payload.type}) → ${response.status}`)
+    }
   } catch (error) {
     log.info("telemetry ping failed", { error: String(error), type: payload.type })
+    if (process.env.SNOW_FLOW_DEBUG_TELEMETRY) {
+      console.error(`[telemetry] ping failed (${payload.type}):`, String(error))
+    }
   }
 }
 
