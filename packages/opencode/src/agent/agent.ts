@@ -260,7 +260,7 @@ export namespace Agent {
 
     // Unhide review agent for enterprise users
     const enterpriseAuth = await Auth.all().then((all) =>
-      Object.values(all).find((e) => e.type === "enterprise" && e.licenseKey),
+      Object.values(all).find((e) => e.type === "enterprise" && (e.licenseKey || e.token)),
     )
     if (enterpriseAuth && result.review) {
       result.review.hidden = false
