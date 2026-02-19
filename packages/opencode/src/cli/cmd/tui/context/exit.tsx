@@ -10,13 +10,13 @@ export const { use: useExit, provider: ExitProvider } = createSimpleContext({
       // Reset window title before destroying renderer
       renderer.setTerminalTitle("")
       renderer.destroy()
-      await input.onExit?.()
       if (reason) {
         const formatted = FormatError(reason) ?? FormatUnknownError(reason)
         if (formatted) {
           process.stderr.write(formatted + "\n")
         }
       }
+      await input.onExit?.()
       process.exit(0)
     }
   },
