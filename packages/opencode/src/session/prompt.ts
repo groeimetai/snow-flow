@@ -1333,27 +1333,49 @@ NOTE: At any point in time through this workflow you should feel free to ask the
 
     // Switching from review to build
     if (input.agent.name === "build" && assistantMessage?.info.agent === "review") {
-      clonedUser.parts.push({
-        id: Identifier.ascending("part"),
-        messageID: userMessage.info.id,
-        sessionID: userMessage.info.sessionID,
-        type: "text",
-        text: REVIEW_SWITCH,
-        synthetic: true,
-      })
+      const reviewPath = Session.review(input.session)
+      const reviewExists = await Bun.file(reviewPath).exists()
+      if (reviewExists) {
+        const part = await Session.updatePart({
+          id: Identifier.ascending("part"),
+          messageID: userMessage.info.id,
+          sessionID: userMessage.info.sessionID,
+          type: "text",
+          text:
+            REVIEW_SWITCH +
+            "\n\n" +
+            `A review file exists at ${reviewPath}. You should read it and act on the review feedback within it`,
+          synthetic: true,
+        })
+        clonedUser.parts.push(part)
+      }
       return replaceUser()
     }
 
     // Entering review mode
     if (input.agent.name === "review" && assistantMessage?.info.agent !== "review") {
-      clonedUser.parts.push({
+      const reviewPath = Session.review(input.session)
+      const reviewExists = await Bun.file(reviewPath).exists()
+      if (!reviewExists) await fs.mkdir(path.dirname(reviewPath), { recursive: true })
+      const part = await Session.updatePart({
         id: Identifier.ascending("part"),
         messageID: userMessage.info.id,
         sessionID: userMessage.info.sessionID,
         type: "text",
-        text: `<system-reminder>\nReview mode is active. You are in READ-ONLY analysis mode.\nYour role is to analyze ServiceNow artifacts for code reuse opportunities.\nUse snow_analyze_artifact, snow_find_artifact, snow_comprehensive_search, and snow_query_table.\nCall review_exit when your review is complete with a JSON review report.\n</system-reminder>`,
+        text: `<system-reminder>
+Review mode is active. You are in READ-ONLY analysis mode (except for the review file).
+Your role is to analyze ServiceNow artifacts for code reuse opportunities.
+Use snow_analyze_artifact, snow_find_artifact, snow_comprehensive_search, and snow_query_table.
+
+## Review File Info:
+${reviewExists ? `A review file already exists at ${reviewPath}. You can read it and make incremental edits using the edit tool.` : `No review file exists yet. You should create your review at ${reviewPath} using the write tool.`}
+Write your review findings to this file. NOTE that this is the only file you are allowed to edit.
+
+When your review is complete, call review_exit to switch back to the build agent.
+</system-reminder>`,
         synthetic: true,
       })
+      clonedUser.parts.push(part)
       return replaceUser()
     }
 

@@ -1,6 +1,7 @@
 <system-reminder>
 Your operational mode has changed from review to build.
 You are no longer in read-only analysis mode.
-The code review results have been provided. Act on the review feedback.
-If approved, proceed with activity_complete. If revision needed, address the feedback.
+You are permitted to make file changes, run shell commands, and utilize your arsenal of tools as needed.
+The code review results have been provided in the review file. Read it and act on the review feedback.
+If approved, proceed with activity_complete. If revision needed, address the feedback first.
 </system-reminder>

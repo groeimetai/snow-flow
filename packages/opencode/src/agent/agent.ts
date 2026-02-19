@@ -132,6 +132,19 @@ export namespace Agent {
             websearch: "allow",
             codesearch: "allow",
             review_exit: "allow",
+            external_directory: {
+              [path.join(Global.Path.data, "reviews", "*")]: "allow",
+            },
+            edit: {
+              "*": "deny",
+              [path.join(".snow-code", "reviews", "*.md")]: "allow",
+              [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("reviews", "*.md")))]: "allow",
+            },
+            write: {
+              "*": "deny",
+              [path.join(".snow-code", "reviews", "*.md")]: "allow",
+              [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("reviews", "*.md")))]: "allow",
+            },
           }),
           user,
         ),

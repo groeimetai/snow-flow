@@ -1,10 +1,12 @@
 import z from "zod"
+import path from "path"
 import { Tool } from "./tool"
 import { Question } from "../question"
 import { Session } from "../session"
 import { MessageV2 } from "../session/message-v2"
 import { Identifier } from "../id/id"
 import { Provider } from "../provider/provider"
+import { Instance } from "../project/instance"
 import EXIT_DESCRIPTION from "./review-exit.txt"
 import ENTER_DESCRIPTION from "./review-enter.txt"
 
@@ -17,16 +19,15 @@ async function getLastModel(sessionID: string) {
 
 export const ReviewExitTool = Tool.define("review_exit", {
   description: EXIT_DESCRIPTION,
-  parameters: z.object({
-    reviewResult: z.string().optional().describe("JSON review report with findings"),
-    approved: z.boolean().optional().describe("Whether the review approved the artifacts"),
-  }),
-  async execute(params, ctx) {
+  parameters: z.object({}),
+  async execute(_params, ctx) {
+    const session = await Session.get(ctx.sessionID)
+    const reviewFile = path.relative(Instance.worktree, Session.review(session))
     const answers = await Question.ask({
       sessionID: ctx.sessionID,
       questions: [
         {
-          question: `Code reuse review is complete. Would you like to switch back to the build agent?`,
+          question: `Review at ${reviewFile} is complete. Would you like to switch to the build agent and start acting on the feedback?`,
           header: "Build Agent",
           custom: false,
           options: [
@@ -54,20 +55,12 @@ export const ReviewExitTool = Tool.define("review_exit", {
       model,
     }
     await Session.updateMessage(userMsg)
-
-    const reviewSummary = params.reviewResult
-      ? `\n\nReview result:\n${params.reviewResult}`
-      : ""
-    const approvalStatus = params.approved !== undefined
-      ? `\nApproved: ${params.approved}`
-      : ""
-
     await Session.updatePart({
       id: Identifier.ascending("part"),
       messageID: userMsg.id,
       sessionID: ctx.sessionID,
       type: "text",
-      text: `The code reuse review has been completed.${approvalStatus}${reviewSummary}`,
+      text: `The review at ${reviewFile} has been approved, you can now edit files. Act on the review feedback`,
       synthetic: true,
     } satisfies MessageV2.TextPart)
 
@@ -87,11 +80,14 @@ export const ReviewEnterTool = Tool.define("review_enter", {
     updateSetName: z.string().optional().describe("Name of the update set being reviewed"),
   }),
   async execute(params, ctx) {
+    const session = await Session.get(ctx.sessionID)
+    const reviewFile = path.relative(Instance.worktree, Session.review(session))
+
     const answers = await Question.ask({
       sessionID: ctx.sessionID,
       questions: [
         {
-          question: `Activity is ready for code reuse review. Would you like to switch to the review agent?`,
+          question: `Activity is ready for code reuse review. Would you like to switch to the review agent and save findings to ${reviewFile}?`,
           header: "Review Mode",
           custom: false,
           options: [
@@ -122,6 +118,7 @@ export const ReviewEnterTool = Tool.define("review_enter", {
 
     const context = [
       "User has requested to enter review mode. Switch to review mode and begin code reuse analysis.",
+      `The review file will be at ${reviewFile}.`,
       params.activityId ? `Activity ID: ${params.activityId}` : "",
       params.updateSetName ? `Update Set: ${params.updateSetName}` : "",
       params.artifacts ? `Artifacts to review:\n${params.artifacts}` : "",
@@ -140,7 +137,7 @@ export const ReviewEnterTool = Tool.define("review_enter", {
 
     return {
       title: "Switching to review agent",
-      output: "User confirmed to switch to review mode. A new message has been created to switch you to review mode. Begin code reuse analysis.",
+      output: `User confirmed to switch to review mode. A new message has been created to switch you to review mode. The review file will be at ${reviewFile}. Begin code reuse analysis.`,
       metadata: {},
     }
   },
