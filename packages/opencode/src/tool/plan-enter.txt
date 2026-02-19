@@ -1,14 +1,29 @@
-Use this tool to suggest switching to plan agent when the user's request would benefit from planning before implementation.
+Use this tool proactively when you're about to start a non-trivial implementation task.
+Getting user sign-off on your approach before writing code prevents wasted effort.
+This tool asks the user if they want to switch to plan mode.
 
-If they explicitly mention wanting to create a plan ALWAYS call this tool first.
+## When to Use This Tool
 
-This tool will ask the user if they want to switch to plan agent.
+**Prefer using plan mode** for implementation tasks unless they're simple.
+Use it when ANY of these conditions apply:
 
-Call this tool when:
-- The user's request is complex and would benefit from planning first
-- You want to research and design before making changes
-- The task involves multiple files or significant architectural decisions
+1. **New Feature Implementation**: Adding meaningful new functionality
+2. **Multiple Valid Approaches**: The task can be solved in several different ways
+3. **Multi-File Changes**: The task will likely touch more than 2-3 files
+4. **Architectural Decisions**: Choosing between patterns or technologies
+5. **Unclear Requirements**: You need to explore before understanding the full scope
+6. **Significant Refactoring**: Restructuring existing code across multiple files
 
-Do NOT call this tool:
-- For simple, straightforward tasks
-- When the user explicitly wants immediate implementation
+## When NOT to Use This Tool
+
+- Single-line or few-line fixes (typos, obvious bugs, small tweaks)
+- Adding a single function with clear requirements
+- Tasks where the user has given very specific, detailed instructions
+- The user explicitly asks to skip planning
+- Simple config changes
+
+## Important
+
+- This tool REQUIRES user approval — they must consent to entering plan mode
+- If the user explicitly requests planning, ALWAYS call this tool first
+- If unsure whether to use it, err on the side of planning
