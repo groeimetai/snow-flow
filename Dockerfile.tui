@@ -22,7 +22,6 @@ COPY packages/app/package.json packages/app/
 COPY packages/desktop/package.json packages/desktop/
 COPY packages/enterprise/package.json packages/enterprise/
 COPY packages/function/package.json packages/function/
-COPY packages/mobile/package.json packages/mobile/
 COPY packages/script/package.json packages/script/
 COPY packages/slack/package.json packages/slack/
 COPY packages/console/app/package.json packages/console/app/
