@@ -1,0 +1,148 @@
+# Cloud Build Configuration for Snow-Flow TUI Server
+#
+# Builds and deploys the TUI WebSocket service to Cloud Run.
+# Spawns PTY-backed TUI sessions over WebSocket connections.
+#
+# Required substitution variables:
+#   _REGION: GCP region (default: europe-west4)
+#   _SERVICE_NAME: Cloud Run service name (default: snow-flow-tui)
+#   _ARTIFACT_REGISTRY_REPO: Artifact Registry repo (default: snow-flow-enterprise)
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_MEDIUM'
+  substitutionOption: 'ALLOW_LOOSE'
+  diskSizeGb: 50
+
+substitutions:
+  _REGION: 'europe-west4'
+  _SERVICE_NAME: 'snow-flow-tui'
+  _ARTIFACT_REGISTRY_REPO: 'snow-flow-enterprise'
+  _MIN_INSTANCES: '1'
+  _MAX_INSTANCES: '10'
+  _MEMORY: '2Gi'
+  _CPU: '2'
+  _CONCURRENCY: '20'
+  _TIMEOUT: '3600s'
+
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args:
+      - 'build'
+      - '-f'
+      - 'Dockerfile.tui'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+      - '--cache-from'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
+      - '.'
+    timeout: '600s'
+
+  # Step 2: Push Docker image (SHA tag)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image-sha'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+    waitFor: ['build-image']
+
+  # Step 3: Push Docker image (latest tag)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-image-latest'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+    waitFor: ['build-image']
+
+  # Step 4: Deploy to Cloud Run (create or update)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloud-run'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if gcloud run services describe ${_SERVICE_NAME} --region=${_REGION} --format='value(name)' 2>/dev/null; then
+          echo "Service exists, updating image..."
+          gcloud run services update ${_SERVICE_NAME} \
+            --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA \
+            --region=${_REGION} \
+            --platform=managed
+        else
+          echo "Service does not exist, creating..."
+          gcloud run deploy ${_SERVICE_NAME} \
+            --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA \
+            --region=${_REGION} \
+            --platform=managed \
+            --allow-unauthenticated
+        fi
+    waitFor: ['push-image-sha', 'push-image-latest']
+
+  # Step 5: Update service configuration
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'update-cloud-run-config'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'update'
+      - '${_SERVICE_NAME}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--min-instances=${_MIN_INSTANCES}'
+      - '--max-instances=${_MAX_INSTANCES}'
+      - '--memory=${_MEMORY}'
+      - '--cpu=${_CPU}'
+      - '--concurrency=${_CONCURRENCY}'
+      - '--timeout=${_TIMEOUT}'
+      - '--port=4096'
+      - '--session-affinity'
+    waitFor: ['deploy-cloud-run']
+
+  # Step 6: Verify deployment health
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'verify-deployment'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        SERVICE_URL=$$(gcloud run services describe ${_SERVICE_NAME} \
+          --region=${_REGION} \
+          --format='value(status.url)')
+
+        echo "Service URL: $$SERVICE_URL"
+
+        for i in {1..12}; do
+          echo "Health check attempt $$i/12..."
+          HEALTH_RESPONSE=$$(curl -f -s "$$SERVICE_URL/global/health" 2>/dev/null)
+          if [ $$? -eq 0 ]; then
+            echo "TUI Server health check passed!"
+            echo "$$HEALTH_RESPONSE"
+            exit 0
+          fi
+          echo "Waiting 5 seconds..."
+          sleep 5
+        done
+
+        echo "TUI Server health check failed after 60 seconds"
+        exit 1
+    waitFor: ['update-cloud-run-config']
+
+# Store built images
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
+
+# Build timeout
+timeout: '900s'
+
+# Tags
+tags:
+  - 'snow-flow'
+  - 'tui-server'
+  - '${_SERVICE_NAME}'

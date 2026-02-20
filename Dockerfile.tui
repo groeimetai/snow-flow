@@ -1,0 +1,39 @@
+FROM oven/bun:1.3 AS base
+
+WORKDIR /app
+
+# Install system dependencies for bun-pty
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files first for better caching
+COPY package.json bun.lock turbo.json ./
+COPY packages/opencode/package.json packages/opencode/
+COPY packages/util/package.json packages/util/
+COPY packages/plugin/package.json packages/plugin/
+COPY packages/sdk/js/package.json packages/sdk/js/
+COPY packages/ui/package.json packages/ui/
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# Copy source
+COPY packages/opencode/ packages/opencode/
+COPY packages/util/ packages/util/
+COPY packages/plugin/ packages/plugin/
+COPY packages/sdk/js/ packages/sdk/js/
+COPY packages/ui/ packages/ui/
+
+# Set terminal environment
+ENV TERM=xterm-256color
+ENV COLORTERM=truecolor
+ENV FORCE_COLOR=3
+ENV NODE_ENV=production
+
+EXPOSE 4096
+
+CMD ["bun", "run", "--conditions=browser", "packages/opencode/src/index.ts", "serve", \
+     "--hostname", "0.0.0.0", "--port", "4096"]
