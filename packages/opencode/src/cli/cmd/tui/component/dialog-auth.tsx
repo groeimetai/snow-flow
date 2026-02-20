@@ -285,7 +285,7 @@ export function DialogAuth() {
       },
     },
     {
-      title: "Enterprise + ServiceNow",
+      title: "Portal + ServiceNow",
       value: "enterprise-combined",
       description: isEnterpriseConfigured() && isServiceNowConfigured() ? "Both connected" : undefined,
       category: "Combined",
@@ -919,7 +919,8 @@ function DialogAuthEnterprise() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"subdomain" | "code" | "verifying">("subdomain")
+  const [step, setStep] = createSignal<"plan-type" | "subdomain" | "code" | "verifying">("plan-type")
+  const [planType, setPlanType] = createSignal<"individual-teams" | "enterprise" | "">("")
   const [subdomain, setSubdomain] = createSignal("")
   const [sessionId, setSessionId] = createSignal("")
   const [authCode, setAuthCode] = createSignal("")
@@ -943,22 +944,49 @@ function DialogAuthEnterprise() {
     } catch {
       // Auth module not available
     }
-    setTimeout(() => subdomainInput?.focus(), 10)
   })
 
   useKeyboard((evt) => {
     if (evt.name === "escape") {
       const currentStep = step()
-      if (currentStep === "subdomain") {
+      if (currentStep === "plan-type") {
         dialog.replace(() => <DialogAuth />)
+      } else if (currentStep === "subdomain") {
+        setStep("plan-type")
+        setPlanType("")
       } else if (currentStep === "code") {
-        setStep("subdomain")
+        if (planType() === "individual-teams") {
+          setStep("plan-type")
+          setPlanType("")
+        } else {
+          setStep("subdomain")
+        }
         setSessionId("")
         setAuthCode("")
         setTimeout(() => subdomainInput?.focus(), 10)
       }
     }
+
+    // Handle 1/2 keypresses for plan type selection
+    if (step() === "plan-type") {
+      if (evt.name === "1") {
+        selectPlanType("individual-teams")
+      } else if (evt.name === "2") {
+        selectPlanType("enterprise")
+      }
+    }
   })
+
+  const selectPlanType = (type: "individual-teams" | "enterprise") => {
+    setPlanType(type)
+    if (type === "individual-teams") {
+      setSubdomain("portal")
+      startDeviceAuth()
+    } else {
+      setStep("subdomain")
+      setTimeout(() => subdomainInput?.focus(), 10)
+    }
+  }
 
   const startDeviceAuth = async () => {
     const sub = subdomain().trim().toLowerCase()
@@ -1244,14 +1272,50 @@ function DialogAuthEnterprise() {
     <box paddingLeft={2} paddingRight={2} gap={1}>
       <box flexDirection="row" justifyContent="space-between">
         <text attributes={TextAttributes.BOLD} fg={theme.text}>
-          Enterprise Portal
+          Snow-Flow Portal
         </text>
         <text fg={theme.textMuted}>esc</text>
       </box>
 
+      <Show when={step() === "plan-type"}>
+        <box gap={1}>
+          <text fg={theme.textMuted}>What type of plan do you have?</text>
+          <box paddingTop={1} gap={1}>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[1] Individual / Teams</text>
+              <text fg={theme.textMuted}>- Login via portal.snow-flow.dev</text>
+            </box>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[2] Enterprise</text>
+              <text fg={theme.textMuted}>- Login via your organization subdomain</text>
+            </box>
+          </box>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>1 </text>
+            <text fg={theme.textMuted}>Individual / Teams</text>
+            <text fg={theme.text}>  2 </text>
+            <text fg={theme.textMuted}>Enterprise</text>
+          </box>
+        </box>
+      </Show>
+
       <Show when={step() === "subdomain"}>
         <box gap={1}>
-          <text fg={theme.textMuted}>Enter your subdomain to connect to the Snow-Flow portal</text>
+          <text fg={theme.textMuted}>Enter your organization subdomain (e.g., "acme" for acme.snow-flow.dev)</text>
           <textarea
             ref={(val: TextareaRenderable) => (subdomainInput = val)}
             height={3}
@@ -1266,10 +1330,6 @@ function DialogAuthEnterprise() {
               startDeviceAuth()
             }}
           />
-          <text fg={theme.primary} attributes={TextAttributes.BOLD}>Individual / Teams</text>
-          <text fg={theme.textMuted}>  Enter "portal" → portal.snow-flow.dev</text>
-          <text fg={theme.primary} attributes={TextAttributes.BOLD}>Enterprise</text>
-          <text fg={theme.textMuted}>  Enter your org name → acme.snow-flow.dev</text>
           <box paddingTop={1} flexDirection="row">
             <text fg={theme.text}>enter </text>
             <text fg={theme.textMuted}>continue</text>
@@ -1587,6 +1647,7 @@ function DialogAuthEnterpriseCombined() {
   const { theme } = useTheme()
 
   type CombinedStep =
+    | "plan-type"
     | "subdomain"
     | "code"
     | "verifying-enterprise"
@@ -1600,7 +1661,8 @@ function DialogAuthEnterpriseCombined() {
     | "sn-basic-password"
     | "completing"
 
-  const [step, setStep] = createSignal<CombinedStep>("subdomain")
+  const [step, setStep] = createSignal<CombinedStep>("plan-type")
+  const [planType, setPlanType] = createSignal<"individual-teams" | "enterprise" | "">("")
   const [subdomain, setSubdomain] = createSignal("")
   const [sessionId, setSessionId] = createSignal("")
   const [authCode, setAuthCode] = createSignal("")
@@ -1674,18 +1736,36 @@ function DialogAuthEnterpriseCombined() {
     } catch {
       // Auth module not available
     }
-    setTimeout(() => subdomainInput?.focus(), 10)
   })
+
+  const selectCombinedPlanType = (type: "individual-teams" | "enterprise") => {
+    setPlanType(type)
+    if (type === "individual-teams") {
+      setSubdomain("portal")
+      startDeviceAuth()
+    } else {
+      setStep("subdomain")
+      setTimeout(() => subdomainInput?.focus(), 10)
+    }
+  }
 
   useKeyboard((evt) => {
     const currentStep = step()
 
     // Handle escape key for navigation
     if (evt.name === "escape") {
-      if (currentStep === "subdomain") {
+      if (currentStep === "plan-type") {
         dialog.replace(() => <DialogAuth />)
+      } else if (currentStep === "subdomain") {
+        setStep("plan-type")
+        setPlanType("")
       } else if (currentStep === "code") {
-        setStep("subdomain")
+        if (planType() === "individual-teams") {
+          setStep("plan-type")
+          setPlanType("")
+        } else {
+          setStep("subdomain")
+        }
         setSessionId("")
         setAuthCode("")
         setTimeout(() => subdomainInput?.focus(), 10)
@@ -1709,6 +1789,15 @@ function DialogAuthEnterpriseCombined() {
       } else if (currentStep === "sn-basic-password") {
         setStep("sn-basic-username")
         setTimeout(() => snUsernameInput?.focus(), 10)
+      }
+    }
+
+    // Handle 1/2 keypresses for plan type selection
+    if (currentStep === "plan-type") {
+      if (evt.name === "1") {
+        selectCombinedPlanType("individual-teams")
+      } else if (evt.name === "2") {
+        selectCombinedPlanType("enterprise")
       }
     }
 
@@ -2200,10 +2289,47 @@ function DialogAuthEnterpriseCombined() {
     <box paddingLeft={2} paddingRight={2} gap={1}>
       <box flexDirection="row" justifyContent="space-between">
         <text attributes={TextAttributes.BOLD} fg={theme.text}>
-          Enterprise + ServiceNow Setup
+          Portal + ServiceNow Setup
         </text>
         <text fg={theme.textMuted}>esc</text>
       </box>
+
+      {/* Plan type selection */}
+      <Show when={step() === "plan-type"}>
+        <box gap={1}>
+          <text fg={theme.textMuted}>What type of plan do you have?</text>
+          <box paddingTop={1} gap={1}>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[1] Individual / Teams</text>
+              <text fg={theme.textMuted}>- Login via portal.snow-flow.dev</text>
+            </box>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[2] Enterprise</text>
+              <text fg={theme.textMuted}>- Login via your organization subdomain</text>
+            </box>
+          </box>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>1 </text>
+            <text fg={theme.textMuted}>Individual / Teams</text>
+            <text fg={theme.text}>  2 </text>
+            <text fg={theme.textMuted}>Enterprise</text>
+          </box>
+        </box>
+      </Show>
 
       {/* Step 1: Enterprise subdomain */}
       <Show when={step() === "subdomain"}>
@@ -2237,7 +2363,7 @@ function DialogAuthEnterpriseCombined() {
       <Show when={step() === "code"}>
         <box gap={1}>
           <text fg={theme.primary} attributes={TextAttributes.BOLD}>
-            Step 1 of 2: Enterprise Portal
+            Step 1 of 2: Portal Login
           </text>
           <Show when={verificationUrl()}>
             <text fg={theme.text}>Open this URL to authorize this device:</text>
