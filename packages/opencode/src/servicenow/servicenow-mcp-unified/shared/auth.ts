@@ -15,6 +15,8 @@
 import axios, { AxiosInstance } from 'axios';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as crypto from 'node:crypto';
+import * as os from 'node:os';
 import { ServiceNowContext, OAuthTokenResponse, EnterpriseLicense } from './types';
 import { mcpDebug } from '../../shared/mcp-debug.js';
 
@@ -589,13 +591,73 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Load token cache from disk
+   * Derive a machine-specific encryption key for token cache
+   */
+  private deriveEncryptionKey(): Buffer {
+    const hostname = os.hostname();
+    let username: string;
+    try {
+      username = os.userInfo().username;
+    } catch {
+      username = process.env.USER || process.env.USERNAME || 'default';
+    }
+    const platform = os.platform();
+    const seed = `snow-flow-token-cache:${hostname}:${username}:${platform}`;
+    return crypto.createHash('sha256').update(seed).digest();
+  }
+
+  /**
+   * Encrypt data with AES-256-GCM
+   */
+  private encrypt(plaintext: string): string {
+    const key = this.deriveEncryptionKey();
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    return JSON.stringify({
+      iv: iv.toString('base64'),
+      data: encrypted.toString('base64'),
+      tag: authTag.toString('base64'),
+    });
+  }
+
+  /**
+   * Decrypt data with AES-256-GCM
+   */
+  private decrypt(ciphertext: string): string {
+    const key = this.deriveEncryptionKey();
+    const { iv, data, tag } = JSON.parse(ciphertext);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64'));
+    decipher.setAuthTag(Buffer.from(tag, 'base64'));
+    const decrypted = Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]);
+    return decrypted.toString('utf8');
+  }
+
+  /**
+   * Load token cache from disk (encrypted)
    */
   private async loadTokenCache(): Promise<void> {
     try {
       const cachePath = this.getTokenCachePath();
-      const cacheData = await fs.readFile(cachePath, 'utf-8');
-      const cached: Record<string, TokenCache> = JSON.parse(cacheData);
+      const raw = await fs.readFile(cachePath, 'utf-8');
+
+      let cached: Record<string, TokenCache>;
+
+      // Try decrypting first; fall back to plaintext for migration
+      try {
+        const decrypted = this.decrypt(raw);
+        cached = JSON.parse(decrypted);
+      } catch {
+        // Attempt plaintext parse for backward compatibility
+        try {
+          cached = JSON.parse(raw);
+          mcpDebug('[Auth] Migrating plaintext token cache to encrypted format');
+        } catch {
+          mcpDebug('[Auth] Token cache corrupted, starting fresh');
+          return;
+        }
+      }
 
       // Load tokens into memory cache
       Object.entries(cached).forEach(([key, token]) => {
@@ -604,6 +666,11 @@ export class ServiceNowAuthManager {
           this.tokenCache.set(key, token);
         }
       });
+
+      // Re-save as encrypted if we loaded from plaintext (migration)
+      if (this.tokenCache.size > 0) {
+        await this.saveTokenCache();
+      }
 
       mcpDebug('[Auth] Loaded', this.tokenCache.size, 'cached tokens');
     } catch (error: any) {
@@ -615,7 +682,7 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Save token cache to disk
+   * Save token cache to disk (encrypted, restricted permissions)
    */
   private async saveTokenCache(): Promise<void> {
     try {
@@ -627,12 +694,14 @@ export class ServiceNowAuthManager {
         cacheData[key] = token;
       });
 
-      // Ensure directory exists
-      await fs.mkdir(path.dirname(cachePath), { recursive: true });
+      // Ensure directory exists with restricted permissions
+      const cacheDir = path.dirname(cachePath);
+      await fs.mkdir(cacheDir, { recursive: true, mode: 0o700 });
 
-      // Write cache file
-      await fs.writeFile(cachePath, JSON.stringify(cacheData, null, 2), 'utf-8');
-      mcpDebug('[Auth] Token cache saved');
+      // Encrypt and write cache file with owner-only permissions
+      const encrypted = this.encrypt(JSON.stringify(cacheData));
+      await fs.writeFile(cachePath, encrypted, { encoding: 'utf-8', mode: 0o600 });
+      mcpDebug('[Auth] Token cache saved (encrypted)');
     } catch (error: any) {
       mcpDebug('[Auth] Failed to save cache:', error.message);
     }
@@ -643,7 +712,7 @@ export class ServiceNowAuthManager {
    */
   private getTokenCachePath(): string {
     // Store in user's home directory
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '/tmp';
+    const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir();
     return path.join(homeDir, '.snow-flow', 'token-cache.json');
   }
 

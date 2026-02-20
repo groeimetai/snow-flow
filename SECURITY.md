@@ -28,14 +28,58 @@ Server mode is opt-in only. When enabled, set `SNOW_CODE_SERVER_PASSWORD` to req
 
 ---
 
-# Reporting Security Issues
+## Coordinated Vulnerability Disclosure
 
 We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
 
+### Reporting a Vulnerability
+
 To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/groeimetai/snow-flow/security/advisories/new) tab.
 
-The team will send a response indicating the next steps in handling your report. After the initial reply to your report, the security team will keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
+Alternatively, email: **security@snow-flow.dev**
 
-## Escalation
+Please include:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact assessment
+- Any proof-of-concept code (non-destructive)
 
-If you do not receive an acknowledgement of your report within 6 business days, you may send an email to security@anoma.ly
+### Scope
+
+The following components are in scope:
+
+| Component | Repository |
+|-----------|-----------|
+| Snow-Flow CLI | `packages/opencode/` |
+| Snow-Flow Web UI | `packages/app/` |
+| Snow-Flow Desktop App | `packages/desktop/` |
+| Snow-Flow Plugin SDK | `packages/plugin/` |
+| Snow-Flow SDK | `packages/sdk/` |
+
+### Response SLAs
+
+| Severity | CVSS Score | Acknowledgment | Fix Timeline |
+|----------|-----------|----------------|-------------|
+| Critical | 9.0 - 10.0 | 24 hours | 48 hours |
+| High | 7.0 - 8.9 | 48 hours | 7 days |
+| Medium | 4.0 - 6.9 | 5 business days | 30 days |
+| Low | 0.1 - 3.9 | 5 business days | 90 days |
+
+### Safe Harbor
+
+We consider security research conducted in accordance with this policy to be:
+- Authorized and we will not pursue legal action against you
+- Conducted in good faith to improve our security
+
+To qualify:
+- Do not access, modify, or delete data belonging to other users
+- Do not publicly disclose the vulnerability before we have addressed it
+- Stop testing and report immediately upon discovering sensitive data
+
+### Acknowledgments
+
+We maintain a security acknowledgments section for researchers who responsibly disclose vulnerabilities. Let us know if you would like to be credited.
+
+### Escalation
+
+If you do not receive an acknowledgment within 6 business days, you may send a follow-up email to security@snow-flow.dev.
