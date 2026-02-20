@@ -31,6 +31,9 @@ COPY packages/console/function/package.json packages/console/function/
 COPY packages/console/mail/package.json packages/console/mail/
 COPY packages/console/resource/package.json packages/console/resource/
 
+# Copy postinstall script needed by bun install
+COPY packages/opencode/scripts/ packages/opencode/scripts/
+
 # Install dependencies
 RUN bun install --frozen-lockfile
 
