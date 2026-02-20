@@ -265,11 +265,11 @@ export function DialogAuth() {
       },
     },
     {
-      title: "Enterprise Portal",
+      title: "Snow-Flow Portal",
       value: "enterprise-portal",
       description: isEnterpriseConfigured() ? "Connected" : undefined,
-      category: "Enterprise",
-      footer: "Jira, Azure DevOps, Confluence",
+      category: "Portal",
+      footer: "Individual, Teams & Enterprise",
       onSelect: () => {
         dialog.replace(() => <DialogAuthEnterprise />)
       },
@@ -278,7 +278,7 @@ export function DialogAuth() {
       title: "Select ServiceNow Instance",
       value: "select-sn-instance",
       description: isServiceNowConfigured() ? "Connected" : undefined,
-      category: "Enterprise",
+      category: "Portal",
       footer: "Switch instance via portal",
       onSelect: () => {
         dialog.replace(() => <DialogAuthSelectInstance />)
@@ -1251,7 +1251,7 @@ function DialogAuthEnterprise() {
 
       <Show when={step() === "subdomain"}>
         <box gap={1}>
-          <text fg={theme.textMuted}>Enter your organization subdomain (e.g., "acme" for acme.snow-flow.dev)</text>
+          <text fg={theme.textMuted}>Enter your subdomain to connect to the Snow-Flow portal</text>
           <textarea
             ref={(val: TextareaRenderable) => (subdomainInput = val)}
             height={3}
@@ -1266,10 +1266,10 @@ function DialogAuthEnterprise() {
               startDeviceAuth()
             }}
           />
-          <text fg={theme.textMuted}>Enterprise features include:</text>
-          <text fg={theme.textMuted}>  - Jira, Azure DevOps, Confluence integration</text>
-          <text fg={theme.textMuted}>  - Stakeholder read-only seats</text>
-          <text fg={theme.textMuted}>  - Custom themes and branding</text>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>Individual / Teams</text>
+          <text fg={theme.textMuted}>  Enter "portal" → portal.snow-flow.dev</text>
+          <text fg={theme.primary} attributes={TextAttributes.BOLD}>Enterprise</text>
+          <text fg={theme.textMuted}>  Enter your org name → acme.snow-flow.dev</text>
           <box paddingTop={1} flexDirection="row">
             <text fg={theme.text}>enter </text>
             <text fg={theme.textMuted}>continue</text>
