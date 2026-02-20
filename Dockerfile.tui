@@ -9,13 +9,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files first for better caching
+# Copy package files and patches for dependency resolution
 COPY package.json bun.lock turbo.json ./
+COPY patches/ patches/
+
+# Copy all workspace package.json files (bun requires all workspaces present)
 COPY packages/opencode/package.json packages/opencode/
 COPY packages/util/package.json packages/util/
 COPY packages/plugin/package.json packages/plugin/
 COPY packages/sdk/js/package.json packages/sdk/js/
 COPY packages/ui/package.json packages/ui/
+COPY packages/app/package.json packages/app/
+COPY packages/desktop/package.json packages/desktop/
+COPY packages/enterprise/package.json packages/enterprise/
+COPY packages/function/package.json packages/function/
+COPY packages/script/package.json packages/script/
+COPY packages/slack/package.json packages/slack/
+COPY packages/console/app/package.json packages/console/app/
+COPY packages/console/core/package.json packages/console/core/
+COPY packages/console/function/package.json packages/console/function/
+COPY packages/console/mail/package.json packages/console/mail/
+COPY packages/console/resource/package.json packages/console/resource/
+
+# Copy postinstall script needed by bun install
+COPY packages/opencode/scripts/ packages/opencode/scripts/
 
 # Install dependencies
 RUN bun install --frozen-lockfile
