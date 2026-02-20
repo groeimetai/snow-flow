@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files first for better caching
+# Copy package files and patches for dependency resolution
 COPY package.json bun.lock turbo.json ./
+COPY patches/ patches/
 
 # Copy all workspace package.json files (bun requires all workspaces present)
 COPY packages/opencode/package.json packages/opencode/
