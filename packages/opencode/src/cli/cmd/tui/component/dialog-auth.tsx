@@ -983,6 +983,7 @@ function DialogAuthEnterprise() {
       setSubdomain("portal")
       startDeviceAuth()
     } else {
+      if (subdomain() === "portal") setSubdomain("")
       setStep("subdomain")
       setTimeout(() => subdomainInput?.focus(), 10)
     }
@@ -1759,6 +1760,7 @@ function DialogAuthEnterpriseCombined() {
       setSubdomain("portal")
       startDeviceAuth()
     } else {
+      if (subdomain() === "portal") setSubdomain("")
       setStep("subdomain")
       setTimeout(() => subdomainInput?.focus(), 10)
     }
