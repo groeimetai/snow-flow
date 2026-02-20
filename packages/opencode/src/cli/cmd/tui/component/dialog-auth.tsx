@@ -1068,6 +1068,21 @@ function DialogAuthEnterprise() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
+        if (err.billingUrl) {
+          toast.show({
+            variant: "error",
+            message: err.message || err.error || "Subscription required",
+            duration: 8000,
+          })
+          toast.show({
+            variant: "info",
+            message: "Opening billing page...",
+            duration: 4000,
+          })
+          tryOpenBrowser(err.billingUrl)
+          setStep("code")
+          return
+        }
         throw new Error(err.error || "Verification failed")
       }
 
@@ -1889,6 +1904,21 @@ function DialogAuthEnterpriseCombined() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
+        if (err.billingUrl) {
+          toast.show({
+            variant: "error",
+            message: err.message || err.error || "Subscription required",
+            duration: 8000,
+          })
+          toast.show({
+            variant: "info",
+            message: "Opening billing page...",
+            duration: 4000,
+          })
+          tryOpenBrowser(err.billingUrl)
+          setStep("code")
+          return
+        }
         throw new Error(err.error || "Verification failed")
       }
 
