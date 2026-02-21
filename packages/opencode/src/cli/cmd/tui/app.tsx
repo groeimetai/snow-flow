@@ -126,68 +126,73 @@ export function tui(input: {
     }
 
     console.log("[snow-flow] starting render...")
-    render(
-      () => {
-        return (
-          <ErrorBoundary
-            fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
-          >
-            <ArgsProvider {...input.args}>
-              <ExitProvider onExit={onExit}>
-                <KVProvider>
-                  <ToastProvider>
-                    <RouteProvider>
-                      <SDKProvider
-                        url={input.url}
-                        directory={input.directory}
-                        fetch={input.fetch}
-                        events={input.events}
-                      >
-                        <SyncProvider>
-                          <ThemeProvider mode={mode}>
-                            <LocalProvider>
-                              <KeybindProvider>
-                                <PromptStashProvider>
-                                  <DialogProvider>
-                                    <CommandProvider>
-                                      <FrecencyProvider>
-                                        <PromptHistoryProvider>
-                                          <PromptRefProvider>
-                                            <App />
-                                          </PromptRefProvider>
-                                        </PromptHistoryProvider>
-                                      </FrecencyProvider>
-                                    </CommandProvider>
-                                  </DialogProvider>
-                                </PromptStashProvider>
-                              </KeybindProvider>
-                            </LocalProvider>
-                          </ThemeProvider>
-                        </SyncProvider>
-                      </SDKProvider>
-                    </RouteProvider>
-                  </ToastProvider>
-                </KVProvider>
-              </ExitProvider>
-            </ArgsProvider>
-          </ErrorBoundary>
-        )
-      },
-      {
-        targetFps: 60,
-        gatherStats: false,
-        exitOnCtrlC: false,
-        useKittyKeyboard: {},
-        consoleOptions: {
-          keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-          onCopySelection: (text) => {
-            Clipboard.copy(text).catch((error) => {
-              console.error(`Failed to copy console selection to clipboard: ${error}`)
-            })
+    try {
+      render(
+        () => {
+          return (
+            <ErrorBoundary
+              fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
+            >
+              <ArgsProvider {...input.args}>
+                <ExitProvider onExit={onExit}>
+                  <KVProvider>
+                    <ToastProvider>
+                      <RouteProvider>
+                        <SDKProvider
+                          url={input.url}
+                          directory={input.directory}
+                          fetch={input.fetch}
+                          events={input.events}
+                        >
+                          <SyncProvider>
+                            <ThemeProvider mode={mode}>
+                              <LocalProvider>
+                                <KeybindProvider>
+                                  <PromptStashProvider>
+                                    <DialogProvider>
+                                      <CommandProvider>
+                                        <FrecencyProvider>
+                                          <PromptHistoryProvider>
+                                            <PromptRefProvider>
+                                              <App />
+                                            </PromptRefProvider>
+                                          </PromptHistoryProvider>
+                                        </FrecencyProvider>
+                                      </CommandProvider>
+                                    </DialogProvider>
+                                  </PromptStashProvider>
+                                </KeybindProvider>
+                              </LocalProvider>
+                            </ThemeProvider>
+                          </SyncProvider>
+                        </SDKProvider>
+                      </RouteProvider>
+                    </ToastProvider>
+                  </KVProvider>
+                </ExitProvider>
+              </ArgsProvider>
+            </ErrorBoundary>
+          )
+        },
+        {
+          targetFps: 60,
+          gatherStats: false,
+          exitOnCtrlC: false,
+          useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+          consoleOptions: {
+            keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+            onCopySelection: (text) => {
+              Clipboard.copy(text).catch((error) => {
+                console.error(`Failed to copy console selection to clipboard: ${error}`)
+              })
+            },
           },
         },
-      },
-    )
+      )
+      console.log("[snow-flow] render() returned")
+    } catch (e) {
+      console.log(`[snow-flow] render() threw: ${e instanceof Error ? e.message : e}`)
+    }
   })
 }
 
