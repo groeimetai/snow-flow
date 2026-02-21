@@ -128,8 +128,9 @@ export function tui(input: {
     const isRemote = !!process.env.OPENCODE_REMOTE_TUI
     console.log("[snow-flow] starting render...", isRemote ? "(remote mode)" : "(local mode)")
     try {
-      render(
+      await render(
         () => {
+          console.log("[snow-flow] component tree evaluating...")
           return (
             <ErrorBoundary
               fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
@@ -191,9 +192,10 @@ export function tui(input: {
           },
         },
       )
-      console.log("[snow-flow] render() returned")
+      console.log("[snow-flow] render() completed")
     } catch (e) {
-      console.log(`[snow-flow] render() threw: ${e instanceof Error ? e.message : e}`)
+      console.log(`[snow-flow] render() FAILED: ${e instanceof Error ? e.message : e}`)
+      if (e instanceof Error && e.stack) console.log(e.stack)
     }
   })
 }
