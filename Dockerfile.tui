@@ -31,6 +31,7 @@ COPY packages/console/core/package.json packages/console/core/
 COPY packages/console/function/package.json packages/console/function/
 COPY packages/console/mail/package.json packages/console/mail/
 COPY packages/console/resource/package.json packages/console/resource/
+COPY packages/mobile/package.json packages/mobile/
 
 # Copy postinstall script needed by bun install
 COPY packages/opencode/scripts/ packages/opencode/scripts/
