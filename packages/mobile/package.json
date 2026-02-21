@@ -1,0 +1,32 @@
+{
+  "name": "@opencode-ai/mobile",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Elastic-2.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cap:sync": "cap sync",
+    "cap:ios": "cap run ios",
+    "cap:android": "cap run android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7",
+    "@capacitor/core": "^7",
+    "@capacitor/ios": "^7",
+    "@capacitor/keyboard": "^7",
+    "@capacitor/network": "^7",
+    "@capacitor/preferences": "^7",
+    "@capacitor/status-bar": "^7",
+    "@xterm/addon-fit": "^0.10",
+    "@xterm/addon-web-links": "^0.11",
+    "@xterm/xterm": "^5.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}
