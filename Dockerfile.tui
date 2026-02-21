@@ -54,13 +54,16 @@ COPY packages/app/ packages/app/
 ENV VITE_SNOW_FLOW_HOSTED=true
 RUN bun run --cwd packages/app build
 
-# Create snow-flow CLI wrapper
-RUN printf '#!/bin/sh\nexec bun run /app/packages/opencode/src/index.ts "$@"\n' > /usr/local/bin/snow-flow && \
+# Create snow-flow CLI wrapper (runs from /app so module resolution works)
+RUN printf '#!/bin/sh\ncd /app && exec bun run --conditions=browser packages/opencode/src/index.ts "$@"\n' > /usr/local/bin/snow-flow && \
     chmod +x /usr/local/bin/snow-flow && \
     ln -s /usr/local/bin/snow-flow /usr/local/bin/snow-code
 
-# Create workspace with git repo (for project detection)
-RUN mkdir -p /workspace && git init /workspace
+# Create workspace with git repo and starter files
+RUN mkdir -p /workspace && \
+    git init /workspace && \
+    printf '# My Project\n\nUse `snow-flow` in the terminal to get started.\n' > /workspace/README.md && \
+    cd /workspace && git add -A && git -c user.name="Snow-Flow" -c user.email="noreply@snow-flow.dev" commit -m "initial workspace"
 
 # Set terminal environment
 ENV TERM=xterm-256color

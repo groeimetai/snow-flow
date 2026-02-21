@@ -1,6 +1,7 @@
 import "@/index.css"
 import { ErrorBoundary, Show, lazy, type ParentProps } from "solid-js"
 import { Router, Route, Navigate } from "@solidjs/router"
+import { base64Encode } from "@opencode-ai/util/encode"
 import { MetaProvider } from "@solidjs/meta"
 import { Font } from "@opencode-ai/ui/font"
 import { MarkedProvider } from "@opencode-ai/ui/context/marked"
@@ -132,11 +133,15 @@ export function AppInterface(props: { defaultUrl?: string }) {
             >
               <Route
                 path="/"
-                component={() => (
-                  <Suspense fallback={<Loading />}>
-                    <Home />
-                  </Suspense>
-                )}
+                component={() =>
+                  import.meta.env.VITE_SNOW_FLOW_HOSTED ? (
+                    <Navigate href={`/${base64Encode("/workspace")}/session`} />
+                  ) : (
+                    <Suspense fallback={<Loading />}>
+                      <Home />
+                    </Suspense>
+                  )
+                }
               />
               <Route path="/:dir" component={DirectoryLayout}>
                 <Route path="/" component={() => <Navigate href="session" />} />
