@@ -40,7 +40,7 @@ async function spawnTui(cols: number, rows: number, env?: Record<string, string>
   const { spawn } = await import("bun-pty")
   const id = crypto.randomUUID()
 
-  const ptyProcess = spawn("bun", ["run", "--conditions=browser", "src/index.ts"], {
+  const ptyProcess = spawn("bun", ["run", "--conditions=browser", "src/index.ts", "--connect", "http://localhost:4096"], {
     name: "xterm-256color",
     cols,
     rows,
@@ -57,8 +57,8 @@ async function spawnTui(cols: number, rows: number, env?: Record<string, string>
   const session: TuiSession = { pty: ptyProcess, lastActivity: Date.now() }
   sessions.set(id, session)
 
-  ptyProcess.onExit(() => {
-    log.info("tui session exited", { id })
+  ptyProcess.onExit((exitCode) => {
+    log.info("tui session exited", { id, exitCode })
     sessions.delete(id)
   })
 
