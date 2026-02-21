@@ -48,6 +48,9 @@ COPY packages/ui/ packages/ui/
 COPY packages/app/ packages/app/
 
 # Build the web app (static HTML/JS/CSS)
+# VITE_SNOW_FLOW_HOSTED tells the app to use window.location.origin as API endpoint
+# instead of redirecting to localhost:4096 on snow-flow.dev domains
+ENV VITE_SNOW_FLOW_HOSTED=true
 RUN bun run --cwd packages/app build
 
 # Set terminal environment
