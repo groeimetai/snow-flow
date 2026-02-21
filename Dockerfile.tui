@@ -45,6 +45,10 @@ COPY packages/util/ packages/util/
 COPY packages/plugin/ packages/plugin/
 COPY packages/sdk/js/ packages/sdk/js/
 COPY packages/ui/ packages/ui/
+COPY packages/app/ packages/app/
+
+# Build the web app (static HTML/JS/CSS)
+RUN bun run --cwd packages/app build
 
 # Set terminal environment
 ENV TERM=xterm-256color

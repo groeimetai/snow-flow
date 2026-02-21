@@ -117,20 +117,15 @@ export function tui(input: {
   _onUpgrade = input.onUpgrade
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
-    console.log("[snow-flow] detecting terminal background...")
     const mode = await getTerminalBackgroundColor()
-    console.log("[snow-flow] background:", mode)
     const onExit = async () => {
       await input.onExit?.()
       resolve()
     }
 
-    const isRemote = !!process.env.OPENCODE_REMOTE_TUI
-    console.log("[snow-flow] starting render...", isRemote ? "(remote mode)" : "(local mode)")
     try {
       await render(
         () => {
-          console.log("[snow-flow] component tree evaluating...")
           return (
             <ErrorBoundary
               fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
@@ -180,7 +175,6 @@ export function tui(input: {
           targetFps: 60,
           gatherStats: false,
           exitOnCtrlC: false,
-          ...(isRemote ? { remote: true } : {}),
           useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
           consoleOptions: {
             keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
@@ -192,19 +186,15 @@ export function tui(input: {
           },
         },
       )
-      console.log("[snow-flow] render() completed")
-    } catch (e) {
-      console.log(`[snow-flow] render() FAILED: ${e instanceof Error ? e.message : e}`)
-      if (e instanceof Error && e.stack) console.log(e.stack)
+    } catch {
+      // render failure handled by ErrorBoundary
     }
   })
 }
 
 function App() {
-  console.log("[snow-flow] App component mounting...")
   const route = useRoute()
   const dimensions = useTerminalDimensions()
-  console.log("[snow-flow] dimensions:", dimensions().width, "x", dimensions().height)
   const renderer = useRenderer()
   renderer.disableStdoutInterception()
   const dialog = useDialog()
@@ -228,10 +218,6 @@ function App() {
     renderer.clearSelection()
   }
   const [terminalTitleEnabled, setTerminalTitleEnabled] = createSignal(kv.get("terminal_title_enabled", true))
-
-  createEffect(() => {
-    console.log(JSON.stringify(route.data))
-  })
 
   // Update terminal window title based on current route and session
   createEffect(() => {

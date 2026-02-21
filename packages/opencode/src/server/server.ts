@@ -5,7 +5,8 @@ import { describeRoute, generateSpecs, validator, resolver, openAPIRouteHandler 
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { streamSSE } from "hono/streaming"
-import { proxy } from "hono/proxy"
+import { serveStatic } from "hono/bun"
+import path from "path"
 import { basicAuth } from "hono/basic-auth"
 import z from "zod"
 import { Provider } from "../provider/provider"
@@ -531,21 +532,17 @@ export namespace Server {
             })
           },
         )
-        .all("/*", async (c) => {
-          const path = c.req.path
-
-          const response = await proxy(`https://app.snow-flow.dev${path}`, {
-            ...c.req,
-            headers: {
-              ...c.req.raw.headers,
-              host: "app.snow-flow.dev",
-            },
+        .use("/assets/*", serveStatic({ root: "./packages/app/dist" }))
+        .get("/*", async (c) => {
+          const filePath = path.join(process.cwd(), "packages/app/dist", c.req.path)
+          const file = Bun.file(filePath)
+          if (await file.exists()) {
+            return new Response(file)
+          }
+          // SPA fallback — serve index.html for all non-asset routes
+          return new Response(Bun.file(path.join(process.cwd(), "packages/app/dist/index.html")), {
+            headers: { "Content-Type": "text/html" },
           })
-          response.headers.set(
-            "Content-Security-Policy",
-            "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' data:",
-          )
-          return response
         }) as unknown as Hono,
   )
 
