@@ -14,6 +14,12 @@ export const ServeCommand = cmd({
     const opts = await resolveNetworkOptions(args)
     const server = Server.listen(opts)
     console.log(`opencode server listening on http://${server.hostname}:${server.port}`)
+
+    // Pre-warm Instance bootstrap so it's cached before TUI connects
+    fetch(`http://127.0.0.1:${server.port}/config`)
+      .then(() => console.log("server bootstrap warmup complete"))
+      .catch((e) => console.log(`server bootstrap warmup failed: ${e instanceof Error ? e.message : e}`))
+
     await new Promise(() => {})
     await server.stop()
   },

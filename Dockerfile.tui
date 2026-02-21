@@ -2,11 +2,12 @@ FROM oven/bun:1.3 AS base
 
 WORKDIR /app
 
-# Install system dependencies for bun-pty
+# Install system dependencies for bun-pty and git for project detection
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
     g++ \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files and patches for dependency resolution
@@ -49,6 +50,8 @@ ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 ENV FORCE_COLOR=3
 ENV NODE_ENV=production
+# Disable default plugin npm installs — no need in headless serve mode
+ENV OPENCODE_DISABLE_DEFAULT_PLUGINS=true
 
 EXPOSE 4096
 
