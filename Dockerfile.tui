@@ -54,10 +54,8 @@ COPY packages/app/ packages/app/
 ENV VITE_SNOW_FLOW_HOSTED=true
 RUN bun run --cwd packages/app build
 
-# Create snow-flow CLI wrapper (runs from /app so module resolution works)
-RUN printf '#!/bin/sh\ncd /app && exec bun run --conditions=browser packages/opencode/src/index.ts "$@"\n' > /usr/local/bin/snow-flow && \
-    chmod +x /usr/local/bin/snow-flow && \
-    ln -s /usr/local/bin/snow-flow /usr/local/bin/snow-code
+# Install snow-flow CLI globally (downloads pre-built binary with TUI support)
+RUN npm install -g snow-flow
 
 # Create workspace with git repo and starter files
 RUN mkdir -p /workspace && \
