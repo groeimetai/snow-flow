@@ -96,16 +96,16 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
           workspacesDefault: false,
         },
         terminal: {
-          height: 280,
-          opened: false,
+          height: import.meta.env.VITE_SNOW_FLOW_HOSTED ? 500 : 280,
+          opened: !!import.meta.env.VITE_SNOW_FLOW_HOSTED,
         },
         review: {
           diffStyle: "split" as ReviewDiffStyle,
         },
         fileTree: {
-          opened: true,
+          opened: !import.meta.env.VITE_SNOW_FLOW_HOSTED,
           width: 344,
-          tab: "changes" as "changes" | "all",
+          tab: (import.meta.env.VITE_SNOW_FLOW_HOSTED ? "all" : "changes") as "changes" | "all",
         },
         session: {
           width: 600,

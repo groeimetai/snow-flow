@@ -40,6 +40,7 @@ export namespace Flag {
   export const OPENCODE_CLIENT = envBoth("CLIENT") ?? "cli"
   export const OPENCODE_SERVER_PASSWORD = envBoth("SERVER_PASSWORD")
   export const OPENCODE_SERVER_USERNAME = envBoth("SERVER_USERNAME")
+  export const OPENCODE_DEFAULT_DIRECTORY = envBoth("DEFAULT_DIRECTORY")
 
   // Experimental
   export const OPENCODE_EXPERIMENTAL = truthyBoth("EXPERIMENTAL")

@@ -551,6 +551,15 @@ export default function Page() {
     sync.session.sync(params.id)
   })
 
+  // Auto-open terminal in hosted mode
+  if (import.meta.env.VITE_SNOW_FLOW_HOSTED) {
+    onMount(() => {
+      if (!view().terminal.opened()) {
+        view().terminal.toggle()
+      }
+    })
+  }
+
   createEffect(() => {
     if (!view().terminal.opened()) {
       setUi("autoCreated", false)
