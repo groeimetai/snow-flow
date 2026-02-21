@@ -70,7 +70,7 @@ ENV NODE_ENV=production
 # Disable default plugin npm installs — no need in headless serve mode
 ENV OPENCODE_DISABLE_DEFAULT_PLUGINS=true
 # Disable opencode/zen provider in hosted TUI
-ENV OPENCODE_CONFIG_CONTENT={"disabled_providers":["opencode"]}
+ENV OPENCODE_CONFIG_CONTENT='{"disabled_providers":["opencode"]}'
 # Default directory for file browser and terminal
 ENV SNOW_CODE_DEFAULT_DIRECTORY=/workspace
 
