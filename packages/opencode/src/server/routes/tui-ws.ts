@@ -51,6 +51,8 @@ async function spawnTui(cols: number, rows: number, env?: Record<string, string>
       TERM: "xterm-256color",
       COLORTERM: "truecolor",
       FORCE_COLOR: "3",
+      OPENCODE_REMOTE_TUI: "1",
+      OPENCODE_DISABLE_KITTY_KEYBOARD: "1",
     },
   })
 

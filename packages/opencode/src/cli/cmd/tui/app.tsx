@@ -125,7 +125,8 @@ export function tui(input: {
       resolve()
     }
 
-    console.log("[snow-flow] starting render...")
+    const isRemote = !!process.env.OPENCODE_REMOTE_TUI
+    console.log("[snow-flow] starting render...", isRemote ? "(remote mode)" : "(local mode)")
     try {
       render(
         () => {
@@ -178,6 +179,7 @@ export function tui(input: {
           targetFps: 60,
           gatherStats: false,
           exitOnCtrlC: false,
+          ...(isRemote ? { remote: true } : {}),
           useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
           consoleOptions: {
             keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
