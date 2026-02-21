@@ -117,12 +117,15 @@ export function tui(input: {
   _onUpgrade = input.onUpgrade
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
+    console.log("[snow-flow] detecting terminal background...")
     const mode = await getTerminalBackgroundColor()
+    console.log("[snow-flow] background:", mode)
     const onExit = async () => {
       await input.onExit?.()
       resolve()
     }
 
+    console.log("[snow-flow] starting render...")
     render(
       () => {
         return (
@@ -189,8 +192,10 @@ export function tui(input: {
 }
 
 function App() {
+  console.log("[snow-flow] App component mounting...")
   const route = useRoute()
   const dimensions = useTerminalDimensions()
+  console.log("[snow-flow] dimensions:", dimensions().width, "x", dimensions().height)
   const renderer = useRenderer()
   renderer.disableStdoutInterception()
   const dialog = useDialog()
