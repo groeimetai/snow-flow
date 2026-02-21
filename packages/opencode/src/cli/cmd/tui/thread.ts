@@ -103,6 +103,13 @@ export const TuiThreadCommand = cmd({
     if (args.connect) {
       // Connect mode: use existing server, no worker
       url = args.connect
+      console.log(`[snow-flow] connect mode: ${url}`)
+      try {
+        const res = await fetch(`${url}/config`, { signal: AbortSignal.timeout(10000) })
+        console.log(`[snow-flow] server ready: ${res.status}`)
+      } catch (e) {
+        console.log(`[snow-flow] server check failed: ${e instanceof Error ? e.message : e}`)
+      }
       onExit = async () => {}
       onUpgrade = async () => ({})
     } else {
