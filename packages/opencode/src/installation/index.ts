@@ -1,5 +1,6 @@
 import { BusEvent } from "@/bus/bus-event"
 import path from "path"
+import fs from "fs"
 import { $ } from "bun"
 import z from "zod"
 import { NamedError } from "@opencode-ai/util/error"
@@ -187,7 +188,17 @@ export namespace Installation {
     await $`${process.execPath} --version`.nothrow().quiet().text()
   }
 
-  export const VERSION = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "local"
+  function readPackageVersion(): string {
+    try {
+      const pkgPath = path.resolve(import.meta.dir, "../../package.json")
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
+      return pkg.version || "local"
+    } catch {
+      return "local"
+    }
+  }
+
+  export const VERSION = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : readPackageVersion()
   export const CHANNEL = typeof OPENCODE_CHANNEL === "string" ? OPENCODE_CHANNEL : "local"
   export const USER_AGENT = `snow-code/${CHANNEL}/${VERSION}/${Flag.OPENCODE_CLIENT}`
 
