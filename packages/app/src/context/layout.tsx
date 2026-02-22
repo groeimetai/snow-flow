@@ -103,8 +103,8 @@ export const { use: useLayout, provider: LayoutProvider } = createSimpleContext(
           diffStyle: "split" as ReviewDiffStyle,
         },
         fileTree: {
-          opened: !import.meta.env.VITE_SNOW_FLOW_HOSTED,
-          width: 344,
+          opened: true,
+          width: import.meta.env.VITE_SNOW_FLOW_HOSTED ? 280 : 344,
           tab: (import.meta.env.VITE_SNOW_FLOW_HOSTED ? "all" : "changes") as "changes" | "all",
         },
         session: {
