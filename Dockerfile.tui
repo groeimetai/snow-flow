@@ -65,7 +65,7 @@ RUN printf '#!/bin/sh\ncd /app\ncase "${1:-}" in\n  run|serve|web|auth|agent|att
 # Create workspace with git repo and starter files
 RUN mkdir -p /workspace && \
     git init /workspace && \
-    printf '# My Project\n\nUse `snow-flow` in the terminal to get started.\n' > /workspace/README.md && \
+    printf '# My Project\n\nUse `snow-flow` in the terminal to get started.\n\n> **Note:** This workspace is ephemeral. Files are lost when your session ends.\n> Maximum workspace size: 512MB.\n' > /workspace/README.md && \
     cd /workspace && git add -A && git -c user.name="Snow-Flow" -c user.email="noreply@snow-flow.dev" commit -m "initial workspace"
 
 # Set terminal environment
@@ -79,6 +79,12 @@ ENV OPENCODE_DISABLE_DEFAULT_PLUGINS=true
 ENV OPENCODE_CONFIG_CONTENT='{"disabled_providers":["opencode"]}'
 # Default directory for file browser and terminal
 ENV SNOW_CODE_DEFAULT_DIRECTORY=/workspace
+# Fix TUI rendering in Ghostty WebGL terminal (no kitty keyboard support)
+ENV OPENCODE_DISABLE_KITTY_KEYBOARD=1
+# Mark as remote/hosted TUI context
+ENV OPENCODE_REMOTE_TUI=1
+# Auto-start snow-flow TUI when terminal opens (PTY spawns $SHELL)
+ENV SHELL=/usr/local/bin/snow-flow
 
 EXPOSE 4096
 
