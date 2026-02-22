@@ -115,17 +115,11 @@ export function tui(input: {
   onUpgrade?: () => Promise<{ success: boolean; version?: string; error?: string }>
 }) {
   _onUpgrade = input.onUpgrade
-  const isRemote = !!process.env.OPENCODE_REMOTE_TUI
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
-    let mode: "dark" | "light" = "dark"
-    if (isRemote) {
-      console.log("[snow-flow] remote mode, skipping theme detection")
-    } else {
-      console.log("[snow-flow] detecting theme...")
-      mode = await getTerminalBackgroundColor()
-      console.log(`[snow-flow] theme: ${mode}`)
-    }
+    console.log("[snow-flow] detecting theme...")
+    const mode = await getTerminalBackgroundColor()
+    console.log(`[snow-flow] theme: ${mode}`)
     const onExit = async () => {
       await input.onExit?.()
       resolve()
@@ -184,7 +178,6 @@ export function tui(input: {
           targetFps: 60,
           gatherStats: false,
           exitOnCtrlC: false,
-          ...(isRemote ? { remote: true } : {}),
           useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
           consoleOptions: {
             keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
@@ -194,7 +187,7 @@ export function tui(input: {
               })
             },
           },
-        } as Parameters<typeof render>[1],
+        },
       )
     } catch (e) {
       console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)
