@@ -138,8 +138,8 @@ images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
 
-# Build timeout
-timeout: '900s'
+# Build timeout (30 min — deploy + health check need headroom)
+timeout: '1800s'
 
 # Tags
 tags:
