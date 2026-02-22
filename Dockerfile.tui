@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     git \
     npm \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files and patches for dependency resolution
@@ -54,8 +55,12 @@ COPY packages/app/ packages/app/
 ENV VITE_SNOW_FLOW_HOSTED=true
 RUN bun run --cwd packages/app build
 
-# Install snow-flow CLI globally (downloads pre-built binary with TUI support)
-RUN npm install -g snow-flow
+# Create snow-flow CLI wrapper that runs from source
+# Default TUI mode uses --connect to share sessions with the web UI server
+# Subcommands (run, serve, etc.) pass through directly
+RUN printf '#!/bin/sh\ncd /app\ncase "${1:-}" in\n  run|serve|web|auth|agent|attach|models|debug|stats|export|import|mcp|github|pr|session|upgrade|uninstall|completion|acp|thread)\n    exec bun run --conditions=browser packages/opencode/src/index.ts "$@"\n    ;;\n  *)\n    exec bun run --conditions=browser packages/opencode/src/index.ts --connect http://localhost:4096 "$@"\n    ;;\nesac\n' > /usr/local/bin/snow-flow && \
+    chmod +x /usr/local/bin/snow-flow && \
+    ln -s /usr/local/bin/snow-flow /usr/local/bin/snow-code
 
 # Create workspace with git repo and starter files
 RUN mkdir -p /workspace && \
