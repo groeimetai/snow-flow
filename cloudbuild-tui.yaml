@@ -10,7 +10,7 @@
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2_MEDIUM'
+  machineType: 'E2_HIGHCPU_8'
   substitutionOption: 'ALLOW_LOOSE'
   diskSizeGb: 50
 
@@ -26,7 +26,16 @@ substitutions:
   _TIMEOUT: '3600s'
 
 steps:
-  # Step 1: Build Docker image
+  # Step 1: Pull cache image (best-effort, don't fail if missing)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'pull-cache'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker pull ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest || true
+
+  # Step 2: Build Docker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-image'
     args:
@@ -42,69 +51,44 @@ steps:
       - '--build-arg'
       - 'BUILDKIT_INLINE_CACHE=1'
       - '.'
+    waitFor: ['pull-cache']
     timeout: '600s'
 
-  # Step 2: Push Docker image (SHA tag)
+  # Step 3: Push both tags in parallel
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-image-sha'
+    id: 'push-image'
+    entrypoint: 'bash'
     args:
-      - 'push'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '-c'
+      - |
+        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA &
+        docker push ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest &
+        wait
     waitFor: ['build-image']
 
-  # Step 3: Push Docker image (latest tag)
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-image-latest'
-    args:
-      - 'push'
-      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
-    waitFor: ['build-image']
-
-  # Step 4: Deploy to Cloud Run (create or update)
+  # Step 4: Deploy to Cloud Run with full configuration
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloud-run'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        if gcloud run services describe ${_SERVICE_NAME} --region=${_REGION} --format='value(name)' 2>/dev/null; then
-          echo "Service exists, updating image..."
-          gcloud run services update ${_SERVICE_NAME} \
-            --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA \
-            --region=${_REGION} \
-            --platform=managed
-        else
-          echo "Service does not exist, creating..."
-          gcloud run deploy ${_SERVICE_NAME} \
-            --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA \
-            --region=${_REGION} \
-            --platform=managed \
-            --allow-unauthenticated
-        fi
-    waitFor: ['push-image-sha', 'push-image-latest']
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA \
+          --region=${_REGION} \
+          --platform=managed \
+          --allow-unauthenticated \
+          --min-instances=${_MIN_INSTANCES} \
+          --max-instances=${_MAX_INSTANCES} \
+          --memory=${_MEMORY} \
+          --cpu=${_CPU} \
+          --concurrency=${_CONCURRENCY} \
+          --timeout=${_TIMEOUT} \
+          --port=4096 \
+          --session-affinity
+    waitFor: ['push-image']
 
-  # Step 5: Update service configuration
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'update-cloud-run-config'
-    entrypoint: 'gcloud'
-    args:
-      - 'run'
-      - 'services'
-      - 'update'
-      - '${_SERVICE_NAME}'
-      - '--region=${_REGION}'
-      - '--platform=managed'
-      - '--min-instances=${_MIN_INSTANCES}'
-      - '--max-instances=${_MAX_INSTANCES}'
-      - '--memory=${_MEMORY}'
-      - '--cpu=${_CPU}'
-      - '--concurrency=${_CONCURRENCY}'
-      - '--timeout=${_TIMEOUT}'
-      - '--port=4096'
-      - '--session-affinity'
-    waitFor: ['deploy-cloud-run']
-
-  # Step 6: Verify deployment health
+  # Step 5: Verify deployment health
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'verify-deployment'
     entrypoint: 'bash'
@@ -117,8 +101,8 @@ steps:
 
         echo "Service URL: $$SERVICE_URL"
 
-        for i in {1..12}; do
-          echo "Health check attempt $$i/12..."
+        for i in {1..6}; do
+          echo "Health check attempt $$i/6..."
           HEALTH_RESPONSE=$$(curl -f -s "$$SERVICE_URL/global/health" 2>/dev/null)
           if [ $$? -eq 0 ]; then
             echo "TUI Server health check passed!"
@@ -129,17 +113,17 @@ steps:
           sleep 5
         done
 
-        echo "TUI Server health check failed after 60 seconds"
+        echo "TUI Server health check failed after 30 seconds"
         exit 1
-    waitFor: ['update-cloud-run-config']
+    waitFor: ['deploy-cloud-run']
 
 # Store built images
 images:
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA'
   - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest'
 
-# Build timeout (30 min — deploy + health check need headroom)
-timeout: '1800s'
+# Build timeout (15 min — should be plenty with faster machine)
+timeout: '900s'
 
 # Tags
 tags:
