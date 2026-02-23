@@ -143,10 +143,24 @@ export function tui(input: {
     }
 
     console.log("[snow-flow] env: OTUI_USE_ALTERNATE_SCREEN=" + (process.env.OTUI_USE_ALTERNATE_SCREEN ?? "unset"))
+    // Test: can this PTY display ANSI at all?
+    process.stdout.write("\x1b[32m[snow-flow] ANSI test: this should be green\x1b[0m\n")
+    console.log("[snow-flow] stdout.isTTY=" + process.stdout.isTTY + " stdin.isTTY=" + process.stdin.isTTY)
+    console.log("[snow-flow] stdout.columns=" + process.stdout.columns + " stdout.rows=" + process.stdout.rows)
+
+    // Timeout watchdog: if render doesn't produce output in 10s, log it
+    const watchdog = setTimeout(() => {
+      console.error("[snow-flow] WATCHDOG: render() has been running for 10s without visible output")
+      console.error("[snow-flow] This suggests the Zig renderer is stuck or not writing to stdout")
+    }, 10_000)
+
     try {
-      console.log("[snow-flow] starting tui...")
+      console.log("[snow-flow] calling render()...")
       await render(
         () => {
+          // This callback is invoked when the renderer is ready to build the component tree
+          console.error("[snow-flow] render callback invoked - component tree building")
+          clearTimeout(watchdog)
           return (
             <ErrorBoundary
               fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
