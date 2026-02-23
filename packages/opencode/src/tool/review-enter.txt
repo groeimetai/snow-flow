@@ -1,15 +1,16 @@
 Use this tool to switch to the review agent for automated review of ServiceNow artifacts.
 
-Call this tool when:
-- You have just created, updated, or deployed a ServiceNow widget, script include, business rule, client script, or other artifact
-- An activity has been set to 'review' status (activity_update response contains reviewAvailable: true)
-- The user explicitly requests a code review
-- Artifacts are ready to be analyzed before completion
-- You have completed a significant ServiceNow development task and want to offer quality analysis
+Call this tool after ANY development sequence completes:
+- After completing a user story, task, request, or any development assignment
+- After creating, updating, or deploying any ServiceNow artifact(s)
+- After finishing any multi-step development workflow
+- After any sequence where ServiceNow code was written, modified, or deployed
+- When the user explicitly requests a code review
+- When an activity has been set to 'review' status
 
 This tool will ask the user if they want to switch to the review agent. There is no risk in calling it — the user can always decline.
 
 Do NOT call this tool:
-- When there are no artifacts to review
-- When already in review mode
 - For simple queries or lookups (reading records, checking properties)
+- When already in review mode
+- When the user has already declined a review in this session
