@@ -568,6 +568,25 @@ export namespace Provider {
         const data = (await response.json()) as { models?: Array<{ name: string; details?: { parameter_size?: string; family?: string } }> }
         if (!data.models?.length) return { autoload: false }
 
+        // Check tool support per model via /api/show (parallel, best-effort)
+        const toolSupport = new Map<string, boolean>()
+        await Promise.all(
+          data.models.map(async (m) => {
+            try {
+              const res = await fetch(`${host}/api/show`, {
+                method: "POST",
+                body: JSON.stringify({ name: m.name }),
+                signal: AbortSignal.timeout(2000),
+              })
+              if (!res.ok) return
+              const info = (await res.json()) as { template?: string }
+              toolSupport.set(m.name, info.template?.includes(".Tools") ?? false)
+            } catch {
+              // assume no tool support if check fails
+            }
+          }),
+        )
+
         for (const model of data.models) {
           if (input.models[model.name]) continue
           input.models[model.name] = fromModelsDevModel(
@@ -578,7 +597,7 @@ export namespace Provider {
               family: model.details?.family ?? model.name.split(":")[0],
               attachment: false,
               reasoning: false,
-              tool_call: true,
+              tool_call: toolSupport.get(model.name) ?? false,
               temperature: true,
               release_date: "2024-01-01",
               modalities: { input: ["text"], output: ["text"] },
