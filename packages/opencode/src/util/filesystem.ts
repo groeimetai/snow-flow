@@ -1,5 +1,6 @@
 import { realpathSync } from "fs"
-import { dirname, join, relative } from "path"
+import { realpath } from "fs/promises"
+import { dirname, join, relative, resolve } from "path"
 
 export namespace Filesystem {
   export const exists = (p: string) =>
@@ -32,8 +33,29 @@ export namespace Filesystem {
     return !relA || !relA.startsWith("..") || !relB || !relB.startsWith("..")
   }
 
+  /**
+   * Lexical containment check: returns true if `child` is inside `parent`
+   * based on path string comparison only. Does NOT resolve symlinks.
+   * Use `containsReal` for symlink-safe checks.
+   */
   export function contains(parent: string, child: string) {
     return !relative(parent, child).startsWith("..")
+  }
+
+  /**
+   * Symlink-safe containment check: resolves both paths to their real
+   * filesystem locations before comparing. This prevents symlink-based
+   * directory traversal attacks where a symlink inside the project
+   * points to a location outside the allowed boundary.
+   *
+   * Falls back to lexical `contains()` if realpath resolution fails
+   * (e.g., path does not exist yet for new file creation).
+   */
+  export async function containsReal(parent: string, child: string): Promise<boolean> {
+    const resolvedParent = await realpath(resolve(parent)).catch(() => resolve(parent))
+    const resolvedChild = await realpath(resolve(child)).catch(() => resolve(child))
+    const rel = relative(resolvedParent, resolvedChild)
+    return !rel.startsWith("..")
   }
 
   export async function findUp(target: string, start: string, stop?: string) {
@@ -75,7 +97,7 @@ export namespace Filesystem {
           cwd: current,
           absolute: true,
           onlyFiles: true,
-          followSymlinks: true,
+          followSymlinks: false,
           dot: true,
         })) {
           result.push(match)

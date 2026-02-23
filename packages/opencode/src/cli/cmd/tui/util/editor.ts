@@ -1,5 +1,6 @@
 import { defer } from "@/util/defer"
-import { rm } from "node:fs/promises"
+import { mkdtemp, rm } from "node:fs/promises"
+import { randomBytes } from "node:crypto"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { CliRenderer } from "@opentui/core"
@@ -9,10 +10,13 @@ export namespace Editor {
     const editor = process.env["VISUAL"] || process.env["EDITOR"]
     if (!editor) return
 
-    const filepath = join(tmpdir(), `${Date.now()}.md`)
-    await using _ = defer(async () => rm(filepath, { force: true }))
+    // Use mkdtemp for unpredictable temp directory + randomBytes for filename
+    // to prevent symlink attacks and temp file race conditions.
+    const tempDir = await mkdtemp(join(tmpdir(), "opencode-editor-"))
+    const filepath = join(tempDir, `${randomBytes(16).toString("hex")}.md`)
+    await using _ = defer(async () => rm(tempDir, { recursive: true, force: true }))
 
-    await Bun.write(filepath, opts.value)
+    await Bun.write(filepath, opts.value, { mode: 0o600 })
     opts.renderer.suspend()
     opts.renderer.currentRenderBuffer.clear()
     const parts = editor.split(" ")

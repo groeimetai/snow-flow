@@ -3,6 +3,9 @@ import { platform, release } from "os"
 import clipboardy from "clipboardy"
 import { lazy } from "../../../../util/lazy.js"
 import { tmpdir } from "os"
+import { mkdtempSync } from "fs"
+import { rmSync } from "fs"
+import { randomBytes } from "crypto"
 import path from "path"
 
 /**
@@ -30,7 +33,10 @@ export namespace Clipboard {
     const os = platform()
 
     if (os === "darwin") {
-      const tmpfile = path.join(tmpdir(), "opencode-clipboard.png")
+      // Use mkdtempSync for unpredictable temp directory + randomBytes for filename
+      // to prevent symlink attacks and temp file race conditions.
+      const tempDir = mkdtempSync(path.join(tmpdir(), "opencode-clip-"))
+      const tmpfile = path.join(tempDir, `${randomBytes(16).toString("hex")}.png`)
       try {
         await $`osascript -e 'set imageData to the clipboard as "PNGf"' -e 'set fileRef to open for access POSIX file "${tmpfile}" with write permission' -e 'set eof fileRef to 0' -e 'write imageData to fileRef' -e 'close access fileRef'`
           .nothrow()
@@ -40,7 +46,9 @@ export namespace Clipboard {
         return { data: Buffer.from(buffer).toString("base64"), mime: "image/png" }
       } catch {
       } finally {
-        await $`rm -f "${tmpfile}"`.nothrow().quiet()
+        try {
+          rmSync(tempDir, { recursive: true, force: true })
+        } catch {}
       }
     }
 

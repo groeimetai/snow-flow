@@ -21,6 +21,19 @@ export namespace Storage {
     }),
   )
 
+  /**
+   * Validate storage key segments to prevent path traversal attacks.
+   * Rejects segments containing "..", "/", "\", or null bytes that could
+   * be used to escape the storage directory boundary.
+   */
+  function validateKey(key: string[]) {
+    for (const segment of key) {
+      if (segment.includes("..") || segment.includes("/") || segment.includes("\\") || segment.includes("\0")) {
+        throw new Error(`Invalid storage key segment: "${segment}"`)
+      }
+    }
+  }
+
   const MIGRATIONS: Migration[] = [
     async (dir) => {
       const project = path.resolve(dir, "../project")
@@ -159,6 +172,7 @@ export namespace Storage {
   })
 
   export async function remove(key: string[]) {
+    validateKey(key)
     const dir = await state().then((x) => x.dir)
     const target = path.join(dir, ...key) + ".json"
     return withErrorHandling(async () => {
@@ -167,6 +181,7 @@ export namespace Storage {
   }
 
   export async function read<T>(key: string[]) {
+    validateKey(key)
     const dir = await state().then((x) => x.dir)
     const target = path.join(dir, ...key) + ".json"
     return withErrorHandling(async () => {
@@ -177,23 +192,29 @@ export namespace Storage {
   }
 
   export async function update<T>(key: string[], fn: (draft: T) => void) {
+    validateKey(key)
     const dir = await state().then((x) => x.dir)
     const target = path.join(dir, ...key) + ".json"
     return withErrorHandling(async () => {
       using _ = await Lock.write(target)
       const content = await Bun.file(target).json()
       fn(content)
-      await Bun.write(target, JSON.stringify(content, null, 2))
+      // Restrict storage files to owner-only read/write (0o600)
+      // to prevent other users from reading sensitive session data.
+      await Bun.write(target, JSON.stringify(content, null, 2), { mode: 0o600 })
       return content as T
     })
   }
 
   export async function write<T>(key: string[], content: T) {
+    validateKey(key)
     const dir = await state().then((x) => x.dir)
     const target = path.join(dir, ...key) + ".json"
     return withErrorHandling(async () => {
       using _ = await Lock.write(target)
-      await Bun.write(target, JSON.stringify(content, null, 2))
+      // Restrict storage files to owner-only read/write (0o600)
+      // to prevent other users from reading sensitive session data.
+      await Bun.write(target, JSON.stringify(content, null, 2), { mode: 0o600 })
     })
   }
 
@@ -210,6 +231,7 @@ export namespace Storage {
 
   const glob = new Bun.Glob("**/*")
   export async function list(prefix: string[]) {
+    validateKey(prefix)
     const dir = await state().then((x) => x.dir)
     try {
       const result = await Array.fromAsync(

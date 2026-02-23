@@ -85,7 +85,9 @@ export const BashTool = Tool.define("bash", async () => {
         throw new Error("Failed to parse command")
       }
       const directories = new Set<string>()
-      if (!Instance.containsPath(cwd)) directories.add(cwd)
+      // Symlink-safe containment check for working directory to prevent
+      // symlink traversal attacks that escape the project boundary.
+      if (!(await Instance.containsPathReal(cwd))) directories.add(cwd)
       const patterns = new Set<string>()
       const always = new Set<string>()
 
