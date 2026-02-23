@@ -45,5 +45,7 @@ mcp-auth.json
 *.keystore
 .env.*
 !.env.example
+.env.local
+.env.*.local
 credentials.json
 service-account*.json

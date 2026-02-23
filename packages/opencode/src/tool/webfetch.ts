@@ -7,6 +7,37 @@ const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
 const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
 const MAX_TIMEOUT = 120 * 1000 // 2 minutes
 
+// SSRF protection: check if a hostname resolves to a private/internal address
+function isPrivateHost(hostname: string): boolean {
+  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1") return true
+  if (hostname.endsWith(".localhost")) return true
+  if (hostname === "0.0.0.0" || hostname === "[::0]" || hostname === "[::]") return true
+  // Block cloud metadata endpoints
+  if (hostname === "169.254.169.254") return true
+  if (hostname === "metadata.google.internal") return true
+  // Check IPv4 private ranges
+  const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (ipv4Match) {
+    const a = Number(ipv4Match[1])
+    const b = Number(ipv4Match[2])
+    if (a === 10) return true // 10.0.0.0/8
+    if (a === 172 && b >= 16 && b <= 31) return true // 172.16.0.0/12
+    if (a === 192 && b === 168) return true // 192.168.0.0/16
+    if (a === 169 && b === 254) return true // 169.254.0.0/16 link-local
+    if (a === 127) return true // 127.0.0.0/8 loopback
+    if (a === 0) return true // 0.0.0.0/8
+  }
+  // Check IPv6 private ranges
+  const ipv6 = hostname.startsWith("[") ? hostname.slice(1, -1) : hostname
+  const ipv6Lower = ipv6.toLowerCase()
+  if (ipv6Lower === "::1" || ipv6Lower === "0:0:0:0:0:0:0:1") return true
+  if (ipv6Lower === "::" || ipv6Lower === "0:0:0:0:0:0:0:0") return true
+  if (ipv6Lower.startsWith("fc") || ipv6Lower.startsWith("fd")) return true // ULA
+  if (ipv6Lower.startsWith("fe80")) return true // link-local
+  return false
+}
+
+
 export const WebFetchTool = Tool.define("webfetch", {
   description: DESCRIPTION,
   parameters: z.object({
@@ -21,6 +52,15 @@ export const WebFetchTool = Tool.define("webfetch", {
     // Validate URL
     if (!params.url.startsWith("http://") && !params.url.startsWith("https://")) {
       throw new Error("URL must start with http:// or https://")
+    }
+
+    // SSRF protection: block requests to private/internal network addresses
+    const parsedUrl = new URL(params.url)
+    if (isPrivateHost(parsedUrl.hostname.toLowerCase())) {
+      throw new Error(
+        `Blocked request to private/internal address: ${parsedUrl.hostname}. ` +
+          "WebFetch cannot access localhost, private networks, or cloud metadata endpoints.",
+      )
     }
 
     await ctx.ask({

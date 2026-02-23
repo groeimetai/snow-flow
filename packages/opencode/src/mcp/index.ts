@@ -542,6 +542,35 @@ export namespace MCP {
 
     if (mcp.type === "local") {
       const [cmd, ...args] = mcp.command
+      if (!cmd) {
+        log.error("local mcp has empty command", { key })
+        return {
+          mcpClient: undefined,
+          status: { status: "failed" as const, error: "Empty command" },
+        }
+      }
+
+      // Sanitize environment: block overriding security-sensitive env vars
+      // that could be used for code injection (e.g., LD_PRELOAD, NODE_OPTIONS)
+      const blockedEnvKeys = [
+        "LD_PRELOAD",
+        "LD_LIBRARY_PATH",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        "NODE_OPTIONS",
+        "ELECTRON_RUN_AS_NODE",
+      ]
+      const sanitizedEnv: Record<string, string> = {}
+      if (mcp.environment) {
+        for (const [envKey, envVal] of Object.entries(mcp.environment)) {
+          if (blockedEnvKeys.includes(envKey.toUpperCase())) {
+            log.warn("blocked dangerous environment variable in MCP config", { key, envKey })
+            continue
+          }
+          sanitizedEnv[envKey] = envVal
+        }
+      }
+
       const cwd = Instance.directory
       const transport = new StdioClientTransport({
         stderr: "pipe",
@@ -551,7 +580,7 @@ export namespace MCP {
         env: {
           ...process.env,
           ...(cmd === "opencode" ? { BUN_BE_BUN: "1" } : {}),
-          ...mcp.environment,
+          ...sanitizedEnv,
         },
       })
       transport.stderr?.on("data", (chunk: Buffer) => {
@@ -1045,7 +1074,7 @@ export namespace MCP {
 
     // The SDK has already added the state parameter to the authorization URL
     // We just need to open the browser
-    log.info("opening browser for oauth", { mcpName, url: authorizationUrl, state: oauthState })
+    log.info("opening browser for oauth", { mcpName })
 
     // Register the callback BEFORE opening the browser to avoid race condition
     // when the IdP has an active SSO session and redirects immediately
