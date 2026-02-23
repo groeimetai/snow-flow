@@ -15,9 +15,9 @@
  * manually in ServiceNow Flow Designer.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 /**
  * Legacy workflow warning message
@@ -35,51 +35,56 @@ Flow Designer is NOT programmable via Snow-Flow, but you can ask:
 to get a document describing what to build manually.
 
 Proceeding with legacy workflow creation...
-`;
+`
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_create_workflow',
-  description: '⚠️ LEGACY: Create workflow definition (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer and ask Snow-Flow to generate a specification document.',
+  name: "snow_create_workflow",
+  description:
+    "⚠️ LEGACY: Create workflow definition (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer and ask Snow-Flow to generate a specification document.",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'automation',
-  subcategory: 'workflow',
-  use_cases: ['workflow', 'process-automation', 'business-logic'],
-  complexity: 'intermediate',
-  frequency: 'medium',
+  category: "automation",
+  subcategory: "workflow",
+  use_cases: ["workflow", "process-automation", "business-logic"],
+  complexity: "intermediate",
+  frequency: "medium",
 
   // Permission enforcement
   // Classification: WRITE - Create operation - modifies data
-  permission: 'write',
-  allowedRoles: ['developer', 'admin'],
+  permission: "write",
+  allowedRoles: ["developer", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      name: { type: 'string', description: 'Workflow name' },
-      table: { type: 'string', description: 'Table workflow applies to' },
-      description: { type: 'string', description: 'Workflow description' },
-      condition: { type: 'string', description: 'When to trigger workflow' }
+      name: { type: "string", description: "Workflow name" },
+      table: { type: "string", description: "Table workflow applies to" },
+      description: { type: "string", description: "Workflow description" },
+      condition: { type: "string", description: "When to trigger workflow" },
     },
-    required: ['name', 'table']
-  }
-};
+    required: ["name", "table"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { name, table, description, condition } = args;
+  const { name, table, description, condition } = args
   try {
-    const client = await getAuthenticatedClient(context);
-    const workflowData: any = { name, table };
-    if (description) workflowData.description = description;
-    if (condition) workflowData.condition = condition;
-    const response = await client.post('/api/now/table/wf_workflow', workflowData);
-    return createSuccessResult({
-      created: true,
-      workflow: response.data.result,
-      legacy_notice: LEGACY_WARNING.trim()
-    }, {}, LEGACY_WARNING);
+    const client = await getAuthenticatedClient(context)
+    const workflowData: any = { name, table }
+    if (description) workflowData.description = description
+    if (condition) workflowData.condition = condition
+    const response = await client.post("/api/now/table/wf_workflow", workflowData)
+    return createSuccessResult(
+      {
+        created: true,
+        workflow: response.data.result,
+        legacy_notice: LEGACY_WARNING.trim(),
+      },
+      {},
+      LEGACY_WARNING,
+    )
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = "1.0.0"
+export const author = "Snow-Flow SDK Migration"

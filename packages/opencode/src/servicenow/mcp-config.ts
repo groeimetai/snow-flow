@@ -53,11 +53,7 @@ export function getServiceNowMcpConfig(options?: {
  */
 export async function canConfigureServiceNowMcp(): Promise<boolean> {
   // Check environment variables first
-  if (
-    process.env.SERVICENOW_INSTANCE_URL &&
-    process.env.SERVICENOW_CLIENT_ID &&
-    process.env.SERVICENOW_CLIENT_SECRET
-  ) {
+  if (process.env.SERVICENOW_INSTANCE_URL && process.env.SERVICENOW_CLIENT_ID && process.env.SERVICENOW_CLIENT_SECRET) {
     return true
   }
 

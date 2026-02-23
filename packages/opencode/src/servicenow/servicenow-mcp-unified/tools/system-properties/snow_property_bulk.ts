@@ -6,175 +6,175 @@
  * Replaces: snow_property_bulk_get, snow_property_bulk_set
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_property_bulk',
-  description: 'Bulk system property operations (get/set multiple)',
+  name: "snow_property_bulk",
+  description: "Bulk system property operations (get/set multiple)",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'core-operations',
-  subcategory: 'properties',
-  use_cases: ['properties', 'bulk-operations', 'batch'],
-  complexity: 'intermediate',
-  frequency: 'low',
+  category: "core-operations",
+  subcategory: "properties",
+  use_cases: ["properties", "bulk-operations", "batch"],
+  complexity: "intermediate",
+  frequency: "low",
 
   // Permission enforcement
   // Classification: WRITE - Bulk operation - modifies multiple properties
-  permission: 'write',
-  allowedRoles: ['developer', 'admin'],
+  permission: "write",
+  allowedRoles: ["developer", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       action: {
-        type: 'string',
-        description: 'Bulk action to perform',
-        enum: ['get', 'set']
+        type: "string",
+        description: "Bulk action to perform",
+        enum: ["get", "set"],
       },
       // GET parameters
       names: {
-        type: 'array',
-        description: '[get] Array of property names to retrieve',
-        items: { type: 'string' }
+        type: "array",
+        description: "[get] Array of property names to retrieve",
+        items: { type: "string" },
       },
       // SET parameters
       properties: {
-        type: 'array',
-        description: '[set] Array of properties to set',
+        type: "array",
+        description: "[set] Array of properties to set",
         items: {
-          type: 'object',
+          type: "object",
           properties: {
-            name: { type: 'string' },
-            value: { type: 'string' },
-            description: { type: 'string' },
-            type: { type: 'string' }
-          }
-        }
-      }
+            name: { type: "string" },
+            value: { type: "string" },
+            description: { type: "string" },
+            type: { type: "string" },
+          },
+        },
+      },
     },
-    required: ['action']
-  }
-};
+    required: ["action"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { action } = args;
+  const { action } = args
 
   try {
     switch (action) {
-      case 'get':
-        return await executeBulkGet(args, context);
-      case 'set':
-        return await executeBulkSet(args, context);
+      case "get":
+        return await executeBulkGet(args, context)
+      case "set":
+        return await executeBulkSet(args, context)
       default:
-        return createErrorResult(`Unknown action: ${action}`);
+        return createErrorResult(`Unknown action: ${action}`)
     }
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
 // ==================== BULK GET ====================
 async function executeBulkGet(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { names } = args;
+  const { names } = args
 
   if (!names || !Array.isArray(names) || names.length === 0) {
-    return createErrorResult('names array is required for bulk get action');
+    return createErrorResult("names array is required for bulk get action")
   }
 
-  const client = await getAuthenticatedClient(context);
+  const client = await getAuthenticatedClient(context)
 
   // Build query for all names
-  const nameQuery = names.map(name => `name=${name}`).join('^OR');
+  const nameQuery = names.map((name) => `name=${name}`).join("^OR")
 
-  const response = await client.get('/api/now/table/sys_properties', {
+  const response = await client.get("/api/now/table/sys_properties", {
     params: {
       sysparm_query: nameQuery,
-      sysparm_fields: 'name,value,description,type,suffix',
-      sysparm_limit: names.length
-    }
-  });
+      sysparm_fields: "name,value,description,type,suffix",
+      sysparm_limit: names.length,
+    },
+  })
 
-  const properties = response.data.result || [];
-  const propertyMap: Record<string, any> = {};
+  const properties = response.data.result || []
+  const propertyMap: Record<string, any> = {}
 
   properties.forEach((p: any) => {
     propertyMap[p.name] = {
       value: p.value,
-      description: p.description || '',
-      type: p.type || 'string',
-      suffix: p.suffix || 'global'
-    };
-  });
+      description: p.description || "",
+      type: p.type || "string",
+      suffix: p.suffix || "global",
+    }
+  })
 
   // Include not found properties
-  const notFound = names.filter(name => !propertyMap[name]);
+  const notFound = names.filter((name) => !propertyMap[name])
 
   return createSuccessResult({
     properties: propertyMap,
     found_count: properties.length,
     not_found: notFound,
-    requested_count: names.length
-  });
+    requested_count: names.length,
+  })
 }
 
 // ==================== BULK SET ====================
 async function executeBulkSet(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { properties } = args;
+  const { properties } = args
 
   if (!properties || !Array.isArray(properties) || properties.length === 0) {
-    return createErrorResult('properties array is required for bulk set action');
+    return createErrorResult("properties array is required for bulk set action")
   }
 
-  const client = await getAuthenticatedClient(context);
+  const client = await getAuthenticatedClient(context)
 
-  const results: any[] = [];
-  let successCount = 0;
-  let errorCount = 0;
+  const results: any[] = []
+  let successCount = 0
+  let errorCount = 0
 
   for (const prop of properties) {
     try {
-      const { name, value, description, type = 'string' } = prop;
+      const { name, value, description, type = "string" } = prop
 
       if (!name || !value) {
-        results.push({ name: name || 'unknown', success: false, error: 'Missing name or value' });
-        errorCount++;
-        continue;
+        results.push({ name: name || "unknown", success: false, error: "Missing name or value" })
+        errorCount++
+        continue
       }
 
       // Check if exists
-      const existingResponse = await client.get('/api/now/table/sys_properties', {
+      const existingResponse = await client.get("/api/now/table/sys_properties", {
         params: {
           sysparm_query: `name=${name}`,
-          sysparm_limit: 1
-        }
-      });
+          sysparm_limit: 1,
+        },
+      })
 
       if (existingResponse.data.result && existingResponse.data.result.length > 0) {
         // Update
-        const sys_id = existingResponse.data.result[0].sys_id;
+        const sys_id = existingResponse.data.result[0].sys_id
         await client.put(`/api/now/table/sys_properties/${sys_id}`, {
           value,
           description,
-          type
-        });
-        results.push({ name, success: true, action: 'updated' });
+          type,
+        })
+        results.push({ name, success: true, action: "updated" })
       } else {
         // Create
-        await client.post('/api/now/table/sys_properties', {
+        await client.post("/api/now/table/sys_properties", {
           name,
           value,
-          description: description || 'Created by Snow-Flow bulk operation',
+          description: description || "Created by Snow-Flow bulk operation",
           type,
-          suffix: 'global'
-        });
-        results.push({ name, success: true, action: 'created' });
+          suffix: "global",
+        })
+        results.push({ name, success: true, action: "created" })
       }
 
-      successCount++;
+      successCount++
     } catch (error: any) {
-      results.push({ name: prop.name, success: false, error: error.message });
-      errorCount++;
+      results.push({ name: prop.name, success: false, error: error.message })
+      errorCount++
     }
   }
 
@@ -183,10 +183,10 @@ async function executeBulkSet(args: any, context: ServiceNowContext): Promise<To
     summary: {
       total: properties.length,
       success: successCount,
-      errors: errorCount
-    }
-  });
+      errors: errorCount,
+    },
+  })
 }
 
-export const version = '2.0.0';
-export const author = 'Snow-Flow v8.2.0 Tool Merging';
+export const version = "2.0.0"
+export const author = "Snow-Flow v8.2.0 Tool Merging"

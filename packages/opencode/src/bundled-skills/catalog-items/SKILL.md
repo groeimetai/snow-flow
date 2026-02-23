@@ -20,15 +20,15 @@ The Service Catalog allows users to request services and items through a self-se
 
 ## Catalog Components
 
-| Component | Purpose | Example |
-|-----------|---------|---------|
-| **Catalog** | Container for categories | IT Service Catalog |
-| **Category** | Group of items | Hardware, Software |
-| **Item** | Requestable service | New Laptop Request |
-| **Variable** | Form field on item | Laptop Model dropdown |
-| **Variable Set** | Reusable variable group | User Details |
-| **Producer** | Creates records directly | Report an Incident |
-| **Order Guide** | Multi-item wizard | New Employee Setup |
+| Component        | Purpose                  | Example               |
+| ---------------- | ------------------------ | --------------------- |
+| **Catalog**      | Container for categories | IT Service Catalog    |
+| **Category**     | Group of items           | Hardware, Software    |
+| **Item**         | Requestable service      | New Laptop Request    |
+| **Variable**     | Form field on item       | Laptop Model dropdown |
+| **Variable Set** | Reusable variable group  | User Details          |
+| **Producer**     | Creates records directly | Report an Incident    |
+| **Order Guide**  | Multi-item wizard        | New Employee Setup    |
 
 ## Catalog Item Structure
 
@@ -51,44 +51,47 @@ Catalog Item: Request New Laptop
 
 ## Variable Types
 
-| Type | Use Case | Example |
-|------|----------|---------|
-| Single Line Text | Short input | Employee ID |
-| Multi Line Text | Long input | Business Justification |
-| Select Box | Single choice | Priority |
-| Check Box | Yes/No | Express Delivery |
-| Reference | Link to table | Requested For |
-| Date | Date picker | Needed By Date |
-| Lookup Select Box | Filtered reference | Model by Category |
-| List Collector | Multiple selections | CC Recipients |
-| Container Start/End | Visual grouping | Hardware Options |
-| Macro | Custom widget | Cost Calculator |
+| Type                | Use Case            | Example                |
+| ------------------- | ------------------- | ---------------------- |
+| Single Line Text    | Short input         | Employee ID            |
+| Multi Line Text     | Long input          | Business Justification |
+| Select Box          | Single choice       | Priority               |
+| Check Box           | Yes/No              | Express Delivery       |
+| Reference           | Link to table       | Requested For          |
+| Date                | Date picker         | Needed By Date         |
+| Lookup Select Box   | Filtered reference  | Model by Category      |
+| List Collector      | Multiple selections | CC Recipients          |
+| Container Start/End | Visual grouping     | Hardware Options       |
+| Macro               | Custom widget       | Cost Calculator        |
 
 ## Creating Catalog Variables
 
 ### Basic Variable
+
 ```javascript
 // Via MCP
 snow_create_catalog_variable({
-  catalog_item: 'laptop_request',
-  name: 'laptop_model',
-  type: 'reference',
-  reference: 'cmdb_model',
-  reference_qual: 'category=computer',
+  catalog_item: "laptop_request",
+  name: "laptop_model",
+  type: "reference",
+  reference: "cmdb_model",
+  reference_qual: "category=computer",
   mandatory: true,
-  order: 100
-});
+  order: 100,
+})
 ```
 
 ### Variable with Dynamic Default
+
 ```javascript
 // Variable: requested_for
 // Type: Reference (sys_user)
 // Default value (script):
-javascript:gs.getUserID()
+javascript: gs.getUserID()
 ```
 
 ### Variable with Reference Qualifier
+
 ```javascript
 // Variable: assignment_group
 // Type: Reference (sys_user_group)
@@ -107,74 +110,76 @@ javascript: 'u_department=' + current.variables.department
 ## Catalog Client Scripts
 
 ### Set Defaults onLoad
+
 ```javascript
 function onLoad() {
   // Set default values
-  g_form.setValue('urgency', 'low');
+  g_form.setValue("urgency", "low")
 
   // Hide admin-only fields
-  if (!g_user.hasRole('catalog_admin')) {
-    g_form.setDisplay('cost_center', false);
+  if (!g_user.hasRole("catalog_admin")) {
+    g_form.setDisplay("cost_center", false)
   }
 
   // Set default date to tomorrow
-  var tomorrow = new GlideDateTime();
-  tomorrow.addDays(1);
-  g_form.setValue('needed_by', tomorrow.getDate().getValue());
+  var tomorrow = new GlideDateTime()
+  tomorrow.addDays(1)
+  g_form.setValue("needed_by", tomorrow.getDate().getValue())
 }
 ```
 
 ### Dynamic Pricing onChange
+
 ```javascript
 function onChange(control, oldValue, newValue, isLoading) {
-  if (isLoading) return;
+  if (isLoading) return
 
   // Get price from selected model
-  var ga = new GlideAjax('CatalogUtils');
-  ga.addParam('sysparm_name', 'getModelPrice');
-  ga.addParam('sysparm_model', newValue);
-  ga.getXMLAnswer(function(price) {
-    g_form.setValue('item_price', price);
-    updateTotal();
-  });
+  var ga = new GlideAjax("CatalogUtils")
+  ga.addParam("sysparm_name", "getModelPrice")
+  ga.addParam("sysparm_model", newValue)
+  ga.getXMLAnswer(function (price) {
+    g_form.setValue("item_price", price)
+    updateTotal()
+  })
 }
 
 function updateTotal() {
-  var price = parseFloat(g_form.getValue('item_price')) || 0;
-  var quantity = parseInt(g_form.getValue('quantity')) || 1;
-  g_form.setValue('total_cost', (price * quantity).toFixed(2));
+  var price = parseFloat(g_form.getValue("item_price")) || 0
+  var quantity = parseInt(g_form.getValue("quantity")) || 1
+  g_form.setValue("total_cost", (price * quantity).toFixed(2))
 }
 ```
 
 ### Validation onSubmit
+
 ```javascript
 function onSubmit() {
   // Validate business justification for high-cost items
-  var cost = parseFloat(g_form.getValue('total_cost'));
-  var justification = g_form.getValue('business_justification');
+  var cost = parseFloat(g_form.getValue("total_cost"))
+  var justification = g_form.getValue("business_justification")
 
   if (cost > 1000 && !justification) {
-    g_form.showFieldMsg('business_justification',
-      'Required for items over $1000', 'error');
-    return false;
+    g_form.showFieldMsg("business_justification", "Required for items over $1000", "error")
+    return false
   }
 
   // Validate date is in future
-  var neededBy = g_form.getValue('needed_by');
-  var today = new GlideDateTime().getDate().getValue();
+  var neededBy = g_form.getValue("needed_by")
+  var today = new GlideDateTime().getDate().getValue()
   if (neededBy < today) {
-    g_form.showFieldMsg('needed_by',
-      'Date must be in the future', 'error');
-    return false;
+    g_form.showFieldMsg("needed_by", "Date must be in the future", "error")
+    return false
   }
 
-  return true;
+  return true
 }
 ```
 
 ## Variable Sets
 
 ### Creating Reusable Variable Sets
+
 ```
 Variable Set: User Contact Information
 ├── contact_name (Single Line Text)
@@ -189,18 +194,20 @@ Use in multiple catalog items:
 ```
 
 ### Accessing Variable Set Values
+
 ```javascript
 // In workflow or script
-var ritm = current;  // sc_req_item
+var ritm = current // sc_req_item
 
 // Access variable from variable set
-var contactEmail = ritm.variables.contact_email;
-var preferredContact = ritm.variables.preferred_contact;
+var contactEmail = ritm.variables.contact_email
+var preferredContact = ritm.variables.preferred_contact
 ```
 
 ## Catalog Workflows/Flows
 
 ### Approval Pattern
+
 ```
 Flow Trigger: sc_req_item created
 ├── If: Total cost > $5000
@@ -214,53 +221,56 @@ Flow Trigger: sc_req_item created
 ```
 
 ### Fulfillment Script
+
 ```javascript
 // In catalog item's "Execution Plan" or workflow
 
-var ritm = current;  // sc_req_item
+var ritm = current // sc_req_item
 
 // Create an incident from catalog request
-var inc = new GlideRecord('incident');
-inc.initialize();
-inc.setValue('short_description', ritm.short_description);
-inc.setValue('description', ritm.description);
-inc.setValue('caller_id', ritm.request.requested_for);
-inc.setValue('category', ritm.variables.category);
-inc.setValue('priority', ritm.variables.urgency);
-inc.insert();
+var inc = new GlideRecord("incident")
+inc.initialize()
+inc.setValue("short_description", ritm.short_description)
+inc.setValue("description", ritm.description)
+inc.setValue("caller_id", ritm.request.requested_for)
+inc.setValue("category", ritm.variables.category)
+inc.setValue("priority", ritm.variables.urgency)
+inc.insert()
 
 // Link incident to request
-ritm.setValue('u_fulfillment_record', inc.getUniqueValue());
-ritm.update();
+ritm.setValue("u_fulfillment_record", inc.getUniqueValue())
+ritm.update()
 ```
 
 ## Record Producers
 
 ### Creating Incidents via Catalog
+
 ```javascript
 // Record Producer: Report an Issue
 // Table: incident
 // Script:
 
 // Map variables to incident fields
-current.short_description = producer.short_description;
-current.description = producer.description;
-current.caller_id = gs.getUserID();
-current.category = producer.category;
-current.subcategory = producer.subcategory;
-current.priority = producer.urgency == 'urgent' ? '2' : '3';
+current.short_description = producer.short_description
+current.description = producer.description
+current.caller_id = gs.getUserID()
+current.category = producer.category
+current.subcategory = producer.subcategory
+current.priority = producer.urgency == "urgent" ? "2" : "3"
 
 // Set assignment based on category
-if (producer.category == 'network') {
-  current.assignment_group.setDisplayValue('Network Support');
+if (producer.category == "network") {
+  current.assignment_group.setDisplayValue("Network Support")
 } else {
-  current.assignment_group.setDisplayValue('Service Desk');
+  current.assignment_group.setDisplayValue("Service Desk")
 }
 ```
 
 ## Order Guides
 
 ### Multi-Step Request Wizard
+
 ```
 Order Guide: New Employee Onboarding
 ├── Step 1: Employee Information
@@ -277,46 +287,49 @@ Order Guide: New Employee Onboarding
 ```
 
 ### Order Guide Rule
+
 ```javascript
 // Rule: Show software items based on department
 function rule(item, guide_variables) {
-  var dept = guide_variables.department;
+  var dept = guide_variables.department
 
   // Show engineering software only for Engineering
-  if (item.name == 'Engineering Software Suite') {
-    return dept == 'engineering';
+  if (item.name == "Engineering Software Suite") {
+    return dept == "engineering"
   }
 
   // Show finance software only for Finance
-  if (item.name == 'Financial Tools') {
-    return dept == 'finance';
+  if (item.name == "Financial Tools") {
+    return dept == "finance"
   }
 
-  return true;  // Show all other items
+  return true // Show all other items
 }
 ```
 
 ## Pricing & Approvals
 
 ### Dynamic Pricing
+
 ```javascript
 // Catalog Item Script (Pricing)
 // Runs when item is added to cart
 
-var basePrice = parseFloat(current.price) || 0;
-var quantity = parseInt(current.variables.quantity) || 1;
-var expedited = current.variables.expedited == 'true';
+var basePrice = parseFloat(current.price) || 0
+var quantity = parseInt(current.variables.quantity) || 1
+var expedited = current.variables.expedited == "true"
 
-var total = basePrice * quantity;
+var total = basePrice * quantity
 if (expedited) {
-  total *= 1.5;  // 50% rush fee
+  total *= 1.5 // 50% rush fee
 }
 
-current.recurring_price = 0;
-current.price = total;
+current.recurring_price = 0
+current.price = total
 ```
 
 ### Approval Rules
+
 ```
 Approval Definition: High-Value Purchases
 Condition: total_cost > 5000

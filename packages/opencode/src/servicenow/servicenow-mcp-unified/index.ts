@@ -15,10 +15,10 @@
  *   SERVICENOW_REFRESH_TOKEN - OAuth refresh token (optional, will be cached)
  */
 
-import { ServiceNowUnifiedServer } from './server.js';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
-import { mcpDebug } from '../shared/mcp-debug.js';
+import { ServiceNowUnifiedServer } from "./server.js"
+import * as dotenv from "dotenv"
+import * as path from "path"
+import { mcpDebug } from "../shared/mcp-debug.js"
 
 /**
  * Main entry point
@@ -36,24 +36,24 @@ async function main() {
       SERVICENOW_CLIENT_ID: process.env.SERVICENOW_CLIENT_ID,
       SNOW_CLIENT_SECRET: process.env.SNOW_CLIENT_SECRET,
       SERVICENOW_CLIENT_SECRET: process.env.SERVICENOW_CLIENT_SECRET,
-    };
+    }
 
     // Load environment variables from .env file
     // Note: dotenv should NOT override existing vars, but we preserve them anyway for safety
-    const result = dotenv.config();
+    const result = dotenv.config()
 
     if (result.error) {
       // Try loading from parent directory (common when MCP server is in subdirectory)
-      const parentEnvPath = path.resolve(process.cwd(), '..', '.env');
-      const parentResult = dotenv.config({ path: parentEnvPath });
+      const parentEnvPath = path.resolve(process.cwd(), "..", ".env")
+      const parentResult = dotenv.config({ path: parentEnvPath })
 
       if (parentResult.error) {
-        mcpDebug('[Main] No .env file found - using environment variables from MCP configuration');
+        mcpDebug("[Main] No .env file found - using environment variables from MCP configuration")
       } else {
-        mcpDebug('[Main] Loaded environment from parent directory:', parentEnvPath);
+        mcpDebug("[Main] Loaded environment from parent directory:", parentEnvPath)
       }
     } else {
-      mcpDebug('[Main] Loaded environment from .env file');
+      mcpDebug("[Main] Loaded environment from .env file")
     }
 
     // 🆕 Restore MCP client env vars (they take priority over .env)
@@ -61,48 +61,47 @@ async function main() {
     for (const [key, value] of Object.entries(mcpEnvVars)) {
       if (value !== undefined) {
         if (process.env[key] !== value) {
-          mcpDebug(`[Main] Restoring MCP config override: ${key}`);
+          mcpDebug(`[Main] Restoring MCP config override: ${key}`)
         }
-        process.env[key] = value;
+        process.env[key] = value
       }
     }
 
     // Log active configuration mode
-    if (process.env.SNOW_LAZY_TOOLS === 'true') {
-      mcpDebug('[Main] SNOW_LAZY_TOOLS=true (lazy loading mode enabled)');
+    if (process.env.SNOW_LAZY_TOOLS === "true") {
+      mcpDebug("[Main] SNOW_LAZY_TOOLS=true (lazy loading mode enabled)")
     }
     if (process.env.SNOW_TOOL_DOMAINS) {
-      mcpDebug(`[Main] SNOW_TOOL_DOMAINS=${process.env.SNOW_TOOL_DOMAINS}`);
+      mcpDebug(`[Main] SNOW_TOOL_DOMAINS=${process.env.SNOW_TOOL_DOMAINS}`)
     }
 
     // Create server instance
-    const server = new ServiceNowUnifiedServer();
+    const server = new ServiceNowUnifiedServer()
 
     // Initialize (discover tools, validate auth)
-    await server.initialize();
+    await server.initialize()
 
     // Start server with stdio transport
-    await server.start();
+    await server.start()
 
     // Graceful shutdown handlers
-    process.on('SIGINT', async () => {
-      mcpDebug('\n[Main] Received SIGINT, shutting down gracefully...');
-      await server.stop();
-      process.exit(0);
-    });
+    process.on("SIGINT", async () => {
+      mcpDebug("\n[Main] Received SIGINT, shutting down gracefully...")
+      await server.stop()
+      process.exit(0)
+    })
 
-    process.on('SIGTERM', async () => {
-      mcpDebug('\n[Main] Received SIGTERM, shutting down gracefully...');
-      await server.stop();
-      process.exit(0);
-    });
-
+    process.on("SIGTERM", async () => {
+      mcpDebug("\n[Main] Received SIGTERM, shutting down gracefully...")
+      await server.stop()
+      process.exit(0)
+    })
   } catch (error: any) {
-    mcpDebug('[Main] Fatal error:', error.message);
-    mcpDebug(error.stack);
-    process.exit(1);
+    mcpDebug("[Main] Fatal error:", error.message)
+    mcpDebug(error.stack)
+    process.exit(1)
   }
 }
 
 // Run server
-main();
+main()

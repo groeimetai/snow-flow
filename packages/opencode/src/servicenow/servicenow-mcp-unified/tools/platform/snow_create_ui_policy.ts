@@ -5,9 +5,9 @@
  * mandatory state, and read-only control.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 /**
  * Extract sys_id from API response - handles both string and object formats
@@ -16,98 +16,98 @@ import { createSuccessResult, createErrorResult } from '../../shared/error-handl
  * - Object: { value: "abc123def456", link: "...", display_value: "..." }
  */
 function extractSysId(value: any): string {
-  if (!value) return '';
-  if (typeof value === 'object' && value.value) {
-    return value.value;
+  if (!value) return ""
+  if (typeof value === "object" && value.value) {
+    return value.value
   }
-  return String(value);
+  return String(value)
 }
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_create_ui_policy',
-  description: 'Create UI Policy for form field control (visibility, mandatory, readonly)',
+  name: "snow_create_ui_policy",
+  description: "Create UI Policy for form field control (visibility, mandatory, readonly)",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'development',
-  subcategory: 'platform',
-  use_cases: ['ui-policies', 'form-control', 'declarative-logic'],
-  complexity: 'intermediate',
-  frequency: 'high',
+  category: "development",
+  subcategory: "platform",
+  use_cases: ["ui-policies", "form-control", "declarative-logic"],
+  complexity: "intermediate",
+  frequency: "high",
 
   // Permission enforcement
   // Classification: WRITE - Create operation - modifies data
-  permission: 'write',
-  allowedRoles: ['developer', 'admin'],
+  permission: "write",
+  allowedRoles: ["developer", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       name: {
-        type: 'string',
-        description: 'UI Policy name'
+        type: "string",
+        description: "UI Policy name",
       },
       table: {
-        type: 'string',
-        description: 'Table to attach policy to'
+        type: "string",
+        description: "Table to attach policy to",
       },
       condition: {
-        type: 'string',
-        description: 'Condition (encoded query or script)'
+        type: "string",
+        description: "Condition (encoded query or script)",
       },
       description: {
-        type: 'string',
-        description: 'Policy description'
+        type: "string",
+        description: "Policy description",
       },
       on_load: {
-        type: 'boolean',
-        description: 'Run on form load',
-        default: true
+        type: "boolean",
+        description: "Run on form load",
+        default: true,
       },
       reverse_if_false: {
-        type: 'boolean',
-        description: 'Reverse actions when condition is false',
-        default: true
+        type: "boolean",
+        description: "Reverse actions when condition is false",
+        default: true,
       },
       active: {
-        type: 'boolean',
-        description: 'Activate immediately',
-        default: true
+        type: "boolean",
+        description: "Activate immediately",
+        default: true,
       },
       actions: {
-        type: 'array',
-        description: 'UI Policy actions',
+        type: "array",
+        description: "UI Policy actions",
         items: {
-          type: 'object',
+          type: "object",
           properties: {
-            field_name: { type: 'string', description: 'Field to control' },
-            visible: { type: 'boolean', description: 'Make field visible' },
-            mandatory: { type: 'boolean', description: 'Make field mandatory' },
-            readonly: { type: 'boolean', description: 'Make field readonly' },
-            cleared: { type: 'boolean', description: 'Clear field value' }
+            field_name: { type: "string", description: "Field to control" },
+            visible: { type: "boolean", description: "Make field visible" },
+            mandatory: { type: "boolean", description: "Make field mandatory" },
+            readonly: { type: "boolean", description: "Make field readonly" },
+            cleared: { type: "boolean", description: "Clear field value" },
           },
-          required: ['field_name']
-        }
-      }
+          required: ["field_name"],
+        },
+      },
     },
-    required: ['name', 'table', 'actions']
-  }
-};
+    required: ["name", "table", "actions"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
     name,
     table,
-    condition = '',
-    description = '',
+    condition = "",
+    description = "",
     on_load = true,
     reverse_if_false = true,
     active = true,
-    actions = []
-  } = args;
+    actions = [],
+  } = args
 
   try {
-    const client = await getAuthenticatedClient(context);
+    const client = await getAuthenticatedClient(context)
 
     if (actions.length === 0) {
-      throw new Error('At least one action is required');
+      throw new Error("At least one action is required")
     }
 
     // Create UI Policy
@@ -118,17 +118,17 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       description,
       on_load,
       reverse_if_false,
-      active
-    };
+      active,
+    }
 
-    const policyResponse = await client.post('/api/now/table/sys_ui_policy', uiPolicyData);
-    const uiPolicy = policyResponse.data.result;
+    const policyResponse = await client.post("/api/now/table/sys_ui_policy", uiPolicyData)
+    const uiPolicy = policyResponse.data.result
 
     // Extract the sys_id properly - API can return string or object
-    const policySysId = extractSysId(uiPolicy.sys_id);
+    const policySysId = extractSysId(uiPolicy.sys_id)
 
     // Create UI Policy Actions
-    const createdActions = [];
+    const createdActions = []
     for (const action of actions) {
       const actionData: any = {
         ui_policy: policySysId,
@@ -136,11 +136,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         visible: action.visible !== undefined ? action.visible : true,
         mandatory: action.mandatory || false,
         readonly: action.readonly || false,
-        cleared: action.cleared || false
-      };
+        cleared: action.cleared || false,
+      }
 
-      const actionResponse = await client.post('/api/now/table/sys_ui_policy_action', actionData);
-      createdActions.push(actionResponse.data.result);
+      const actionResponse = await client.post("/api/now/table/sys_ui_policy_action", actionData)
+      createdActions.push(actionResponse.data.result)
     }
 
     return createSuccessResult({
@@ -150,33 +150,32 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         name: uiPolicy.short_description,
         table: uiPolicy.table,
         condition: uiPolicy.conditions,
-        on_load: uiPolicy.on_load === 'true',
-        reverse_if_false: uiPolicy.reverse_if_false === 'true',
-        active: uiPolicy.active === 'true'
+        on_load: uiPolicy.on_load === "true",
+        reverse_if_false: uiPolicy.reverse_if_false === "true",
+        active: uiPolicy.active === "true",
       },
-      actions: createdActions.map(action => ({
+      actions: createdActions.map((action) => ({
         sys_id: extractSysId(action.sys_id),
         field: action.field,
-        visible: action.visible === 'true',
-        mandatory: action.mandatory === 'true',
-        readonly: action.readonly === 'true',
-        cleared: action.cleared === 'true',
-        ui_policy_reference: policySysId
+        visible: action.visible === "true",
+        mandatory: action.mandatory === "true",
+        readonly: action.readonly === "true",
+        cleared: action.cleared === "true",
+        ui_policy_reference: policySysId,
       })),
       total_actions: createdActions.length,
       best_practices: [
-        'UI Policies are declarative - use instead of client scripts when possible',
-        'Conditions can be encoded queries or scripts',
-        'reverse_if_false makes policy bidirectional',
-        'Order matters when multiple policies affect same field',
-        'Test with different user roles and data'
-      ]
-    });
-
+        "UI Policies are declarative - use instead of client scripts when possible",
+        "Conditions can be encoded queries or scripts",
+        "reverse_if_false makes policy bidirectional",
+        "Order matters when multiple policies affect same field",
+        "Test with different user roles and data",
+      ],
+    })
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.1.0';
-export const author = 'Snow-Flow v8.41.16';
+export const version = "1.1.0"
+export const author = "Snow-Flow v8.41.16"

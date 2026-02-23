@@ -9,6 +9,7 @@ All ML tools have been migrated to the **Enterprise tier** (`snow-flow-enterpris
 ### Why the Move?
 
 Machine Learning is a **premium enterprise feature** comparable to:
+
 - ServiceNow Predictive Intelligence ($100k+/year)
 - Salesforce Einstein ($50-75/user/month)
 - Microsoft Dynamics 365 AI ($40-60/user/month)
@@ -20,6 +21,7 @@ Snow-Flow Enterprise includes ML at a fraction of the cost (80% savings).
 ## What Was Moved?
 
 **Track 1: ServiceNow PI Integration (5 tools)**
+
 - `pi_create_solution` - Create PI solution IN ServiceNow
 - `pi_train_solution` - Train PI model
 - `pi_activate_solution` - Activate trained model
@@ -27,6 +29,7 @@ Snow-Flow Enterprise includes ML at a fraction of the cost (80% savings).
 - `pi_list_solutions` - List all PI solutions
 
 **Track 2: TensorFlow.js Local (9 tools)**
+
 - `ml_train_incident_classifier` - Train LSTM neural network locally
 - `ml_classify_incident` - Predict with local model
 - `ml_train_anomaly_detector` - Train anomaly detection
@@ -53,6 +56,7 @@ npx @snow-flow/mcp-proxy --license-key SNOW-ENT-YOUR-LICENSE
 ```
 
 **Benefits:**
+
 - ✅ All 14 ML tools (Track 1 + 2)
 - ✅ 15 advanced Cloud ML tools (Q1 2026, Track 3)
 - ✅ Jira/Azure/Confluence integrations
@@ -68,10 +72,12 @@ Contact: enterprise@snow-flow.dev
 The ML tools were built using **open source technologies**:
 
 **Track 1 (ServiceNow PI):**
+
 - ServiceNow REST API (`/api/now/table/ml_solution_definition`)
 - Requires Predictive Intelligence plugin license from ServiceNow
 
 **Track 2 (TensorFlow.js Local):**
+
 - TensorFlow.js (`@tensorflow/tfjs`)
 - Node.js runtime
 - Local model training/serving
@@ -113,15 +119,18 @@ If you don't want Enterprise, consider ServiceNow's native features:
 For development/testing, consider these open source options:
 
 **Machine Learning:**
+
 - TensorFlow.js - https://www.tensorflow.org/js
 - Brain.js - https://brain.js.org/
 - ML5.js - https://ml5js.org/
 
 **Anomaly Detection:**
+
 - Isolation Forest (Python) - https://scikit-learn.org/
 - Prophet (Time Series) - https://facebook.github.io/prophet/
 
 **Forecasting:**
+
 - Prophet - https://facebook.github.io/prophet/
 - NeuralProphet - https://neuralprophet.com/
 

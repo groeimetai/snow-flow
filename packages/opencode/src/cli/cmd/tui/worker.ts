@@ -136,8 +136,7 @@ export const rpc = {
       directory: input.directory,
       init: InstanceBootstrap,
       fn: async () => {
-        if (Installation.isLocal())
-          return { success: false as const, error: "Cannot update from a local dev build" }
+        if (Installation.isLocal()) return { success: false as const, error: "Cannot update from a local dev build" }
         const method = await Installation.method()
         if (method === "unknown") return { success: false as const, error: "Unknown install method" }
         const latest = await Installation.latest(method).catch(() => undefined)

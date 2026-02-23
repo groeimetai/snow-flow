@@ -133,7 +133,7 @@ const baseStyles = `
       }
     }
   </style>
-`;
+`
 
 const logoSVG = `
   <svg class="logo-svg" viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -161,7 +161,7 @@ const logoSVG = `
     <!-- Text FLOW centered -->
     <text x="50" y="66" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#00D9FF" letter-spacing="-0.02em">FLOW</text>
   </svg>
-`;
+`
 
 const OAuthTemplates = {
   success: `
@@ -350,7 +350,7 @@ const OAuthTemplates = {
         </div>
       </body>
     </html>
-  `
+  `,
 }
 
 export interface ServiceNowAuthResult {
@@ -620,7 +620,7 @@ export class ServiceNowOAuth {
    */
   private isCodespace(): boolean {
     // Check multiple Codespace indicators
-    const hasCodespacesEnv = process.env.CODESPACES === 'true'
+    const hasCodespacesEnv = process.env.CODESPACES === "true"
     const hasCodespaceName = !!process.env.CODESPACE_NAME
     const hasForwardingDomain = !!process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN
 
@@ -629,7 +629,9 @@ export class ServiceNowOAuth {
       prompts.log.info(`🔍 Codespace detection:`)
       prompts.log.message(`   CODESPACES=${process.env.CODESPACES}`)
       prompts.log.message(`   CODESPACE_NAME=${process.env.CODESPACE_NAME}`)
-      prompts.log.message(`   GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN=${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`)
+      prompts.log.message(
+        `   GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN=${process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}`,
+      )
     }
 
     return hasCodespacesEnv || (hasCodespaceName && hasForwardingDomain)
@@ -712,13 +714,7 @@ export class ServiceNowOAuth {
         return { success: false, error: "No authorization code found in callback URL" }
       }
 
-      const tokenResult = await this.exchangeCodeForTokens(
-        instance,
-        clientId,
-        clientSecret,
-        code,
-        redirectUri,
-      )
+      const tokenResult = await this.exchangeCodeForTokens(instance, clientId, clientSecret, code, redirectUri)
 
       if (tokenResult.success && tokenResult.accessToken) {
         await Auth.set("servicenow", {
@@ -790,7 +786,13 @@ export class ServiceNowOAuth {
       // Start callback server
       // In remote environments (Codespaces, Gitpod, etc), the callback won't reach localhost
       // The user will be prompted to paste the callback URL after clicking Approve
-      const result = await this.startCallbackServer(port, normalizedInstance, options.clientId, options.clientSecret, redirectUri)
+      const result = await this.startCallbackServer(
+        port,
+        normalizedInstance,
+        options.clientId,
+        options.clientSecret,
+        redirectUri,
+      )
 
       if (result.success && result.accessToken) {
         // Save to SnowCode auth store
@@ -928,13 +930,7 @@ export class ServiceNowOAuth {
             // Exchange code for tokens
             const spinner = prompts.spinner()
             spinner.start("Exchanging authorization code for tokens")
-            const tokenResult = await this.exchangeCodeForTokens(
-              instance,
-              clientId,
-              clientSecret,
-              code,
-              redirectUri
-            )
+            const tokenResult = await this.exchangeCodeForTokens(instance, clientId, clientSecret, code, redirectUri)
 
             if (tokenResult.success) {
               res.writeHead(200, { "Content-Type": "text/html" })
@@ -984,7 +980,7 @@ export class ServiceNowOAuth {
           prompts.log.message("")
 
           // Wait a bit to see if automatic callback works (unlikely in Codespaces)
-          await new Promise(resolve => setTimeout(resolve, 3000))
+          await new Promise((resolve) => setTimeout(resolve, 3000))
 
           if (!resolved) {
             try {
@@ -999,13 +995,13 @@ export class ServiceNowOAuth {
                     return "URL must contain '/callback'"
                   }
                   return undefined
-                }
+                },
               })
 
               if (!prompts.isCancel(callbackUrl) && callbackUrl && callbackUrl.trim() !== "") {
                 // Parse the pasted URL
                 try {
-                  const parsedUrl = new URL(callbackUrl.replace('localhost:3005', 'localhost:' + port))
+                  const parsedUrl = new URL(callbackUrl.replace("localhost:3005", "localhost:" + port))
                   const code = parsedUrl.searchParams.get("code")
                   const error = parsedUrl.searchParams.get("error")
                   const state = parsedUrl.searchParams.get("state")
@@ -1036,7 +1032,7 @@ export class ServiceNowOAuth {
                       clientId,
                       clientSecret,
                       code,
-                      redirectUri
+                      redirectUri,
                     )
 
                     if (tokenResult.success) {

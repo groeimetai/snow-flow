@@ -185,7 +185,9 @@ body {
   border-radius: 8px;
   color: var(--fg-muted);
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 
 #disconnect-btn:active {

@@ -53,7 +53,11 @@ export type PromptRef = {
   submit(): void
 }
 
-const PLACEHOLDERS = ["Create a Business Rule for incident assignment", "Query all active incidents assigned to me", "Deploy a widget to the Service Portal"]
+const PLACEHOLDERS = [
+  "Create a Business Rule for incident assignment",
+  "Query all active incidents assigned to me",
+  "Deploy a widget to the Service Portal",
+]
 
 export function Prompt(props: PromptProps) {
   let input: TextareaRenderable
@@ -981,9 +985,7 @@ export function Prompt(props: PromptProps) {
             <Show when={updatedVersion()}>
               <box flexDirection="row" gap={1} flexShrink={0}>
                 <text fg={theme.success}>↑</text>
-                <text fg={theme.textMuted}>
-                  Updated to v{updatedVersion()} · restart to apply
-                </text>
+                <text fg={theme.textMuted}>Updated to v{updatedVersion()} · restart to apply</text>
               </box>
             </Show>
           </box>

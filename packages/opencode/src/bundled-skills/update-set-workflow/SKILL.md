@@ -20,14 +20,14 @@ ALWAYS create or ensure an Update Set is active before making changes:
 
 ```javascript
 // Step 1: Check current Update Set
-var current = await snow_update_set_current();
+var current = await snow_update_set_current()
 
 // Step 2: If no Update Set or using Default, create one
-if (!current || current.name === 'Default') {
+if (!current || current.name === "Default") {
   await snow_update_set_create({
     name: "Feature: [Descriptive Name]",
-    description: "What and why this change is being made"
-  });
+    description: "What and why this change is being made",
+  })
 }
 
 // Step 3: Now safe to make changes
@@ -35,18 +35,18 @@ if (!current || current.name === 'Default') {
 
 // Step 4: When done, complete the Update Set
 await snow_update_set_complete({
-  update_set_id: current.sys_id
-});
+  update_set_id: current.sys_id,
+})
 ```
 
 ## Update Set Naming Conventions
 
-| Type | Format | Example |
-|------|--------|---------|
-| Feature | `Feature: [Name]` | `Feature: Incident Auto-Assignment` |
-| Bug Fix | `Fix: [Issue]` | `Fix: Approval Email Not Sending` |
+| Type        | Format                | Example                              |
+| ----------- | --------------------- | ------------------------------------ |
+| Feature     | `Feature: [Name]`     | `Feature: Incident Auto-Assignment`  |
+| Bug Fix     | `Fix: [Issue]`        | `Fix: Approval Email Not Sending`    |
 | Enhancement | `Enhancement: [Name]` | `Enhancement: Dashboard Performance` |
-| Hotfix | `Hotfix: [Issue]` | `Hotfix: Critical Login Bug` |
+| Hotfix      | `Hotfix: [Issue]`     | `Hotfix: Critical Login Bug`         |
 
 ## Update Set Lifecycle
 
@@ -57,6 +57,7 @@ await snow_update_set_complete({
 ## What Gets Tracked
 
 Update Sets automatically capture changes to:
+
 - Tables and columns
 - Business Rules
 - Script Includes
@@ -82,26 +83,26 @@ Update Sets automatically capture changes to:
 // Create new Update Set
 snow_update_set_create({
   name: "Feature: My Feature",
-  description: "Description of changes"
-});
+  description: "Description of changes",
+})
 
 // Switch to existing Update Set
 snow_update_set_switch({
-  update_set_id: "sys_id_here"
-});
+  update_set_id: "sys_id_here",
+})
 
 // Get current Update Set
-snow_update_set_current();
+snow_update_set_current()
 
 // Complete Update Set
 snow_update_set_complete({
-  update_set_id: "sys_id_here"
-});
+  update_set_id: "sys_id_here",
+})
 
 // Export Update Set as XML
 snow_update_set_export({
-  update_set_id: "sys_id_here"
-});
+  update_set_id: "sys_id_here",
+})
 ```
 
 ## Best Practices

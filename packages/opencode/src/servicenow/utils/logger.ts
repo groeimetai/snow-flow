@@ -8,47 +8,44 @@
  * - Silent mode available via SNOW_FLOW_SILENT_LOGS=true
  */
 
-import winston from 'winston';
-import path from 'path';
-import os from 'os';
-import fs from 'fs';
+import winston from "winston"
+import path from "path"
+import os from "os"
+import fs from "fs"
 
 // Centralized log directory in user's home
-const LOG_DIR = path.join(os.homedir(), '.snow-flow', 'logs');
+const LOG_DIR = path.join(os.homedir(), ".snow-flow", "logs")
 
 // Ensure log directory exists
 if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
+  fs.mkdirSync(LOG_DIR, { recursive: true })
 }
 
 export class Logger {
-  private logger: winston.Logger;
+  private logger: winston.Logger
 
   constructor(agentName: string) {
     // Check if logging should be silent (for production/quiet mode)
-    const isSilent = process.env.SNOW_FLOW_SILENT_LOGS === 'true';
+    const isSilent = process.env.SNOW_FLOW_SILENT_LOGS === "true"
 
     // Check if verbose mode is enabled
-    const isVerbose = process.env.LOG_LEVEL === 'verbose' || process.env.LOG_LEVEL === 'debug';
+    const isVerbose = process.env.LOG_LEVEL === "verbose" || process.env.LOG_LEVEL === "debug"
 
     // Only log errors in production, or respect LOG_LEVEL
-    const logLevel = isSilent ? 'error' : (process.env.LOG_LEVEL || 'warn');
+    const logLevel = isSilent ? "error" : process.env.LOG_LEVEL || "warn"
 
-    const transports: winston.transport[] = [];
+    const transports: winston.transport[] = []
 
     // Console transport - only in verbose mode or for errors
     if (!isSilent) {
       transports.push(
         new winston.transports.Console({
           format: isVerbose
-            ? winston.format.combine(
-                winston.format.colorize(),
-                winston.format.simple()
-              )
+            ? winston.format.combine(winston.format.colorize(), winston.format.simple())
             : winston.format.printf((info) => `${info.message}`),
-          stderrLevels: ['error', 'warn', 'info', 'debug', 'verbose', 'silly']
-        })
-      );
+          stderrLevels: ["error", "warn", "info", "debug", "verbose", "silly"],
+        }),
+      )
     }
 
     // File transports with rotation
@@ -56,47 +53,47 @@ export class Logger {
     transports.push(
       new winston.transports.File({
         filename: path.join(LOG_DIR, `${agentName}-error.log`),
-        level: 'error',
+        level: "error",
         maxsize: 5 * 1024 * 1024, // 5MB
         maxFiles: 3,
-        tailable: true
+        tailable: true,
       }),
       new winston.transports.File({
         filename: path.join(LOG_DIR, `${agentName}.log`),
         maxsize: 5 * 1024 * 1024, // 5MB
         maxFiles: 3,
-        tailable: true
-      })
-    );
+        tailable: true,
+      }),
+    )
 
     this.logger = winston.createLogger({
       level: logLevel,
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
-        winston.format.json()
+        winston.format.json(),
       ),
       defaultMeta: { agent: agentName },
-      transports
-    });
+      transports,
+    })
   }
 
   info(message: string, meta?: any): void {
-    this.logger.info(message, meta);
+    this.logger.info(message, meta)
   }
 
   error(message: string, meta?: any): void {
-    this.logger.error(message, meta);
+    this.logger.error(message, meta)
   }
 
   warn(message: string, meta?: any): void {
-    this.logger.warn(message, meta);
+    this.logger.warn(message, meta)
   }
 
   debug(message: string, meta?: any): void {
-    this.logger.debug(message, meta);
+    this.logger.debug(message, meta)
   }
 }
 
 // Create a default logger instance
-export const logger = new Logger('snow-flow');
+export const logger = new Logger("snow-flow")

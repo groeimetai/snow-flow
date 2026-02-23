@@ -129,7 +129,10 @@ export namespace Server {
         .route("/tui", TuiClientRoutes())
         .use(async (c, next) => {
           let directory =
-            c.req.query("directory") || c.req.header("x-opencode-directory") || Flag.OPENCODE_DEFAULT_DIRECTORY || process.cwd()
+            c.req.query("directory") ||
+            c.req.header("x-opencode-directory") ||
+            Flag.OPENCODE_DEFAULT_DIRECTORY ||
+            process.cwd()
           try {
             directory = decodeURIComponent(directory)
           } catch {

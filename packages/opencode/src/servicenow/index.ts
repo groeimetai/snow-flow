@@ -65,9 +65,7 @@ export function getDefaultServiceNowMcpConfig() {
 export async function isServiceNowConfigured(): Promise<boolean> {
   // Check environment variables
   const hasEnvConfig =
-    process.env.SERVICENOW_INSTANCE_URL &&
-    process.env.SERVICENOW_CLIENT_ID &&
-    process.env.SERVICENOW_CLIENT_SECRET
+    process.env.SERVICENOW_INSTANCE_URL && process.env.SERVICENOW_CLIENT_ID && process.env.SERVICENOW_CLIENT_SECRET
 
   if (hasEnvConfig) return true
 

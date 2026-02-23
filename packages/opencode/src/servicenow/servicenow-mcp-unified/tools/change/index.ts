@@ -7,5 +7,5 @@
  */
 
 // Merged Tools (v8.2.0)
-export { toolDefinition as snow_change_manage_def, execute as snow_change_manage_exec } from './snow_change_manage.js';
-export { toolDefinition as snow_change_query_def, execute as snow_change_query_exec } from './snow_change_query.js';
+export { toolDefinition as snow_change_manage_def, execute as snow_change_manage_exec } from "./snow_change_manage.js"
+export { toolDefinition as snow_change_query_def, execute as snow_change_query_exec } from "./snow_change_query.js"

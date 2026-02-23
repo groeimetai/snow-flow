@@ -31,7 +31,7 @@ async function ensureAgentsMd() {
     }
   } catch (error) {
     Log.Default.warn("failed to create AGENTS.md", {
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     })
   }
 }

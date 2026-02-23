@@ -10,8 +10,8 @@
  */
 
 // Merged Tools (v8.2.0 Phase 2)
-export { toolDefinition as snow_pa_create_def, execute as snow_pa_create_exec } from './snow_pa_create.js';
-export { toolDefinition as snow_pa_discover_def, execute as snow_pa_discover_exec } from './snow_pa_discover.js';
+export { toolDefinition as snow_pa_create_def, execute as snow_pa_create_exec } from "./snow_pa_create.js"
+export { toolDefinition as snow_pa_discover_def, execute as snow_pa_discover_exec } from "./snow_pa_discover.js"
 
 // Merged Tools (v8.2.0 Phase 3)
-export { toolDefinition as snow_pa_operate_def, execute as snow_pa_operate_exec } from './snow_pa_operate.js';
+export { toolDefinition as snow_pa_operate_def, execute as snow_pa_operate_exec } from "./snow_pa_operate.js"

@@ -3,32 +3,32 @@
  * Provides agent context awareness and tracking for all MCP tools
  */
 
-import { MCPMemoryManager, AgentContext } from './mcp-memory-manager.js';
-import { Logger } from '../utils/logger.js';
+import { MCPMemoryManager, AgentContext } from "./mcp-memory-manager.js"
+import { Logger } from "../utils/logger.js"
 
 export interface MCPOperationContext {
-  session_id: string;
-  agent_id: string;
-  agent_type: string;
-  operation_name: string;
-  mcp_server: string;
+  session_id: string
+  agent_id: string
+  agent_type: string
+  operation_name: string
+  mcp_server: string
 }
 
 export interface OperationResult<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  duration_ms: number;
-  memory_updates?: Record<string, any>;
+  success: boolean
+  data?: T
+  error?: string
+  duration_ms: number
+  memory_updates?: Record<string, any>
 }
 
 export class AgentContextProvider {
-  private memory: MCPMemoryManager;
-  private logger: Logger;
+  private memory: MCPMemoryManager
+  private logger: Logger
 
   constructor() {
-    this.memory = MCPMemoryManager.getInstance();
-    this.logger = new Logger('AgentContextProvider');
+    this.memory = MCPMemoryManager.getInstance()
+    this.logger = new Logger("AgentContextProvider")
   }
 
   /**
@@ -37,7 +37,7 @@ export class AgentContextProvider {
   extractAgentContext(args: any): AgentContext {
     // Check if agent context is provided in args
     if (args.agent_context) {
-      return args.agent_context;
+      return args.agent_context
     }
 
     // Check for session_id and agent_id in args
@@ -45,31 +45,28 @@ export class AgentContextProvider {
       return {
         session_id: args.session_id,
         agent_id: args.agent_id,
-        agent_type: args.agent_type || 'unknown'
-      };
+        agent_type: args.agent_type || "unknown",
+      }
     }
 
     // Check environment variables (for backward compatibility)
-    const session_id = process.env.SNOW_FLOW_SESSION_ID || `session_${Date.now()}`;
-    const agent_id = process.env.SNOW_FLOW_AGENT_ID || `agent_${Date.now()}`;
-    const agent_type = process.env.SNOW_FLOW_AGENT_TYPE || 'mcp_direct';
+    const session_id = process.env.SNOW_FLOW_SESSION_ID || `session_${Date.now()}`
+    const agent_id = process.env.SNOW_FLOW_AGENT_ID || `agent_${Date.now()}`
+    const agent_type = process.env.SNOW_FLOW_AGENT_TYPE || "mcp_direct"
 
     return {
       session_id,
       agent_id,
-      agent_type
-    };
+      agent_type,
+    }
   }
 
   /**
    * Execute an MCP operation with full agent context tracking
    */
-  async executeWithContext<T>(
-    context: MCPOperationContext,
-    operation: () => Promise<T>
-  ): Promise<OperationResult<T>> {
-    const startTime = Date.now();
-    const { session_id, agent_id, operation_name } = context;
+  async executeWithContext<T>(context: MCPOperationContext, operation: () => Promise<T>): Promise<OperationResult<T>> {
+    const startTime = Date.now()
+    const { session_id, agent_id, operation_name } = context
 
     try {
       // Update agent coordination - mark as active
@@ -77,14 +74,14 @@ export class AgentContextProvider {
         session_id,
         agent_id,
         agent_type: context.agent_type,
-        status: 'active',
+        status: "active",
         current_tool: operation_name,
-        progress_percentage: 0
-      });
+        progress_percentage: 0,
+      })
 
       // Execute the operation
-      const result = await operation();
-      const duration = Date.now() - startTime;
+      const result = await operation()
+      const duration = Date.now() - startTime
 
       // Track performance
       await this.memory.trackPerformance({
@@ -92,26 +89,25 @@ export class AgentContextProvider {
         agent_id,
         operation_name,
         duration_ms: duration,
-        success: true
-      });
+        success: true,
+      })
 
       // Update progress
       await this.memory.updateAgentCoordination({
         session_id,
         agent_id,
         progress_percentage: 100,
-        current_tool: null
-      });
+        current_tool: null,
+      })
 
       return {
         success: true,
         data: result,
-        duration_ms: duration
-      };
-
+        duration_ms: duration,
+      }
     } catch (error) {
-      const duration = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const duration = Date.now() - startTime
+      const errorMessage = error instanceof Error ? error.message : String(error)
 
       // Track failed operation
       await this.memory.trackPerformance({
@@ -120,42 +116,38 @@ export class AgentContextProvider {
         operation_name,
         duration_ms: duration,
         success: false,
-        error_message: errorMessage
-      });
+        error_message: errorMessage,
+      })
 
       // Update agent status with error
       await this.memory.updateAgentCoordination({
         session_id,
         agent_id,
-        status: 'blocked',
+        status: "blocked",
         error_state: errorMessage,
-        current_tool: null
-      });
+        current_tool: null,
+      })
 
       return {
         success: false,
         error: errorMessage,
-        duration_ms: duration
-      };
+        duration_ms: duration,
+      }
     }
   }
 
   /**
    * Report progress during long-running operations
    */
-  async reportProgress(
-    context: AgentContext,
-    progress: number,
-    phase?: string
-  ): Promise<void> {
+  async reportProgress(context: AgentContext, progress: number, phase?: string): Promise<void> {
     try {
       await this.memory.updateAgentCoordination({
         session_id: context.session_id,
         agent_id: context.agent_id,
         agent_type: context.agent_type,
         progress_percentage: Math.min(100, Math.max(0, progress)),
-        current_tool: phase
-      });
+        current_tool: phase,
+      })
 
       // Optionally update shared context with detailed progress
       if (phase) {
@@ -165,13 +157,13 @@ export class AgentContextProvider {
           context_value: JSON.stringify({
             progress,
             phase,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           }),
-          created_by_agent: context.agent_id
-        });
+          created_by_agent: context.agent_id,
+        })
       }
     } catch (error) {
-      this.logger.error('Failed to report progress', error);
+      this.logger.error("Failed to report progress", error)
     }
   }
 
@@ -182,25 +174,25 @@ export class AgentContextProvider {
     from_context: AgentContext,
     to_agent: string,
     artifact_info: {
-      type: string;
-      sys_id: string;
-      next_steps: string[];
-    }
+      type: string
+      sys_id: string
+      next_steps: string[]
+    },
   ): Promise<void> {
     try {
       await this.memory.sendAgentMessage({
         session_id: from_context.session_id,
         from_agent: from_context.agent_id,
         to_agent,
-        message_type: 'handoff',
+        message_type: "handoff",
         content: JSON.stringify({
           artifact_type: artifact_info.type,
           artifact_sys_id: artifact_info.sys_id,
           next_steps: artifact_info.next_steps,
-          handoff_time: new Date().toISOString()
+          handoff_time: new Date().toISOString(),
         }),
-        artifact_reference: artifact_info.sys_id
-      });
+        artifact_reference: artifact_info.sys_id,
+      })
 
       // Update shared context for the handoff
       await this.memory.updateSharedContext({
@@ -210,15 +202,15 @@ export class AgentContextProvider {
           sys_id: artifact_info.sys_id,
           ready: true,
           from_agent: from_context.agent_id,
-          next_steps: artifact_info.next_steps
+          next_steps: artifact_info.next_steps,
         }),
-        created_by_agent: from_context.agent_id
-      });
+        created_by_agent: from_context.agent_id,
+      })
 
-      this.logger.info(`Notified handoff from ${from_context.agent_id} to ${to_agent}`);
+      this.logger.info(`Notified handoff from ${from_context.agent_id} to ${to_agent}`)
     } catch (error) {
-      this.logger.error('Failed to notify handoff', error);
-      throw error;
+      this.logger.error("Failed to notify handoff", error)
+      throw error
     }
   }
 
@@ -227,25 +219,22 @@ export class AgentContextProvider {
    */
   async checkForHandoffs(context: AgentContext): Promise<any[]> {
     try {
-      const messages = await this.memory.checkForMessages(
-        context.agent_id,
-        context.session_id
-      );
+      const messages = await this.memory.checkForMessages(context.agent_id, context.session_id)
 
       const handoffs = messages
-        .filter(m => m.message_type === 'handoff')
-        .map(m => {
+        .filter((m) => m.message_type === "handoff")
+        .map((m) => {
           try {
-            return JSON.parse(m.content);
+            return JSON.parse(m.content)
           } catch {
-            return m.content;
+            return m.content
           }
-        });
+        })
 
-      return handoffs;
+      return handoffs
     } catch (error) {
-      this.logger.error('Failed to check for handoffs', error);
-      return [];
+      this.logger.error("Failed to check for handoffs", error)
+      return []
     }
   }
 
@@ -255,13 +244,13 @@ export class AgentContextProvider {
   async storeArtifact(
     context: AgentContext,
     artifact: {
-      sys_id: string;
-      type: string;
-      name: string;
-      description?: string;
-      config?: any;
-      update_set_id?: string;
-    }
+      sys_id: string
+      type: string
+      name: string
+      description?: string
+      config?: any
+      update_set_id?: string
+    },
   ): Promise<void> {
     try {
       await this.memory.storeArtifact({
@@ -271,10 +260,10 @@ export class AgentContextProvider {
         description: artifact.description,
         created_by_agent: context.agent_id,
         session_id: context.session_id,
-        deployment_status: 'created',
+        deployment_status: "created",
         update_set_id: artifact.update_set_id,
-        metadata: artifact.config ? JSON.stringify(artifact.config) : undefined
-      });
+        metadata: artifact.config ? JSON.stringify(artifact.config) : undefined,
+      })
 
       // Update shared context
       await this.memory.updateSharedContext({
@@ -283,15 +272,15 @@ export class AgentContextProvider {
         context_value: JSON.stringify({
           sys_id: artifact.sys_id,
           created_by: context.agent_id,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         }),
-        created_by_agent: context.agent_id
-      });
+        created_by_agent: context.agent_id,
+      })
 
-      this.logger.info(`Stored artifact ${artifact.name} (${artifact.sys_id})`);
+      this.logger.info(`Stored artifact ${artifact.name} (${artifact.sys_id})`)
     } catch (error) {
-      this.logger.error('Failed to store artifact', error);
-      throw error;
+      this.logger.error("Failed to store artifact", error)
+      throw error
     }
   }
 
@@ -301,41 +290,41 @@ export class AgentContextProvider {
   async requestQueenIntervention(
     context: AgentContext,
     issue: {
-      type: string;
-      priority: 'low' | 'medium' | 'high' | 'critical';
-      description: string;
-      attempted_solutions?: string[];
-    }
+      type: string
+      priority: "low" | "medium" | "high" | "critical"
+      description: string
+      attempted_solutions?: string[]
+    },
   ): Promise<void> {
     try {
       await this.memory.sendAgentMessage({
         session_id: context.session_id,
         from_agent: context.agent_id,
-        to_agent: 'queen_agent',
-        message_type: 'error',
+        to_agent: "queen_agent",
+        message_type: "error",
         content: JSON.stringify({
           issue_type: issue.type,
           priority: issue.priority,
           description: issue.description,
           attempted_solutions: issue.attempted_solutions || [],
           requesting_agent: context.agent_id,
-          timestamp: new Date().toISOString()
-        })
-      });
+          timestamp: new Date().toISOString(),
+        }),
+      })
 
       // Update agent status to blocked
       await this.memory.updateAgentCoordination({
         session_id: context.session_id,
         agent_id: context.agent_id,
         agent_type: context.agent_type,
-        status: 'blocked',
-        error_state: issue.description
-      });
+        status: "blocked",
+        error_state: issue.description,
+      })
 
-      this.logger.warn(`Requested Queen intervention for ${issue.type}`);
+      this.logger.warn(`Requested Queen intervention for ${issue.type}`)
     } catch (error) {
-      this.logger.error('Failed to request Queen intervention', error);
-      throw error;
+      this.logger.error("Failed to request Queen intervention", error)
+      throw error
     }
   }
 
@@ -344,10 +333,10 @@ export class AgentContextProvider {
    */
   async getSessionArtifacts(session_id: string): Promise<any[]> {
     try {
-      return await this.memory.getSessionArtifacts(session_id);
+      return await this.memory.getSessionArtifacts(session_id)
     } catch (error) {
-      this.logger.error('Failed to get session artifacts', error);
-      return [];
+      this.logger.error("Failed to get session artifacts", error)
+      return []
     }
   }
 
@@ -356,10 +345,10 @@ export class AgentContextProvider {
    */
   async getSessionContext(session_id: string): Promise<any> {
     try {
-      return await this.memory.getSessionContext(session_id);
+      return await this.memory.getSessionContext(session_id)
     } catch (error) {
-      this.logger.error('Failed to get session context', error);
-      return {};
+      this.logger.error("Failed to get session context", error)
+      return {}
     }
   }
 }

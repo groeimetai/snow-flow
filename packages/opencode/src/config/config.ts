@@ -426,9 +426,12 @@ export namespace Config {
           if (enterpriseData.token && enterpriseData.subdomain) {
             if (!result["servicenow-unified"]) {
               const sessionId = getCurrentSessionId()
-              log.info("auto-configuring servicenow-unified MCP server from enterprise.json (credentials fetched at runtime)", {
-                subdomain: enterpriseData.subdomain,
-              })
+              log.info(
+                "auto-configuring servicenow-unified MCP server from enterprise.json (credentials fetched at runtime)",
+                {
+                  subdomain: enterpriseData.subdomain,
+                },
+              )
               result["servicenow-unified"] = {
                 type: "local",
                 command: getMcpServerCommand("servicenow-unified"),
@@ -1295,7 +1298,12 @@ export namespace Config {
       instructions: z.array(z.string()).optional().describe("Additional instruction files or patterns to include"),
       layout: Layout.optional().describe("@deprecated Always uses stretch layout."),
       permission: Permission.optional(),
-      tools: z.record(z.string(), z.boolean()).optional().describe("Enable/disable specific tools. Web tools (webfetch, websearch, codesearch) are disabled by default."),
+      tools: z
+        .record(z.string(), z.boolean())
+        .optional()
+        .describe(
+          "Enable/disable specific tools. Web tools (webfetch, websearch, codesearch) are disabled by default.",
+        ),
       enterprise: z
         .object({
           url: z.string().optional().describe("Enterprise URL"),
@@ -1534,9 +1542,7 @@ export namespace Config {
   }
 
   function globalConfigFile() {
-    const candidates = ["snow-code.jsonc", "snow-code.json"].map((file) =>
-      path.join(Global.Path.config, file),
-    )
+    const candidates = ["snow-code.jsonc", "snow-code.json"].map((file) => path.join(Global.Path.config, file))
     for (const file of candidates) {
       if (existsSync(file)) return file
     }

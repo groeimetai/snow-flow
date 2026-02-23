@@ -582,12 +582,7 @@ export namespace SessionPrompt {
       // Ephemerally wrap queued user messages with a reminder to stay on track.
       // Uses a targeted shallow clone: only messages/parts that need mutation are copied.
       const sessionMessages = msgs.map((msg) => {
-        if (
-          step > 1 &&
-          lastFinished &&
-          msg.info.role === "user" &&
-          msg.info.id > lastFinished.id
-        ) {
+        if (step > 1 && lastFinished && msg.info.role === "user" && msg.info.id > lastFinished.id) {
           return {
             info: msg.info,
             parts: msg.parts.map((part) => {

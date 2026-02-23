@@ -4,91 +4,90 @@
  * Handles OAuth2 flow for ServiceNow integration (Claude-style)
  */
 
-import { promises as fs, existsSync } from 'fs';
-import { join } from 'path';
-import os from 'os';
-import { createServer } from 'http';
-import { URL } from 'url';
-import axios from 'axios';
-import https from 'https';
-import net from 'net';
-import crypto from 'crypto';
-import * as prompts from '@clack/prompts';
-import { snowFlowConfig } from '../config/snow-flow-config.js';
-import { unifiedAuthStore } from './unified-auth-store.js';
-import { OAuthTemplates } from './oauth-html-templates.js';
+import { promises as fs, existsSync } from "fs"
+import { join } from "path"
+import os from "os"
+import { createServer } from "http"
+import { URL } from "url"
+import axios from "axios"
+import https from "https"
+import net from "net"
+import crypto from "crypto"
+import * as prompts from "@clack/prompts"
+import { snowFlowConfig } from "../config/snow-flow-config.js"
+import { unifiedAuthStore } from "./unified-auth-store.js"
+import { OAuthTemplates } from "./oauth-html-templates.js"
 
 export interface ServiceNowAuthResult {
-  success: boolean;
-  accessToken?: string;
-  refreshToken?: string;
-  expiresIn?: number;
-  error?: string;
+  success: boolean
+  accessToken?: string
+  refreshToken?: string
+  expiresIn?: number
+  error?: string
 }
 
 export interface ServiceNowCredentials {
-  instance: string;
-  clientId: string;
-  clientSecret: string;
-  accessToken?: string;
-  refreshToken?: string;
-  expiresAt?: string;
+  instance: string
+  clientId: string
+  clientSecret: string
+  accessToken?: string
+  refreshToken?: string
+  expiresAt?: string
 }
 
 interface OAuthCredentials {
-  instance: string;
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
+  instance: string
+  clientId: string
+  clientSecret: string
+  redirectUri: string
 }
 
 export class ServiceNowOAuth {
-  private credentials?: OAuthCredentials;
-  private tokenPath: string;
-  private stateParameter?: string;
-  private codeVerifier?: string;
-  private codeChallenge?: string;
-  
+  private credentials?: OAuthCredentials
+  private tokenPath: string
+  private stateParameter?: string
+  private codeVerifier?: string
+  private codeChallenge?: string
+
   // 🔒 SEC-002 FIX: Add rate limiting to prevent authentication bypass attacks
-  private lastTokenRequest: number = 0;
-  private tokenRequestCount: number = 0;
-  private readonly TOKEN_REQUEST_WINDOW_MS = 60000; // 1 minute window
-  private readonly MAX_TOKEN_REQUESTS_PER_WINDOW = 10; // Max 10 token requests per minute
+  private lastTokenRequest: number = 0
+  private tokenRequestCount: number = 0
+  private readonly TOKEN_REQUEST_WINDOW_MS = 60000 // 1 minute window
+  private readonly MAX_TOKEN_REQUESTS_PER_WINDOW = 10 // Max 10 token requests per minute
 
   constructor() {
     // Store tokens in user's home directory
-    const configDir = process.env.SNOW_FLOW_HOME || join(os.homedir(), '.snow-flow');
-    this.tokenPath = join(configDir, 'auth.json');
+    const configDir = process.env.SNOW_FLOW_HOME || join(os.homedir(), ".snow-flow")
+    this.tokenPath = join(configDir, "auth.json")
   }
 
   /**
    * 🔒 SEC-002 FIX: Check rate limiting for token requests to prevent brute force attacks
    */
   private checkTokenRequestRateLimit(): boolean {
-    const now = Date.now();
-    
+    const now = Date.now()
+
     // Reset counter if window has passed
     if (now - this.lastTokenRequest > this.TOKEN_REQUEST_WINDOW_MS) {
-      this.tokenRequestCount = 0;
-      this.lastTokenRequest = now;
+      this.tokenRequestCount = 0
+      this.lastTokenRequest = now
     }
-    
+
     // Check if within rate limit
     if (this.tokenRequestCount >= this.MAX_TOKEN_REQUESTS_PER_WINDOW) {
-      prompts.log.warn('Rate limit exceeded: Too many token requests. Please wait before retrying.');
-      return false;
+      prompts.log.warn("Rate limit exceeded: Too many token requests. Please wait before retrying.")
+      return false
     }
-    
-    this.tokenRequestCount++;
-    return true;
+
+    this.tokenRequestCount++
+    return true
   }
 
   /**
    * Generate a random state parameter for CSRF protection
    */
   private generateState(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   }
 
   /**
@@ -96,12 +95,12 @@ export class ServiceNowOAuth {
    */
   private generatePKCE() {
     // Generate code verifier (43-128 characters)
-    this.codeVerifier = crypto.randomBytes(32).toString('base64url');
-    
+    this.codeVerifier = crypto.randomBytes(32).toString("base64url")
+
     // Generate code challenge (SHA256 hash of verifier)
-    const hash = crypto.createHash('sha256');
-    hash.update(this.codeVerifier);
-    this.codeChallenge = hash.digest('base64url');
+    const hash = crypto.createHash("sha256")
+    hash.update(this.codeVerifier)
+    this.codeChallenge = hash.digest("base64url")
   }
 
   /**
@@ -109,20 +108,19 @@ export class ServiceNowOAuth {
    */
   private async checkPortAvailable(port: number): Promise<boolean> {
     return new Promise((resolve) => {
-      const server = net.createServer();
-      
-      server.on('error', () => {
-        resolve(false);
-      });
-      
+      const server = net.createServer()
+
+      server.on("error", () => {
+        resolve(false)
+      })
+
       server.listen(port, () => {
         server.close(() => {
-          resolve(true);
-        });
-      });
-    });
+          resolve(true)
+        })
+      })
+    })
   }
-
 
   /**
    * 🔧 CRIT-002 FIX: Normalize instance URL to prevent trailing slash 400 errors
@@ -130,153 +128,157 @@ export class ServiceNowOAuth {
   private normalizeInstanceUrl(instance: string): string {
     // Remove any trailing slashes that cause 400 errors
     // SECURITY: Use trimEnd + while loop instead of regex to avoid ReDoS
-    let normalized = instance;
-    while (normalized.endsWith('/')) {
-      normalized = normalized.slice(0, -1);
+    let normalized = instance
+    while (normalized.endsWith("/")) {
+      normalized = normalized.slice(0, -1)
     }
 
     // Add https:// if missing
-    if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
-      normalized = `https://${normalized}`;
+    if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+      normalized = `https://${normalized}`
     }
 
     // SECURITY: Use URL parsing to validate hostname instead of string includes
     try {
-      const parsed = new URL(normalized);
-      const hostname = parsed.hostname.toLowerCase();
+      const parsed = new URL(normalized)
+      const hostname = parsed.hostname.toLowerCase()
 
       // Check if it's already a valid ServiceNow or local URL
-      const isServiceNow = hostname.endsWith('.service-now.com') || hostname.endsWith('.servicenow.com');
-      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
+      const isServiceNow = hostname.endsWith(".service-now.com") || hostname.endsWith(".servicenow.com")
+      const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.")
 
       if (!isServiceNow && !isLocal) {
         // Assume it's just the instance name, append .service-now.com
-        normalized = `https://${hostname}.service-now.com`;
+        normalized = `https://${hostname}.service-now.com`
       }
     } catch {
       // If URL parsing fails, treat input as instance name
-      const instanceName = normalized.replace(/^https?:\/\//, '');
-      normalized = `https://${instanceName}.service-now.com`;
+      const instanceName = normalized.replace(/^https?:\/\//, "")
+      normalized = `https://${instanceName}.service-now.com`
     }
 
-    return normalized;
+    return normalized
   }
 
   /**
    * 🎯 NEW: Simplified OAuth flow with code paste (Claude-style)
    * No local server required - user manually pastes authorization code
    */
-  async authenticateWithCodePaste(instance: string, clientId: string, clientSecret: string): Promise<ServiceNowAuthResult> {
+  async authenticateWithCodePaste(
+    instance: string,
+    clientId: string,
+    clientSecret: string,
+  ): Promise<ServiceNowAuthResult> {
     try {
       // Normalize instance URL
-      const normalizedInstance = this.normalizeInstanceUrl(instance);
+      const normalizedInstance = this.normalizeInstanceUrl(instance)
 
       // Validate client secret
-      const secretValidation = this.validateClientSecret(clientSecret);
+      const secretValidation = this.validateClientSecret(clientSecret)
       if (!secretValidation.valid) {
-        prompts.log.error(`Invalid OAuth Client Secret: ${secretValidation.reason}`);
-        prompts.log.info('To get a valid OAuth secret:');
-        prompts.log.message('   1. Log into ServiceNow as admin');
-        prompts.log.message('   2. Navigate to: System OAuth > Application Registry');
-        prompts.log.message('   3. Create a new OAuth application');
-        prompts.log.message('   4. Copy the generated Client Secret (long random string)');
+        prompts.log.error(`Invalid OAuth Client Secret: ${secretValidation.reason}`)
+        prompts.log.info("To get a valid OAuth secret:")
+        prompts.log.message("   1. Log into ServiceNow as admin")
+        prompts.log.message("   2. Navigate to: System OAuth > Application Registry")
+        prompts.log.message("   3. Create a new OAuth application")
+        prompts.log.message("   4. Copy the generated Client Secret (long random string)")
         return {
           success: false,
-          error: secretValidation.reason
-        };
+          error: secretValidation.reason,
+        }
       }
 
       // For code paste flow, we use a special redirect URI that shows the code
-      const redirectUri = 'urn:ietf:wg:oauth:2.0:oob'; // Out-of-band redirect for manual code entry
+      const redirectUri = "urn:ietf:wg:oauth:2.0:oob" // Out-of-band redirect for manual code entry
 
       // Store credentials
       this.credentials = {
-        instance: normalizedInstance.replace('https://', '').replace('http://', ''),
+        instance: normalizedInstance.replace("https://", "").replace("http://", ""),
         clientId,
         clientSecret,
-        redirectUri
-      };
+        redirectUri,
+      }
 
-      prompts.log.step('Starting ServiceNow OAuth flow');
-      prompts.log.info(`Instance: ${normalizedInstance}`);
-      prompts.log.info(`Client ID: ${clientId}`);
+      prompts.log.step("Starting ServiceNow OAuth flow")
+      prompts.log.info(`Instance: ${normalizedInstance}`)
+      prompts.log.info(`Client ID: ${clientId}`)
 
       // Generate state parameter and PKCE
-      this.stateParameter = this.generateState();
-      this.generatePKCE();
+      this.stateParameter = this.generateState()
+      this.generatePKCE()
 
       // Generate authorization URL
-      const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri);
+      const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri)
 
-      prompts.log.message('');
-      prompts.log.step('Authorization URL generated');
-      prompts.log.message(`\n${authUrl}\n`);
-      prompts.log.warn(`Go to: ${authUrl}`);
-      prompts.log.message('');
+      prompts.log.message("")
+      prompts.log.step("Authorization URL generated")
+      prompts.log.message(`\n${authUrl}\n`)
+      prompts.log.warn(`Go to: ${authUrl}`)
+      prompts.log.message("")
 
-      const authCode = await prompts.text({
-        message: 'Paste the authorization code here',
-        placeholder: 'Enter the code from the browser after authorizing',
+      const authCode = (await prompts.text({
+        message: "Paste the authorization code here",
+        placeholder: "Enter the code from the browser after authorizing",
         validate: (value) => {
-          if (!value || value.trim() === '') return 'Authorization code is required';
-          if (value.length < 10) return 'Code seems too short - please paste the full authorization code';
-        }
-      }) as string;
+          if (!value || value.trim() === "") return "Authorization code is required"
+          if (value.length < 10) return "Code seems too short - please paste the full authorization code"
+        },
+      })) as string
 
       if (prompts.isCancel(authCode)) {
-        prompts.cancel('Authentication cancelled');
+        prompts.cancel("Authentication cancelled")
         return {
           success: false,
-          error: 'Authentication cancelled by user'
-        };
+          error: "Authentication cancelled by user",
+        }
       }
 
       // Extract code if user pasted full URL
-      let code = authCode.trim();
-      if (code.includes('code=')) {
-        const match = code.match(/code=([^&]+)/);
+      let code = authCode.trim()
+      if (code.includes("code=")) {
+        const match = code.match(/code=([^&]+)/)
         if (match) {
-          code = match[1];
+          code = match[1]
         }
       }
 
       // Exchange code for tokens
-      const spinner = prompts.spinner();
-      spinner.start('Exchanging authorization code for tokens');
+      const spinner = prompts.spinner()
+      spinner.start("Exchanging authorization code for tokens")
 
-      let tokenResult: ServiceNowAuthResult;
+      let tokenResult: ServiceNowAuthResult
       try {
-        tokenResult = await this.exchangeCodeForTokens(code);
+        tokenResult = await this.exchangeCodeForTokens(code)
 
         if (tokenResult.success && tokenResult.accessToken) {
           // Save tokens
           await this.saveTokens({
             accessToken: tokenResult.accessToken,
-            refreshToken: tokenResult.refreshToken || '',
+            refreshToken: tokenResult.refreshToken || "",
             expiresIn: tokenResult.expiresIn || 3600,
             instance: this.credentials.instance,
             clientId,
-            clientSecret
-          });
+            clientSecret,
+          })
 
-          spinner.stop('Authentication successful');
-          prompts.log.success('Tokens saved securely');
+          spinner.stop("Authentication successful")
+          prompts.log.success("Tokens saved securely")
         } else {
-          spinner.stop('Token exchange failed');
+          spinner.stop("Token exchange failed")
         }
       } catch (error) {
-        spinner.stop('Token exchange failed');
-        throw error;
+        spinner.stop("Token exchange failed")
+        throw error
       }
 
-      return tokenResult;
+      return tokenResult
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      prompts.log.error(`Authentication failed: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      prompts.log.error(`Authentication failed: ${errorMessage}`)
       return {
         success: false,
-        error: errorMessage
-      };
+        error: errorMessage,
+      }
     }
   }
 
@@ -286,93 +288,93 @@ export class ServiceNowOAuth {
   async authenticate(instance: string, clientId: string, clientSecret: string): Promise<ServiceNowAuthResult> {
     try {
       // 🔧 CRIT-002 FIX: Apply URL normalization
-      const normalizedInstance = this.normalizeInstanceUrl(instance);
+      const normalizedInstance = this.normalizeInstanceUrl(instance)
       // Validate client secret format
-      const secretValidation = this.validateClientSecret(clientSecret);
+      const secretValidation = this.validateClientSecret(clientSecret)
       if (!secretValidation.valid) {
-        prompts.log.error(`Invalid OAuth Client Secret: ${secretValidation.reason}`);
-        prompts.log.info('To get a valid OAuth secret:');
-        prompts.log.message('   1. Log into ServiceNow as admin');
-        prompts.log.message('   2. Navigate to: System OAuth > Application Registry');
-        prompts.log.message('   3. Create a new OAuth application');
-        prompts.log.message('   4. Copy the generated Client Secret (long random string)');
+        prompts.log.error(`Invalid OAuth Client Secret: ${secretValidation.reason}`)
+        prompts.log.info("To get a valid OAuth secret:")
+        prompts.log.message("   1. Log into ServiceNow as admin")
+        prompts.log.message("   2. Navigate to: System OAuth > Application Registry")
+        prompts.log.message("   3. Create a new OAuth application")
+        prompts.log.message("   4. Copy the generated Client Secret (long random string)")
         return {
           success: false,
-          error: secretValidation.reason
-        };
+          error: secretValidation.reason,
+        }
       }
 
       // Get OAuth redirect configuration from environment or use defaults
-      const oauthConfig = snowFlowConfig.servicenow.oauth;
-      const port = oauthConfig.redirectPort;
-      const host = oauthConfig.redirectHost;
-      const path = oauthConfig.redirectPath;
-      const redirectUri = `http://${host}:${port}${path}`;
+      const oauthConfig = snowFlowConfig.servicenow.oauth
+      const port = oauthConfig.redirectPort
+      const host = oauthConfig.redirectHost
+      const path = oauthConfig.redirectPath
+      const redirectUri = `http://${host}:${port}${path}`
 
       // Check if port is available
-      const isPortAvailable = await this.checkPortAvailable(port);
+      const isPortAvailable = await this.checkPortAvailable(port)
       if (!isPortAvailable) {
-        prompts.log.error(`Port ${port} is already in use!`);
-        prompts.log.warn(`Please close any application using port ${port} and try again.`);
+        prompts.log.error(`Port ${port} is already in use!`)
+        prompts.log.warn(`Please close any application using port ${port} and try again.`)
         return {
           success: false,
-          error: `Port ${port} is already in use. Please free up the port and try again.`
-        };
+          error: `Port ${port} is already in use. Please free up the port and try again.`,
+        }
       }
 
       // Store credentials temporarily with normalized instance
       this.credentials = {
-        instance: normalizedInstance.replace('https://', '').replace('http://', ''),
+        instance: normalizedInstance.replace("https://", "").replace("http://", ""),
         clientId,
         clientSecret,
-        redirectUri
-      };
+        redirectUri,
+      }
 
-      prompts.log.step('Starting ServiceNow OAuth flow');
-      prompts.log.info(`Instance: ${normalizedInstance}`);
-      prompts.log.info(`Client ID: ${clientId}`);
-      prompts.log.info(`Redirect URI: ${redirectUri}`);
+      prompts.log.step("Starting ServiceNow OAuth flow")
+      prompts.log.info(`Instance: ${normalizedInstance}`)
+      prompts.log.info(`Client ID: ${clientId}`)
+      prompts.log.info(`Redirect URI: ${redirectUri}`)
 
       // Generate state parameter for CSRF protection
-      this.stateParameter = this.generateState();
+      this.stateParameter = this.generateState()
 
       // Generate PKCE parameters
-      this.generatePKCE();
+      this.generatePKCE()
 
       // Generate authorization URL
-      const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri);
+      const authUrl = this.generateAuthUrl(this.credentials.instance, clientId, redirectUri)
 
-      prompts.log.step('Authorization URL generated');
-      prompts.log.message('');
-      prompts.log.message(`\n${authUrl}\n`);
-      prompts.log.message('');
+      prompts.log.step("Authorization URL generated")
+      prompts.log.message("")
+      prompts.log.message(`\n${authUrl}\n`)
+      prompts.log.message("")
 
       // Start local server to handle callback
-      const authResult = await this.startCallbackServer(redirectUri, port);
+      const authResult = await this.startCallbackServer(redirectUri, port)
 
       if (authResult.success && authResult.accessToken) {
         // Save tokens with normalized instance
         await this.saveTokens({
           accessToken: authResult.accessToken,
-          refreshToken: authResult.refreshToken || '',
+          refreshToken: authResult.refreshToken || "",
           expiresIn: authResult.expiresIn || 3600,
           instance: this.credentials.instance,
           clientId,
-          clientSecret
-        });
+          clientSecret,
+        })
 
-        prompts.log.success('Authentication successful');
-        prompts.log.success('Tokens saved securely');
+        prompts.log.success("Authentication successful")
+        prompts.log.success("Tokens saved securely")
       }
 
-      return authResult;
+      return authResult
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      prompts.log.error(`Authentication failed: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      prompts.log.error(`Authentication failed: ${errorMessage}`)
       return {
         success: false,
-        error: errorMessage
-      };
+        error: errorMessage,
+      }
     }
   }
 
@@ -380,18 +382,18 @@ export class ServiceNowOAuth {
    * Generate ServiceNow OAuth authorization URL
    */
   private generateAuthUrl(instance: string, clientId: string, redirectUri: string): string {
-    const baseUrl = `https://${instance}/oauth_auth.do`;
+    const baseUrl = `https://${instance}/oauth_auth.do`
     const params = new URLSearchParams({
-      response_type: 'code',
+      response_type: "code",
       client_id: clientId,
       redirect_uri: redirectUri,
-      scope: 'useraccount write admin',
-      state: this.stateParameter || '',
-      code_challenge: this.codeChallenge || '',
-      code_challenge_method: 'S256'
-    });
-    
-    return `${baseUrl}?${params.toString()}`;
+      scope: "useraccount write admin",
+      state: this.stateParameter || "",
+      code_challenge: this.codeChallenge || "",
+      code_challenge_method: "S256",
+    })
+
+    return `${baseUrl}?${params.toString()}`
   }
 
   /**
@@ -400,290 +402,288 @@ export class ServiceNowOAuth {
    */
   private async startCallbackServer(redirectUri: string, port: number): Promise<ServiceNowAuthResult> {
     return new Promise(async (resolve) => {
-      let resolved = false;
-      let timeoutHandle: NodeJS.Timeout | null = null;
+      let resolved = false
+      let timeoutHandle: NodeJS.Timeout | null = null
 
       // Helper function to cleanup and close server
       const cleanup = () => {
         if (timeoutHandle) {
-          clearTimeout(timeoutHandle);
-          timeoutHandle = null;
+          clearTimeout(timeoutHandle)
+          timeoutHandle = null
         }
-        server.close();
-      };
+        server.close()
+      }
 
       const server = createServer(async (req, res) => {
-        if (resolved) return;
+        if (resolved) return
         try {
-          const url = new URL(req.url!, `http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
-          
-          if (url.pathname === '/callback') {
-            const code = url.searchParams.get('code');
-            const error = url.searchParams.get('error');
-            const state = url.searchParams.get('state');
-            
+          const url = new URL(req.url!, `http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`)
+
+          if (url.pathname === "/callback") {
+            const code = url.searchParams.get("code")
+            const error = url.searchParams.get("error")
+            const state = url.searchParams.get("state")
+
             // Validate state parameter
             if (state !== this.stateParameter) {
-              res.writeHead(400, { 'Content-Type': 'text/html' });
-              res.end(OAuthTemplates.securityError);
+              res.writeHead(400, { "Content-Type": "text/html" })
+              res.end(OAuthTemplates.securityError)
 
-              resolved = true;
-              cleanup();
+              resolved = true
+              cleanup()
               resolve({
                 success: false,
-                error: 'Invalid state parameter'
-              });
-              return;
+                error: "Invalid state parameter",
+              })
+              return
             }
 
             if (error) {
-              res.writeHead(400, { 'Content-Type': 'text/html' });
-              res.end(OAuthTemplates.error(error));
+              res.writeHead(400, { "Content-Type": "text/html" })
+              res.end(OAuthTemplates.error(error))
 
-              resolved = true;
-              cleanup();
+              resolved = true
+              cleanup()
               resolve({
                 success: false,
-                error: `OAuth error: ${error}`
-              });
-              return;
+                error: `OAuth error: ${error}`,
+              })
+              return
             }
 
             if (!code) {
-              res.writeHead(400, { 'Content-Type': 'text/html' });
-              res.end(OAuthTemplates.missingCode);
+              res.writeHead(400, { "Content-Type": "text/html" })
+              res.end(OAuthTemplates.missingCode)
 
-              resolved = true;
-              cleanup();
+              resolved = true
+              cleanup()
               resolve({
                 success: false,
-                error: 'No authorization code received'
-              });
-              return;
+                error: "No authorization code received",
+              })
+              return
             }
 
             // Exchange code for tokens
-            resolved = true;
-            const spinner = prompts.spinner();
-            spinner.start('Exchanging authorization code for tokens');
+            resolved = true
+            const spinner = prompts.spinner()
+            spinner.start("Exchanging authorization code for tokens")
 
-            let tokenResult: ServiceNowAuthResult;
+            let tokenResult: ServiceNowAuthResult
             try {
-              tokenResult = await this.exchangeCodeForTokens(code);
-              spinner.stop(tokenResult.success ? 'Token exchange successful' : 'Token exchange failed');
+              tokenResult = await this.exchangeCodeForTokens(code)
+              spinner.stop(tokenResult.success ? "Token exchange successful" : "Token exchange failed")
 
               if (tokenResult.success) {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(OAuthTemplates.success);
+                res.writeHead(200, { "Content-Type": "text/html" })
+                res.end(OAuthTemplates.success)
 
-                cleanup();
-                resolve(tokenResult);
+                cleanup()
+                resolve(tokenResult)
               } else {
-                res.writeHead(500, { 'Content-Type': 'text/html' });
-                res.end(OAuthTemplates.tokenExchangeFailed(tokenResult.error || 'Unknown error'));
+                res.writeHead(500, { "Content-Type": "text/html" })
+                res.end(OAuthTemplates.tokenExchangeFailed(tokenResult.error || "Unknown error"))
 
-                cleanup();
-                resolve(tokenResult);
+                cleanup()
+                resolve(tokenResult)
               }
             } catch (error) {
-              spinner.stop('Token exchange failed');
-              res.writeHead(500, { 'Content-Type': 'text/html' });
-              res.end(OAuthTemplates.tokenExchangeFailed('Unexpected error during token exchange'));
+              spinner.stop("Token exchange failed")
+              res.writeHead(500, { "Content-Type": "text/html" })
+              res.end(OAuthTemplates.tokenExchangeFailed("Unexpected error during token exchange"))
 
-              cleanup();
+              cleanup()
               resolve({
                 success: false,
-                error: error instanceof Error ? error.message : String(error)
-              });
+                error: error instanceof Error ? error.message : String(error),
+              })
             }
           } else {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('Not Found');
+            res.writeHead(404, { "Content-Type": "text/plain" })
+            res.end("Not Found")
           }
         } catch (error) {
-          prompts.log.error(`Callback server error: ${error}`);
-          res.writeHead(500, { 'Content-Type': 'text/plain' });
-          res.end('Internal Server Error');
+          prompts.log.error(`Callback server error: ${error}`)
+          res.writeHead(500, { "Content-Type": "text/plain" })
+          res.end("Internal Server Error")
 
-          resolved = true;
-          cleanup();
+          resolved = true
+          cleanup()
           resolve({
             success: false,
-            error: error instanceof Error ? error.message : String(error)
-          });
+            error: error instanceof Error ? error.message : String(error),
+          })
         }
-      });
-      
+      })
+
       server.listen(port, () => {
         // Prevent server from keeping process alive after authentication completes
-        server.unref();
+        server.unref()
 
-        prompts.log.step(`OAuth callback server started on http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`);
-        prompts.log.warn('Please open the authorization URL in your browser');
-        prompts.log.info('Waiting for OAuth callback...');
-        
+        prompts.log.step(
+          `OAuth callback server started on http://${snowFlowConfig.servicenow.oauth.redirectHost}:${port}`,
+        )
+        prompts.log.warn("Please open the authorization URL in your browser")
+        prompts.log.info("Waiting for OAuth callback...")
+
         // Auto-open browser if possible
         // Try to auto-open browser if not in headless environment
-        const isCodespaces = process.env.CODESPACES === 'true';
-        const isContainer = process.env.CONTAINER === 'true' || existsSync('/.dockerenv');
-        const isHeadless = isCodespaces || isContainer || process.env.CI === 'true';
-        
+        const isCodespaces = process.env.CODESPACES === "true"
+        const isContainer = process.env.CONTAINER === "true" || existsSync("/.dockerenv")
+        const isHeadless = isCodespaces || isContainer || process.env.CI === "true"
+
         if (!isHeadless) {
           try {
-            const { spawn } = require('child_process');
-            const authUrl = this.generateAuthUrl(
-              this.credentials!.instance,
-              this.credentials!.clientId,
-              redirectUri
-            );
-            
-            let browserProcess: any;
-            
+            const { spawn } = require("child_process")
+            const authUrl = this.generateAuthUrl(this.credentials!.instance, this.credentials!.clientId, redirectUri)
+
+            let browserProcess: any
+
             // Try to open browser based on platform
-            if (process.platform === 'darwin') {
-              browserProcess = spawn('open', [authUrl], { detached: true, stdio: 'ignore' });
-            } else if (process.platform === 'win32') {
-              browserProcess = spawn('cmd', ['/c', 'start', authUrl], { detached: true, stdio: 'ignore' });
-            } else if (process.platform === 'linux') {
+            if (process.platform === "darwin") {
+              browserProcess = spawn("open", [authUrl], { detached: true, stdio: "ignore" })
+            } else if (process.platform === "win32") {
+              browserProcess = spawn("cmd", ["/c", "start", authUrl], { detached: true, stdio: "ignore" })
+            } else if (process.platform === "linux") {
               // Try multiple Linux browser openers
-              const openers = ['xdg-open', 'gnome-open', 'kde-open', 'sensible-browser'];
+              const openers = ["xdg-open", "gnome-open", "kde-open", "sensible-browser"]
               for (const opener of openers) {
                 try {
-                  browserProcess = spawn(opener, [authUrl], { detached: true, stdio: 'ignore' });
-                  break; // If successful, stop trying
+                  browserProcess = spawn(opener, [authUrl], { detached: true, stdio: "ignore" })
+                  break // If successful, stop trying
                 } catch (e) {
                   // Try next opener
-                  continue;
+                  continue
                 }
               }
             } else {
-              prompts.log.warn(`Unknown OS: ${process.platform}`);
+              prompts.log.warn(`Unknown OS: ${process.platform}`)
             }
-            
+
             // Prevent the spawn from keeping the process alive
             if (browserProcess && browserProcess.unref) {
-              browserProcess.unref();
+              browserProcess.unref()
             }
           } catch (err) {
             // Silently fail - user can manually open URL
-            prompts.log.warn('Browser auto-open failed. Please manually copy and open the URL above.');
+            prompts.log.warn("Browser auto-open failed. Please manually copy and open the URL above.")
           }
         }
 
         // Offer manual callback URL paste as alternative
-        prompts.log.message('');
-        prompts.log.info('Alternatively, paste the callback URL here after authorizing:');
+        prompts.log.message("")
+        prompts.log.info("Alternatively, paste the callback URL here after authorizing:")
 
         // Start prompt for manual URL paste (race with server callback)
-        (async () => {
+        ;(async () => {
           try {
-            const callbackUrl = await prompts.text({
-              message: 'Paste callback URL (or press Enter to wait for automatic redirect)',
-              placeholder: 'http://localhost:3005/callback?code=...&state=...',
+            const callbackUrl = (await prompts.text({
+              message: "Paste callback URL (or press Enter to wait for automatic redirect)",
+              placeholder: "http://localhost:3005/callback?code=...&state=...",
               validate: (value) => {
                 // Allow empty (waiting for server callback)
-                if (!value || value.trim() === '') return undefined;
+                if (!value || value.trim() === "") return undefined
 
                 // Validate if URL was pasted
-                if (!value.includes('callback')) return 'Invalid callback URL - must contain "callback"';
-                if (!value.includes('code=')) return 'Invalid callback URL - must contain code parameter';
-              }
-            }) as string;
+                if (!value.includes("callback")) return 'Invalid callback URL - must contain "callback"'
+                if (!value.includes("code=")) return "Invalid callback URL - must contain code parameter"
+              },
+            })) as string
 
             // If user pressed Enter without pasting, just wait for server callback
-            if (prompts.isCancel(callbackUrl) || !callbackUrl || callbackUrl.trim() === '') {
-              prompts.log.info('Waiting for browser redirect...');
-              return;
+            if (prompts.isCancel(callbackUrl) || !callbackUrl || callbackUrl.trim() === "") {
+              prompts.log.info("Waiting for browser redirect...")
+              return
             }
 
             // User pasted a URL - parse it
-            if (resolved) return; // Server already handled it
-            resolved = true;
+            if (resolved) return // Server already handled it
+            resolved = true
 
             try {
-              const url = new URL(callbackUrl);
-              const code = url.searchParams.get('code');
-              const state = url.searchParams.get('state');
-              const error = url.searchParams.get('error');
+              const url = new URL(callbackUrl)
+              const code = url.searchParams.get("code")
+              const state = url.searchParams.get("state")
+              const error = url.searchParams.get("error")
 
               // Validate state
               if (state !== this.stateParameter) {
-                cleanup();
+                cleanup()
                 resolve({
                   success: false,
-                  error: 'Invalid state parameter - security check failed'
-                });
-                return;
+                  error: "Invalid state parameter - security check failed",
+                })
+                return
               }
 
               if (error) {
-                cleanup();
+                cleanup()
                 resolve({
                   success: false,
-                  error: `OAuth error: ${error}`
-                });
-                return;
+                  error: `OAuth error: ${error}`,
+                })
+                return
               }
 
               if (!code) {
-                cleanup();
+                cleanup()
                 resolve({
                   success: false,
-                  error: 'No authorization code found in URL'
-                });
-                return;
+                  error: "No authorization code found in URL",
+                })
+                return
               }
 
               // Exchange code for tokens
-              prompts.log.success('Authorization code received from pasted URL');
-              const spinner = prompts.spinner();
-              spinner.start('Exchanging authorization code for tokens');
+              prompts.log.success("Authorization code received from pasted URL")
+              const spinner = prompts.spinner()
+              spinner.start("Exchanging authorization code for tokens")
 
-              let tokenResult: ServiceNowAuthResult;
+              let tokenResult: ServiceNowAuthResult
               try {
-                tokenResult = await this.exchangeCodeForTokens(code);
-                spinner.stop(tokenResult.success ? 'Token exchange successful' : 'Token exchange failed');
+                tokenResult = await this.exchangeCodeForTokens(code)
+                spinner.stop(tokenResult.success ? "Token exchange successful" : "Token exchange failed")
 
-                cleanup();
-                resolve(tokenResult);
+                cleanup()
+                resolve(tokenResult)
               } catch (error) {
-                spinner.stop('Token exchange failed');
-                cleanup();
+                spinner.stop("Token exchange failed")
+                cleanup()
                 resolve({
                   success: false,
-                  error: error instanceof Error ? error.message : 'Unexpected error during token exchange'
-                });
+                  error: error instanceof Error ? error.message : "Unexpected error during token exchange",
+                })
               }
             } catch (err) {
-              cleanup();
+              cleanup()
               resolve({
                 success: false,
-                error: 'Invalid callback URL format'
-              });
+                error: "Invalid callback URL format",
+              })
             }
           } catch (err) {
             // Prompt was cancelled or errored - just wait for server callback
             if (!resolved) {
-              prompts.log.info('Waiting for browser redirect...');
+              prompts.log.info("Waiting for browser redirect...")
             }
           }
-        })();
+        })()
 
         // Add 5-minute timeout for OAuth flow
         timeoutHandle = setTimeout(() => {
           if (!resolved) {
-            resolved = true;
-            cleanup();
-            prompts.log.error('OAuth authorization timed out after 5 minutes');
-            prompts.log.info('Please try again: snow-flow auth login');
+            resolved = true
+            cleanup()
+            prompts.log.error("OAuth authorization timed out after 5 minutes")
+            prompts.log.info("Please try again: snow-flow auth login")
             resolve({
               success: false,
-              error: 'OAuth authorization timed out - no callback received within 5 minutes'
-            });
+              error: "OAuth authorization timed out - no callback received within 5 minutes",
+            })
           }
-        }, 300000); // 5 minutes
-      });
-    });
+        }, 300000) // 5 minutes
+      })
+    })
   }
 
   /**
@@ -695,88 +695,94 @@ export class ServiceNowOAuth {
       if (!this.checkTokenRequestRateLimit()) {
         return {
           success: false,
-          error: 'Rate limit exceeded. Too many token requests. Please wait 1 minute before retrying.'
-        };
+          error: "Rate limit exceeded. Too many token requests. Please wait 1 minute before retrying.",
+        }
       }
-      
-      const tokenUrl = `https://${this.credentials!.instance}/oauth_token.do`;
-      
-      const response = await axios.post(tokenUrl, new URLSearchParams({
-        grant_type: 'authorization_code',
-        code,
-        client_id: this.credentials!.clientId,
-        client_secret: this.credentials!.clientSecret,
-        redirect_uri: this.credentials!.redirectUri,
-        code_verifier: this.codeVerifier || ''
-      }), {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+
+      const tokenUrl = `https://${this.credentials!.instance}/oauth_token.do`
+
+      const response = await axios.post(
+        tokenUrl,
+        new URLSearchParams({
+          grant_type: "authorization_code",
+          code,
+          client_id: this.credentials!.clientId,
+          client_secret: this.credentials!.clientSecret,
+          redirect_uri: this.credentials!.redirectUri,
+          code_verifier: this.codeVerifier || "",
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          timeout: 15000, // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
+          // SECURITY: Certificate validation enforced (removed rejectUnauthorized: false)
         },
-        timeout: 15000,  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
-        // SECURITY: Certificate validation enforced (removed rejectUnauthorized: false)
-      });
-      
-      const data = response.data;
-      
+      )
+
+      const data = response.data
+
       if (data.access_token) {
         return {
           success: true,
           accessToken: data.access_token,
           refreshToken: data.refresh_token,
-          expiresIn: data.expires_in
-        };
+          expiresIn: data.expires_in,
+        }
       } else {
         return {
           success: false,
-          error: 'No access token received'
-        };
+          error: "No access token received",
+        }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error)
 
       // Check for invalid redirect_uri error
       if (axios.isAxiosError(error) && error.response) {
-        const responseData = error.response.data;
-        const errorDescription = responseData?.error_description || responseData?.error || '';
+        const responseData = error.response.data
+        const errorDescription = responseData?.error_description || responseData?.error || ""
 
         // Special handling for redirect_uri errors
-        if (errorDescription.toLowerCase().includes('redirect_uri') ||
-            errorDescription.toLowerCase().includes('redirect uri')) {
-          prompts.log.error('Invalid redirect_uri configuration');
-          prompts.log.message('');
-          prompts.log.warn('The OAuth application in ServiceNow is not configured correctly.');
-          prompts.log.message('');
-          prompts.log.step('Fix this by following these steps:');
-          prompts.log.message('');
-          prompts.log.info('1. Log into ServiceNow as administrator');
-          prompts.log.info(`2. Navigate to: System OAuth → Application Registry`);
-          prompts.log.info(`3. Find your OAuth application (Client ID: ${this.credentials!.clientId})`);
-          prompts.log.info('4. Edit the "Redirect URL" field');
-          prompts.log.info('5. Change it to: http://localhost:3005/callback');
-          prompts.log.message('   (exactly this - copy/paste to avoid typos!)');
-          prompts.log.info('6. Save the application');
-          prompts.log.info('7. Run "snow-flow auth login" again');
-          prompts.log.message('');
-          prompts.log.warn('The redirect URI MUST be exactly: http://localhost:3005/callback');
-          prompts.log.message('');
+        if (
+          errorDescription.toLowerCase().includes("redirect_uri") ||
+          errorDescription.toLowerCase().includes("redirect uri")
+        ) {
+          prompts.log.error("Invalid redirect_uri configuration")
+          prompts.log.message("")
+          prompts.log.warn("The OAuth application in ServiceNow is not configured correctly.")
+          prompts.log.message("")
+          prompts.log.step("Fix this by following these steps:")
+          prompts.log.message("")
+          prompts.log.info("1. Log into ServiceNow as administrator")
+          prompts.log.info(`2. Navigate to: System OAuth → Application Registry`)
+          prompts.log.info(`3. Find your OAuth application (Client ID: ${this.credentials!.clientId})`)
+          prompts.log.info('4. Edit the "Redirect URL" field')
+          prompts.log.info("5. Change it to: http://localhost:3005/callback")
+          prompts.log.message("   (exactly this - copy/paste to avoid typos!)")
+          prompts.log.info("6. Save the application")
+          prompts.log.info('7. Run "snow-flow auth login" again')
+          prompts.log.message("")
+          prompts.log.warn("The redirect URI MUST be exactly: http://localhost:3005/callback")
+          prompts.log.message("")
 
           return {
             success: false,
-            error: 'Invalid redirect_uri - OAuth application not configured. See instructions above.'
-          };
+            error: "Invalid redirect_uri - OAuth application not configured. See instructions above.",
+          }
         }
 
         // Log other API errors
-        prompts.log.error(`ServiceNow OAuth error: ${errorDescription}`);
-        prompts.log.error(`Response data: ${JSON.stringify(responseData)}`);
+        prompts.log.error(`ServiceNow OAuth error: ${errorDescription}`)
+        prompts.log.error(`Response data: ${JSON.stringify(responseData)}`)
       } else {
-        prompts.log.error(`Token exchange error: ${errorMessage}`);
+        prompts.log.error(`Token exchange error: ${errorMessage}`)
       }
 
       return {
         success: false,
-        error: errorMessage
-      };
+        error: errorMessage,
+      }
     }
   }
 
@@ -785,22 +791,22 @@ export class ServiceNowOAuth {
    */
   private async saveTokens(tokenData: any): Promise<void> {
     try {
-      const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expiresIn);
-      
+      const expiresAt = new Date()
+      expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expiresIn)
+
       const authData = {
         ...tokenData,
-        expiresAt: expiresAt.toISOString()
-      };
-      
+        expiresAt: expiresAt.toISOString(),
+      }
+
       // Use unified auth store
-      await unifiedAuthStore.saveTokens(authData);
-      
+      await unifiedAuthStore.saveTokens(authData)
+
       // Bridge to MCP servers immediately
-      await unifiedAuthStore.bridgeToMCP();
+      await unifiedAuthStore.bridgeToMCP()
     } catch (error) {
-      prompts.log.error(`Failed to save tokens: ${error}`);
-      throw error;
+      prompts.log.error(`Failed to save tokens: ${error}`)
+      throw error
     }
   }
 
@@ -809,9 +815,9 @@ export class ServiceNowOAuth {
    */
   async loadTokens(): Promise<any> {
     try {
-      return await unifiedAuthStore.getTokens();
+      return await unifiedAuthStore.getTokens()
     } catch (error) {
-      return null;
+      return null
     }
   }
 
@@ -820,16 +826,16 @@ export class ServiceNowOAuth {
    */
   async isAuthenticated(): Promise<boolean> {
     try {
-      const tokens = await this.loadTokens();
-      if (!tokens) return false;
-      
+      const tokens = await this.loadTokens()
+      if (!tokens) return false
+
       // Check if token is expired
-      const expiresAt = new Date(tokens.expiresAt);
-      const now = new Date();
-      
-      return now < expiresAt;
+      const expiresAt = new Date(tokens.expiresAt)
+      const now = new Date()
+
+      return now < expiresAt
     } catch (error) {
-      return false;
+      return false
     }
   }
 
@@ -838,37 +844,37 @@ export class ServiceNowOAuth {
    */
   async getAccessToken(): Promise<string | null> {
     try {
-      const tokens = await this.loadTokens();
-      if (!tokens) return null;
-      
+      const tokens = await this.loadTokens()
+      if (!tokens) return null
+
       // Check if token is expired
-      const expiresAt = new Date(tokens.expiresAt);
-      const now = new Date();
-      
+      const expiresAt = new Date(tokens.expiresAt)
+      const now = new Date()
+
       if (now >= expiresAt && tokens.refreshToken) {
         // Token expired, try to refresh
-        prompts.log.info('Token expired, refreshing...');
-        const refreshResult = await this.refreshAccessToken(tokens);
-        
+        prompts.log.info("Token expired, refreshing...")
+        const refreshResult = await this.refreshAccessToken(tokens)
+
         if (refreshResult.success && refreshResult.accessToken) {
           // Update saved tokens
           await this.saveTokens({
             ...tokens,
             accessToken: refreshResult.accessToken,
-            expiresIn: refreshResult.expiresIn || 3600
-          });
-          
-          return refreshResult.accessToken;
+            expiresIn: refreshResult.expiresIn || 3600,
+          })
+
+          return refreshResult.accessToken
         } else {
-          prompts.log.error(`Token refresh failed: ${refreshResult.error}`);
-          return null;
+          prompts.log.error(`Token refresh failed: ${refreshResult.error}`)
+          return null
         }
       }
 
-      return tokens.accessToken;
+      return tokens.accessToken
     } catch (error) {
-      prompts.log.error(`Failed to get access token: ${error}`);
-      return null;
+      prompts.log.error(`Failed to get access token: ${error}`)
+      return null
     }
   }
 
@@ -881,63 +887,67 @@ export class ServiceNowOAuth {
       if (!this.checkTokenRequestRateLimit()) {
         return {
           success: false,
-          error: 'Rate limit exceeded. Too many token requests. Please wait 1 minute before retrying.'
-        };
+          error: "Rate limit exceeded. Too many token requests. Please wait 1 minute before retrying.",
+        }
       }
-      
+
       // If no tokens provided, load from file
       if (!tokens) {
-        tokens = await this.loadTokens();
+        tokens = await this.loadTokens()
         if (!tokens) {
           return {
             success: false,
-            error: 'No tokens found to refresh'
-          };
+            error: "No tokens found to refresh",
+          }
         }
       }
-      
-      const tokenUrl = `https://${tokens.instance}/oauth_token.do`;
-      
-      const response = await axios.post(tokenUrl, new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: tokens.refreshToken,
-        client_id: tokens.clientId,
-        client_secret: tokens.clientSecret
-      }), {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+
+      const tokenUrl = `https://${tokens.instance}/oauth_token.do`
+
+      const response = await axios.post(
+        tokenUrl,
+        new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: tokens.refreshToken,
+          client_id: tokens.clientId,
+          client_secret: tokens.clientSecret,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          timeout: 15000, // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
+          // SECURITY: Certificate validation enforced (removed rejectUnauthorized: false)
         },
-        timeout: 15000,  // 🔒 SEC-002 FIX: 15 second timeout to prevent hanging requests
-        // SECURITY: Certificate validation enforced (removed rejectUnauthorized: false)
-      });
-      
-      const data = response.data;
-      
+      )
+
+      const data = response.data
+
       if (data.access_token) {
         // Update saved tokens
         await this.saveTokens({
           ...tokens,
           accessToken: data.access_token,
-          expiresIn: data.expires_in || 3600
-        });
-        
+          expiresIn: data.expires_in || 3600,
+        })
+
         return {
           success: true,
           accessToken: data.access_token,
-          expiresIn: data.expires_in
-        };
+          expiresIn: data.expires_in,
+        }
       } else {
         return {
           success: false,
-          error: 'No access token received'
-        };
+          error: "No access token received",
+        }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error)
       return {
         success: false,
-        error: errorMessage
-      };
+        error: errorMessage,
+      }
     }
   }
 
@@ -946,10 +956,10 @@ export class ServiceNowOAuth {
    */
   async logout(): Promise<void> {
     try {
-      await fs.unlink(this.tokenPath);
-      prompts.log.success('Logged out successfully');
+      await fs.unlink(this.tokenPath)
+      prompts.log.success("Logged out successfully")
     } catch (error) {
-      prompts.log.info('No active session to logout from');
+      prompts.log.info("No active session to logout from")
     }
   }
 
@@ -957,7 +967,7 @@ export class ServiceNowOAuth {
    * Get stored OAuth tokens for use in other contexts (MCP servers)
    */
   async getStoredTokens(): Promise<any> {
-    return await this.loadTokens();
+    return await this.loadTokens()
   }
 
   /**
@@ -966,117 +976,118 @@ export class ServiceNowOAuth {
   async loadCredentials(): Promise<ServiceNowCredentials | null> {
     try {
       // First, try to load saved OAuth tokens
-      const tokens = await this.loadTokens();
-      
+      const tokens = await this.loadTokens()
+
       if (tokens && tokens.accessToken) {
         // Validate client secret when loading
         if (tokens.clientSecret) {
-          const secretValidation = this.validateClientSecret(tokens.clientSecret);
+          const secretValidation = this.validateClientSecret(tokens.clientSecret)
           if (!secretValidation.valid) {
-            prompts.log.warn(`OAuth Configuration Issue: ${secretValidation.reason}`);
-            prompts.log.info('Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login');
+            prompts.log.warn(`OAuth Configuration Issue: ${secretValidation.reason}`)
+            prompts.log.info("Your stored client secret may be incorrect. Re-authenticate with: snow-flow auth login")
           }
         }
 
         // Check if token is expired
-        const expiresAt = new Date(tokens.expiresAt);
-        const now = new Date();
+        const expiresAt = new Date(tokens.expiresAt)
+        const now = new Date()
 
         if (now < expiresAt) {
-          prompts.log.success('Using saved OAuth tokens');
+          prompts.log.success("Using saved OAuth tokens")
           return {
             instance: tokens.instance,
             clientId: tokens.clientId,
             clientSecret: tokens.clientSecret,
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
-            expiresAt: tokens.expiresAt
-          };
+            expiresAt: tokens.expiresAt,
+          }
         } else {
-          prompts.log.warn('Saved OAuth token expired, will try refresh...');
+          prompts.log.warn("Saved OAuth token expired, will try refresh...")
         }
       }
 
       // 🔧 NEW: Fallback to .env file if no valid tokens
-      prompts.log.info('No valid OAuth tokens found, checking .env file...');
+      prompts.log.info("No valid OAuth tokens found, checking .env file...")
 
       // Load environment variables with dotenv
       try {
-        require('dotenv').config();
+        require("dotenv").config()
       } catch (err) {
-        prompts.log.message('dotenv not available, using process.env directly');
+        prompts.log.message("dotenv not available, using process.env directly")
       }
-      
-      const envInstance = process.env.SNOW_INSTANCE;
-      const envClientId = process.env.SNOW_CLIENT_ID;
-      const envClientSecret = process.env.SNOW_CLIENT_SECRET;
+
+      const envInstance = process.env.SNOW_INSTANCE
+      const envClientId = process.env.SNOW_CLIENT_ID
+      const envClientSecret = process.env.SNOW_CLIENT_SECRET
 
       if (envInstance && envClientId && envClientSecret) {
-        prompts.log.success('Found ServiceNow credentials in .env file');
-        prompts.log.message(`   - Instance: ${envInstance}`);
-        prompts.log.message(`   - Client ID: ${envClientId}`);
-        prompts.log.message('   - Client Secret: Present');
+        prompts.log.success("Found ServiceNow credentials in .env file")
+        prompts.log.message(`   - Instance: ${envInstance}`)
+        prompts.log.message(`   - Client ID: ${envClientId}`)
+        prompts.log.message("   - Client Secret: Present")
 
         // Validate client secret
-        const secretValidation = this.validateClientSecret(envClientSecret);
+        const secretValidation = this.validateClientSecret(envClientSecret)
         if (!secretValidation.valid) {
-          prompts.log.error(`Invalid OAuth Client Secret in .env file: ${secretValidation.reason}`);
-          prompts.log.warn('Please update SNOW_CLIENT_SECRET in .env with proper OAuth secret from ServiceNow');
-          return null;
+          prompts.log.error(`Invalid OAuth Client Secret in .env file: ${secretValidation.reason}`)
+          prompts.log.warn("Please update SNOW_CLIENT_SECRET in .env with proper OAuth secret from ServiceNow")
+          return null
         }
 
-        prompts.log.message('');
-        prompts.log.info('OAuth Setup Required:');
-        prompts.log.message('   Your .env has OAuth credentials but no active session.');
-        prompts.log.message('   Run: snow-flow auth login');
-        prompts.log.message('   This will authenticate and create persistent tokens.');
-        prompts.log.message('');
+        prompts.log.message("")
+        prompts.log.info("OAuth Setup Required:")
+        prompts.log.message("   Your .env has OAuth credentials but no active session.")
+        prompts.log.message("   Run: snow-flow auth login")
+        prompts.log.message("   This will authenticate and create persistent tokens.")
+        prompts.log.message("")
 
         // Return credentials without access token - this will trigger auth flow
         return {
-          instance: envInstance.replace(/\/$/, ''),
+          instance: envInstance.replace(/\/$/, ""),
           clientId: envClientId,
           clientSecret: envClientSecret,
           // No accessToken - this signals that OAuth login is needed
-        };
+        }
       }
-      
+
       // 🔧 Check for old username/password setup in .env
-      const envUsername = process.env.SNOW_USERNAME;
-      const envPassword = process.env.SNOW_PASSWORD;
+      const envUsername = process.env.SNOW_USERNAME
+      const envPassword = process.env.SNOW_PASSWORD
 
       if (envInstance && envUsername && envPassword) {
-        prompts.log.warn('Found username/password in .env - OAuth is recommended');
-        prompts.log.info('For better security, set up OAuth credentials:');
-        prompts.log.message('   1. In ServiceNow: System OAuth > Application Registry > New');
-        prompts.log.message('   2. Update .env with SNOW_CLIENT_ID and SNOW_CLIENT_SECRET');
-        prompts.log.message('   3. Run: snow-flow auth login');
+        prompts.log.warn("Found username/password in .env - OAuth is recommended")
+        prompts.log.info("For better security, set up OAuth credentials:")
+        prompts.log.message("   1. In ServiceNow: System OAuth > Application Registry > New")
+        prompts.log.message("   2. Update .env with SNOW_CLIENT_ID and SNOW_CLIENT_SECRET")
+        prompts.log.message("   3. Run: snow-flow auth login")
 
         // Don't return username/password - force OAuth setup
-        return null;
+        return null
       }
 
       // No credentials found anywhere
-      prompts.log.error('No ServiceNow credentials found!');
-      prompts.log.message('');
-      prompts.log.info('Setup Instructions:');
-      prompts.log.message('   1. Create .env file with OAuth credentials:');
-      prompts.log.message('      SNOW_INSTANCE=your-instance.service-now.com');
-      prompts.log.message('      SNOW_CLIENT_ID=your_oauth_client_id');
-      prompts.log.message('      SNOW_CLIENT_SECRET=your_oauth_client_secret');
-      prompts.log.message('   2. Run: snow-flow auth login');
-      prompts.log.message('');
-      prompts.log.info('To get OAuth credentials:');
-      prompts.log.message('   • ServiceNow: System OAuth > Application Registry > New OAuth Application');
-      prompts.log.message(`   • Redirect URI: http://${snowFlowConfig.servicenow.oauth.redirectHost}:${snowFlowConfig.servicenow.oauth.redirectPort}${snowFlowConfig.servicenow.oauth.redirectPath}`);
-      prompts.log.message('   • Scopes: useraccount write admin');
-      prompts.log.message('');
+      prompts.log.error("No ServiceNow credentials found!")
+      prompts.log.message("")
+      prompts.log.info("Setup Instructions:")
+      prompts.log.message("   1. Create .env file with OAuth credentials:")
+      prompts.log.message("      SNOW_INSTANCE=your-instance.service-now.com")
+      prompts.log.message("      SNOW_CLIENT_ID=your_oauth_client_id")
+      prompts.log.message("      SNOW_CLIENT_SECRET=your_oauth_client_secret")
+      prompts.log.message("   2. Run: snow-flow auth login")
+      prompts.log.message("")
+      prompts.log.info("To get OAuth credentials:")
+      prompts.log.message("   • ServiceNow: System OAuth > Application Registry > New OAuth Application")
+      prompts.log.message(
+        `   • Redirect URI: http://${snowFlowConfig.servicenow.oauth.redirectHost}:${snowFlowConfig.servicenow.oauth.redirectPort}${snowFlowConfig.servicenow.oauth.redirectPath}`,
+      )
+      prompts.log.message("   • Scopes: useraccount write admin")
+      prompts.log.message("")
 
-      return null;
-
+      return null
     } catch (error) {
-      prompts.log.error(`Error loading credentials: ${error}`);
-      return null;
+      prompts.log.error(`Error loading credentials: ${error}`)
+      return null
     }
   }
 
@@ -1090,10 +1101,10 @@ export class ServiceNowOAuth {
     if (clientSecret.length < 20) {
       return {
         valid: false,
-        reason: 'OAuth Client Secret too short. Expected 32+ character random string from ServiceNow.'
-      };
+        reason: "OAuth Client Secret too short. Expected 32+ character random string from ServiceNow.",
+      }
     }
-    
+
     // Check for common password patterns
     const commonPasswordPatterns = [
       /^password/i,
@@ -1103,39 +1114,39 @@ export class ServiceNowOAuth {
       /^welcome/i,
       /123456/,
       /qwerty/i,
-      /^[a-z]+\d{1,4}$/i,  // Simple word + numbers like "Welkom123"
-      /^[A-Z][a-z]+\d{1,4}$/  // Capitalized word + numbers
-    ];
-    
+      /^[a-z]+\d{1,4}$/i, // Simple word + numbers like "Welkom123"
+      /^[A-Z][a-z]+\d{1,4}$/, // Capitalized word + numbers
+    ]
+
     for (const pattern of commonPasswordPatterns) {
       if (pattern.test(clientSecret)) {
         return {
           valid: false,
-          reason: `OAuth Client Secret appears to be a password. ServiceNow OAuth secrets are long random strings (e.g., "a1b2c3d4e5f6..."). Check your Application Registry in ServiceNow.`
-        };
+          reason: `OAuth Client Secret appears to be a password. ServiceNow OAuth secrets are long random strings (e.g., "a1b2c3d4e5f6..."). Check your Application Registry in ServiceNow.`,
+        }
       }
     }
-    
+
     // Check for sufficient entropy (mix of upper, lower, numbers)
-    const hasUpper = /[A-Z]/.test(clientSecret);
-    const hasLower = /[a-z]/.test(clientSecret);
-    const hasNumber = /[0-9]/.test(clientSecret);
-    const charTypes = [hasUpper, hasLower, hasNumber].filter(Boolean).length;
-    
+    const hasUpper = /[A-Z]/.test(clientSecret)
+    const hasLower = /[a-z]/.test(clientSecret)
+    const hasNumber = /[0-9]/.test(clientSecret)
+    const charTypes = [hasUpper, hasLower, hasNumber].filter(Boolean).length
+
     if (charTypes < 2) {
       return {
         valid: false,
-        reason: 'OAuth Client Secret lacks complexity. ServiceNow generates secrets with mixed case and numbers.'
-      };
+        reason: "OAuth Client Secret lacks complexity. ServiceNow generates secrets with mixed case and numbers.",
+      }
     }
-    
-    return { valid: true };
+
+    return { valid: true }
   }
 
   /**
    * Get credentials (compatibility method for MCP servers)
    */
   async getCredentials(): Promise<ServiceNowCredentials | null> {
-    return await this.loadCredentials();
+    return await this.loadCredentials()
   }
 }

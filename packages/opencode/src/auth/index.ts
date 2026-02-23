@@ -147,7 +147,16 @@ export namespace Auth {
     .meta({ ref: "MidServer" })
 
   export const Info = z
-    .discriminatedUnion("type", [Oauth, Api, WellKnown, ServiceNowOAuth, ServiceNowBasic, Enterprise, Portal, MidServer])
+    .discriminatedUnion("type", [
+      Oauth,
+      Api,
+      WellKnown,
+      ServiceNowOAuth,
+      ServiceNowBasic,
+      Enterprise,
+      Portal,
+      MidServer,
+    ])
     .meta({ ref: "Auth" })
   export type Info = z.infer<typeof Info>
 

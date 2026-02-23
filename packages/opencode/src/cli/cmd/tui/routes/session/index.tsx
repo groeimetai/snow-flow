@@ -923,9 +923,14 @@ export function Session() {
   createEffect(on(() => route.sessionID, toBottom))
 
   // Set current session for MCP server (enables session-based tool enabling)
-  createEffect(on(() => route.sessionID, (sessionId) => {
-    setCurrentSessionId(sessionId)
-  }))
+  createEffect(
+    on(
+      () => route.sessionID,
+      (sessionId) => {
+        setCurrentSessionId(sessionId)
+      },
+    ),
+  )
 
   return (
     <context.Provider

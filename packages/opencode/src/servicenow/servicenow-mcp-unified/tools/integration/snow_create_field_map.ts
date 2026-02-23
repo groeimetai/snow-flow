@@ -5,90 +5,90 @@
  * coalescing, and default values.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_create_field_map',
-  description: 'Create field mapping within transform map for data transformation',
+  name: "snow_create_field_map",
+  description: "Create field mapping within transform map for data transformation",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'integration',
-  subcategory: 'data-transformation',
-  use_cases: ['integration', 'transformation', 'mapping'],
-  complexity: 'intermediate',
-  frequency: 'medium',
+  category: "integration",
+  subcategory: "data-transformation",
+  use_cases: ["integration", "transformation", "mapping"],
+  complexity: "intermediate",
+  frequency: "medium",
 
   // Permission enforcement
   // Classification: WRITE - Create operation - modifies data
-  permission: 'write',
-  allowedRoles: ['developer', 'admin'],
+  permission: "write",
+  allowedRoles: ["developer", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       transformMapName: {
-        type: 'string',
-        description: 'Parent Transform Map name or sys_id'
+        type: "string",
+        description: "Parent Transform Map name or sys_id",
       },
       sourceField: {
-        type: 'string',
-        description: 'Source field name'
+        type: "string",
+        description: "Source field name",
       },
       targetField: {
-        type: 'string',
-        description: 'Target field name'
+        type: "string",
+        description: "Target field name",
       },
       transform: {
-        type: 'string',
-        description: 'Transform script (JavaScript to transform value)'
+        type: "string",
+        description: "Transform script (JavaScript to transform value)",
       },
       coalesce: {
-        type: 'boolean',
-        description: 'Use as coalesce field for matching records',
-        default: false
+        type: "boolean",
+        description: "Use as coalesce field for matching records",
+        default: false,
       },
       defaultValue: {
-        type: 'string',
-        description: 'Default value if source is empty'
+        type: "string",
+        description: "Default value if source is empty",
       },
       choice: {
-        type: 'boolean',
-        description: 'Use choice list for mapping',
-        default: false
-      }
+        type: "boolean",
+        description: "Use choice list for mapping",
+        default: false,
+      },
     },
-    required: ['transformMapName', 'sourceField', 'targetField']
-  }
-};
+    required: ["transformMapName", "sourceField", "targetField"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
     transformMapName,
     sourceField,
     targetField,
-    transform = '',
+    transform = "",
     coalesce = false,
-    defaultValue = '',
-    choice = false
-  } = args;
+    defaultValue = "",
+    choice = false,
+  } = args
 
   try {
-    const client = await getAuthenticatedClient(context);
+    const client = await getAuthenticatedClient(context)
 
     // Find transform map
-    let transformMapId = transformMapName;
+    let transformMapId = transformMapName
     if (!transformMapName.match(/^[a-f0-9]{32}$/)) {
-      const mapQuery = await client.get('/api/now/table/sys_transform_map', {
+      const mapQuery = await client.get("/api/now/table/sys_transform_map", {
         params: {
           sysparm_query: `name=${transformMapName}`,
-          sysparm_limit: 1
-        }
-      });
+          sysparm_limit: 1,
+        },
+      })
 
       if (!mapQuery.data.result || mapQuery.data.result.length === 0) {
-        throw new Error(`Transform Map '${transformMapName}' not found`);
+        throw new Error(`Transform Map '${transformMapName}' not found`)
       }
-      transformMapId = mapQuery.data.result[0].sys_id;
+      transformMapId = mapQuery.data.result[0].sys_id
     }
 
     const fieldMapData = {
@@ -98,11 +98,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       transform,
       coalesce,
       default_value: defaultValue,
-      choice
-    };
+      choice,
+    }
 
-    const response = await client.post('/api/now/table/sys_transform_entry', fieldMapData);
-    const fieldMap = response.data.result;
+    const response = await client.post("/api/now/table/sys_transform_entry", fieldMapData)
+    const fieldMap = response.data.result
 
     return createSuccessResult({
       created: true,
@@ -114,15 +114,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         has_transform: !!transform,
         coalesce,
         has_default: !!defaultValue,
-        choice
+        choice,
       },
-      message: `Field mapping '${sourceField}' → '${targetField}' created successfully`
-    });
-
+      message: `Field mapping '${sourceField}' → '${targetField}' created successfully`,
+    })
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = "1.0.0"
+export const author = "Snow-Flow SDK Migration"

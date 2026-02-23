@@ -1,44 +1,49 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="UTF-8" />
-  <title>TUI WebSocket Test</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
-  <style>
-    body { margin: 0; background: #1a1a2e; }
-    #terminal { height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="terminal"></div>
-  <script type="module">
-    import { Terminal } from "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm"
-    import { FitAddon } from "https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm"
+  <head>
+    <meta charset="UTF-8" />
+    <title>TUI WebSocket Test</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css" />
+    <style>
+      body {
+        margin: 0;
+        background: #1a1a2e;
+      }
+      #terminal {
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal"></div>
+    <script type="module">
+      import { Terminal } from "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm"
+      import { FitAddon } from "https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm"
 
-    const term = new Terminal({
-      fontSize: 15,
-      fontFamily: "Menlo, monospace",
-      theme: { background: "#1a1a2e", foreground: "#e2e8f0", cursor: "#4f8ff7" },
-      cursorBlink: true,
-      convertEol: true,
-    })
+      const term = new Terminal({
+        fontSize: 15,
+        fontFamily: "Menlo, monospace",
+        theme: { background: "#1a1a2e", foreground: "#e2e8f0", cursor: "#4f8ff7" },
+        cursorBlink: true,
+        convertEol: true,
+      })
 
-    const fit = new FitAddon()
-    term.loadAddon(fit)
-    term.open(document.getElementById("terminal"))
-    fit.fit()
-
-    const ws = new WebSocket(`ws://localhost:4096/tui-ws/ws?cols=${term.cols}&rows=${term.rows}`)
-
-    term.onData((data) => ws.send(data))
-    ws.onmessage = (e) => term.write(typeof e.data === "string" ? e.data : new Uint8Array(e.data))
-    ws.onclose = () => term.write("\r\n\x1b[31m[Disconnected]\x1b[0m\r\n")
-    ws.onerror = () => term.write("\r\n\x1b[31m[Connection error]\x1b[0m\r\n")
-
-    window.addEventListener("resize", () => {
+      const fit = new FitAddon()
+      term.loadAddon(fit)
+      term.open(document.getElementById("terminal"))
       fit.fit()
-      if (ws.readyState === 1) ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }))
-    })
-  </script>
-</body>
+
+      const ws = new WebSocket(`ws://localhost:4096/tui-ws/ws?cols=${term.cols}&rows=${term.rows}`)
+
+      term.onData((data) => ws.send(data))
+      ws.onmessage = (e) => term.write(typeof e.data === "string" ? e.data : new Uint8Array(e.data))
+      ws.onclose = () => term.write("\r\n\x1b[31m[Disconnected]\x1b[0m\r\n")
+      ws.onerror = () => term.write("\r\n\x1b[31m[Connection error]\x1b[0m\r\n")
+
+      window.addEventListener("resize", () => {
+        fit.fit()
+        if (ws.readyState === 1) ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }))
+      })
+    </script>
+  </body>
 </html>

@@ -24,43 +24,43 @@ import { DialogAuthServiceNowLLM } from "./dialog-servicenow-llm"
 async function fetchActiveIntegrations(portalUrl: string, token: string): Promise<string[]> {
   try {
     const response = await fetch(`${portalUrl}/api/user-credentials`, {
-      method: 'GET',
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
+        Accept: "application/json",
       },
     })
 
     if (!response.ok) {
-      console.error('[Enterprise] Failed to fetch user credentials:', response.status)
+      console.error("[Enterprise] Failed to fetch user credentials:", response.status)
       return []
     }
 
     const data = await response.json()
 
     if (!data.success || !Array.isArray(data.credentials)) {
-      console.error('[Enterprise] Invalid credentials response')
+      console.error("[Enterprise] Invalid credentials response")
       return []
     }
 
     // Extract unique service types from credentials
     const serviceTypes = new Set<string>()
     for (const credential of data.credentials) {
-      if (credential.serviceType && typeof credential.serviceType === 'string') {
+      if (credential.serviceType && typeof credential.serviceType === "string") {
         // Normalize service type (e.g., 'azuredevops' -> 'azure-devops')
         let serviceType = credential.serviceType.toLowerCase()
-        if (serviceType === 'azuredevops') {
-          serviceType = 'azure-devops'
+        if (serviceType === "azuredevops") {
+          serviceType = "azure-devops"
         }
         serviceTypes.add(serviceType)
       }
     }
 
     const activeServices = Array.from(serviceTypes)
-    console.error(`[Enterprise] Found active integrations: ${activeServices.join(', ')}`)
+    console.error(`[Enterprise] Found active integrations: ${activeServices.join(", ")}`)
     return activeServices
   } catch (error) {
-    console.error('[Enterprise] Error fetching active integrations:', error)
+    console.error("[Enterprise] Error fetching active integrations:", error)
     return []
   }
 }
@@ -75,14 +75,14 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[], rol
   }
 
   const cwd = process.cwd()
-  const agentsMdPath = path.join(cwd, 'AGENTS.md')
+  const agentsMdPath = path.join(cwd, "AGENTS.md")
 
-  const enterpriseMarker = '<!-- SNOW-FLOW-ENTERPRISE-START -->'
-  const enterpriseEndMarker = '<!-- SNOW-FLOW-ENTERPRISE-END -->'
+  const enterpriseMarker = "<!-- SNOW-FLOW-ENTERPRISE-START -->"
+  const enterpriseEndMarker = "<!-- SNOW-FLOW-ENTERPRISE-END -->"
 
   // Generate appropriate documentation based on role
   let enterpriseContent: string
-  if (role === 'stakeholder') {
+  if (role === "stakeholder") {
     enterpriseContent = generateStakeholderDocumentation()
   } else {
     enterpriseContent = generateEnterpriseInstructions(enabledServices)
@@ -92,14 +92,14 @@ async function updateDocumentationWithEnterprise(enabledServices?: string[], rol
 
   // Update AGENTS.md with enterprise content (create if doesn't exist)
   try {
-    let content = ''
+    let content = ""
     let fileExists = true
     try {
-      content = await fs.readFile(agentsMdPath, 'utf-8')
+      content = await fs.readFile(agentsMdPath, "utf-8")
     } catch {
       // File doesn't exist, create it with enterprise content
       fileExists = false
-      console.error('[Enterprise] AGENTS.md not found, creating new file')
+      console.error("[Enterprise] AGENTS.md not found, creating new file")
     }
 
     // If file doesn't exist, create with header
@@ -125,14 +125,21 @@ This file contains instructions for AI agents working in this codebase.
       content = content + markedContent
     }
 
-    await fs.writeFile(agentsMdPath, content, 'utf-8')
-    console.error(`[Enterprise] ${fileExists ? 'Updated' : 'Created'} AGENTS.md with enterprise instructions`)
+    await fs.writeFile(agentsMdPath, content, "utf-8")
+    console.error(`[Enterprise] ${fileExists ? "Updated" : "Created"} AGENTS.md with enterprise instructions`)
   } catch (err) {
-    console.error('[Enterprise] Failed to update AGENTS.md:', err)
+    console.error("[Enterprise] Failed to update AGENTS.md:", err)
   }
 }
 
-type AuthMethod = "servicenow-oauth" | "servicenow-basic" | "enterprise-portal" | "enterprise-license" | "enterprise-combined" | "servicenow-llm" | "select-sn-instance"
+type AuthMethod =
+  | "servicenow-oauth"
+  | "servicenow-basic"
+  | "enterprise-portal"
+  | "enterprise-license"
+  | "enterprise-combined"
+  | "servicenow-llm"
+  | "select-sn-instance"
 
 interface AuthCredentials {
   servicenow?: {
@@ -307,7 +314,9 @@ function DialogAuthServiceNowOAuth() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"instance" | "clientId" | "secret" | "authenticating" | "callback-paste">("instance")
+  const [step, setStep] = createSignal<"instance" | "clientId" | "secret" | "authenticating" | "callback-paste">(
+    "instance",
+  )
   const [instance, setInstance] = createSignal("")
   const [clientId, setClientId] = createSignal("")
   const [clientSecret, setClientSecret] = createSignal("")
@@ -447,7 +456,11 @@ function DialogAuthServiceNowOAuth() {
         setHeadlessAuthUrl(prepared.authUrl)
         tryOpenBrowser(prepared.authUrl).then((opened) => {
           if (opened) {
-            toast.show({ variant: "info", message: "Browser opened! Authorize and paste the callback URL below.", duration: 5000 })
+            toast.show({
+              variant: "info",
+              message: "Browser opened! Authorize and paste the callback URL below.",
+              duration: 5000,
+            })
           }
         })
         Clipboard.copy(prepared.authUrl).catch(() => {})
@@ -583,9 +596,7 @@ function DialogAuthServiceNowOAuth() {
 
       <Show when={step() === "clientId"}>
         <box gap={1}>
-          <text fg={theme.textMuted}>
-            OAuth Client ID from ServiceNow: System OAuth {">"} Application Registry
-          </text>
+          <text fg={theme.textMuted}>OAuth Client ID from ServiceNow: System OAuth {">"} Application Registry</text>
           <textarea
             ref={(val: TextareaRenderable) => (clientIdInput = val)}
             height={3}
@@ -652,7 +663,9 @@ function DialogAuthServiceNowOAuth() {
                   })
                 }}
               >
-                <text fg={theme.selectedListItemText} attributes={TextAttributes.BOLD}>[ Open in Browser ]</text>
+                <text fg={theme.selectedListItemText} attributes={TextAttributes.BOLD}>
+                  [ Open in Browser ]
+                </text>
               </box>
               <box
                 paddingLeft={2}
@@ -665,21 +678,23 @@ function DialogAuthServiceNowOAuth() {
                   )
                 }}
               >
-                <text fg={theme.text} attributes={TextAttributes.BOLD}>[ Copy URL ]</text>
+                <text fg={theme.text} attributes={TextAttributes.BOLD}>
+                  [ Copy URL ]
+                </text>
               </box>
             </box>
             <box paddingTop={1}>
               <text fg={theme.textMuted}>After clicking "Allow" in ServiceNow:</text>
-              <text fg={theme.textMuted}>  1. Your browser will redirect to a localhost URL</text>
-              <text fg={theme.textMuted}>  2. The page may show an error (this is expected)</text>
-              <text fg={theme.textMuted}>  3. Copy the FULL URL from your browser address bar</text>
+              <text fg={theme.textMuted}> 1. Your browser will redirect to a localhost URL</text>
+              <text fg={theme.textMuted}> 2. The page may show an error (this is expected)</text>
+              <text fg={theme.textMuted}> 3. Copy the FULL URL from your browser address bar</text>
             </box>
             <box flexDirection="row" gap={1}>
               <text fg={theme.text}>o</text>
               <text fg={theme.textMuted}>open</text>
-              <text fg={theme.text}>  c</text>
+              <text fg={theme.text}> c</text>
               <text fg={theme.textMuted}>copy</text>
-              <text fg={theme.text}>  esc</text>
+              <text fg={theme.text}> esc</text>
               <text fg={theme.textMuted}>back</text>
             </box>
           </Show>
@@ -1107,16 +1122,24 @@ function DialogAuthEnterprise() {
       // This is the primary token source used by the MCP server
       try {
         const os = await import("os")
-        const enterpriseJsonDir = path.join(os.homedir(), '.snow-code')
-        const enterpriseJsonPath = path.join(enterpriseJsonDir, 'enterprise.json')
+        const enterpriseJsonDir = path.join(os.homedir(), ".snow-code")
+        const enterpriseJsonPath = path.join(enterpriseJsonDir, "enterprise.json")
         await fs.mkdir(enterpriseJsonDir, { recursive: true })
-        await fs.writeFile(enterpriseJsonPath, JSON.stringify({
-          subdomain: sub,
-          token: data.token,
-        }, null, 2), 'utf-8')
-        console.error('[Enterprise] Saved JWT token to ~/.snow-code/enterprise.json')
+        await fs.writeFile(
+          enterpriseJsonPath,
+          JSON.stringify(
+            {
+              subdomain: sub,
+              token: data.token,
+            },
+            null,
+            2,
+          ),
+          "utf-8",
+        )
+        console.error("[Enterprise] Saved JWT token to ~/.snow-code/enterprise.json")
       } catch (saveErr) {
-        console.error('[Enterprise] Could not save enterprise.json:', saveErr)
+        console.error("[Enterprise] Could not save enterprise.json:", saveErr)
       }
 
       // Add enterprise MCP server directly (no restart needed)
@@ -1226,10 +1249,10 @@ function DialogAuthEnterprise() {
       try {
         const sub = subdomain().trim().toLowerCase()
         const activeFeatures = await fetchActiveIntegrations(`https://${sub}.snow-flow.dev`, data.token)
-        const userRole = data.user?.role || 'developer'
+        const userRole = data.user?.role || "developer"
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
-        console.error('[Enterprise] Failed to update documentation:', docError)
+        console.error("[Enterprise] Failed to update documentation:", docError)
       }
 
       // Show trial/subscription status toast
@@ -1323,7 +1346,7 @@ function DialogAuthEnterprise() {
           <box paddingTop={1} flexDirection="row">
             <text fg={theme.text}>1 </text>
             <text fg={theme.textMuted}>Individual / Teams</text>
-            <text fg={theme.text}>  2 </text>
+            <text fg={theme.text}> 2 </text>
             <text fg={theme.textMuted}>Enterprise</text>
           </box>
         </box>
@@ -1363,9 +1386,9 @@ function DialogAuthEnterprise() {
             <text fg={theme.primary}>{verificationUrl()}</text>
             <box paddingTop={1}>
               <text fg={theme.text}>After logging in on the portal:</text>
-              <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
-              <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
-              <text fg={theme.textMuted}>  3. Paste it below and press Enter</text>
+              <text fg={theme.textMuted}> 1. Click "Approve" to authorize this device</text>
+              <text fg={theme.textMuted}> 2. Copy the authorization code shown</text>
+              <text fg={theme.textMuted}> 3. Paste it below and press Enter</text>
             </box>
           </Show>
           <text fg={theme.textMuted}>Enter the authorization code from the portal</text>
@@ -1598,9 +1621,7 @@ function DialogAuthSelectInstance() {
           <text fg={theme.warning} attributes={TextAttributes.BOLD}>
             Enterprise feature
           </text>
-          <text fg={theme.textMuted}>
-            This feature requires an active Enterprise Portal connection.
-          </text>
+          <text fg={theme.textMuted}>This feature requires an active Enterprise Portal connection.</text>
           <text fg={theme.textMuted}>
             Please authenticate via "Enterprise Portal" or "Enterprise + ServiceNow" first.
           </text>
@@ -1941,16 +1962,24 @@ function DialogAuthEnterpriseCombined() {
       // This is the primary token source used by the MCP server
       try {
         const os = await import("os")
-        const enterpriseJsonDir = path.join(os.homedir(), '.snow-code')
-        const enterpriseJsonPath = path.join(enterpriseJsonDir, 'enterprise.json')
+        const enterpriseJsonDir = path.join(os.homedir(), ".snow-code")
+        const enterpriseJsonPath = path.join(enterpriseJsonDir, "enterprise.json")
         await fs.mkdir(enterpriseJsonDir, { recursive: true })
-        await fs.writeFile(enterpriseJsonPath, JSON.stringify({
-          subdomain: sub,
-          token: data.token,
-        }, null, 2), 'utf-8')
-        console.error('[Enterprise] Saved JWT token to ~/.snow-code/enterprise.json')
+        await fs.writeFile(
+          enterpriseJsonPath,
+          JSON.stringify(
+            {
+              subdomain: sub,
+              token: data.token,
+            },
+            null,
+            2,
+          ),
+          "utf-8",
+        )
+        console.error("[Enterprise] Saved JWT token to ~/.snow-code/enterprise.json")
       } catch (saveErr) {
-        console.error('[Enterprise] Could not save enterprise.json:', saveErr)
+        console.error("[Enterprise] Could not save enterprise.json:", saveErr)
       }
 
       setEnterpriseData({
@@ -2072,7 +2101,7 @@ function DialogAuthEnterpriseCombined() {
     portalUrl: string,
     token: string,
     snCreds: { instanceUrl: string; clientId: string; clientSecret: string },
-    user?: { username?: string; email?: string; role?: string }
+    user?: { username?: string; email?: string; role?: string },
   ) => {
     setStep("completing")
     try {
@@ -2112,10 +2141,10 @@ function DialogAuthEnterpriseCombined() {
       // Update documentation with enterprise instructions (only for active integrations)
       try {
         const activeFeatures = await fetchActiveIntegrations(portalUrl, token)
-        const userRole = user?.role || 'developer'
+        const userRole = user?.role || "developer"
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
-        console.error('[Enterprise] Failed to update documentation:', docError)
+        console.error("[Enterprise] Failed to update documentation:", docError)
       }
 
       dialog.clear()
@@ -2129,10 +2158,10 @@ function DialogAuthEnterpriseCombined() {
       // Update documentation with enterprise instructions even if MCP server failed (only for active integrations)
       try {
         const activeFeatures = await fetchActiveIntegrations(portalUrl, token)
-        const userRole = user?.role || 'developer'
+        const userRole = user?.role || "developer"
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
-        console.error('[Enterprise] Failed to update documentation:', docError)
+        console.error("[Enterprise] Failed to update documentation:", docError)
       }
 
       dialog.clear()
@@ -2288,11 +2317,11 @@ function DialogAuthEnterpriseCombined() {
 
       // Update documentation with enterprise instructions (only for active integrations)
       try {
-        const activeFeatures = await fetchActiveIntegrations(portalUrl, entData.token ?? '')
-        const userRole = entData.user?.role || 'developer'
+        const activeFeatures = await fetchActiveIntegrations(portalUrl, entData.token ?? "")
+        const userRole = entData.user?.role || "developer"
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
-        console.error('[Enterprise] Failed to update documentation:', docError)
+        console.error("[Enterprise] Failed to update documentation:", docError)
       }
 
       dialog.clear()
@@ -2306,11 +2335,14 @@ function DialogAuthEnterpriseCombined() {
       // Update documentation with enterprise instructions even if MCP server failed (only for active integrations)
       try {
         const sub = subdomain().trim().toLowerCase()
-        const activeFeatures = await fetchActiveIntegrations(`https://${sub}.snow-flow.dev`, enterpriseData().token ?? '')
-        const userRole = enterpriseData().user?.role || 'developer'
+        const activeFeatures = await fetchActiveIntegrations(
+          `https://${sub}.snow-flow.dev`,
+          enterpriseData().token ?? "",
+        )
+        const userRole = enterpriseData().user?.role || "developer"
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
-        console.error('[Enterprise] Failed to update documentation:', docError)
+        console.error("[Enterprise] Failed to update documentation:", docError)
       }
 
       dialog.clear()
@@ -2357,7 +2389,7 @@ function DialogAuthEnterpriseCombined() {
           <box paddingTop={1} flexDirection="row">
             <text fg={theme.text}>1 </text>
             <text fg={theme.textMuted}>Individual / Teams</text>
-            <text fg={theme.text}>  2 </text>
+            <text fg={theme.text}> 2 </text>
             <text fg={theme.textMuted}>Enterprise</text>
           </box>
         </box>
@@ -2402,9 +2434,9 @@ function DialogAuthEnterpriseCombined() {
             <text fg={theme.primary}>{verificationUrl()}</text>
             <box paddingTop={1}>
               <text fg={theme.text}>After logging in on the portal:</text>
-              <text fg={theme.textMuted}>  1. Click "Approve" to authorize this device</text>
-              <text fg={theme.textMuted}>  2. Copy the authorization code shown</text>
-              <text fg={theme.textMuted}>  3. Paste it below and press Enter</text>
+              <text fg={theme.textMuted}> 1. Click "Approve" to authorize this device</text>
+              <text fg={theme.textMuted}> 2. Copy the authorization code shown</text>
+              <text fg={theme.textMuted}> 3. Paste it below and press Enter</text>
             </box>
           </Show>
           <text fg={theme.textMuted}>Enter the authorization code from the portal</text>
@@ -2517,7 +2549,7 @@ function DialogAuthEnterpriseCombined() {
           <box paddingTop={1} flexDirection="row">
             <text fg={theme.text}>1 </text>
             <text fg={theme.textMuted}>OAuth</text>
-            <text fg={theme.text}>  2 </text>
+            <text fg={theme.text}> 2 </text>
             <text fg={theme.textMuted}>Basic Auth</text>
           </box>
         </box>
@@ -2562,9 +2594,7 @@ function DialogAuthEnterpriseCombined() {
               Step 2 of 2: ServiceNow OAuth
             </text>
           </box>
-          <text fg={theme.textMuted}>
-            OAuth Client ID from ServiceNow: System OAuth {">"} Application Registry
-          </text>
+          <text fg={theme.textMuted}>OAuth Client ID from ServiceNow: System OAuth {">"} Application Registry</text>
           <textarea
             ref={(val: TextareaRenderable) => (snClientIdInput = val)}
             height={3}

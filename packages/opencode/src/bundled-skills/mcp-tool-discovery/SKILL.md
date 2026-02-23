@@ -19,69 +19,69 @@ Snow-Flow provides 400+ tools via MCP (Model Context Protocol) servers. Tools ar
 
 ```javascript
 // Find tools for a specific task
-tool_search({ query: "incident" })      // ServiceNow incidents
-tool_search({ query: "widget" })        // Widget development
-tool_search({ query: "update set" })    // Update Set management
-tool_search({ query: "cmdb" })          // CMDB operations
+tool_search({ query: "incident" }) // ServiceNow incidents
+tool_search({ query: "widget" }) // Widget development
+tool_search({ query: "update set" }) // Update Set management
+tool_search({ query: "cmdb" }) // CMDB operations
 ```
 
 ## Tool Categories
 
 ### ServiceNow Core Operations
 
-| Query | Tools Found |
-|-------|-------------|
-| `"incident"` | Incident CRUD, metrics, SLA |
-| `"change"` | Change requests, CAB, risk |
-| `"problem"` | Problem management, known errors |
-| `"cmdb"` | CI search, relationships, discovery |
-| `"user lookup"` | User/group queries |
-| `"query table"` | Universal table queries |
+| Query           | Tools Found                         |
+| --------------- | ----------------------------------- |
+| `"incident"`    | Incident CRUD, metrics, SLA         |
+| `"change"`      | Change requests, CAB, risk          |
+| `"problem"`     | Problem management, known errors    |
+| `"cmdb"`        | CI search, relationships, discovery |
+| `"user lookup"` | User/group queries                  |
+| `"query table"` | Universal table queries             |
 
 ### ServiceNow Development
 
-| Query | Tools Found |
-|-------|-------------|
-| `"widget"` | Widget create/update/sync |
-| `"business rule"` | BR creation and management |
-| `"script include"` | Reusable scripts |
-| `"client script"` | Client-side scripts |
-| `"ui policy"` | Form policies |
-| `"ui action"` | Buttons and links |
-| `"update set"` | Update Set lifecycle |
-| `"snow deploy"` | Artifact deployment |
+| Query              | Tools Found                |
+| ------------------ | -------------------------- |
+| `"widget"`         | Widget create/update/sync  |
+| `"business rule"`  | BR creation and management |
+| `"script include"` | Reusable scripts           |
+| `"client script"`  | Client-side scripts        |
+| `"ui policy"`      | Form policies              |
+| `"ui action"`      | Buttons and links          |
+| `"update set"`     | Update Set lifecycle       |
+| `"snow deploy"`    | Artifact deployment        |
 
 ### ServiceNow Platform
 
-| Query | Tools Found |
-|-------|-------------|
-| `"flow designer"` | Flow/subflow creation |
-| `"workspace"` | Workspace builder |
-| `"catalog"` | Service catalog items |
-| `"knowledge"` | Knowledge articles |
-| `"notification"` | Email notifications |
-| `"scheduled job"` | Scheduled scripts |
-| `"rest"` | REST API integration |
-| `"import"` | Import sets, transform maps |
+| Query             | Tools Found                 |
+| ----------------- | --------------------------- |
+| `"flow designer"` | Flow/subflow creation       |
+| `"workspace"`     | Workspace builder           |
+| `"catalog"`       | Service catalog items       |
+| `"knowledge"`     | Knowledge articles          |
+| `"notification"`  | Email notifications         |
+| `"scheduled job"` | Scheduled scripts           |
+| `"rest"`          | REST API integration        |
+| `"import"`        | Import sets, transform maps |
 
 ### Activity & Instance
 
-| Query | Tools Found |
-|-------|-------------|
-| `"activity"` | Activity tracking (always available) |
-| `"instance info"` | Instance URL and config |
-| `"property"` | System properties |
-| `"logs"` | System logs |
+| Query             | Tools Found                          |
+| ----------------- | ------------------------------------ |
+| `"activity"`      | Activity tracking (always available) |
+| `"instance info"` | Instance URL and config              |
+| `"property"`      | System properties                    |
+| `"logs"`          | System logs                          |
 
 ### Enterprise (if enabled)
 
-| Query | Tools Found |
-|-------|-------------|
-| `"jira"` | Jira issues, transitions, comments |
-| `"azure devops"` | Work items, boards, pipelines |
-| `"confluence"` | Pages, spaces, search |
-| `"github"` | Issues, PRs, workflows, releases |
-| `"gitlab"` | Issues, MRs, pipelines |
+| Query            | Tools Found                        |
+| ---------------- | ---------------------------------- |
+| `"jira"`         | Jira issues, transitions, comments |
+| `"azure devops"` | Work items, boards, pipelines      |
+| `"confluence"`   | Pages, spaces, search              |
+| `"github"`       | Issues, PRs, workflows, releases   |
+| `"gitlab"`       | Issues, MRs, pipelines             |
 
 ## Always-Available Tools
 
@@ -119,11 +119,11 @@ jira_search_issues({ jql: "project = PROJ AND status = Open" })
 
 ```javascript
 // Too broad - may not find what you need
-tool_search({ query: "github" })  // Returns 20+ tools
+tool_search({ query: "github" }) // Returns 20+ tools
 
 // More specific - finds exactly what you need
-tool_search({ query: "github content" })      // File content tools
-tool_search({ query: "github repository" })   // Repo info tools
+tool_search({ query: "github content" }) // File content tools
+tool_search({ query: "github repository" }) // Repo info tools
 tool_search({ query: "github pull request" }) // PR tools
 ```
 
@@ -148,29 +148,29 @@ tool_search({ query: "sysevent_email_action" })
 
 Tools follow consistent naming patterns:
 
-| Pattern | Example | Purpose |
-|---------|---------|---------|
-| `snow_*` | `snow_query_table` | ServiceNow operations |
-| `snow_deploy_*` | `snow_deploy_widget` | Artifact creation |
-| `snow_update_*` | `snow_update_set_manage` | Update operations |
-| `jira_*` | `jira_search_issues` | Jira integration |
-| `azdo_*` | `azdo_search_work_items` | Azure DevOps |
-| `confluence_*` | `confluence_create_page` | Confluence |
-| `github_*` | `github_create_issue` | GitHub |
-| `gitlab_*` | `gitlab_create_mr` | GitLab |
+| Pattern         | Example                  | Purpose               |
+| --------------- | ------------------------ | --------------------- |
+| `snow_*`        | `snow_query_table`       | ServiceNow operations |
+| `snow_deploy_*` | `snow_deploy_widget`     | Artifact creation     |
+| `snow_update_*` | `snow_update_set_manage` | Update operations     |
+| `jira_*`        | `jira_search_issues`     | Jira integration      |
+| `azdo_*`        | `azdo_search_work_items` | Azure DevOps          |
+| `confluence_*`  | `confluence_create_page` | Confluence            |
+| `github_*`      | `github_create_issue`    | GitHub                |
+| `gitlab_*`      | `gitlab_create_mr`       | GitLab                |
 
 ## MCP Server Categories
 
 Snow-Flow includes specialized MCP servers:
 
-| Server | Purpose | Example Tools |
-|--------|---------|---------------|
-| **ServiceNow Unified** | Core ServiceNow ops | Query, CRUD, scripts |
-| **ServiceNow Development** | Artifact management | Deploy, widget sync |
-| **ServiceNow Automation** | Script execution | Background scripts |
-| **ServiceNow ITSM** | IT Service Management | Incidents, changes |
-| **ServiceNow Platform** | Platform features | Flows, workspaces |
-| **Enterprise** | External integrations | Jira, Azure, GitHub |
+| Server                     | Purpose               | Example Tools        |
+| -------------------------- | --------------------- | -------------------- |
+| **ServiceNow Unified**     | Core ServiceNow ops   | Query, CRUD, scripts |
+| **ServiceNow Development** | Artifact management   | Deploy, widget sync  |
+| **ServiceNow Automation**  | Script execution      | Background scripts   |
+| **ServiceNow ITSM**        | IT Service Management | Incidents, changes   |
+| **ServiceNow Platform**    | Platform features     | Flows, workspaces    |
+| **Enterprise**             | External integrations | Jira, Azure, GitHub  |
 
 ## Best Practices
 
@@ -182,12 +182,12 @@ Snow-Flow includes specialized MCP servers:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Tool not found | Try different query terms |
-| Too many results | Be more specific in query |
-| Tool doesn't work | Check parameters, may need auth |
-| Enterprise tool missing | Verify enterprise auth status |
+| Issue                   | Solution                        |
+| ----------------------- | ------------------------------- |
+| Tool not found          | Try different query terms       |
+| Too many results        | Be more specific in query       |
+| Tool doesn't work       | Check parameters, may need auth |
+| Enterprise tool missing | Verify enterprise auth status   |
 
 ## Example Workflows
 

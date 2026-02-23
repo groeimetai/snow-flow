@@ -12,47 +12,47 @@
  * - Connection pooling
  */
 
-import axios, { AxiosInstance } from 'axios';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as crypto from 'node:crypto';
-import * as os from 'node:os';
-import { ServiceNowContext, OAuthTokenResponse, EnterpriseLicense } from './types';
-import { mcpDebug } from '../../shared/mcp-debug.js';
+import axios, { AxiosInstance } from "axios"
+import * as fs from "fs/promises"
+import * as path from "path"
+import * as crypto from "node:crypto"
+import * as os from "node:os"
+import { ServiceNowContext, OAuthTokenResponse, EnterpriseLicense } from "./types"
+import { mcpDebug } from "../../shared/mcp-debug.js"
 
 // Extended AxiosInstance with ServiceNow helper methods
 export interface ExtendedAxiosInstance extends AxiosInstance {
-  getRecord(table: string, sys_id: string): Promise<any>;
-  query(table: string, params?: any): Promise<any>;
-  updateRecord(table: string, sys_id: string, data: any): Promise<any>;
+  getRecord(table: string, sys_id: string): Promise<any>
+  query(table: string, params?: any): Promise<any>
+  updateRecord(table: string, sys_id: string, data: any): Promise<any>
 }
 
 /**
  * Token cache for active sessions
  */
 interface TokenCache {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  instanceUrl: string;
+  accessToken: string
+  refreshToken: string
+  expiresAt: number
+  instanceUrl: string
 }
 
 /**
  * ServiceNow OAuth Manager
  */
 export class ServiceNowAuthManager {
-  private tokenCache: Map<string, TokenCache> = new Map();
-  private clients: Map<string, AxiosInstance> = new Map();
-  private tokenRefreshPromises: Map<string, Promise<string>> = new Map();
+  private tokenCache: Map<string, TokenCache> = new Map()
+  private clients: Map<string, AxiosInstance> = new Map()
+  private tokenRefreshPromises: Map<string, Promise<string>> = new Map()
 
   constructor() {
     // Load cached tokens on initialization
-    this.loadTokenCache().catch(err => {
-      mcpDebug('[Auth] Failed to load token cache:', err.message);
-    });
+    this.loadTokenCache().catch((err) => {
+      mcpDebug("[Auth] Failed to load token cache:", err.message)
+    })
 
     // Load enterprise license on initialization
-    this.loadEnterpriseLicense();
+    this.loadEnterpriseLicense()
   }
 
   /**
@@ -61,34 +61,34 @@ export class ServiceNowAuthManager {
   private loadEnterpriseLicense(): void {
     try {
       // Try to load enterprise features (only available in enterprise edition)
-      let loadLicenseFromEnv: any;
+      let loadLicenseFromEnv: any
 
       try {
         // Attempt to import from enterprise package
-        loadLicenseFromEnv = require('../../../../enterprise/src/auth/enterprise-validator').loadLicenseFromEnv;
+        loadLicenseFromEnv = require("../../../../enterprise/src/auth/enterprise-validator").loadLicenseFromEnv
       } catch (err) {
         // Enterprise package not installed - use community license
-        mcpDebug('[Auth] Enterprise features not available, using community tier');
-        (this as any)._enterpriseLicense = this.getCommunityLicense();
-        return;
+        mcpDebug("[Auth] Enterprise features not available, using community tier")
+        ;(this as any)._enterpriseLicense = this.getCommunityLicense()
+        return
       }
 
-      const license: EnterpriseLicense = loadLicenseFromEnv();
+      const license: EnterpriseLicense = loadLicenseFromEnv()
 
-      mcpDebug('[Auth] Enterprise License:', {
+      mcpDebug("[Auth] Enterprise License:", {
         tier: license.tier,
-        company: license.companyName || 'N/A',
+        company: license.companyName || "N/A",
         theme: license.theme,
         features: license.features.length,
-        expiresAt: license.expiresAt?.toISOString() || 'N/A'
-      });
+        expiresAt: license.expiresAt?.toISOString() || "N/A",
+      })
 
       // Store license for context enrichment
-      (this as any)._enterpriseLicense = license;
+      ;(this as any)._enterpriseLicense = license
     } catch (error: any) {
-      mcpDebug('[Auth] Failed to load enterprise license:', error.message);
+      mcpDebug("[Auth] Failed to load enterprise license:", error.message)
       // Fallback to community license
-      (this as any)._enterpriseLicense = this.getCommunityLicense();
+      ;(this as any)._enterpriseLicense = this.getCommunityLicense()
     }
   }
 
@@ -97,10 +97,10 @@ export class ServiceNowAuthManager {
    */
   private getCommunityLicense(): EnterpriseLicense {
     return {
-      tier: 'community',
+      tier: "community",
       features: [],
-      theme: 'servicenow'
-    };
+      theme: "servicenow",
+    }
   }
 
   /**
@@ -109,49 +109,47 @@ export class ServiceNowAuthManager {
   async getAuthenticatedClient(context: ServiceNowContext): Promise<ExtendedAxiosInstance> {
     // Enrich context with enterprise license if not already present
     if (!context.enterprise && (this as any)._enterpriseLicense) {
-      context.enterprise = (this as any)._enterpriseLicense;
+      context.enterprise = (this as any)._enterpriseLicense
     }
 
-    const cacheKey = this.getCacheKey(context.instanceUrl);
+    const cacheKey = this.getCacheKey(context.instanceUrl)
 
     // Return existing client if valid token exists
     if (this.clients.has(cacheKey) && this.isTokenValid(cacheKey)) {
-      return this.clients.get(cacheKey)! as ExtendedAxiosInstance;
+      return this.clients.get(cacheKey)! as ExtendedAxiosInstance
     }
 
     // Get fresh access token
-    const accessToken = await this.getAccessToken(context);
+    const accessToken = await this.getAccessToken(context)
 
     // Determine correct Authorization header format
     // Basic auth tokens already include "Basic " prefix, Bearer tokens don't
-    const authHeader = accessToken.startsWith('Basic ')
-      ? accessToken
-      : `Bearer ${accessToken}`;
+    const authHeader = accessToken.startsWith("Basic ") ? accessToken : `Bearer ${accessToken}`
 
     // Create new authenticated client
     const client = axios.create({
       baseURL: context.instanceUrl,
       headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Authorization: authHeader,
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-      timeout: 60000 // 60 second timeout (increased from 30s to handle slow operations)
-    }) as ExtendedAxiosInstance;
+      timeout: 60000, // 60 second timeout (increased from 30s to handle slow operations)
+    }) as ExtendedAxiosInstance
 
     // Add response interceptor to validate ServiceNow responses
     // ServiceNow returns error responses with a different structure that doesn't have 'result'
     client.interceptors.response.use(
-      response => {
+      (response) => {
         // Check if this is an error response disguised as a 200
         // ServiceNow sometimes returns 200 with error body
         if (response.data?.error) {
-          const errorMsg = response.data.error.message || response.data.error.detail || 'ServiceNow API error';
-          mcpDebug('[Auth] ServiceNow returned error in response body:', errorMsg);
-          const err = new Error(errorMsg);
-          (err as any).response = response;
-          (err as any).isServiceNowError = true;
-          throw err;
+          const errorMsg = response.data.error.message || response.data.error.detail || "ServiceNow API error"
+          mcpDebug("[Auth] ServiceNow returned error in response body:", errorMsg)
+          const err = new Error(errorMsg)
+          ;(err as any).response = response
+          ;(err as any).isServiceNowError = true
+          throw err
         }
 
         // Normalize response structure for consistent API handling
@@ -159,116 +157,116 @@ export class ServiceNowAuthManager {
         if (response.data && response.data.result === undefined) {
           // If response has sys_id directly or is an array, wrap it in result
           if (response.data.sys_id || Array.isArray(response.data)) {
-            response.data = { result: response.data };
+            response.data = { result: response.data }
           } else {
             // Ensure result exists as empty object/array for safe access
-            response.data.result = [];
+            response.data.result = []
           }
         }
 
-        return response;
+        return response
       },
-      async error => {
+      async (error) => {
         // Check if the error response has ServiceNow error structure
         if (error.response?.data?.error) {
-          const snowError = error.response.data.error;
-          const errorMsg = snowError.message || snowError.detail || 'ServiceNow API error';
-          mcpDebug('[Auth] ServiceNow API error:', errorMsg);
+          const snowError = error.response.data.error
+          const errorMsg = snowError.message || snowError.detail || "ServiceNow API error"
+          mcpDebug("[Auth] ServiceNow API error:", errorMsg)
           // Re-throw with clearer message
-          const err = new Error(`ServiceNow: ${errorMsg}`);
-          (err as any).response = error.response;
-          (err as any).originalError = error;
-          throw err;
+          const err = new Error(`ServiceNow: ${errorMsg}`)
+          ;(err as any).response = error.response
+          ;(err as any).originalError = error
+          throw err
         }
-        throw error;
-      }
-    );
+        throw error
+      },
+    )
 
     // Add response interceptor for automatic token refresh on 401
     client.interceptors.response.use(
-      response => response,
-      async error => {
-        const originalRequest = error.config;
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config
 
         // If 401 and not already retrying, refresh token and retry
         if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
+          originalRequest._retry = true
 
           try {
             // Force token refresh
-            this.invalidateToken(cacheKey);
+            this.invalidateToken(cacheKey)
 
             // CRITICAL FIX: Clear the accessToken from context to force using refreshToken
             // Otherwise STEP 0 in refreshAccessToken will return the same invalid token!
-            const invalidAccessToken = context.accessToken;
-            context.accessToken = undefined;
+            const invalidAccessToken = context.accessToken
+            context.accessToken = undefined
 
-            mcpDebug('[Auth] 401 received, clearing invalid accessToken and forcing refresh...');
-            const newAccessToken = await this.getAccessToken(context);
+            mcpDebug("[Auth] 401 received, clearing invalid accessToken and forcing refresh...")
+            const newAccessToken = await this.getAccessToken(context)
 
             // Update request with new token
             // Check if it's already a full auth header (Basic auth) or just a Bearer token
-            if (newAccessToken.startsWith('Basic ')) {
-              originalRequest.headers['Authorization'] = newAccessToken;
+            if (newAccessToken.startsWith("Basic ")) {
+              originalRequest.headers["Authorization"] = newAccessToken
             } else {
-              originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+              originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`
             }
 
             // Retry original request
-            return client(originalRequest);
+            return client(originalRequest)
           } catch (refreshError) {
-            mcpDebug('[Auth] Token refresh failed:', refreshError);
-            throw refreshError;
+            mcpDebug("[Auth] Token refresh failed:", refreshError)
+            throw refreshError
           }
         }
 
-        throw error;
-      }
-    );
+        throw error
+      },
+    )
 
     // Add ServiceNow helper methods
     client.getRecord = async (table: string, sys_id: string) => {
-      return await client.get(`/api/now/table/${table}/${sys_id}`);
-    };
+      return await client.get(`/api/now/table/${table}/${sys_id}`)
+    }
 
     client.query = async (table: string, params?: any) => {
-      return await client.get(`/api/now/table/${table}`, { params });
-    };
+      return await client.get(`/api/now/table/${table}`, { params })
+    }
 
     client.updateRecord = async (table: string, sys_id: string, data: any) => {
-      return await client.put(`/api/now/table/${table}/${sys_id}`, data);
-    };
+      return await client.put(`/api/now/table/${table}/${sys_id}`, data)
+    }
 
-    this.clients.set(cacheKey, client);
-    return client;
+    this.clients.set(cacheKey, client)
+    return client
   }
 
   /**
    * Get valid access token (from cache or refresh)
    */
   async getAccessToken(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl);
+    const cacheKey = this.getCacheKey(context.instanceUrl)
 
     // Return cached token if valid
     if (this.isTokenValid(cacheKey)) {
-      return this.tokenCache.get(cacheKey)!.accessToken;
+      return this.tokenCache.get(cacheKey)!.accessToken
     }
 
     // Check if refresh already in progress for this instance
     if (this.tokenRefreshPromises.has(cacheKey)) {
-      mcpDebug('[Auth] Token refresh already in progress, awaiting...');
-      return await this.tokenRefreshPromises.get(cacheKey)!;
+      mcpDebug("[Auth] Token refresh already in progress, awaiting...")
+      return await this.tokenRefreshPromises.get(cacheKey)!
     }
 
     // Start token refresh
-    const refreshPromise = this.refreshAccessToken(context);
-    this.tokenRefreshPromises.set(cacheKey, refreshPromise);
+    const refreshPromise = this.refreshAccessToken(context)
+    this.tokenRefreshPromises.set(cacheKey, refreshPromise)
 
     try {
-      const accessToken = await refreshPromise;
-      return accessToken;
+      const accessToken = await refreshPromise
+      return accessToken
     } finally {
-      this.tokenRefreshPromises.delete(cacheKey);
+      this.tokenRefreshPromises.delete(cacheKey)
     }
   }
 
@@ -276,169 +274,170 @@ export class ServiceNowAuthManager {
    * Refresh access token using refresh token, OAuth client credentials, OR username/password
    */
   private async refreshAccessToken(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl);
-    mcpDebug('[Auth] Refreshing access token for:', context.instanceUrl);
+    const cacheKey = this.getCacheKey(context.instanceUrl)
+    mcpDebug("[Auth] Refreshing access token for:", context.instanceUrl)
 
     // Check if instance URL is valid
-    if (!context.instanceUrl || context.instanceUrl === '' ||
-        context.instanceUrl.includes('your-instance')) {
-      throw new Error('ServiceNow credentials not configured. Please run: snow-flow auth login');
+    if (!context.instanceUrl || context.instanceUrl === "" || context.instanceUrl.includes("your-instance")) {
+      throw new Error("ServiceNow credentials not configured. Please run: snow-flow auth login")
     }
 
     // Check for valid OAuth credentials
-    const hasValidOAuth = context.clientId && context.clientSecret &&
-                         context.clientId !== '' && context.clientSecret !== '' &&
-                         !context.clientId.includes('your-') && !context.clientSecret.includes('your-');
+    const hasValidOAuth =
+      context.clientId &&
+      context.clientSecret &&
+      context.clientId !== "" &&
+      context.clientSecret !== "" &&
+      !context.clientId.includes("your-") &&
+      !context.clientSecret.includes("your-")
 
     // Check for valid Basic auth credentials
-    const hasValidBasic = context.username && context.password &&
-                         context.username.trim() !== '' && context.password.trim() !== '';
+    const hasValidBasic =
+      context.username && context.password && context.username.trim() !== "" && context.password.trim() !== ""
 
     // Must have at least one valid auth method
     if (!hasValidOAuth && !hasValidBasic) {
-      throw new Error('ServiceNow credentials not configured. Please run: snow-flow auth login');
+      throw new Error("ServiceNow credentials not configured. Please run: snow-flow auth login")
     }
 
     // If only Basic auth is available, skip OAuth flows and go directly to Basic auth
     if (!hasValidOAuth && hasValidBasic) {
-      mcpDebug('[Auth] Using Basic auth (no OAuth credentials configured)');
-      return this.authenticateWithBasicAuth(context);
+      mcpDebug("[Auth] Using Basic auth (no OAuth credentials configured)")
+      return this.authenticateWithBasicAuth(context)
     }
 
     // STEP 0: Use pre-loaded access token from context (from TUI OAuth flow)
     if (context.accessToken) {
       // Check if token has already expired based on tokenExpiry
-      const tokenExpiry = context.tokenExpiry || 0;
-      const isExpired = tokenExpiry > 0 && tokenExpiry < Date.now();
+      const tokenExpiry = context.tokenExpiry || 0
+      const isExpired = tokenExpiry > 0 && tokenExpiry < Date.now()
 
       if (isExpired) {
-        mcpDebug('[Auth] Pre-loaded access token from context has EXPIRED, skipping to refresh flow...');
+        mcpDebug("[Auth] Pre-loaded access token from context has EXPIRED, skipping to refresh flow...")
         // Clear the expired token to prevent reuse
-        context.accessToken = undefined;
+        context.accessToken = undefined
       } else {
-        mcpDebug('[Auth] Using pre-loaded access token from context');
+        mcpDebug("[Auth] Using pre-loaded access token from context")
 
         // Cache it for future requests
-        const expiresAt = tokenExpiry || (Date.now() + 3600000); // 1 hour default
+        const expiresAt = tokenExpiry || Date.now() + 3600000 // 1 hour default
         this.tokenCache.set(cacheKey, {
           accessToken: context.accessToken,
-          refreshToken: context.refreshToken || '',
+          refreshToken: context.refreshToken || "",
           expiresAt,
-          instanceUrl: context.instanceUrl
-        });
+          instanceUrl: context.instanceUrl,
+        })
 
         // Persist to disk
-        await this.saveTokenCache();
+        await this.saveTokenCache()
 
-        return context.accessToken;
+        return context.accessToken
       }
     }
 
     // STEP 1: Try OAuth Refresh Token flow if refresh token is available
-    let refreshToken = context.refreshToken;
-    const cached = this.tokenCache.get(cacheKey);
+    let refreshToken = context.refreshToken
+    const cached = this.tokenCache.get(cacheKey)
     if (!refreshToken && cached) {
-      refreshToken = cached.refreshToken;
+      refreshToken = cached.refreshToken
     }
 
     if (refreshToken) {
       try {
-        mcpDebug('[Auth] Attempting OAuth refresh token flow...');
+        mcpDebug("[Auth] Attempting OAuth refresh token flow...")
         // OAuth token refresh request
-        const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
+        const tokenUrl = `${context.instanceUrl}/oauth_token.do`
         const response = await axios.post<OAuthTokenResponse>(
           tokenUrl,
           new URLSearchParams({
-            grant_type: 'refresh_token',
+            grant_type: "refresh_token",
             client_id: context.clientId,
             client_secret: context.clientSecret,
-            refresh_token: refreshToken
+            refresh_token: refreshToken,
           }),
           {
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
+              "Content-Type": "application/x-www-form-urlencoded",
             },
-            timeout: 10000
-          }
-        );
+            timeout: 10000,
+          },
+        )
 
-        const tokenData = response.data;
+        const tokenData = response.data
 
         // Cache tokens
-        const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 min buffer
+        const expiresAt = Date.now() + tokenData.expires_in * 1000 - 60000 // 1 min buffer
         this.tokenCache.set(cacheKey, {
           accessToken: tokenData.access_token,
           refreshToken: tokenData.refresh_token || refreshToken, // Keep old refresh token if new one not provided
           expiresAt,
-          instanceUrl: context.instanceUrl
-        });
+          instanceUrl: context.instanceUrl,
+        })
 
         // Persist to disk
-        await this.saveTokenCache();
+        await this.saveTokenCache()
 
-        mcpDebug('[Auth] Access token refreshed successfully (OAuth Refresh Token)');
-        return tokenData.access_token;
-
+        mcpDebug("[Auth] Access token refreshed successfully (OAuth Refresh Token)")
+        return tokenData.access_token
       } catch (error: any) {
-        mcpDebug('[Auth] OAuth refresh token flow failed:', error.message);
-        mcpDebug('[Auth] Will try OAuth client credentials flow...');
+        mcpDebug("[Auth] OAuth refresh token flow failed:", error.message)
+        mcpDebug("[Auth] Will try OAuth client credentials flow...")
       }
     }
 
     // STEP 2: Try OAuth Client Credentials Grant (initial token acquisition)
     try {
-      mcpDebug('[Auth] Attempting OAuth client credentials flow...');
-      const tokenUrl = `${context.instanceUrl}/oauth_token.do`;
+      mcpDebug("[Auth] Attempting OAuth client credentials flow...")
+      const tokenUrl = `${context.instanceUrl}/oauth_token.do`
       const response = await axios.post<OAuthTokenResponse>(
         tokenUrl,
         new URLSearchParams({
-          grant_type: 'client_credentials',
+          grant_type: "client_credentials",
           client_id: context.clientId,
-          client_secret: context.clientSecret
+          client_secret: context.clientSecret,
         }),
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            "Content-Type": "application/x-www-form-urlencoded",
           },
-          timeout: 10000
-        }
-      );
+          timeout: 10000,
+        },
+      )
 
-      const tokenData = response.data;
+      const tokenData = response.data
 
       // Cache tokens
-      const expiresAt = Date.now() + (tokenData.expires_in * 1000) - 60000; // 1 min buffer
+      const expiresAt = Date.now() + tokenData.expires_in * 1000 - 60000 // 1 min buffer
       this.tokenCache.set(cacheKey, {
         accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token || '', // Store refresh token if provided
+        refreshToken: tokenData.refresh_token || "", // Store refresh token if provided
         expiresAt,
-        instanceUrl: context.instanceUrl
-      });
+        instanceUrl: context.instanceUrl,
+      })
 
       // Persist to disk
-      await this.saveTokenCache();
+      await this.saveTokenCache()
 
-      mcpDebug('[Auth] Access token acquired successfully (OAuth Client Credentials)');
-      return tokenData.access_token;
-
+      mcpDebug("[Auth] Access token acquired successfully (OAuth Client Credentials)")
+      return tokenData.access_token
     } catch (error: any) {
-      mcpDebug('[Auth] OAuth client credentials flow failed:', error.message);
+      mcpDebug("[Auth] OAuth client credentials flow failed:", error.message)
 
       // Only try username/password if explicitly provided
-      const hasBasicAuth = context.username && context.password &&
-                          context.username.trim() !== '' && context.password.trim() !== '';
+      const hasBasicAuth =
+        context.username && context.password && context.username.trim() !== "" && context.password.trim() !== ""
 
       if (hasBasicAuth) {
-        mcpDebug('[Auth] Will try username/password fallback...');
-        return await this.authenticateWithPassword(context);
+        mcpDebug("[Auth] Will try username/password fallback...")
+        return await this.authenticateWithPassword(context)
       } else {
-        mcpDebug('[Auth] No username/password credentials available for fallback');
-        throw new Error(`OAuth authentication failed: ${error.message}. Please verify ServiceNow OAuth configuration.`);
+        mcpDebug("[Auth] No username/password credentials available for fallback")
+        throw new Error(`OAuth authentication failed: ${error.message}. Please verify ServiceNow OAuth configuration.`)
       }
     }
 
     // This code should never be reached, but TypeScript needs it
-    throw new Error('Authentication failed: All methods exhausted');
+    throw new Error("Authentication failed: All methods exhausted")
   }
 
   /**
@@ -446,53 +445,51 @@ export class ServiceNowAuthManager {
    * Used when auth.json has servicenow-basic type credentials
    */
   private async authenticateWithBasicAuth(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl);
+    const cacheKey = this.getCacheKey(context.instanceUrl)
 
     try {
       // Use credentials from context (loaded from auth.json)
-      const username = context.username;
-      const password = context.password;
+      const username = context.username
+      const password = context.password
 
       // Check for missing OR empty strings
-      if (!username || !password || username.trim() === '' || password.trim() === '') {
-        throw new Error('No username/password available in context for basic authentication');
+      if (!username || !password || username.trim() === "" || password.trim() === "") {
+        throw new Error("No username/password available in context for basic authentication")
       }
 
-      mcpDebug('[Auth] Using Basic auth from auth.json credentials');
+      mcpDebug("[Auth] Using Basic auth from auth.json credentials")
 
       // Create Basic Auth token
-      const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
-      const accessToken = `Basic ${basicAuth}`;
+      const basicAuth = Buffer.from(`${username}:${password}`).toString("base64")
+      const accessToken = `Basic ${basicAuth}`
 
       // Cache with long expiry (basic auth doesn't expire)
-      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
       this.tokenCache.set(cacheKey, {
         accessToken,
-        refreshToken: '', // No refresh token for basic auth
+        refreshToken: "", // No refresh token for basic auth
         expiresAt,
-        instanceUrl: context.instanceUrl
-      });
+        instanceUrl: context.instanceUrl,
+      })
 
       // Test the credentials with a simple API call
       try {
         await axios.get(`${context.instanceUrl}/api/now/table/sys_user?sysparm_limit=1`, {
           headers: {
-            'Authorization': accessToken,
-            'Content-Type': 'application/json'
+            Authorization: accessToken,
+            "Content-Type": "application/json",
           },
-          timeout: 10000
-        });
+          timeout: 10000,
+        })
 
-        mcpDebug('[Auth] Basic auth successful');
-        return accessToken;
-
+        mcpDebug("[Auth] Basic auth successful")
+        return accessToken
       } catch (testError: any) {
-        throw new Error(`Basic auth failed: Invalid credentials`);
+        throw new Error(`Basic auth failed: Invalid credentials`)
       }
-
     } catch (error: any) {
-      mcpDebug('[Auth] Basic auth failed:', error.message);
-      throw new Error(`Authentication failed: ${error.message}`);
+      mcpDebug("[Auth] Basic auth failed:", error.message)
+      throw new Error(`Authentication failed: ${error.message}`)
     }
   }
 
@@ -501,59 +498,57 @@ export class ServiceNowAuthManager {
    * Used when OAuth fails and SERVICENOW_USERNAME/PASSWORD env vars are set
    */
   private async authenticateWithPassword(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl);
+    const cacheKey = this.getCacheKey(context.instanceUrl)
 
     try {
       // First try context credentials (from auth.json), then environment variables
-      let username = context.username;
-      let password = context.password;
+      let username = context.username
+      let password = context.password
 
       // Fall back to environment variables if context credentials not available
-      if (!username || !password || username.trim() === '' || password.trim() === '') {
-        username = process.env.SERVICENOW_USERNAME;
-        password = process.env.SERVICENOW_PASSWORD;
+      if (!username || !password || username.trim() === "" || password.trim() === "") {
+        username = process.env.SERVICENOW_USERNAME
+        password = process.env.SERVICENOW_PASSWORD
       }
 
       // Check for missing OR empty strings (reject empty credentials)
-      if (!username || !password || username.trim() === '' || password.trim() === '') {
-        throw new Error('No username/password available for basic authentication');
+      if (!username || !password || username.trim() === "" || password.trim() === "") {
+        throw new Error("No username/password available for basic authentication")
       }
 
-      mcpDebug('[Auth] Using username/password authentication');
+      mcpDebug("[Auth] Using username/password authentication")
 
       // Create Basic Auth token
-      const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');
-      const accessToken = `Basic ${basicAuth}`;
+      const basicAuth = Buffer.from(`${username}:${password}`).toString("base64")
+      const accessToken = `Basic ${basicAuth}`
 
       // Cache with long expiry (basic auth doesn't expire)
-      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000 // 24 hours
       this.tokenCache.set(cacheKey, {
         accessToken,
-        refreshToken: '', // No refresh token for basic auth
+        refreshToken: "", // No refresh token for basic auth
         expiresAt,
-        instanceUrl: context.instanceUrl
-      });
+        instanceUrl: context.instanceUrl,
+      })
 
       // Test the credentials with a simple API call
       try {
         await axios.get(`${context.instanceUrl}/api/now/table/sys_user?sysparm_limit=1`, {
           headers: {
-            'Authorization': accessToken,
-            'Content-Type': 'application/json'
+            Authorization: accessToken,
+            "Content-Type": "application/json",
           },
-          timeout: 10000
-        });
+          timeout: 10000,
+        })
 
-        mcpDebug('[Auth] Username/password authentication successful');
-        return accessToken;
-
+        mcpDebug("[Auth] Username/password authentication successful")
+        return accessToken
       } catch (testError: any) {
-        throw new Error(`Username/password authentication failed: Invalid credentials`);
+        throw new Error(`Username/password authentication failed: Invalid credentials`)
       }
-
     } catch (error: any) {
-      mcpDebug('[Auth] Username/password authentication failed:', error.message);
-      throw new Error(`Authentication failed: ${error.message}`);
+      mcpDebug("[Auth] Username/password authentication failed:", error.message)
+      throw new Error(`Authentication failed: ${error.message}`)
     }
   }
 
@@ -561,22 +556,22 @@ export class ServiceNowAuthManager {
    * Check if cached token is still valid
    */
   private isTokenValid(cacheKey: string): boolean {
-    const cached = this.tokenCache.get(cacheKey);
+    const cached = this.tokenCache.get(cacheKey)
     if (!cached) {
-      return false;
+      return false
     }
 
     // Check if token expired (with 1 minute buffer)
-    return Date.now() < cached.expiresAt;
+    return Date.now() < cached.expiresAt
   }
 
   /**
    * Invalidate cached token for instance
    */
   private invalidateToken(cacheKey: string): void {
-    this.tokenCache.delete(cacheKey);
-    this.clients.delete(cacheKey);
-    mcpDebug('[Auth] Invalidated token for:', cacheKey);
+    this.tokenCache.delete(cacheKey)
+    this.clients.delete(cacheKey)
+    mcpDebug("[Auth] Invalidated token for:", cacheKey)
   }
 
   /**
@@ -585,53 +580,53 @@ export class ServiceNowAuthManager {
   private getCacheKey(instanceUrl: string): string {
     // Normalize instance URL (remove trailing slash, protocol)
     return instanceUrl
-      .replace(/^https?:\/\//, '')
-      .replace(/\/$/, '')
-      .toLowerCase();
+      .replace(/^https?:\/\//, "")
+      .replace(/\/$/, "")
+      .toLowerCase()
   }
 
   /**
    * Derive a machine-specific encryption key for token cache
    */
   private deriveEncryptionKey(): Buffer {
-    const hostname = os.hostname();
-    let username: string;
+    const hostname = os.hostname()
+    let username: string
     try {
-      username = os.userInfo().username;
+      username = os.userInfo().username
     } catch {
-      username = process.env.USER || process.env.USERNAME || 'default';
+      username = process.env.USER || process.env.USERNAME || "default"
     }
-    const platform = os.platform();
-    const seed = `snow-flow-token-cache:${hostname}:${username}:${platform}`;
-    return crypto.createHash('sha256').update(seed).digest();
+    const platform = os.platform()
+    const seed = `snow-flow-token-cache:${hostname}:${username}:${platform}`
+    return crypto.createHash("sha256").update(seed).digest()
   }
 
   /**
    * Encrypt data with AES-256-GCM
    */
   private encrypt(plaintext: string): string {
-    const key = this.deriveEncryptionKey();
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-    const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-    const authTag = cipher.getAuthTag();
+    const key = this.deriveEncryptionKey()
+    const iv = crypto.randomBytes(12)
+    const cipher = crypto.createCipheriv("aes-256-gcm", key, iv)
+    const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()])
+    const authTag = cipher.getAuthTag()
     return JSON.stringify({
-      iv: iv.toString('base64'),
-      data: encrypted.toString('base64'),
-      tag: authTag.toString('base64'),
-    });
+      iv: iv.toString("base64"),
+      data: encrypted.toString("base64"),
+      tag: authTag.toString("base64"),
+    })
   }
 
   /**
    * Decrypt data with AES-256-GCM
    */
   private decrypt(ciphertext: string): string {
-    const key = this.deriveEncryptionKey();
-    const { iv, data, tag } = JSON.parse(ciphertext);
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64'));
-    decipher.setAuthTag(Buffer.from(tag, 'base64'));
-    const decrypted = Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]);
-    return decrypted.toString('utf8');
+    const key = this.deriveEncryptionKey()
+    const { iv, data, tag } = JSON.parse(ciphertext)
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64"))
+    decipher.setAuthTag(Buffer.from(tag, "base64"))
+    const decrypted = Buffer.concat([decipher.update(Buffer.from(data, "base64")), decipher.final()])
+    return decrypted.toString("utf8")
   }
 
   /**
@@ -639,23 +634,23 @@ export class ServiceNowAuthManager {
    */
   private async loadTokenCache(): Promise<void> {
     try {
-      const cachePath = this.getTokenCachePath();
-      const raw = await fs.readFile(cachePath, 'utf-8');
+      const cachePath = this.getTokenCachePath()
+      const raw = await fs.readFile(cachePath, "utf-8")
 
-      let cached: Record<string, TokenCache>;
+      let cached: Record<string, TokenCache>
 
       // Try decrypting first; fall back to plaintext for migration
       try {
-        const decrypted = this.decrypt(raw);
-        cached = JSON.parse(decrypted);
+        const decrypted = this.decrypt(raw)
+        cached = JSON.parse(decrypted)
       } catch {
         // Attempt plaintext parse for backward compatibility
         try {
-          cached = JSON.parse(raw);
-          mcpDebug('[Auth] Migrating plaintext token cache to encrypted format');
+          cached = JSON.parse(raw)
+          mcpDebug("[Auth] Migrating plaintext token cache to encrypted format")
         } catch {
-          mcpDebug('[Auth] Token cache corrupted, starting fresh');
-          return;
+          mcpDebug("[Auth] Token cache corrupted, starting fresh")
+          return
         }
       }
 
@@ -663,20 +658,20 @@ export class ServiceNowAuthManager {
       Object.entries(cached).forEach(([key, token]) => {
         // Only load if not expired
         if (token.expiresAt > Date.now()) {
-          this.tokenCache.set(key, token);
+          this.tokenCache.set(key, token)
         }
-      });
+      })
 
       // Re-save as encrypted if we loaded from plaintext (migration)
       if (this.tokenCache.size > 0) {
-        await this.saveTokenCache();
+        await this.saveTokenCache()
       }
 
-      mcpDebug('[Auth] Loaded', this.tokenCache.size, 'cached tokens');
+      mcpDebug("[Auth] Loaded", this.tokenCache.size, "cached tokens")
     } catch (error: any) {
       // Cache file doesn't exist or is corrupted - not critical
-      if (error.code !== 'ENOENT') {
-        mcpDebug('[Auth] Failed to load cache:', error.message);
+      if (error.code !== "ENOENT") {
+        mcpDebug("[Auth] Failed to load cache:", error.message)
       }
     }
   }
@@ -686,24 +681,24 @@ export class ServiceNowAuthManager {
    */
   private async saveTokenCache(): Promise<void> {
     try {
-      const cachePath = this.getTokenCachePath();
-      const cacheData: Record<string, TokenCache> = {};
+      const cachePath = this.getTokenCachePath()
+      const cacheData: Record<string, TokenCache> = {}
 
       // Convert Map to plain object
       this.tokenCache.forEach((token, key) => {
-        cacheData[key] = token;
-      });
+        cacheData[key] = token
+      })
 
       // Ensure directory exists with restricted permissions
-      const cacheDir = path.dirname(cachePath);
-      await fs.mkdir(cacheDir, { recursive: true, mode: 0o700 });
+      const cacheDir = path.dirname(cachePath)
+      await fs.mkdir(cacheDir, { recursive: true, mode: 0o700 })
 
       // Encrypt and write cache file with owner-only permissions
-      const encrypted = this.encrypt(JSON.stringify(cacheData));
-      await fs.writeFile(cachePath, encrypted, { encoding: 'utf-8', mode: 0o600 });
-      mcpDebug('[Auth] Token cache saved (encrypted)');
+      const encrypted = this.encrypt(JSON.stringify(cacheData))
+      await fs.writeFile(cachePath, encrypted, { encoding: "utf-8", mode: 0o600 })
+      mcpDebug("[Auth] Token cache saved (encrypted)")
     } catch (error: any) {
-      mcpDebug('[Auth] Failed to save cache:', error.message);
+      mcpDebug("[Auth] Failed to save cache:", error.message)
     }
   }
 
@@ -712,17 +707,17 @@ export class ServiceNowAuthManager {
    */
   private getTokenCachePath(): string {
     // Store in user's home directory
-    const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir();
-    return path.join(homeDir, '.snow-flow', 'token-cache.json');
+    const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir()
+    return path.join(homeDir, ".snow-flow", "token-cache.json")
   }
 
   /**
    * Clear all cached tokens
    */
   clearCache(): void {
-    this.tokenCache.clear();
-    this.clients.clear();
-    mcpDebug('[Auth] Cache cleared');
+    this.tokenCache.clear()
+    this.clients.clear()
+    mcpDebug("[Auth] Cache cleared")
   }
 
   /**
@@ -733,42 +728,40 @@ export class ServiceNowAuthManager {
       cachedInstances: this.tokenCache.size,
       activeClients: this.clients.size,
       tokens: [] as Array<{
-        instanceUrl: string;
-        expiresIn: number;
-        valid: boolean;
-      }>
-    };
+        instanceUrl: string
+        expiresIn: number
+        valid: boolean
+      }>,
+    }
 
     this.tokenCache.forEach((token, key) => {
-      const expiresIn = Math.max(0, token.expiresAt - Date.now());
+      const expiresIn = Math.max(0, token.expiresAt - Date.now())
       stats.tokens.push({
         instanceUrl: token.instanceUrl,
         expiresIn,
-        valid: this.isTokenValid(key)
-      });
-    });
+        valid: this.isTokenValid(key),
+      })
+    })
 
-    return stats;
+    return stats
   }
 }
 
 /**
  * Singleton instance for global use
  */
-export const authManager = new ServiceNowAuthManager();
+export const authManager = new ServiceNowAuthManager()
 
 /**
  * Convenience function to get authenticated client
  */
-export async function getAuthenticatedClient(
-  context: ServiceNowContext
-): Promise<ExtendedAxiosInstance> {
-  return await authManager.getAuthenticatedClient(context);
+export async function getAuthenticatedClient(context: ServiceNowContext): Promise<ExtendedAxiosInstance> {
+  return await authManager.getAuthenticatedClient(context)
 }
 
 /**
  * Convenience function to get access token
  */
 export async function getAccessToken(context: ServiceNowContext): Promise<string> {
-  return await authManager.getAccessToken(context);
+  return await authManager.getAccessToken(context)
 }

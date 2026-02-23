@@ -10,9 +10,7 @@ const CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 async function authorize(mode: "max" | "console") {
   const pkce = await generatePKCE()
 
-  const url = new URL(
-    `https://${mode === "console" ? "console.anthropic.com" : "claude.ai"}/oauth/authorize`,
-  )
+  const url = new URL(`https://${mode === "console" ? "console.anthropic.com" : "claude.ai"}/oauth/authorize`)
   url.searchParams.set("code", "true")
   url.searchParams.set("client_id", CLIENT_ID)
   url.searchParams.set("response_type", "code")

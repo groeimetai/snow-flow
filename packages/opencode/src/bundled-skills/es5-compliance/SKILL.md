@@ -18,72 +18,81 @@ ServiceNow runs on Mozilla Rhino engine which only supports ES5 JavaScript (2009
 
 ## Forbidden Syntax (WILL CAUSE SyntaxError)
 
-| ES6+ Syntax | ES5 Alternative |
-|-------------|-----------------|
-| `const x = 5` | `var x = 5` |
-| `let items = []` | `var items = []` |
-| `() => {}` | `function() {}` |
-| `` `Hello ${name}` `` | `'Hello ' + name` |
-| `for (x of arr)` | `for (var i = 0; i < arr.length; i++)` |
-| `{a, b} = obj` | `var a = obj.a; var b = obj.b;` |
-| `[a, b] = arr` | `var a = arr[0]; var b = arr[1];` |
-| `...spread` | Use `Array.prototype.slice.call()` |
-| `class MyClass {}` | Use constructor functions |
-| `async/await` | Use GlideRecord callbacks |
-| `Promise` | Use GlideRecord with callbacks |
+| ES6+ Syntax           | ES5 Alternative                        |
+| --------------------- | -------------------------------------- |
+| `const x = 5`         | `var x = 5`                            |
+| `let items = []`      | `var items = []`                       |
+| `() => {}`            | `function() {}`                        |
+| `` `Hello ${name}` `` | `'Hello ' + name`                      |
+| `for (x of arr)`      | `for (var i = 0; i < arr.length; i++)` |
+| `{a, b} = obj`        | `var a = obj.a; var b = obj.b;`        |
+| `[a, b] = arr`        | `var a = arr[0]; var b = arr[1];`      |
+| `...spread`           | Use `Array.prototype.slice.call()`     |
+| `class MyClass {}`    | Use constructor functions              |
+| `async/await`         | Use GlideRecord callbacks              |
+| `Promise`             | Use GlideRecord with callbacks         |
 
 ## Common Patterns
 
 ### Variable Declarations
+
 ```javascript
 // WRONG - ES6
-const MAX_RETRIES = 3;
-let currentUser = gs.getUser();
+const MAX_RETRIES = 3
+let currentUser = gs.getUser()
 
 // CORRECT - ES5
-var MAX_RETRIES = 3;
-var currentUser = gs.getUser();
+var MAX_RETRIES = 3
+var currentUser = gs.getUser()
 ```
 
 ### Functions
+
 ```javascript
 // WRONG - Arrow functions
-var active = incidents.filter(inc => inc.active);
-var process = () => { return 'done'; };
+var active = incidents.filter((inc) => inc.active)
+var process = () => {
+  return "done"
+}
 
 // CORRECT - ES5 functions
-var active = [];
+var active = []
 for (var i = 0; i < incidents.length; i++) {
   if (incidents[i].active) {
-    active.push(incidents[i]);
+    active.push(incidents[i])
   }
 }
-var process = function() { return 'done'; };
+var process = function () {
+  return "done"
+}
 ```
 
 ### String Concatenation
+
 ```javascript
 // WRONG - Template literals
-var message = `Incident ${number} assigned to ${user}`;
+var message = `Incident ${number} assigned to ${user}`
 
 // CORRECT - String concatenation
-var message = 'Incident ' + number + ' assigned to ' + user;
+var message = "Incident " + number + " assigned to " + user
 ```
 
 ### Loops
+
 ```javascript
 // WRONG - for...of
 for (var item of items) {
-  gs.info(item);
+  gs.info(item)
 }
 
 // CORRECT - Traditional for loop
 for (var i = 0; i < items.length; i++) {
-  gs.info(items[i]);
+  gs.info(items[i])
 }
 ```
 
 ### Default Parameters
+
 ```javascript
 // WRONG - Default parameters
 function process(incident, priority = 3) {
@@ -92,8 +101,8 @@ function process(incident, priority = 3) {
 
 // CORRECT - Manual defaults
 function process(incident, priority) {
-  if (typeof priority === 'undefined') {
-    priority = 3;
+  if (typeof priority === "undefined") {
+    priority = 3
   }
   // ...
 }
@@ -102,6 +111,7 @@ function process(incident, priority) {
 ## Automatic Validation
 
 Before deploying any server-side script:
+
 1. Check for `const`/`let` declarations - convert to `var`
 2. Check for arrow functions `=>` - convert to `function()`
 3. Check for template literals `` ` `` - convert to string concatenation

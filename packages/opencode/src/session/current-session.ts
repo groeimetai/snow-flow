@@ -8,12 +8,12 @@
  * which session's enabled tools to use.
  */
 
-import * as fs from 'fs'
-import * as path from 'path'
-import * as os from 'os'
-import { Log } from '../util/log'
+import * as fs from "fs"
+import * as path from "path"
+import * as os from "os"
+import { Log } from "../util/log"
 
-const log = Log.create({ service: 'current-session' })
+const log = Log.create({ service: "current-session" })
 
 /**
  * Get the current session file path
@@ -21,19 +21,19 @@ const log = Log.create({ service: 'current-session' })
  */
 function getCurrentSessionFilePath(): string {
   let dataDir: string
-  if (process.platform === 'darwin') {
-    dataDir = path.join(os.homedir(), 'Library', 'Application Support', 'snow-code')
-  } else if (process.platform === 'win32' && process.env.APPDATA) {
-    dataDir = path.join(process.env.APPDATA, 'snow-code')
+  if (process.platform === "darwin") {
+    dataDir = path.join(os.homedir(), "Library", "Application Support", "snow-code")
+  } else if (process.platform === "win32" && process.env.APPDATA) {
+    dataDir = path.join(process.env.APPDATA, "snow-code")
   } else {
-    dataDir = path.join(os.homedir(), '.local', 'share', 'snow-code')
+    dataDir = path.join(os.homedir(), ".local", "share", "snow-code")
   }
 
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true })
   }
 
-  return path.join(dataDir, 'current-session.json')
+  return path.join(dataDir, "current-session.json")
 }
 
 /**
@@ -43,14 +43,18 @@ function getCurrentSessionFilePath(): string {
 export function setCurrentSessionId(sessionId: string): void {
   try {
     const filePath = getCurrentSessionFilePath()
-    const data = JSON.stringify({
-      sessionId,
-      updatedAt: new Date().toISOString()
-    }, null, 2)
-    fs.writeFileSync(filePath, data, 'utf-8')
-    log.debug('set current session', { sessionId })
+    const data = JSON.stringify(
+      {
+        sessionId,
+        updatedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    )
+    fs.writeFileSync(filePath, data, "utf-8")
+    log.debug("set current session", { sessionId })
   } catch (e: any) {
-    log.warn('failed to set current session', { error: e.message })
+    log.warn("failed to set current session", { error: e.message })
   }
 }
 
@@ -61,11 +65,11 @@ export function getCurrentSessionId(): string | undefined {
   try {
     const filePath = getCurrentSessionFilePath()
     if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+      const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
       return data.sessionId
     }
   } catch (e: any) {
-    log.debug('failed to read current session', { error: e.message })
+    log.debug("failed to read current session", { error: e.message })
   }
   return undefined
 }
@@ -78,9 +82,9 @@ export function clearCurrentSessionId(): void {
     const filePath = getCurrentSessionFilePath()
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath)
-      log.debug('cleared current session')
+      log.debug("cleared current session")
     }
   } catch (e: any) {
-    log.warn('failed to clear current session', { error: e.message })
+    log.warn("failed to clear current session", { error: e.message })
   }
 }

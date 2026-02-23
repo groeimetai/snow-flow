@@ -6,17 +6,20 @@
 ## Architecture Overview
 
 This unified server replaces the legacy architecture where 34 separate MCP servers each had:
+
 - Duplicate OAuth authentication code
 - Redundant error handling
 - Separate tool registration
 - Individual server initialization
 
 **Old Architecture (Legacy):**
+
 ```
 34 Separate Servers × (Auth + Error + Tools) = Massive duplication
 ```
 
 **New Architecture (Unified):**
+
 ```
 1 Unified Server:
   ├─ Shared Auth Module (OAuth 2.0, single instance)
@@ -76,7 +79,9 @@ servicenow-mcp-unified/
 Tools are organized by **domain** (functional area), not by original server:
 
 ### 1. Deployment Tools (deployment/)
+
 **Purpose:** Artifact creation and deployment with validation
+
 - `snow_create_artifact` - Create widgets, pages, scripts, and more
 - `snow_validate_deployment` - Pre-deployment validation
 - `snow_rollback_deployment` - Safe rollback
@@ -84,7 +89,9 @@ Tools are organized by **domain** (functional area), not by original server:
 - `snow_validate_artifact_coherence` - Widget coherence
 
 ### 2. Operations Tools (operations/)
+
 **Purpose:** Core ServiceNow CRUD operations
+
 - `snow_query_table` - Universal table querying
 - `snow_create_incident` - Incident management
 - `snow_update_record` - Update any table
@@ -92,7 +99,9 @@ Tools are organized by **domain** (functional area), not by original server:
 - `snow_discover_table_fields` - Schema discovery
 
 ### 3. UI Builder Tools (ui-builder/)
+
 **Purpose:** Now Experience Framework development
+
 - `snow_create_uib_page` - Create UI Builder pages
 - `snow_create_uib_component` - Custom components
 - `snow_add_uib_page_element` - Add elements to pages
@@ -100,7 +109,9 @@ Tools are organized by **domain** (functional area), not by original server:
 - `snow_create_workspace` - Complete workspaces
 
 ### 4. Automation Tools (automation/)
+
 **Purpose:** Script scheduling and job management
+
 - `snow_schedule_script_job` - ⚠️ SCHEDULES scripts (NOT direct execution!) via sysauto_script + sys_trigger
 - `snow_confirm_script_execution` - Confirm scripts requiring approval (also uses scheduling)
 - `snow_schedule_job` - Create scheduled jobs
@@ -108,13 +119,17 @@ Tools are organized by **domain** (functional area), not by original server:
 - `snow_trace_execution` - Set up execution tracing configuration
 
 ### 5. Advanced Tools (advanced/)
+
 **Purpose:** Performance and analytics
+
 - `snow_analyze_query` - Query optimization
 - `snow_detect_code_patterns` - Code analysis
 - `snow_get_table_relationships` - Relationship mapping
 
 ### 6. Local Sync Tools (local-sync/)
+
 **Purpose:** Local development integration
+
 - `snow_pull_artifact` - Pull to local files
 - `snow_push_artifact` - Push local changes
 - `snow_validate_artifact_coherence` - Validate relationships
@@ -130,6 +145,7 @@ The tool registry automatically discovers tools using:
 4. **Registration**: Adds to MCP server tool list
 
 **Tool Definition Pattern:**
+
 ```typescript
 // tools/deployment/snow_create_artifact.ts
 export const toolDefinition = {
@@ -153,66 +169,71 @@ export async function execute(args: any, context: ServiceNowContext) {
 ## Shared Modules
 
 ### Auth Module (shared/auth.ts)
+
 **Purpose:** Single OAuth 2.0 implementation for all tools
 
 **Features:**
+
 - OAuth token management
 - Automatic token refresh
 - Session persistence
 - Multi-instance support
 
 **Usage:**
-```typescript
-import { getAuthenticatedClient } from '../shared/auth';
 
-const client = await getAuthenticatedClient(instanceUrl);
-const response = await client.get('/api/now/table/incident');
+```typescript
+import { getAuthenticatedClient } from "../shared/auth"
+
+const client = await getAuthenticatedClient(instanceUrl)
+const response = await client.get("/api/now/table/incident")
 ```
 
 ### Error Handler (shared/error-handler.ts)
+
 **Purpose:** Unified error handling and recovery
 
 **Features:**
+
 - Standardized error formats
 - Automatic retry with exponential backoff
 - Detailed error messages
 - Rollback on critical failures
 
 **Usage:**
+
 ```typescript
-import { handleError, retryWithBackoff } from '../shared/error-handler';
+import { handleError, retryWithBackoff } from "../shared/error-handler"
 
 try {
   await retryWithBackoff(() => createArtifact(config), {
     maxAttempts: 3,
-    initialDelay: 1000
-  });
+    initialDelay: 1000,
+  })
 } catch (error) {
-  throw handleError(error, 'snow_create_artifact', { config });
+  throw handleError(error, "snow_create_artifact", { config })
 }
 ```
 
 ### Retry Policy (shared/retry-policy.ts)
+
 **Purpose:** Exponential backoff for transient failures
 
 **Configuration:**
+
 ```json
 {
   "maxAttempts": 3,
   "backoff": "exponential",
   "initialDelay": 1000,
   "maxDelay": 10000,
-  "retryableErrors": [
-    "ECONNRESET",
-    "ETIMEDOUT",
-    "RATE_LIMIT_EXCEEDED"
-  ]
+  "retryableErrors": ["ECONNRESET", "ETIMEDOUT", "RATE_LIMIT_EXCEEDED"]
 }
 ```
 
 ## Configuration
 
 ### Server Configuration (config/server-config.json)
+
 ```json
 {
   "serverName": "servicenow-unified",
@@ -231,9 +252,11 @@ try {
 ```
 
 ### Tool Definitions (config/tool-definitions.json)
+
 **Auto-generated** by tool registry during server initialization.
 
 ### OAuth Configuration (config/oauth-config.json)
+
 ```json
 {
   "grantType": "refresh_token",
@@ -245,24 +268,28 @@ try {
 ## Migration Benefits
 
 **Code Reduction:**
+
 - 34 separate servers → 1 unified server
 - ~15,000 LOC duplicate code eliminated
 - Single OAuth implementation (no duplication)
 - Unified error handling (consistent behavior)
 
 **Performance:**
+
 - Faster initialization (1 server vs 34)
 - Shared connection pool
 - Reduced memory footprint
 - Better caching
 
 **Maintainability:**
+
 - Single codebase to update
 - Consistent tool patterns
 - Centralized error handling
 - Easier testing
 
 **Developer Experience:**
+
 - Auto-discovery of new tools
 - Standardized tool structure
 - Clear organization by domain
@@ -271,6 +298,7 @@ try {
 ## Usage Examples
 
 ### Starting the Server
+
 ```bash
 # Start unified MCP server
 node dist/mcp/servicenow-mcp-unified/index.js
@@ -290,50 +318,58 @@ node dist/mcp/servicenow-mcp-unified/index.js
 ```
 
 ### Adding New Tools
+
 1. Create tool file in appropriate domain directory
 2. Export `toolDefinition` and `execute` function
 3. Add to domain `index.ts`
 4. Tool automatically discovered on server start
 
 **Example:**
+
 ```typescript
 // tools/deployment/snow_create_flow.ts
 export const toolDefinition = {
-  name: 'snow_create_flow',
-  description: 'Create Flow Designer flows',
-  inputSchema: { /* ... */ }
-};
+  name: "snow_create_flow",
+  description: "Create Flow Designer flows",
+  inputSchema: {
+    /* ... */
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext) {
-  const client = await getAuthenticatedClient(context.instanceUrl);
+  const client = await getAuthenticatedClient(context.instanceUrl)
   // Implementation...
 }
 ```
 
 ### Tool Execution
+
 ```typescript
 // From Claude Agent SDK subagent
 const result = await snow_create_artifact({
-  type: 'sp_widget',
-  name: 'my_widget',
-  template: '<div>Hello</div>',
-  server_script: 'data.message = "Hello";'
-});
+  type: "sp_widget",
+  name: "my_widget",
+  template: "<div>Hello</div>",
+  server_script: 'data.message = "Hello";',
+})
 ```
 
 ## Testing
 
 ### Unit Tests
+
 ```bash
 npm test src/mcp/servicenow-mcp-unified
 ```
 
 ### Integration Tests
+
 ```bash
 npm run test:integration
 ```
 
 ### Tool Discovery Test
+
 ```bash
 npm run test:tool-discovery
 ```
@@ -343,6 +379,7 @@ npm run test:tool-discovery
 ### ✅ **MIGRATION COMPLETE!**
 
 **All Components Implemented:**
+
 - [x] Directory structure created (76 domains)
 - [x] Architecture documented
 - [x] Tool registry implementation (auto-discovery)
@@ -355,6 +392,7 @@ npm run test:tool-discovery
 - [x] Tool validation scripts
 
 **Tool Count by Category:**
+
 - Core Operations: 15 tools
 - Deployment: 3 tools
 - CMDB: 9 tools
@@ -373,6 +411,7 @@ npm run test:tool-discovery
 - **+ 60 additional domain categories** (Platform, Security, DevOps, etc.)
 
 **Code Metrics:**
+
 - **Eliminated:** ~15,000 LOC of duplicate code
 - **Created:** 235 unified tools with shared infrastructure
 - **Servers Consolidated:** 34 → 1 unified server

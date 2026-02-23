@@ -35,13 +35,13 @@ UX Application
 
 ### Key Concepts
 
-| Concept | Description |
-|---------|-------------|
-| **Macroponent** | Reusable container with components and logic |
-| **Component** | UI building block (list, form, button) |
-| **Data Broker** | Fetches and manages data for components |
-| **Client State** | Page-level state management |
-| **Event** | Communication between components |
+| Concept          | Description                                  |
+| ---------------- | -------------------------------------------- |
+| **Macroponent**  | Reusable container with components and logic |
+| **Component**    | UI building block (list, form, button)       |
+| **Data Broker**  | Fetches and manages data for components      |
+| **Client State** | Page-level state management                  |
+| **Event**        | Communication between components             |
 
 ## Page Structure
 
@@ -71,12 +71,12 @@ Page: incident_list
 
 ### Types of Data Brokers
 
-| Type | Use Case | Example |
-|------|----------|---------|
-| **GraphQL** | Table queries | Incident list |
-| **Script** | Complex logic | Calculated metrics |
-| **REST** | External APIs | Weather data |
-| **Transform** | Data manipulation | Format dates |
+| Type          | Use Case          | Example            |
+| ------------- | ----------------- | ------------------ |
+| **GraphQL**   | Table queries     | Incident list      |
+| **Script**    | Complex logic     | Calculated metrics |
+| **REST**      | External APIs     | Weather data       |
+| **Transform** | Data manipulation | Format dates       |
 
 ### GraphQL Data Broker
 
@@ -114,42 +114,41 @@ query ($limit: Int, $query: String) {
 // Data Broker: incident_metrics
 // Type: Script
 
-(function execute(inputs, outputs) {
-    var result = {
-        total: 0,
-        byPriority: {},
-        avgAge: 0
-    };
+;(function execute(inputs, outputs) {
+  var result = {
+    total: 0,
+    byPriority: {},
+    avgAge: 0,
+  }
 
-    var gr = new GlideRecord('incident');
-    gr.addQuery('active', true);
-    gr.query();
+  var gr = new GlideRecord("incident")
+  gr.addQuery("active", true)
+  gr.query()
 
-    var totalAge = 0;
-    while (gr.next()) {
-        result.total++;
+  var totalAge = 0
+  while (gr.next()) {
+    result.total++
 
-        // Count by priority
-        var priority = gr.getValue('priority');
-        if (!result.byPriority[priority]) {
-            result.byPriority[priority] = 0;
-        }
-        result.byPriority[priority]++;
-
-        // Calculate age
-        var opened = new GlideDateTime(gr.getValue('opened_at'));
-        var now = new GlideDateTime();
-        var age = gs.dateDiff(opened, now, true);
-        totalAge += parseInt(age);
+    // Count by priority
+    var priority = gr.getValue("priority")
+    if (!result.byPriority[priority]) {
+      result.byPriority[priority] = 0
     }
+    result.byPriority[priority]++
 
-    if (result.total > 0) {
-        result.avgAge = Math.round(totalAge / result.total / 3600); // hours
-    }
+    // Calculate age
+    var opened = new GlideDateTime(gr.getValue("opened_at"))
+    var now = new GlideDateTime()
+    var age = gs.dateDiff(opened, now, true)
+    totalAge += parseInt(age)
+  }
 
-    outputs.metrics = result;
+  if (result.total > 0) {
+    result.avgAge = Math.round(totalAge / result.total / 3600) // hours
+  }
 
-})(inputs, outputs);
+  outputs.metrics = result
+})(inputs, outputs)
 ```
 
 ## Client State Parameters
@@ -207,12 +206,12 @@ query ($limit: Int, $query: String) {
 
 ### Event Types
 
-| Event | Trigger | Payload |
-|-------|---------|---------|
-| `NOW_RECORD_LIST#RECORD_SELECTED` | Row click | { sys_id, table } |
-| `NOW_BUTTON#CLICKED` | Button click | { label } |
-| `NOW_DROPDOWN#SELECTED` | Dropdown change | { value } |
-| `CUSTOM#EVENT_NAME` | Custom event | Custom payload |
+| Event                             | Trigger         | Payload           |
+| --------------------------------- | --------------- | ----------------- |
+| `NOW_RECORD_LIST#RECORD_SELECTED` | Row click       | { sys_id, table } |
+| `NOW_BUTTON#CLICKED`              | Button click    | { label }         |
+| `NOW_DROPDOWN#SELECTED`           | Dropdown change | { value }         |
+| `CUSTOM#EVENT_NAME`               | Custom event    | Custom payload    |
 
 ### Event Handler Configuration
 
@@ -248,43 +247,42 @@ query ($limit: Int, $query: String) {
 
 ```javascript
 // Client Script for custom event handling
-(function(coeffects) {
-    var dispatch = coeffects.dispatch;
-    var state = coeffects.state;
-    var payload = coeffects.action.payload;
+;(function (coeffects) {
+  var dispatch = coeffects.dispatch
+  var state = coeffects.state
+  var payload = coeffects.action.payload
 
-    // Custom logic
-    var selectedId = payload.sys_id;
+  // Custom logic
+  var selectedId = payload.sys_id
 
-    // Update multiple states
-    dispatch('UPDATE_CLIENT_STATE', {
-        selectedIncident: selectedId,
-        detailsVisible: true
-    });
+  // Update multiple states
+  dispatch("UPDATE_CLIENT_STATE", {
+    selectedIncident: selectedId,
+    detailsVisible: true,
+  })
 
-    // Conditional dispatch
-    if (payload.priority === '1') {
-        dispatch('DISPATCH_EVENT', {
-            eventName: 'CRITICAL_INCIDENT_SELECTED',
-            payload: payload
-        });
-    }
-
-})(coeffects);
+  // Conditional dispatch
+  if (payload.priority === "1") {
+    dispatch("DISPATCH_EVENT", {
+      eventName: "CRITICAL_INCIDENT_SELECTED",
+      payload: payload,
+    })
+  }
+})(coeffects)
 ```
 
 ## Component Configuration
 
 ### Common Components
 
-| Component | Purpose | Key Properties |
-|-----------|---------|----------------|
-| `now-record-list` | Data table | columns, query, table |
-| `now-record-form` | Record form | table, sysId, fields |
-| `now-button` | Action button | label, variant, icon |
-| `now-card` | Card container | header, content |
-| `now-tabs` | Tab container | tabs, activeTab |
-| `now-modal` | Modal dialog | opened, title |
+| Component         | Purpose        | Key Properties        |
+| ----------------- | -------------- | --------------------- |
+| `now-record-list` | Data table     | columns, query, table |
+| `now-record-form` | Record form    | table, sysId, fields  |
+| `now-button`      | Action button  | label, variant, icon  |
+| `now-card`        | Card container | header, content       |
+| `now-tabs`        | Tab container  | tabs, activeTab       |
+| `now-modal`       | Modal dialog   | opened, title         |
 
 ### Record List Configuration
 
@@ -316,13 +314,7 @@ query ($limit: Int, $query: String) {
   "properties": {
     "table": "incident",
     "sysId": "@state.selectedIncident",
-    "fields": [
-      "short_description",
-      "description",
-      "priority",
-      "assignment_group",
-      "assigned_to"
-    ],
+    "fields": ["short_description", "description", "priority", "assignment_group", "assigned_to"],
     "readOnly": false
   }
 }
@@ -377,48 +369,48 @@ Macroponent: incident-summary-card
 
 ### Available UIB Tools
 
-| Tool | Purpose |
-|------|---------|
-| `snow_create_uib_page` | Create new page |
-| `snow_create_uib_component` | Add component to page |
-| `snow_create_uib_data_broker` | Create data broker |
-| `snow_create_uib_client_state` | Define client state |
-| `snow_create_uib_event` | Configure events |
-| `snow_create_complete_workspace` | Full workspace |
-| `snow_update_uib_page` | Modify page |
-| `snow_validate_uib_page_structure` | Validate structure |
+| Tool                               | Purpose               |
+| ---------------------------------- | --------------------- |
+| `snow_create_uib_page`             | Create new page       |
+| `snow_create_uib_component`        | Add component to page |
+| `snow_create_uib_data_broker`      | Create data broker    |
+| `snow_create_uib_client_state`     | Define client state   |
+| `snow_create_uib_event`            | Configure events      |
+| `snow_create_complete_workspace`   | Full workspace        |
+| `snow_update_uib_page`             | Modify page           |
+| `snow_validate_uib_page_structure` | Validate structure    |
 
 ### Example Workflow
 
 ```javascript
 // 1. Create workspace
 await snow_create_complete_workspace({
-    name: 'IT Support Workspace',
-    description: 'Agent workspace for IT support',
-    landing_page: 'incident_list'
-});
+  name: "IT Support Workspace",
+  description: "Agent workspace for IT support",
+  landing_page: "incident_list",
+})
 
 // 2. Create data broker
 await snow_create_uib_data_broker({
-    page_id: pageId,
-    name: 'incident_list',
-    type: 'graphql',
-    query: incidentQuery
-});
+  page_id: pageId,
+  name: "incident_list",
+  type: "graphql",
+  query: incidentQuery,
+})
 
 // 3. Add components
 await snow_create_uib_component({
-    page_id: pageId,
-    component: 'now-record-list',
-    properties: listConfig
-});
+  page_id: pageId,
+  component: "now-record-list",
+  properties: listConfig,
+})
 
 // 4. Configure events
 await snow_create_uib_event({
-    page_id: pageId,
-    event_name: 'NOW_RECORD_LIST#RECORD_SELECTED',
-    handlers: eventHandlers
-});
+  page_id: pageId,
+  event_name: "NOW_RECORD_LIST#RECORD_SELECTED",
+  handlers: eventHandlers,
+})
 ```
 
 ## Best Practices

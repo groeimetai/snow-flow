@@ -63,9 +63,11 @@ export namespace ActivityReporter {
           if (UPDATE_SET_TOOLS.has(toolName)) {
             const action = input.action
             if (action === "create") {
-              handleUpdateSetCreate(output, part.sessionID, authCache).then((activity) => {
-                if (activity) activeActivity = activity
-              }).catch(() => {})
+              handleUpdateSetCreate(output, part.sessionID, authCache)
+                .then((activity) => {
+                  if (activity) activeActivity = activity
+                })
+                .catch(() => {})
             }
             if (action === "complete" && activeActivity) {
               handleUpdateSetComplete(activeActivity, authCache).catch(() => {})
@@ -179,10 +181,7 @@ async function handleUpdateSetCreate(
   }
 }
 
-async function handleUpdateSetComplete(
-  activity: ActiveActivity,
-  authCache: AuthCache | undefined,
-): Promise<void> {
+async function handleUpdateSetComplete(activity: ActiveActivity, authCache: AuthCache | undefined): Promise<void> {
   if (!authCache) return
 
   try {

@@ -22,6 +22,7 @@ Flow Designer is the modern automation engine in ServiceNow, replacing legacy Wo
 To create and manage flows programmatically, first discover the Flow Designer tool via `tool_search({query: "flow designer"})`. The discovered tool handles all GraphQL mutations for the full flow lifecycle.
 
 **CRITICAL — IF/ELSE/ELSEIF placement rules:**
+
 - Actions **inside** an IF branch: `parent_ui_id` = IF's `uiUniqueIdentifier`
 - **ELSE/ELSEIF** blocks: must be at the **same level** as IF, NOT nested inside it
   - `parent_ui_id` = the **same parent** you used for the IF block
@@ -30,16 +31,17 @@ To create and manage flows programmatically, first discover the Flow Designer to
 
 ## Flow Designer Components
 
-| Component | Purpose | Reusable |
-|-----------|---------|----------|
-| **Flow** | Main automation process | No |
-| **Subflow** | Reusable flow logic | Yes |
-| **Action** | Single operation (Script, REST, etc.) | Yes |
-| **Spoke** | Collection of related actions | Yes |
+| Component   | Purpose                               | Reusable |
+| ----------- | ------------------------------------- | -------- |
+| **Flow**    | Main automation process               | No       |
+| **Subflow** | Reusable flow logic                   | Yes      |
+| **Action**  | Single operation (Script, REST, etc.) | Yes      |
+| **Spoke**   | Collection of related actions         | Yes      |
 
 ## Flow Triggers
 
 ### Record-Based Triggers
+
 ```
 Trigger: Created
 Table: incident
@@ -55,6 +57,7 @@ Condition: Risk = High
 ```
 
 ### Schedule Triggers
+
 ```
 Trigger: Daily
 Time: 02:00 AM
@@ -66,6 +69,7 @@ Time: 08:00 AM
 ```
 
 ### Service Catalog Triggers
+
 ```
 Trigger: Service Catalog
 Catalog Item: Request New Laptop
@@ -74,6 +78,7 @@ Catalog Item: Request New Laptop
 ## Flow Best Practices
 
 ### 1. Use Subflows for Reusability
+
 ```
 Main Flow: Incident P1 Handler
 ├── Trigger: Incident Created (Priority = 1)
@@ -84,6 +89,7 @@ Main Flow: Incident P1 Handler
 ```
 
 ### 2. Error Handling
+
 ```
 Flow: Process Integration
 ├── Try
@@ -99,21 +105,23 @@ Flow: Process Integration
 ```
 
 ### 3. Flow Variables
+
 ```javascript
 // Input Variables (from trigger)
-var incidentSysId = fd_data.trigger.current.sys_id;
-var priority = fd_data.trigger.current.priority;
+var incidentSysId = fd_data.trigger.current.sys_id
+var priority = fd_data.trigger.current.priority
 
 // Scratch Variables (within flow)
-fd_data.scratch.approval_required = priority == '1';
-fd_data.scratch.notification_sent = false;
+fd_data.scratch.approval_required = priority == "1"
+fd_data.scratch.notification_sent = false
 
 // Output Variables (to calling flow/subflow)
-fd_data.output.success = true;
-fd_data.output.message = 'Processed successfully';
+fd_data.output.success = true
+fd_data.output.message = "Processed successfully"
 ```
 
 ### 4. Conditions and Branches
+
 ```
 If: Priority = Critical
   Then:
@@ -130,60 +138,62 @@ If: Priority = Critical
 ## Custom Actions (Scripts)
 
 ### Basic Script Action
+
 ```javascript
-(function execute(inputs, outputs) {
+;(function execute(inputs, outputs) {
   // Inputs defined in Action Designer
-  var incidentId = inputs.incident_sys_id;
-  var newState = inputs.target_state;
+  var incidentId = inputs.incident_sys_id
+  var newState = inputs.target_state
 
   // Process
-  var gr = new GlideRecord('incident');
+  var gr = new GlideRecord("incident")
   if (gr.get(incidentId)) {
-    gr.setValue('state', newState);
-    gr.update();
+    gr.setValue("state", newState)
+    gr.update()
 
     // Set outputs
-    outputs.success = true;
-    outputs.incident_number = gr.getValue('number');
+    outputs.success = true
+    outputs.incident_number = gr.getValue("number")
   } else {
-    outputs.success = false;
-    outputs.error_message = 'Incident not found';
+    outputs.success = false
+    outputs.error_message = "Incident not found"
   }
-})(inputs, outputs);
+})(inputs, outputs)
 ```
 
 ### Script Action with Error Handling
-```javascript
-(function execute(inputs, outputs) {
-  try {
-    var gr = new GlideRecord(inputs.table_name);
-    gr.addEncodedQuery(inputs.query);
-    gr.query();
 
-    var records = [];
+```javascript
+;(function execute(inputs, outputs) {
+  try {
+    var gr = new GlideRecord(inputs.table_name)
+    gr.addEncodedQuery(inputs.query)
+    gr.query()
+
+    var records = []
     while (gr.next()) {
       records.push({
         sys_id: gr.getUniqueValue(),
-        display_value: gr.getDisplayValue()
-      });
+        display_value: gr.getDisplayValue(),
+      })
     }
 
-    outputs.records = JSON.stringify(records);
-    outputs.count = records.length;
-    outputs.success = true;
-
+    outputs.records = JSON.stringify(records)
+    outputs.count = records.length
+    outputs.success = true
   } catch (e) {
-    outputs.success = false;
-    outputs.error_message = e.message;
+    outputs.success = false
+    outputs.error_message = e.message
     // Flow Designer will catch this and route to error handler
-    throw new Error('Query failed: ' + e.message);
+    throw new Error("Query failed: " + e.message)
   }
-})(inputs, outputs);
+})(inputs, outputs)
 ```
 
 ## REST Action Example
 
 ### Configuration
+
 ```yaml
 Action: Call External API
 Connection: My REST Connection Alias
@@ -205,22 +215,24 @@ Parse Response: JSON
 ```
 
 ### Response Handling
+
 ```javascript
 // In a Script step after REST call
-var response = fd_data.action_outputs.rest_response;
+var response = fd_data.action_outputs.rest_response
 
 if (response.status_code == 201) {
-  outputs.external_id = response.body.id;
-  outputs.success = true;
+  outputs.external_id = response.body.id
+  outputs.success = true
 } else {
-  outputs.success = false;
-  outputs.error = response.body.error || 'Unknown error';
+  outputs.success = false
+  outputs.error = response.body.error || "Unknown error"
 }
 ```
 
 ## Subflow Patterns
 
 ### Notification Subflow
+
 ```
 Subflow: Send Notification
 Inputs:
@@ -240,6 +252,7 @@ Actions:
 ```
 
 ### Approval Subflow
+
 ```
 Subflow: Request Approval
 Inputs:
@@ -259,28 +272,30 @@ Actions:
 
 ## Flow Designer vs Workflow
 
-| Feature | Flow Designer | Workflow |
-|---------|---------------|----------|
-| Interface | Modern, visual | Legacy |
-| Reusability | Subflows, Actions | Limited |
-| Testing | Built-in testing | Manual |
-| Version Control | Yes | Limited |
-| Integration Hub | Yes | No |
-| Performance | Better | Slower |
+| Feature            | Flow Designer               | Workflow               |
+| ------------------ | --------------------------- | ---------------------- |
+| Interface          | Modern, visual              | Legacy                 |
+| Reusability        | Subflows, Actions           | Limited                |
+| Testing            | Built-in testing            | Manual                 |
+| Version Control    | Yes                         | Limited                |
+| Integration Hub    | Yes                         | No                     |
+| Performance        | Better                      | Slower                 |
 | **Recommendation** | **Use for new development** | Maintain existing only |
 
 ## Debugging Flows
 
 ### Flow Context Logs
+
 ```javascript
 // In Script Action
-fd_log.info('Processing incident: ' + inputs.incident_number);
-fd_log.debug('Input data: ' + JSON.stringify(inputs));
-fd_log.warn('Retry attempt: ' + inputs.retry_count);
-fd_log.error('Failed to process: ' + error.message);
+fd_log.info("Processing incident: " + inputs.incident_number)
+fd_log.debug("Input data: " + JSON.stringify(inputs))
+fd_log.warn("Retry attempt: " + inputs.retry_count)
+fd_log.error("Failed to process: " + error.message)
 ```
 
 ### Flow Execution History
+
 ```
 Navigate: Flow Designer > Executions
 Filter by: Flow name, Status, Date range
@@ -290,6 +305,7 @@ View: Step-by-step execution details
 ## Common Patterns
 
 ### Pattern 1: SLA Escalation Flow
+
 ```
 Trigger: SLA breached (Task SLA)
 Actions:
@@ -301,6 +317,7 @@ Actions:
 ```
 
 ### Pattern 2: Approval Routing
+
 ```
 Trigger: Request Item created
 Actions:
@@ -315,6 +332,7 @@ Actions:
 ```
 
 ### Pattern 3: Integration Sync
+
 ```
 Trigger: Scheduled (every 15 minutes)
 Actions:

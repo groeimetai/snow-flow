@@ -2,46 +2,46 @@
  * snow_ai_classify
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_ai_classify',
-  description: 'Classify text using AI',
+  name: "snow_ai_classify",
+  description: "Classify text using AI",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'advanced',
-  subcategory: 'machine-learning',
-  use_cases: ['text-classification', 'ai', 'categorization'],
-  complexity: 'intermediate',
-  frequency: 'low',
+  category: "advanced",
+  subcategory: "machine-learning",
+  use_cases: ["text-classification", "ai", "categorization"],
+  complexity: "intermediate",
+  frequency: "low",
 
   // Permission enforcement
   // Classification: READ - Classification function - classifies data without modifying
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: "read",
+  allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      text: { type: 'string', description: 'Text to classify' },
-      categories: { type: 'array', items: { type: 'string' }, description: 'Available categories' }
+      text: { type: "string", description: "Text to classify" },
+      categories: { type: "array", items: { type: "string" }, description: "Available categories" },
     },
-    required: ['text', 'categories']
-  }
-};
+    required: ["text", "categories"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { text, categories } = args;
+  const { text, categories } = args
   try {
     return createSuccessResult({
       classified: true,
       category: categories[0],
       confidence: 0.92,
-      text_length: text.length
-    });
+      text_length: text.length,
+    })
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = "1.0.0"
+export const author = "Snow-Flow SDK Migration"

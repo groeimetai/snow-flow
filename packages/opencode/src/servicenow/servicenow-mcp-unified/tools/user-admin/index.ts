@@ -7,5 +7,8 @@
  */
 
 // Merged Tools (v8.2.0)
-export { toolDefinition as snow_user_manage_def, execute as snow_user_manage_exec } from './snow_user_manage.js';
-export { toolDefinition as snow_role_group_manage_def, execute as snow_role_group_manage_exec } from './snow_role_group_manage.js';
+export { toolDefinition as snow_user_manage_def, execute as snow_user_manage_exec } from "./snow_user_manage.js"
+export {
+  toolDefinition as snow_role_group_manage_def,
+  execute as snow_role_group_manage_exec,
+} from "./snow_role_group_manage.js"

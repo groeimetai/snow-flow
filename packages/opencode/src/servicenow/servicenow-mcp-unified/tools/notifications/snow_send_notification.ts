@@ -2,46 +2,46 @@
  * snow_send_notification - Send notification
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_send_notification',
-  description: 'Send email/SMS notification',
+  name: "snow_send_notification",
+  description: "Send email/SMS notification",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'automation',
-  subcategory: 'notifications',
-  use_cases: ['notifications', 'email', 'sms'],
-  complexity: 'beginner',
-  frequency: 'high',
+  category: "automation",
+  subcategory: "notifications",
+  use_cases: ["notifications", "email", "sms"],
+  complexity: "beginner",
+  frequency: "high",
 
   // Permission enforcement
   // Classification: READ - Query/analysis operation
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: "read",
+  allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      users: { type: 'array', items: { type: 'string' } },
-      subject: { type: 'string' },
-      message: { type: 'string' },
-      type: { type: 'string', enum: ['email', 'sms', 'push'] }
+      users: { type: "array", items: { type: "string" } },
+      subject: { type: "string" },
+      message: { type: "string" },
+      type: { type: "string", enum: ["email", "sms", "push"] },
     },
-    required: ['users', 'subject', 'message']
-  }
-};
+    required: ["users", "subject", "message"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { users, subject, message, type = 'email' } = args;
+  const { users, subject, message, type = "email" } = args
   try {
-    const client = await getAuthenticatedClient(context);
-    const notifData = { users: users.join(','), subject, message, type };
-    const response = await client.post('/api/now/table/sysevent_email_action', notifData);
-    return createSuccessResult({ sent: true, notification: response.data.result });
+    const client = await getAuthenticatedClient(context)
+    const notifData = { users: users.join(","), subject, message, type }
+    const response = await client.post("/api/now/table/sysevent_email_action", notifData)
+    return createSuccessResult({ sent: true, notification: response.data.result })
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.0.0';
+export const version = "1.0.0"

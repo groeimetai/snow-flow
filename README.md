@@ -145,8 +145,8 @@ On first launch, Snow-Flow prompts you to configure an AI provider. You can also
   "$schema": "https://snow-flow.dev/config.json",
   "provider": {
     "anthropic": {},
-    "openai": {}
-  }
+    "openai": {},
+  },
 }
 ```
 
@@ -203,11 +203,11 @@ Snow-Flow is not coupled to any single AI provider. Use whichever model works be
 
 Switch between agents with `Tab`:
 
-| Agent | Description |
-|:------|:------------|
-| **build** | Default agent with full tool access for development work |
-| **plan** | Read-only agent for analysis and exploration — denies edits, asks before bash |
-| **general** | Subagent for complex multi-step tasks — invoke with `@general` |
+| Agent       | Description                                                                   |
+| :---------- | :---------------------------------------------------------------------------- |
+| **build**   | Default agent with full tool access for development work                      |
+| **plan**    | Read-only agent for analysis and exploration — denies edits, asks before bash |
+| **general** | Subagent for complex multi-step tasks — invoke with `@general`                |
 
 Custom agents can be configured in `snow-flow.jsonc` with per-agent model selection, permissions, and temperature controls. Learn more about [agents](https://snow-flow.dev/docs/agents).
 
@@ -240,6 +240,7 @@ The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
 <td width="33%" valign="top">
 
 **Operations**
+
 - Query any table
 - CMDB search
 - User management
@@ -249,6 +250,7 @@ The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
 <td width="33%" valign="top">
 
 **Development**
+
 - Script Includes
 - Business Rules
 - Client Scripts
@@ -258,6 +260,7 @@ The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
 <td width="33%" valign="top">
 
 **Automation**
+
 - Flow Designer
 - Scheduled Jobs
 - Approval Workflows
@@ -269,6 +272,7 @@ The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
 <td width="33%" valign="top">
 
 **Deployment**
+
 - Widget deploy & preview
 - Update Set lifecycle
 - Artifact validation
@@ -278,6 +282,7 @@ The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
 <td width="33%" valign="top">
 
 **Security**
+
 - ACL management
 - Domain Separation
 - Compliance auditing
@@ -287,6 +292,7 @@ The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
 <td width="33%" valign="top">
 
 **Analysis**
+
 - Reporting & Dashboards
 - KPI management
 - Performance Analytics
@@ -307,10 +313,10 @@ Connect to your instance:
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "...",
-        "SERVICENOW_CLIENT_SECRET": "..."
-      }
-    }
-  }
+        "SERVICENOW_CLIENT_SECRET": "...",
+      },
+    },
+  },
 }
 ```
 
@@ -320,15 +326,15 @@ Connect to your instance:
 
 Deep domain knowledge for ServiceNow development, organized by category:
 
-| Category | Skills |
-|:---------|:-------|
+| Category        | Skills                                                                            |
+| :-------------- | :-------------------------------------------------------------------------------- |
 | **Development** | GlideRecord patterns, Script Includes, Business Rules, Client Scripts, UI Builder |
-| **Integration** | REST integration, Integration Hub, Transform Maps, Import/Export |
-| **Automation** | Flow Designer, Approval Workflows, Scheduled Jobs, Change Management |
-| **Security** | ACL patterns, Domain Separation, Instance Security, GRC Compliance |
-| **ITSM** | Incident, Problem, Change, Request, SLA Management |
-| **Platform** | CMDB, Discovery, Performance Analytics, Virtual Agent, Agent Workspace |
-| **Quality** | ATF Testing, Code Review, Widget Coherence, ES5 Compliance |
+| **Integration** | REST integration, Integration Hub, Transform Maps, Import/Export                  |
+| **Automation**  | Flow Designer, Approval Workflows, Scheduled Jobs, Change Management              |
+| **Security**    | ACL patterns, Domain Separation, Instance Security, GRC Compliance                |
+| **ITSM**        | Incident, Problem, Change, Request, SLA Management                                |
+| **Platform**    | CMDB, Discovery, Performance Analytics, Virtual Agent, Agent Workspace            |
+| **Quality**     | ATF Testing, Code Review, Widget Coherence, ES5 Compliance                        |
 
 <br>
 
@@ -347,13 +353,13 @@ Connect any MCP-compatible server via stdio, SSE, or streamable HTTP with OAuth 
   "mcp": {
     "context7": {
       "type": "remote",
-      "url": "https://mcp.context7.com/mcp"
+      "url": "https://mcp.context7.com/mcp",
     },
     "custom-tools": {
       "type": "local",
-      "command": ["node", "./server.js"]
-    }
-  }
+      "command": ["node", "./server.js"],
+    },
+  },
 }
 ```
 
@@ -366,10 +372,7 @@ Extend with npm packages or local plugins that add tools, auth providers, event 
 
 ```jsonc
 {
-  "plugin": [
-    "my-snow-flow-plugin",
-    "file://./local-plugin"
-  ]
+  "plugin": ["my-snow-flow-plugin", "file://./local-plugin"],
 }
 ```
 
@@ -402,8 +405,8 @@ Fine-grained control over what agents can do, with glob pattern matching and env
     "bash": "ask",
     "write": "allow",
     "read": "allow",
-    "external_directory": "deny"
-  }
+    "external_directory": "deny",
+  },
 }
 ```
 

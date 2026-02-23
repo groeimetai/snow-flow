@@ -20,23 +20,23 @@ Predictive Intelligence uses machine learning to automate categorization, routin
 
 ## PI Capabilities
 
-| Capability | Use Case |
-|------------|----------|
+| Capability         | Use Case                         |
+| ------------------ | -------------------------------- |
 | **Classification** | Auto-categorize incidents, cases |
-| **Similarity** | Find similar records |
-| **Clustering** | Group related items |
-| **Regression** | Predict numeric values |
-| **Recommendation** | Suggest next actions |
+| **Similarity**     | Find similar records             |
+| **Clustering**     | Group related items              |
+| **Regression**     | Predict numeric values           |
+| **Recommendation** | Suggest next actions             |
 
 ## Key Tables
 
-| Table | Purpose |
-|-------|---------|
-| `ml_solution` | ML solution definitions |
-| `ml_solution_definition` | Solution configuration |
-| `ml_capability_definition` | Capability settings |
-| `ml_model` | Trained models |
-| `ml_prediction_result` | Prediction results |
+| Table                      | Purpose                 |
+| -------------------------- | ----------------------- |
+| `ml_solution`              | ML solution definitions |
+| `ml_solution_definition`   | Solution configuration  |
+| `ml_capability_definition` | Capability settings     |
+| `ml_model`                 | Trained models          |
+| `ml_prediction_result`     | Prediction results      |
 
 ## Classification (ES5)
 
@@ -46,24 +46,24 @@ Predictive Intelligence uses machine learning to automate categorization, routin
 // Create classification solution (ES5 ONLY!)
 // Note: Usually done via UI, shown for understanding
 
-var solution = new GlideRecord('ml_solution');
-solution.initialize();
+var solution = new GlideRecord("ml_solution")
+solution.initialize()
 
-solution.setValue('name', 'Incident Category Classifier');
-solution.setValue('label', 'Incident Category Classifier');
-solution.setValue('table', 'incident');
-solution.setValue('active', true);
+solution.setValue("name", "Incident Category Classifier")
+solution.setValue("label", "Incident Category Classifier")
+solution.setValue("table", "incident")
+solution.setValue("active", true)
 
 // Capability type
-solution.setValue('capability', 'classification');
+solution.setValue("capability", "classification")
 
 // Target field to predict
-solution.setValue('target_field', 'category');
+solution.setValue("target_field", "category")
 
 // Input fields for training
-solution.setValue('input_fields', 'short_description,description');
+solution.setValue("input_fields", "short_description,description")
 
-solution.insert();
+solution.insert()
 ```
 
 ### Get Classification Prediction
@@ -71,25 +71,25 @@ solution.insert();
 ```javascript
 // Get classification prediction for record (ES5 ONLY!)
 function getClassificationPrediction(tableName, recordSysId, solutionName) {
-    var predictor = new sn_ml.ClassificationPredictor(solutionName);
+  var predictor = new sn_ml.ClassificationPredictor(solutionName)
 
-    var gr = new GlideRecord(tableName);
-    if (!gr.get(recordSysId)) {
-        return null;
+  var gr = new GlideRecord(tableName)
+  if (!gr.get(recordSysId)) {
+    return null
+  }
+
+  try {
+    var result = predictor.predict(gr)
+
+    return {
+      predicted_value: result.getPredictedValue(),
+      confidence: result.getConfidence(),
+      top_predictions: result.getTopPredictions(5),
     }
-
-    try {
-        var result = predictor.predict(gr);
-
-        return {
-            predicted_value: result.getPredictedValue(),
-            confidence: result.getConfidence(),
-            top_predictions: result.getTopPredictions(5)
-        };
-    } catch (e) {
-        gs.error('Prediction failed: ' + e.message);
-        return null;
-    }
+  } catch (e) {
+    gs.error("Prediction failed: " + e.message)
+    return null
+  }
 }
 ```
 
@@ -99,28 +99,31 @@ function getClassificationPrediction(tableName, recordSysId, solutionName) {
 // Auto-apply classification prediction (ES5 ONLY!)
 // Business Rule: before, insert, incident
 
-(function executeRule(current, previous) {
-    // Skip if already categorized
-    if (current.category) {
-        return;
+;(function executeRule(current, previous) {
+  // Skip if already categorized
+  if (current.category) {
+    return
+  }
+
+  var solutionName = "incident_category_classifier"
+
+  try {
+    var predictor = new sn_ml.ClassificationPredictor(solutionName)
+    var result = predictor.predict(current)
+
+    // Only apply if confidence is high enough
+    if (result.getConfidence() >= 0.8) {
+      current.category = result.getPredictedValue()
+      current.work_notes =
+        "Category auto-assigned by Predictive Intelligence " +
+        "(Confidence: " +
+        Math.round(result.getConfidence() * 100) +
+        "%)"
     }
-
-    var solutionName = 'incident_category_classifier';
-
-    try {
-        var predictor = new sn_ml.ClassificationPredictor(solutionName);
-        var result = predictor.predict(current);
-
-        // Only apply if confidence is high enough
-        if (result.getConfidence() >= 0.8) {
-            current.category = result.getPredictedValue();
-            current.work_notes = 'Category auto-assigned by Predictive Intelligence ' +
-                                '(Confidence: ' + Math.round(result.getConfidence() * 100) + '%)';
-        }
-    } catch (e) {
-        gs.warn('Classification prediction failed: ' + e.message);
-    }
-})(current, previous);
+  } catch (e) {
+    gs.warn("Classification prediction failed: " + e.message)
+  }
+})(current, previous)
 ```
 
 ## Similarity (ES5)
@@ -130,32 +133,32 @@ function getClassificationPrediction(tableName, recordSysId, solutionName) {
 ```javascript
 // Find similar incidents (ES5 ONLY!)
 function findSimilarIncidents(incidentSysId, maxResults) {
-    maxResults = maxResults || 5;
+  maxResults = maxResults || 5
 
-    var incident = new GlideRecord('incident');
-    if (!incident.get(incidentSysId)) {
-        return [];
+  var incident = new GlideRecord("incident")
+  if (!incident.get(incidentSysId)) {
+    return []
+  }
+
+  try {
+    var similarity = new sn_ml.SimilarityPredictor("incident_similarity")
+    var results = similarity.findSimilar(incident, maxResults)
+
+    var similar = []
+    for (var i = 0; i < results.length; i++) {
+      var match = results[i]
+      similar.push({
+        sys_id: match.getRecordSysId(),
+        similarity_score: match.getSimilarityScore(),
+        record: match.getRecord(),
+      })
     }
 
-    try {
-        var similarity = new sn_ml.SimilarityPredictor('incident_similarity');
-        var results = similarity.findSimilar(incident, maxResults);
-
-        var similar = [];
-        for (var i = 0; i < results.length; i++) {
-            var match = results[i];
-            similar.push({
-                sys_id: match.getRecordSysId(),
-                similarity_score: match.getSimilarityScore(),
-                record: match.getRecord()
-            });
-        }
-
-        return similar;
-    } catch (e) {
-        gs.error('Similarity search failed: ' + e.message);
-        return [];
-    }
+    return similar
+  } catch (e) {
+    gs.error("Similarity search failed: " + e.message)
+    return []
+  }
 }
 ```
 
@@ -163,42 +166,42 @@ function findSimilarIncidents(incidentSysId, maxResults) {
 
 ```javascript
 // Widget Server Script for similar records (ES5 ONLY!)
-(function() {
-    if (!input || !input.table || !input.sys_id) {
-        data.similar = [];
-        return;
+;(function () {
+  if (!input || !input.table || !input.sys_id) {
+    data.similar = []
+    return
+  }
+
+  var solutionName = input.table + "_similarity"
+
+  try {
+    var gr = new GlideRecord(input.table)
+    if (!gr.get(input.sys_id)) {
+      data.similar = []
+      return
     }
 
-    var solutionName = input.table + '_similarity';
+    var similarity = new sn_ml.SimilarityPredictor(solutionName)
+    var results = similarity.findSimilar(gr, 5)
 
-    try {
-        var gr = new GlideRecord(input.table);
-        if (!gr.get(input.sys_id)) {
-            data.similar = [];
-            return;
-        }
+    data.similar = []
+    for (var i = 0; i < results.length; i++) {
+      var match = results[i]
+      var record = match.getRecord()
 
-        var similarity = new sn_ml.SimilarityPredictor(solutionName);
-        var results = similarity.findSimilar(gr, 5);
-
-        data.similar = [];
-        for (var i = 0; i < results.length; i++) {
-            var match = results[i];
-            var record = match.getRecord();
-
-            data.similar.push({
-                sys_id: match.getRecordSysId(),
-                score: Math.round(match.getSimilarityScore() * 100),
-                number: record.getValue('number'),
-                short_description: record.getValue('short_description'),
-                state: record.state.getDisplayValue()
-            });
-        }
-    } catch (e) {
-        data.error = 'Similarity search unavailable';
-        data.similar = [];
+      data.similar.push({
+        sys_id: match.getRecordSysId(),
+        score: Math.round(match.getSimilarityScore() * 100),
+        number: record.getValue("number"),
+        short_description: record.getValue("short_description"),
+        state: record.state.getDisplayValue(),
+      })
     }
-})();
+  } catch (e) {
+    data.error = "Similarity search unavailable"
+    data.similar = []
+  }
+})()
 ```
 
 ## Clustering (ES5)
@@ -208,24 +211,24 @@ function findSimilarIncidents(incidentSysId, maxResults) {
 ```javascript
 // Get cluster for record (ES5 ONLY!)
 function getClusterAssignment(tableName, recordSysId, solutionName) {
-    var gr = new GlideRecord(tableName);
-    if (!gr.get(recordSysId)) {
-        return null;
-    }
+  var gr = new GlideRecord(tableName)
+  if (!gr.get(recordSysId)) {
+    return null
+  }
 
-    try {
-        var clustering = new sn_ml.ClusteringPredictor(solutionName);
-        var result = clustering.predict(gr);
+  try {
+    var clustering = new sn_ml.ClusteringPredictor(solutionName)
+    var result = clustering.predict(gr)
 
-        return {
-            cluster_id: result.getClusterId(),
-            cluster_label: result.getClusterLabel(),
-            confidence: result.getConfidence()
-        };
-    } catch (e) {
-        gs.error('Clustering failed: ' + e.message);
-        return null;
+    return {
+      cluster_id: result.getClusterId(),
+      cluster_label: result.getClusterLabel(),
+      confidence: result.getConfidence(),
     }
+  } catch (e) {
+    gs.error("Clustering failed: " + e.message)
+    return null
+  }
 }
 ```
 
@@ -234,22 +237,22 @@ function getClusterAssignment(tableName, recordSysId, solutionName) {
 ```javascript
 // Get cluster statistics (ES5 ONLY!)
 function getClusterStats(solutionName) {
-    var stats = [];
+  var stats = []
 
-    var cluster = new GlideRecord('ml_cluster');
-    cluster.addQuery('solution.name', solutionName);
-    cluster.query();
+  var cluster = new GlideRecord("ml_cluster")
+  cluster.addQuery("solution.name", solutionName)
+  cluster.query()
 
-    while (cluster.next()) {
-        stats.push({
-            cluster_id: cluster.getValue('cluster_id'),
-            label: cluster.getValue('label'),
-            size: parseInt(cluster.getValue('record_count'), 10),
-            keywords: cluster.getValue('keywords')
-        });
-    }
+  while (cluster.next()) {
+    stats.push({
+      cluster_id: cluster.getValue("cluster_id"),
+      label: cluster.getValue("label"),
+      size: parseInt(cluster.getValue("record_count"), 10),
+      keywords: cluster.getValue("keywords"),
+    })
+  }
 
-    return stats;
+  return stats
 }
 ```
 
@@ -260,23 +263,23 @@ function getClusterStats(solutionName) {
 ```javascript
 // Trigger retraining of ML solution (ES5 ONLY!)
 function retrainSolution(solutionName) {
-    var solution = new GlideRecord('ml_solution');
-    if (!solution.get('name', solutionName)) {
-        gs.error('Solution not found: ' + solutionName);
-        return false;
-    }
+  var solution = new GlideRecord("ml_solution")
+  if (!solution.get("name", solutionName)) {
+    gs.error("Solution not found: " + solutionName)
+    return false
+  }
 
-    try {
-        // Queue training job
-        var trainer = new sn_ml.MLTrainer();
-        trainer.train(solution.getUniqueValue());
+  try {
+    // Queue training job
+    var trainer = new sn_ml.MLTrainer()
+    trainer.train(solution.getUniqueValue())
 
-        gs.info('Training queued for solution: ' + solutionName);
-        return true;
-    } catch (e) {
-        gs.error('Training failed: ' + e.message);
-        return false;
-    }
+    gs.info("Training queued for solution: " + solutionName)
+    return true
+  } catch (e) {
+    gs.error("Training failed: " + e.message)
+    return false
+  }
 }
 ```
 
@@ -285,23 +288,23 @@ function retrainSolution(solutionName) {
 ```javascript
 // Check model training status (ES5 ONLY!)
 function getTrainingStatus(solutionName) {
-    var model = new GlideRecord('ml_model');
-    model.addQuery('solution.name', solutionName);
-    model.orderByDesc('sys_created_on');
-    model.setLimit(1);
-    model.query();
+  var model = new GlideRecord("ml_model")
+  model.addQuery("solution.name", solutionName)
+  model.orderByDesc("sys_created_on")
+  model.setLimit(1)
+  model.query()
 
-    if (model.next()) {
-        return {
-            model_id: model.getUniqueValue(),
-            status: model.getValue('state'),
-            accuracy: model.getValue('accuracy'),
-            trained_on: model.getValue('sys_created_on'),
-            record_count: model.getValue('training_record_count')
-        };
+  if (model.next()) {
+    return {
+      model_id: model.getUniqueValue(),
+      status: model.getValue("state"),
+      accuracy: model.getValue("accuracy"),
+      trained_on: model.getValue("sys_created_on"),
+      record_count: model.getValue("training_record_count"),
     }
+  }
 
-    return null;
+  return null
 }
 ```
 
@@ -312,19 +315,19 @@ function getTrainingStatus(solutionName) {
 ```javascript
 // Record prediction feedback for model improvement (ES5 ONLY!)
 function recordPredictionFeedback(predictionSysId, wasCorrect, actualValue) {
-    var prediction = new GlideRecord('ml_prediction_result');
-    if (!prediction.get(predictionSysId)) {
-        return false;
-    }
+  var prediction = new GlideRecord("ml_prediction_result")
+  if (!prediction.get(predictionSysId)) {
+    return false
+  }
 
-    prediction.setValue('feedback', wasCorrect ? 'correct' : 'incorrect');
-    prediction.setValue('actual_value', actualValue);
-    prediction.setValue('feedback_date', new GlideDateTime());
-    prediction.setValue('feedback_user', gs.getUserID());
+  prediction.setValue("feedback", wasCorrect ? "correct" : "incorrect")
+  prediction.setValue("actual_value", actualValue)
+  prediction.setValue("feedback_date", new GlideDateTime())
+  prediction.setValue("feedback_user", gs.getUserID())
 
-    prediction.update();
+  prediction.update()
 
-    return true;
+  return true
 }
 ```
 
@@ -333,32 +336,32 @@ function recordPredictionFeedback(predictionSysId, wasCorrect, actualValue) {
 ```javascript
 // Get prediction accuracy stats (ES5 ONLY!)
 function getPredictionAccuracy(solutionName, days) {
-    days = days || 30;
+  days = days || 30
 
-    var startDate = new GlideDateTime();
-    startDate.addDaysLocalTime(-days);
+  var startDate = new GlideDateTime()
+  startDate.addDaysLocalTime(-days)
 
-    var ga = new GlideAggregate('ml_prediction_result');
-    ga.addQuery('solution.name', solutionName);
-    ga.addQuery('sys_created_on', '>=', startDate);
-    ga.addNotNullQuery('feedback');
-    ga.addAggregate('COUNT');
-    ga.groupBy('feedback');
-    ga.query();
+  var ga = new GlideAggregate("ml_prediction_result")
+  ga.addQuery("solution.name", solutionName)
+  ga.addQuery("sys_created_on", ">=", startDate)
+  ga.addNotNullQuery("feedback")
+  ga.addAggregate("COUNT")
+  ga.groupBy("feedback")
+  ga.query()
 
-    var stats = { correct: 0, incorrect: 0 };
+  var stats = { correct: 0, incorrect: 0 }
 
-    while (ga.next()) {
-        var feedback = ga.getValue('feedback');
-        var count = parseInt(ga.getAggregate('COUNT'), 10);
-        stats[feedback] = count;
-    }
+  while (ga.next()) {
+    var feedback = ga.getValue("feedback")
+    var count = parseInt(ga.getAggregate("COUNT"), 10)
+    stats[feedback] = count
+  }
 
-    var total = stats.correct + stats.incorrect;
-    stats.accuracy = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
-    stats.total = total;
+  var total = stats.correct + stats.incorrect
+  stats.accuracy = total > 0 ? Math.round((stats.correct / total) * 100) : 0
+  stats.total = total
 
-    return stats;
+  return stats
 }
 ```
 
@@ -366,37 +369,37 @@ function getPredictionAccuracy(solutionName, days) {
 
 ### Available Tools
 
-| Tool | Purpose |
-|------|---------|
-| `snow_query_table` | Query ML tables |
-| `snow_execute_script_with_output` | Test predictions |
-| `ml_predict_change_risk` | Predict change risk |
-| `ml_detect_anomalies` | Anomaly detection |
+| Tool                              | Purpose             |
+| --------------------------------- | ------------------- |
+| `snow_query_table`                | Query ML tables     |
+| `snow_execute_script_with_output` | Test predictions    |
+| `ml_predict_change_risk`          | Predict change risk |
+| `ml_detect_anomalies`             | Anomaly detection   |
 
 ### Example Workflow
 
 ```javascript
 // 1. Query ML solutions
 await snow_query_table({
-    table: 'ml_solution',
-    query: 'active=true',
-    fields: 'name,table,capability,target_field'
-});
+  table: "ml_solution",
+  query: "active=true",
+  fields: "name,table,capability,target_field",
+})
 
 // 2. Check model status
 await snow_query_table({
-    table: 'ml_model',
-    query: 'solution.active=true',
-    fields: 'solution,state,accuracy,sys_created_on'
-});
+  table: "ml_model",
+  query: "solution.active=true",
+  fields: "solution,state,accuracy,sys_created_on",
+})
 
 // 3. Test prediction
 await snow_execute_script_with_output({
-    script: `
+  script: `
         var result = getClassificationPrediction('incident', 'inc_sys_id', 'incident_classifier');
         gs.info(JSON.stringify(result));
-    `
-});
+    `,
+})
 ```
 
 ## Best Practices

@@ -7,12 +7,14 @@ The Enterprise MCP Proxy bridges **SnowCode CLI** (stdio MCP protocol) with the 
 ### 🚀 Enterprise Tool Ecosystem
 
 **Total: 76+ Enterprise Tools**
+
 - 🎯 **Jira**: 22 tools (AI-powered workflow intelligence)
 - ⚡ **Azure DevOps**: 26 tools (CI/CD + work item intelligence)
 - 📚 **Confluence**: 24 tools (AI-powered documentation intelligence)
 - 🔄 **Process Mining**: 4 tools (Process optimization)
 
 **Key Capabilities:**
+
 - ✅ AI-powered story generation and estimation
 - ✅ Automated epic/feature decomposition
 - ✅ Smart task suggestions based on context
@@ -73,6 +75,7 @@ CONFLUENCE_API_TOKEN=ATATT3xFfGF0...
 ```
 
 **Credential Priority:**
+
 1. **Local environment variables** (shown above) - Sent encrypted to server
 2. **Server-side encrypted storage** - Managed by enterprise admin
 3. **Error** - If neither available, tool will fail with clear message
@@ -114,18 +117,21 @@ Automatically added to `~/.config/snow-code/snow-code.json`:
 The enterprise proxy includes comprehensive Jira integration with AI-powered workflow intelligence.
 
 #### Phase 1: Foundation Tools (4)
+
 1. **jira_get_active_sprint** - Get current sprint context and progress
 2. **jira_get_epic_hierarchy** - View complete epic breakdown and story structure
 3. **jira_get_board** - Board workflow, columns, and WIP limits
 4. **jira_get_issue_comments** - Team discussions and collaboration context
 
 #### Phase 2: Intelligence Tools (4)
+
 5. **jira_create_user_story** - AI-generated user stories with acceptance criteria
 6. **jira_analyze_issue_dependencies** - Automatic blocker and dependency detection
 7. **jira_estimate_story_points** - AI-powered story point estimation
 8. **jira_decompose_epic** - Automated epic breakdown into user stories
 
 #### Phase 3: Optimization Tools (6)
+
 9. **jira_suggest_next_task** - Smart task suggestions based on context
 10. **jira_get_sprint_velocity** - Team velocity tracking and forecasting
 11. **jira_find_similar_issues** - Duplicate detection and historical insights
@@ -134,6 +140,7 @@ The enterprise proxy includes comprehensive Jira integration with AI-powered wor
 14. **jira_create_sprint_report** - Comprehensive sprint reporting
 
 #### Original Jira Tools (8)
+
 15. **jira_create_issue** - Create Jira issues
 16. **jira_update_issue** - Update existing issues
 17. **jira_get_issue** - Get issue details
@@ -144,18 +151,19 @@ The enterprise proxy includes comprehensive Jira integration with AI-powered wor
 22. **jira_get_transitions** - Get available transitions
 
 **Example Usage:**
+
 ```javascript
 // AI suggests next task based on sprint, dependencies, and your skills
 await jira_suggest_next_task({
   board_id: 123,
-  user_id: "john.doe"
-});
+  user_id: "john.doe",
+})
 // Returns: "PROJ-102 (OAuth integration) - Blocks 3 stories, matches your skills"
 
 // AI decomposes epic into stories
 await jira_decompose_epic({
-  epic_key: "PROJ-50"
-});
+  epic_key: "PROJ-50",
+})
 // Creates 4 user stories with acceptance criteria and estimates
 ```
 
@@ -164,6 +172,7 @@ await jira_decompose_epic({
 Comprehensive Azure DevOps integration with AI-powered workflow intelligence and CI/CD analysis.
 
 #### Phase 1: Foundation Tools (6)
+
 1. **azure_get_active_iteration** - Get current iteration context and progress
 2. **azure_get_work_item_hierarchy** - Epic → Feature → Story → Task breakdown
 3. **azure_get_board** - Board workflow, columns, and WIP limits
@@ -172,6 +181,7 @@ Comprehensive Azure DevOps integration with AI-powered workflow intelligence and
 6. **azure_analyze_pipeline_failures** - CI/CD failure analysis with recommendations
 
 #### Phase 2: Intelligence Tools (6)
+
 7. **azure_create_user_story** - AI-generated user stories with acceptance criteria
 8. **azure_estimate_work_item** - AI-powered story points/hours estimation
 9. **azure_decompose_feature** - Automated feature breakdown into stories
@@ -180,12 +190,14 @@ Comprehensive Azure DevOps integration with AI-powered workflow intelligence and
 12. **azure_find_similar_work_items** - Duplicate detection and historical insights
 
 #### Phase 3: Optimization Tools (4)
+
 13. **azure_bulk_update_work_items** - Efficient bulk operations
 14. **azure_get_team_capacity** - Team capacity analysis and planning
 15. **azure_create_iteration_report** - Comprehensive iteration reporting
 16. **azure_pr_readiness_check** - PR quality gates and recommendations
 
 #### Original Azure DevOps Tools (10)
+
 17. **azure_create_work_item** - Create work items
 18. **azure_update_work_item** - Update existing work items
 19. **azure_get_work_item** - Get work item details
@@ -198,25 +210,26 @@ Comprehensive Azure DevOps integration with AI-powered workflow intelligence and
 26. **azure_create_pull_request** - Create PRs
 
 **Example Usage:**
+
 ```javascript
 // AI suggests next work item based on iteration, dependencies, and capacity
 await azure_suggest_next_work_item({
   team: "Platform Team",
-  project: "MyProject"
-});
+  project: "MyProject",
+})
 // Returns: "Work Item 102 (OAuth login) - High priority, blocks 2 items, ~13 pts"
 
 // AI analyzes pipeline failures and suggests fixes
 await azure_analyze_pipeline_failures({
   project: "MyProject",
-  pipeline_id: 42
-});
+  pipeline_id: 42,
+})
 // Returns: "3/10 runs failed. Recommendations: 1) Review failed builds 2) Check agent config"
 
 // AI decomposes feature into stories
 await azure_decompose_feature({
-  work_item_id: 150
-});
+  work_item_id: 150,
+})
 // Creates 3 user stories with estimates and acceptance criteria
 ```
 
@@ -225,6 +238,7 @@ await azure_decompose_feature({
 The enterprise proxy includes comprehensive Confluence integration with AI-powered documentation intelligence.
 
 #### Phase 1: Foundation Tools (6)
+
 1. **confluence_get_space_overview** - Complete space overview with page tree structure
 2. **confluence_get_page_hierarchy** - Page hierarchy for navigation context
 3. **confluence_get_page_comments** - All comments and team discussions
@@ -233,6 +247,7 @@ The enterprise proxy includes comprehensive Confluence integration with AI-power
 6. **confluence_get_page_metrics** - Engagement metrics (views, likes, shares)
 
 #### Phase 2: Intelligence Tools (6)
+
 7. **confluence_create_documentation** - AI-powered documentation generation with best practices
 8. **confluence_improve_content** - AI content analysis and improvement suggestions
 9. **confluence_generate_page_summary** - Automatic page summarization
@@ -241,12 +256,14 @@ The enterprise proxy includes comprehensive Confluence integration with AI-power
 12. **confluence_standardize_formatting** - Automated formatting standardization
 
 #### Phase 3: Optimization Tools (4)
+
 13. **confluence_bulk_update_pages** - Bulk operations on multiple pages
 14. **confluence_create_space_report** - Comprehensive space analytics and health reports
 15. **confluence_find_duplicate_content** - Detect duplicate or similar pages
 16. **confluence_archive_old_content** - Archive outdated content automatically
 
 #### Original Confluence Tools (8)
+
 17. **confluence_create_page** - Create new pages
 18. **confluence_update_page** - Update existing pages
 19. **confluence_get_page** - Get page details
@@ -257,12 +274,13 @@ The enterprise proxy includes comprehensive Confluence integration with AI-power
 24. **confluence_manage_attachments** - Handle page attachments
 
 **Example Usage:**
+
 ```javascript
 // AI identifies documentation gaps in your space
 await confluence_analyze_documentation_gaps({
   space_key: "DEV",
-  check_areas: ["API", "Architecture", "Deployment"]
-});
+  check_areas: ["API", "Architecture", "Deployment"],
+})
 // Returns: "Missing: API authentication guide, Database schema docs"
 
 // AI generates comprehensive documentation
@@ -270,15 +288,15 @@ await confluence_create_documentation({
   space_key: "DEV",
   title: "REST API Authentication Guide",
   topic: "OAuth 2.0 implementation for our REST API",
-  include_code_examples: true
-});
+  include_code_examples: true,
+})
 // Creates complete page with structure, examples, and best practices
 
 // AI improves existing content
 await confluence_improve_content({
   page_id: "12345",
-  aspects: ["clarity", "structure", "completeness"]
-});
+  aspects: ["clarity", "structure", "completeness"],
+})
 // Returns suggestions: "Add table of contents, clarify step 3, add troubleshooting section"
 ```
 
@@ -319,11 +337,13 @@ node dist/mcp/enterprise-proxy/index.js
 ### Credentials
 
 **Option 1: Local (in environment)**
+
 - Credentials read from environment variables
 - Sent to server in HTTPS request body (encrypted in transit)
 - Simple setup, no server-side configuration needed
 
 **Option 2: Server-side (encrypted)**
+
 - Credentials stored encrypted in enterprise server database
 - Not sent in requests, server uses own credentials
 - Requires SSO configuration, most secure option

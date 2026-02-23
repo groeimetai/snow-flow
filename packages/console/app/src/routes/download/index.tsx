@@ -447,8 +447,8 @@ export default function Download() {
             </li>
             <li>
               <Faq question="How much does Snow-Flow cost?">
-                Snow-Flow is 100% free to use. Any additional costs will come from your subscription to a model provider.
-                While Snow-Flow works with any model provider, we recommend using <A href="/zen">Zen</A>.
+                Snow-Flow is 100% free to use. Any additional costs will come from your subscription to a model
+                provider. While Snow-Flow works with any model provider, we recommend using <A href="/zen">Zen</A>.
               </Faq>
             </li>
             <li>

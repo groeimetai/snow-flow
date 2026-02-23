@@ -10,19 +10,19 @@
  * When the limit is reached, the oldest entries are evicted based on the eviction strategy
  */
 export class BoundedMap<K, V> extends Map<K, V> {
-  private maxSize: number;
-  private evictionStrategy: 'lru' | 'fifo';
-  private accessOrder: K[] = [];
+  private maxSize: number
+  private evictionStrategy: "lru" | "fifo"
+  private accessOrder: K[] = []
 
   /**
    * Create a new BoundedMap
    * @param maxSize Maximum number of entries (default: 1000)
    * @param evictionStrategy 'lru' for Least Recently Used, 'fifo' for First In First Out (default: 'lru')
    */
-  constructor(maxSize: number = 1000, evictionStrategy: 'lru' | 'fifo' = 'lru') {
-    super();
-    this.maxSize = maxSize;
-    this.evictionStrategy = evictionStrategy;
+  constructor(maxSize: number = 1000, evictionStrategy: "lru" | "fifo" = "lru") {
+    super()
+    this.maxSize = maxSize
+    this.evictionStrategy = evictionStrategy
   }
 
   /**
@@ -30,26 +30,26 @@ export class BoundedMap<K, V> extends Map<K, V> {
    */
   set(key: K, value: V): this {
     // Update access order for LRU
-    if (this.evictionStrategy === 'lru') {
-      const idx = this.accessOrder.indexOf(key);
+    if (this.evictionStrategy === "lru") {
+      const idx = this.accessOrder.indexOf(key)
       if (idx > -1) {
-        this.accessOrder.splice(idx, 1);
+        this.accessOrder.splice(idx, 1)
       }
-      this.accessOrder.push(key);
-    } else if (this.evictionStrategy === 'fifo' && !this.has(key)) {
+      this.accessOrder.push(key)
+    } else if (this.evictionStrategy === "fifo" && !this.has(key)) {
       // For FIFO, only add to order if it's a new key
-      this.accessOrder.push(key);
+      this.accessOrder.push(key)
     }
 
     // Evict oldest if at capacity
     if (this.size >= this.maxSize && !this.has(key)) {
-      const evictKey = this.accessOrder.shift();
+      const evictKey = this.accessOrder.shift()
       if (evictKey !== undefined) {
-        super.delete(evictKey);
+        super.delete(evictKey)
       }
     }
 
-    return super.set(key, value);
+    return super.set(key, value)
   }
 
   /**
@@ -57,47 +57,47 @@ export class BoundedMap<K, V> extends Map<K, V> {
    */
   get(key: K): V | undefined {
     // Update access order for LRU
-    if (this.evictionStrategy === 'lru' && this.has(key)) {
-      const idx = this.accessOrder.indexOf(key);
+    if (this.evictionStrategy === "lru" && this.has(key)) {
+      const idx = this.accessOrder.indexOf(key)
       if (idx > -1) {
-        this.accessOrder.splice(idx, 1);
-        this.accessOrder.push(key);
+        this.accessOrder.splice(idx, 1)
+        this.accessOrder.push(key)
       }
     }
-    return super.get(key);
+    return super.get(key)
   }
 
   /**
    * Delete a key-value pair
    */
   delete(key: K): boolean {
-    const idx = this.accessOrder.indexOf(key);
+    const idx = this.accessOrder.indexOf(key)
     if (idx > -1) {
-      this.accessOrder.splice(idx, 1);
+      this.accessOrder.splice(idx, 1)
     }
-    return super.delete(key);
+    return super.delete(key)
   }
 
   /**
    * Clear all entries
    */
   clear(): void {
-    this.accessOrder = [];
-    super.clear();
+    this.accessOrder = []
+    super.clear()
   }
 
   /**
    * Get the maximum size
    */
   getMaxSize(): number {
-    return this.maxSize;
+    return this.maxSize
   }
 
   /**
    * Get the eviction strategy
    */
-  getEvictionStrategy(): 'lru' | 'fifo' {
-    return this.evictionStrategy;
+  getEvictionStrategy(): "lru" | "fifo" {
+    return this.evictionStrategy
   }
 
   /**
@@ -107,8 +107,8 @@ export class BoundedMap<K, V> extends Map<K, V> {
     return {
       size: this.size,
       maxSize: this.maxSize,
-      utilization: this.size / this.maxSize
-    };
+      utilization: this.size / this.maxSize,
+    }
   }
 }
 
@@ -117,16 +117,16 @@ export class BoundedMap<K, V> extends Map<K, V> {
  * When the limit is reached, the oldest entries are evicted (FIFO)
  */
 export class BoundedSet<T> extends Set<T> {
-  private maxSize: number;
-  private insertionOrder: T[] = [];
+  private maxSize: number
+  private insertionOrder: T[] = []
 
   /**
    * Create a new BoundedSet
    * @param maxSize Maximum number of entries (default: 1000)
    */
   constructor(maxSize: number = 1000) {
-    super();
-    this.maxSize = maxSize;
+    super()
+    this.maxSize = maxSize
   }
 
   /**
@@ -134,43 +134,43 @@ export class BoundedSet<T> extends Set<T> {
    */
   add(value: T): this {
     if (this.size >= this.maxSize && !this.has(value)) {
-      const evictValue = this.insertionOrder.shift();
+      const evictValue = this.insertionOrder.shift()
       if (evictValue !== undefined) {
-        super.delete(evictValue);
+        super.delete(evictValue)
       }
     }
 
     if (!this.has(value)) {
-      this.insertionOrder.push(value);
+      this.insertionOrder.push(value)
     }
 
-    return super.add(value);
+    return super.add(value)
   }
 
   /**
    * Delete a value
    */
   delete(value: T): boolean {
-    const idx = this.insertionOrder.indexOf(value);
+    const idx = this.insertionOrder.indexOf(value)
     if (idx > -1) {
-      this.insertionOrder.splice(idx, 1);
+      this.insertionOrder.splice(idx, 1)
     }
-    return super.delete(value);
+    return super.delete(value)
   }
 
   /**
    * Clear all entries
    */
   clear(): void {
-    this.insertionOrder = [];
-    super.clear();
+    this.insertionOrder = []
+    super.clear()
   }
 
   /**
    * Get the maximum size
    */
   getMaxSize(): number {
-    return this.maxSize;
+    return this.maxSize
   }
 
   /**
@@ -180,8 +180,8 @@ export class BoundedSet<T> extends Set<T> {
     return {
       size: this.size,
       maxSize: this.maxSize,
-      utilization: this.size / this.maxSize
-    };
+      utilization: this.size / this.maxSize,
+    }
   }
 }
 
@@ -190,36 +190,36 @@ export class BoundedSet<T> extends Set<T> {
  * When the limit is reached, the oldest entries are removed from the front
  */
 export class BoundedArray<T> extends Array<T> {
-  private maxSize: number;
+  private maxSize: number
 
   /**
    * Create a new BoundedArray
    * @param maxSize Maximum number of entries (default: 1000)
    */
   constructor(maxSize: number = 1000) {
-    super();
-    this.maxSize = maxSize;
+    super()
+    this.maxSize = maxSize
   }
 
   /**
    * Push values, removing oldest if over capacity
    */
   push(...items: T[]): number {
-    const result = super.push(...items);
+    const result = super.push(...items)
 
     // Remove oldest entries if over capacity
     while (this.length > this.maxSize) {
-      this.shift();
+      this.shift()
     }
 
-    return Math.min(result, this.maxSize);
+    return Math.min(result, this.maxSize)
   }
 
   /**
    * Get the maximum size
    */
   getMaxSize(): number {
-    return this.maxSize;
+    return this.maxSize
   }
 
   /**
@@ -229,7 +229,7 @@ export class BoundedArray<T> extends Array<T> {
     return {
       length: this.length,
       maxSize: this.maxSize,
-      utilization: this.length / this.maxSize
-    };
+      utilization: this.length / this.maxSize,
+    }
   }
 }

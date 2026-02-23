@@ -20,13 +20,13 @@ ServiceNow notifications are triggered by events and send emails, SMS, or other 
 
 ## Notification Components
 
-| Component | Table | Purpose |
-|-----------|-------|---------|
-| **Notification** | sysevent_email_action | Main notification record |
-| **Email Template** | sysevent_email_template | Reusable email layouts |
-| **Event** | sysevent | Triggers notifications |
-| **Event Registration** | sysevent_register | Defines custom events |
-| **Email Script** | sys_script_email | Dynamic content scripts |
+| Component              | Table                   | Purpose                  |
+| ---------------------- | ----------------------- | ------------------------ |
+| **Notification**       | sysevent_email_action   | Main notification record |
+| **Email Template**     | sysevent_email_template | Reusable email layouts   |
+| **Event**              | sysevent                | Triggers notifications   |
+| **Event Registration** | sysevent_register       | Defines custom events    |
+| **Email Script**       | sys_script_email        | Dynamic content scripts  |
 
 ## Creating Notifications
 
@@ -83,51 +83,58 @@ state = 6  // Resolved
 
 ```html
 <!-- Field references -->
-${number}                    <!-- Direct field value -->
-${caller_id.name}            <!-- Dot-walked reference -->
-${opened_at.display_value}   <!-- Display value -->
+${number}
+<!-- Direct field value -->
+${caller_id.name}
+<!-- Dot-walked reference -->
+${opened_at.display_value}
+<!-- Display value -->
 
 <!-- Special variables -->
-${URI}                       <!-- Link to record -->
-${URI_REF}                   <!-- Reference link -->
-${mail_script:script_name}   <!-- Include email script -->
+${URI}
+<!-- Link to record -->
+${URI_REF}
+<!-- Reference link -->
+${mail_script:script_name}
+<!-- Include email script -->
 
 <!-- Conditional content -->
-${mailto:assigned_to}        <!-- Mailto link -->
+${mailto:assigned_to}
+<!-- Mailto link -->
 ```
 
 ### Template Example
 
 ```html
 <html>
-<body style="font-family: Arial, sans-serif;">
-  <h2>Incident ${number} - ${short_description}</h2>
+  <body style="font-family: Arial, sans-serif;">
+    <h2>Incident ${number} - ${short_description}</h2>
 
-  <table border="0" cellpadding="5">
-    <tr>
-      <td><strong>Priority:</strong></td>
-      <td>${priority}</td>
-    </tr>
-    <tr>
-      <td><strong>Caller:</strong></td>
-      <td>${caller_id.name}</td>
-    </tr>
-    <tr>
-      <td><strong>Assigned to:</strong></td>
-      <td>${assigned_to.name}</td>
-    </tr>
-    <tr>
-      <td><strong>Description:</strong></td>
-      <td>${description}</td>
-    </tr>
-  </table>
+    <table border="0" cellpadding="5">
+      <tr>
+        <td><strong>Priority:</strong></td>
+        <td>${priority}</td>
+      </tr>
+      <tr>
+        <td><strong>Caller:</strong></td>
+        <td>${caller_id.name}</td>
+      </tr>
+      <tr>
+        <td><strong>Assigned to:</strong></td>
+        <td>${assigned_to.name}</td>
+      </tr>
+      <tr>
+        <td><strong>Description:</strong></td>
+        <td>${description}</td>
+      </tr>
+    </table>
 
-  <p>
-    <a href="${URI}">View Incident</a>
-  </p>
+    <p>
+      <a href="${URI}">View Incident</a>
+    </p>
 
-  ${mail_script:incident_history}
-</body>
+    ${mail_script:incident_history}
+  </body>
 </html>
 ```
 
@@ -140,69 +147,63 @@ ${mailto:assigned_to}        <!-- Mailto link -->
 // Table: incident
 // Script (ES5 only!):
 
-(function runMailScript(current, template, email, email_action, event) {
+;(function runMailScript(current, template, email, email_action, event) {
+  // Build activity history
+  var html = "<h3>Recent Activity</h3><ul>"
 
-    // Build activity history
-    var html = '<h3>Recent Activity</h3><ul>';
+  var history = new GlideRecord("sys_journal_field")
+  history.addQuery("element_id", current.sys_id)
+  history.addQuery("name", "incident")
+  history.orderByDesc("sys_created_on")
+  history.setLimit(5)
+  history.query()
 
-    var history = new GlideRecord('sys_journal_field');
-    history.addQuery('element_id', current.sys_id);
-    history.addQuery('name', 'incident');
-    history.orderByDesc('sys_created_on');
-    history.setLimit(5);
-    history.query();
+  while (history.next()) {
+    html += "<li><strong>" + history.sys_created_on.getDisplayValue() + "</strong>: "
+    html += history.value.substring(0, 200) + "</li>"
+  }
+  html += "</ul>"
 
-    while (history.next()) {
-        html += '<li><strong>' + history.sys_created_on.getDisplayValue() + '</strong>: ';
-        html += history.value.substring(0, 200) + '</li>';
-    }
-    html += '</ul>';
-
-    template.print(html);
-
-})(current, template, email, email_action, event);
+  template.print(html)
+})(current, template, email, email_action, event)
 ```
 
 ### Email Script with Attachments
 
 ```javascript
 // Add attachments from the record to the email
-(function runMailScript(current, template, email, email_action, event) {
+;(function runMailScript(current, template, email, email_action, event) {
+  var gr = new GlideRecord("sys_attachment")
+  gr.addQuery("table_sys_id", current.sys_id)
+  gr.addQuery("table_name", "incident")
+  gr.query()
 
-    var gr = new GlideRecord('sys_attachment');
-    gr.addQuery('table_sys_id', current.sys_id);
-    gr.addQuery('table_name', 'incident');
-    gr.query();
-
-    while (gr.next()) {
-        email.addAttachment(gr);
-    }
-
-})(current, template, email, email_action, event);
+  while (gr.next()) {
+    email.addAttachment(gr)
+  }
+})(current, template, email, email_action, event)
 ```
 
 ### Dynamic Recipients
 
 ```javascript
 // Email Script to add CC recipients dynamically
-(function runMailScript(current, template, email, email_action, event) {
+;(function runMailScript(current, template, email, email_action, event) {
+  // Add all group members as CC
+  var group = current.assignment_group
+  if (!group.nil()) {
+    var members = new GlideRecord("sys_user_grmember")
+    members.addQuery("group", group)
+    members.query()
 
-    // Add all group members as CC
-    var group = current.assignment_group;
-    if (!group.nil()) {
-        var members = new GlideRecord('sys_user_grmember');
-        members.addQuery('group', group);
-        members.query();
-
-        while (members.next()) {
-            var user = members.user.getRefRecord();
-            if (user.email) {
-                email.addAddress('cc', user.email, user.name);
-            }
-        }
+    while (members.next()) {
+      var user = members.user.getRefRecord()
+      if (user.email) {
+        email.addAddress("cc", user.email, user.name)
+      }
     }
-
-})(current, template, email, email_action, event);
+  }
+})(current, template, email, email_action, event)
 ```
 
 ## Custom Events
@@ -217,18 +218,18 @@ ${mailto:assigned_to}        <!-- Mailto link -->
 // Fired by: Business Rule
 
 // In Business Rule (ES5 only!)
-(function executeRule(current, previous) {
-
-    // Check if escalation occurred
-    if (current.escalation > previous.escalation) {
-        // Fire custom event
-        gs.eventQueue('x_myapp.incident.escalated', current,
-            current.escalation.getDisplayValue(),  // parm1
-            current.assigned_to.name               // parm2
-        );
-    }
-
-})(current, previous);
+;(function executeRule(current, previous) {
+  // Check if escalation occurred
+  if (current.escalation > previous.escalation) {
+    // Fire custom event
+    gs.eventQueue(
+      "x_myapp.incident.escalated",
+      current,
+      current.escalation.getDisplayValue(), // parm1
+      current.assigned_to.name, // parm2
+    )
+  }
+})(current, previous)
 ```
 
 ### Notification on Custom Event
@@ -249,13 +250,13 @@ Notification: Escalation Alert
 
 ### Who Will Receive
 
-| Type | Description | Example |
-|------|-------------|---------|
-| **Users** | Specific users | ${assigned_to}, ${caller_id} |
-| **Groups** | User groups | Service Desk, CAB |
-| **Group Managers** | Group manager field | ${assignment_group.manager} |
-| **Event Parm 1/2** | From event parameters | ${event.parm1} |
-| **Additional Recipients** | Email addresses | External emails |
+| Type                      | Description           | Example                      |
+| ------------------------- | --------------------- | ---------------------------- |
+| **Users**                 | Specific users        | ${assigned_to}, ${caller_id} |
+| **Groups**                | User groups           | Service Desk, CAB            |
+| **Group Managers**        | Group manager field   | ${assignment_group.manager}  |
+| **Event Parm 1/2**        | From event parameters | ${event.parm1}               |
+| **Additional Recipients** | Email addresses       | External emails              |
 
 ### Recipient Script
 
@@ -263,35 +264,34 @@ Notification: Escalation Alert
 // Recipient Script (ES5 only!)
 // Returns comma-separated list of emails or sys_ids
 
-(function getRecipients(current, event) {
-    var recipients = [];
+;(function getRecipients(current, event) {
+  var recipients = []
 
-    // Add the caller
-    if (!current.caller_id.nil()) {
-        recipients.push(current.caller_id.email.toString());
-    }
+  // Add the caller
+  if (!current.caller_id.nil()) {
+    recipients.push(current.caller_id.email.toString())
+  }
 
-    // Add VIP's manager
-    var caller = current.caller_id.getRefRecord();
-    if (caller.vip == true && !caller.manager.nil()) {
-        recipients.push(caller.manager.email.toString());
-    }
+  // Add VIP's manager
+  var caller = current.caller_id.getRefRecord()
+  if (caller.vip == true && !caller.manager.nil()) {
+    recipients.push(caller.manager.email.toString())
+  }
 
-    return recipients.join(',');
-
-})(current, event);
+  return recipients.join(",")
+})(current, event)
 ```
 
 ## Notification Weight
 
 Priority system for multiple matching notifications:
 
-| Weight | Use Case |
-|--------|----------|
-| 0 | Default priority |
-| 1-99 | Higher priority (lower weight = higher priority) |
-| -1 to -99 | Lower priority |
-| 100+ | Rarely used |
+| Weight    | Use Case                                         |
+| --------- | ------------------------------------------------ |
+| 0         | Default priority                                 |
+| 1-99      | Higher priority (lower weight = higher priority) |
+| -1 to -99 | Lower priority                                   |
+| 100+      | Rarely used                                      |
 
 ```javascript
 // Only highest weight notification sends if "Exclude subscribers" checked
@@ -314,27 +314,25 @@ Notification: Daily Incident Summary
 
 ```javascript
 // Summarize digest records
-(function runMailScript(current, template, email, email_action, event) {
+;(function runMailScript(current, template, email, email_action, event) {
+  var count = 0
+  var html = '<table border="1" cellpadding="5">'
+  html += "<tr><th>Number</th><th>Description</th><th>Priority</th></tr>"
 
-    var count = 0;
-    var html = '<table border="1" cellpadding="5">';
-    html += '<tr><th>Number</th><th>Description</th><th>Priority</th></tr>';
+  // 'current' is a GlideRecord with all digest records
+  while (current.next()) {
+    count++
+    html += "<tr>"
+    html += "<td>" + current.number + "</td>"
+    html += "<td>" + current.short_description + "</td>"
+    html += "<td>" + current.priority.getDisplayValue() + "</td>"
+    html += "</tr>"
+  }
+  html += "</table>"
+  html += "<p>Total: " + count + " incidents</p>"
 
-    // 'current' is a GlideRecord with all digest records
-    while (current.next()) {
-        count++;
-        html += '<tr>';
-        html += '<td>' + current.number + '</td>';
-        html += '<td>' + current.short_description + '</td>';
-        html += '<td>' + current.priority.getDisplayValue() + '</td>';
-        html += '</tr>';
-    }
-    html += '</table>';
-    html += '<p>Total: ' + count + ' incidents</p>';
-
-    template.print(html);
-
-})(current, template, email, email_action, event);
+  template.print(html)
+})(current, template, email, email_action, event)
 ```
 
 ## Outbound Email Configuration
@@ -343,26 +341,24 @@ Notification: Daily Incident Summary
 
 ```javascript
 // System Properties for email
-glide.email.smtp.active          // Enable/disable outbound email
-glide.email.smtp.host            // SMTP server
-glide.email.smtp.port            // SMTP port (usually 25 or 587)
-glide.email.default.sender       // Default from address
-glide.email.test.user            // Test recipient (all emails go here)
+glide.email.smtp.active // Enable/disable outbound email
+glide.email.smtp.host // SMTP server
+glide.email.smtp.port // SMTP port (usually 25 or 587)
+glide.email.default.sender // Default from address
+glide.email.test.user // Test recipient (all emails go here)
 ```
 
 ### Testing Notifications
 
 ```javascript
 // Background Script to test notification (ES5 only!)
-var gr = new GlideRecord('incident');
-gr.get('sys_id_here');
+var gr = new GlideRecord("incident")
+gr.get("sys_id_here")
 
 // Fire event to trigger notification
-gs.eventQueue('incident.assigned', gr,
-    gr.assigned_to.getDisplayValue(),
-    gs.getUserDisplayName());
+gs.eventQueue("incident.assigned", gr, gr.assigned_to.getDisplayValue(), gs.getUserDisplayName())
 
-gs.info('Event queued for incident: ' + gr.number);
+gs.info("Event queued for incident: " + gr.number)
 ```
 
 ## Best Practices
@@ -378,10 +374,10 @@ gs.info('Event queued for incident: ' + gr.number);
 
 ## Common Issues
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Email not sent | Event not fired | Check business rule fires event |
-| Wrong recipients | Script error | Debug recipient script |
-| Missing content | Template variable wrong | Check field names |
-| Duplicate emails | Multiple notifications | Check weights and conditions |
-| Delayed emails | Email job schedule | Check sysauto_script |
+| Issue            | Cause                   | Solution                        |
+| ---------------- | ----------------------- | ------------------------------- |
+| Email not sent   | Event not fired         | Check business rule fires event |
+| Wrong recipients | Script error            | Debug recipient script          |
+| Missing content  | Template variable wrong | Check field names               |
+| Duplicate emails | Multiple notifications  | Check weights and conditions    |
+| Delayed emails   | Email job schedule      | Check sysauto_script            |

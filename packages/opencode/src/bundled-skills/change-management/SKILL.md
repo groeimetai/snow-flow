@@ -20,11 +20,11 @@ Change Management ensures controlled modifications to IT infrastructure through 
 
 ## Change Types
 
-| Type | Approval | Risk | Example |
-|------|----------|------|---------|
-| **Standard** | Pre-approved | Low | Password reset template |
-| **Normal** | CAB approval | Medium | Server patching |
-| **Emergency** | Post-implementation | High | Production outage fix |
+| Type          | Approval            | Risk   | Example                 |
+| ------------- | ------------------- | ------ | ----------------------- |
+| **Standard**  | Pre-approved        | Low    | Password reset template |
+| **Normal**    | CAB approval        | Medium | Server patching         |
+| **Emergency** | Post-implementation | High   | Production outage fix   |
 
 ## Change Request Structure
 
@@ -55,91 +55,89 @@ Change Request: CHG0010001
 
 ```javascript
 // Create normal change request
-var change = new GlideRecord('change_request');
-change.initialize();
+var change = new GlideRecord("change_request")
+change.initialize()
 
 // Basic info
-change.setValue('short_description', 'Apply security patches to web servers');
-change.setValue('description', 'Monthly security patch deployment for production web tier');
-change.setValue('type', 'normal');  // normal, standard, emergency
+change.setValue("short_description", "Apply security patches to web servers")
+change.setValue("description", "Monthly security patch deployment for production web tier")
+change.setValue("type", "normal") // normal, standard, emergency
 
 // Classification
-change.setValue('category', 'Software');
-change.setValue('priority', 3);
+change.setValue("category", "Software")
+change.setValue("priority", 3)
 
 // Risk assessment
-change.setValue('risk', 'low');  // high, moderate, low
-change.setValue('impact', 2);     // 1-High, 2-Medium, 3-Low
+change.setValue("risk", "low") // high, moderate, low
+change.setValue("impact", 2) // 1-High, 2-Medium, 3-Low
 
 // Schedule
-var startDate = new GlideDateTime();
-startDate.addDaysLocalTime(7);
-startDate.setValue('2024-03-15 22:00:00');
-change.setValue('start_date', startDate);
+var startDate = new GlideDateTime()
+startDate.addDaysLocalTime(7)
+startDate.setValue("2024-03-15 22:00:00")
+change.setValue("start_date", startDate)
 
-var endDate = new GlideDateTime(startDate);
-endDate.addSeconds(3600);  // 1 hour
-change.setValue('end_date', endDate);
+var endDate = new GlideDateTime(startDate)
+endDate.addSeconds(3600) // 1 hour
+change.setValue("end_date", endDate)
 
 // Assignment
-change.setValue('assignment_group', getGroupSysId('Change Management'));
-change.setValue('assigned_to', getOnCallUser());
+change.setValue("assignment_group", getGroupSysId("Change Management"))
+change.setValue("assigned_to", getOnCallUser())
 
 // Implementation plan
-change.setValue('implementation_plan',
-    '1. Take backup of current configuration\\n' +
-    '2. Stop web services\\n' +
-    '3. Apply security patches\\n' +
-    '4. Restart services\\n' +
-    '5. Verify functionality'
-);
+change.setValue(
+  "implementation_plan",
+  "1. Take backup of current configuration\\n" +
+    "2. Stop web services\\n" +
+    "3. Apply security patches\\n" +
+    "4. Restart services\\n" +
+    "5. Verify functionality",
+)
 
-change.setValue('backout_plan',
-    '1. Stop web services\\n' +
-    '2. Restore from backup\\n' +
-    '3. Restart services\\n' +
-    '4. Verify rollback successful'
-);
+change.setValue(
+  "backout_plan",
+  "1. Stop web services\\n" + "2. Restore from backup\\n" + "3. Restart services\\n" + "4. Verify rollback successful",
+)
 
-change.setValue('test_plan',
-    '1. Check web server response\\n' +
-    '2. Verify all pages load\\n' +
-    '3. Run automated health checks'
-);
+change.setValue(
+  "test_plan",
+  "1. Check web server response\\n" + "2. Verify all pages load\\n" + "3. Run automated health checks",
+)
 
-var changeSysId = change.insert();
+var changeSysId = change.insert()
 ```
 
 ### Emergency Change (ES5)
 
 ```javascript
 // Create emergency change
-var emergencyChange = new GlideRecord('change_request');
-emergencyChange.initialize();
+var emergencyChange = new GlideRecord("change_request")
+emergencyChange.initialize()
 
-emergencyChange.setValue('short_description', 'Emergency: Fix production database connection leak');
-emergencyChange.setValue('type', 'emergency');
-emergencyChange.setValue('priority', 1);
-emergencyChange.setValue('risk', 'high');
-emergencyChange.setValue('impact', 1);
+emergencyChange.setValue("short_description", "Emergency: Fix production database connection leak")
+emergencyChange.setValue("type", "emergency")
+emergencyChange.setValue("priority", 1)
+emergencyChange.setValue("risk", "high")
+emergencyChange.setValue("impact", 1)
 
 // Emergency justification
-emergencyChange.setValue('justification',
-    'Production database connections exhausted causing service outage. ' +
-    'Immediate fix required to restore service.'
-);
+emergencyChange.setValue(
+  "justification",
+  "Production database connections exhausted causing service outage. " + "Immediate fix required to restore service.",
+)
 
 // Immediate start
-emergencyChange.setValue('start_date', new GlideDateTime());
+emergencyChange.setValue("start_date", new GlideDateTime())
 
-var endDate = new GlideDateTime();
-endDate.addSeconds(7200);  // 2 hours
-emergencyChange.setValue('end_date', endDate);
+var endDate = new GlideDateTime()
+endDate.addSeconds(7200) // 2 hours
+emergencyChange.setValue("end_date", endDate)
 
-emergencyChange.insert();
+emergencyChange.insert()
 
 // Emergency changes bypass normal CAB
-gs.eventQueue('change.emergency.created', emergencyChange);
+gs.eventQueue("change.emergency.created", emergencyChange)
 ```
 
 ### Standard Change (ES5)
@@ -147,41 +145,41 @@ gs.eventQueue('change.emergency.created', emergencyChange);
 ```javascript
 // Create from standard change template
 function createStandardChange(templateName, variables) {
-    // Find template
-    var template = new GlideRecord('std_change_producer');
-    template.addQuery('name', templateName);
-    template.query();
+  // Find template
+  var template = new GlideRecord("std_change_producer")
+  template.addQuery("name", templateName)
+  template.query()
 
-    if (!template.next()) {
-        gs.error('Standard change template not found: ' + templateName);
-        return null;
+  if (!template.next()) {
+    gs.error("Standard change template not found: " + templateName)
+    return null
+  }
+
+  // Create change from template
+  var change = new GlideRecord("change_request")
+  change.initialize()
+
+  // Copy template values
+  change.setValue("short_description", template.getValue("short_description"))
+  change.setValue("description", template.getValue("description"))
+  change.setValue("type", "standard")
+  change.setValue("std_change_producer", template.getUniqueValue())
+
+  // Apply variables
+  for (var key in variables) {
+    if (variables.hasOwnProperty(key) && change.isValidField(key)) {
+      change.setValue(key, variables[key])
     }
+  }
 
-    // Create change from template
-    var change = new GlideRecord('change_request');
-    change.initialize();
-
-    // Copy template values
-    change.setValue('short_description', template.getValue('short_description'));
-    change.setValue('description', template.getValue('description'));
-    change.setValue('type', 'standard');
-    change.setValue('std_change_producer', template.getUniqueValue());
-
-    // Apply variables
-    for (var key in variables) {
-        if (variables.hasOwnProperty(key) && change.isValidField(key)) {
-            change.setValue(key, variables[key]);
-        }
-    }
-
-    return change.insert();
+  return change.insert()
 }
 
 // Usage
-createStandardChange('Password Reset', {
-    requested_by: userSysId,
-    cmdb_ci: applicationSysId
-});
+createStandardChange("Password Reset", {
+  requested_by: userSysId,
+  cmdb_ci: applicationSysId,
+})
 ```
 
 ## Change Tasks
@@ -191,27 +189,27 @@ createStandardChange('Password Reset', {
 ```javascript
 // Add tasks to change
 function addChangeTask(changeSysId, taskConfig) {
-    var task = new GlideRecord('change_task');
-    task.initialize();
-    task.setValue('change_request', changeSysId);
-    task.setValue('short_description', taskConfig.description);
-    task.setValue('order', taskConfig.order);
-    task.setValue('assignment_group', taskConfig.group);
-    task.setValue('planned_start_date', taskConfig.start);
-    task.setValue('planned_end_date', taskConfig.end);
-    return task.insert();
+  var task = new GlideRecord("change_task")
+  task.initialize()
+  task.setValue("change_request", changeSysId)
+  task.setValue("short_description", taskConfig.description)
+  task.setValue("order", taskConfig.order)
+  task.setValue("assignment_group", taskConfig.group)
+  task.setValue("planned_start_date", taskConfig.start)
+  task.setValue("planned_end_date", taskConfig.end)
+  return task.insert()
 }
 
 // Create implementation tasks
 var tasks = [
-    { description: 'Pre-implementation backup', order: 100, group: 'Database Team' },
-    { description: 'Apply patches', order: 200, group: 'Server Team' },
-    { description: 'Verify functionality', order: 300, group: 'QA Team' },
-    { description: 'Update documentation', order: 400, group: 'Change Management' }
-];
+  { description: "Pre-implementation backup", order: 100, group: "Database Team" },
+  { description: "Apply patches", order: 200, group: "Server Team" },
+  { description: "Verify functionality", order: 300, group: "QA Team" },
+  { description: "Update documentation", order: 400, group: "Change Management" },
+]
 
 for (var i = 0; i < tasks.length; i++) {
-    addChangeTask(changeSysId, tasks[i]);
+  addChangeTask(changeSysId, tasks[i])
 }
 ```
 
@@ -222,17 +220,17 @@ for (var i = 0; i < tasks.length; i++) {
 ```javascript
 // Add affected CIs
 function addAffectedCI(changeSysId, ciSysId) {
-    var task = new GlideRecord('task_ci');
-    task.initialize();
-    task.setValue('task', changeSysId);
-    task.setValue('ci_item', ciSysId);
-    return task.insert();
+  var task = new GlideRecord("task_ci")
+  task.initialize()
+  task.setValue("task", changeSysId)
+  task.setValue("ci_item", ciSysId)
+  return task.insert()
 }
 
 // Add all affected servers
-var servers = ['server1_sys_id', 'server2_sys_id', 'db_sys_id'];
+var servers = ["server1_sys_id", "server2_sys_id", "db_sys_id"]
 for (var i = 0; i < servers.length; i++) {
-    addAffectedCI(changeSysId, servers[i]);
+  addAffectedCI(changeSysId, servers[i])
 }
 ```
 
@@ -243,22 +241,22 @@ for (var i = 0; i < servers.length; i++) {
 ```javascript
 // Get approval status
 function getApprovalStatus(changeSysId) {
-    var approvals = [];
+  var approvals = []
 
-    var approval = new GlideRecord('sysapproval_approver');
-    approval.addQuery('sysapproval', changeSysId);
-    approval.query();
+  var approval = new GlideRecord("sysapproval_approver")
+  approval.addQuery("sysapproval", changeSysId)
+  approval.query()
 
-    while (approval.next()) {
-        approvals.push({
-            approver: approval.approver.getDisplayValue(),
-            state: approval.state.getDisplayValue(),
-            comments: approval.getValue('comments'),
-            sys_updated_on: approval.getValue('sys_updated_on')
-        });
-    }
+  while (approval.next()) {
+    approvals.push({
+      approver: approval.approver.getDisplayValue(),
+      state: approval.state.getDisplayValue(),
+      comments: approval.getValue("comments"),
+      sys_updated_on: approval.getValue("sys_updated_on"),
+    })
+  }
 
-    return approvals;
+  return approvals
 }
 ```
 
@@ -267,12 +265,12 @@ function getApprovalStatus(changeSysId) {
 ```javascript
 // Add approval request
 function requestApproval(changeSysId, approverSysId) {
-    var approval = new GlideRecord('sysapproval_approver');
-    approval.initialize();
-    approval.setValue('sysapproval', changeSysId);
-    approval.setValue('approver', approverSysId);
-    approval.setValue('state', 'requested');
-    return approval.insert();
+  var approval = new GlideRecord("sysapproval_approver")
+  approval.initialize()
+  approval.setValue("sysapproval", changeSysId)
+  approval.setValue("approver", approverSysId)
+  approval.setValue("state", "requested")
+  return approval.insert()
 }
 ```
 
@@ -283,46 +281,45 @@ function requestApproval(changeSysId, approverSysId) {
 ```javascript
 // Check for scheduling conflicts
 function checkChangeConflicts(changeSysId) {
-    var change = new GlideRecord('change_request');
-    if (!change.get(changeSysId)) return [];
+  var change = new GlideRecord("change_request")
+  if (!change.get(changeSysId)) return []
 
-    var conflicts = [];
-    var startDate = change.getValue('start_date');
-    var endDate = change.getValue('end_date');
+  var conflicts = []
+  var startDate = change.getValue("start_date")
+  var endDate = change.getValue("end_date")
 
-    // Find overlapping changes on same CIs
-    var affected = new GlideAggregate('task_ci');
-    affected.addQuery('task', changeSysId);
-    affected.groupBy('ci_item');
-    affected.query();
+  // Find overlapping changes on same CIs
+  var affected = new GlideAggregate("task_ci")
+  affected.addQuery("task", changeSysId)
+  affected.groupBy("ci_item")
+  affected.query()
 
-    while (affected.next()) {
-        var ciSysId = affected.ci_item.toString();
+  while (affected.next()) {
+    var ciSysId = affected.ci_item.toString()
 
-        // Find other changes affecting this CI
-        var otherChanges = new GlideRecord('change_request');
-        otherChanges.addQuery('sys_id', '!=', changeSysId);
-        otherChanges.addQuery('state', 'NOT IN', 'closed,cancelled');
-        otherChanges.addQuery('start_date', '<=', endDate);
-        otherChanges.addQuery('end_date', '>=', startDate);
+    // Find other changes affecting this CI
+    var otherChanges = new GlideRecord("change_request")
+    otherChanges.addQuery("sys_id", "!=", changeSysId)
+    otherChanges.addQuery("state", "NOT IN", "closed,cancelled")
+    otherChanges.addQuery("start_date", "<=", endDate)
+    otherChanges.addQuery("end_date", ">=", startDate)
 
-        // Join to task_ci
-        otherChanges.addJoinQuery('task_ci', 'sys_id', 'task')
-            .addCondition('ci_item', ciSysId);
+    // Join to task_ci
+    otherChanges.addJoinQuery("task_ci", "sys_id", "task").addCondition("ci_item", ciSysId)
 
-        otherChanges.query();
+    otherChanges.query()
 
-        while (otherChanges.next()) {
-            conflicts.push({
-                change: otherChanges.getValue('number'),
-                ci: ciSysId,
-                start: otherChanges.getValue('start_date'),
-                end: otherChanges.getValue('end_date')
-            });
-        }
+    while (otherChanges.next()) {
+      conflicts.push({
+        change: otherChanges.getValue("number"),
+        ci: ciSysId,
+        start: otherChanges.getValue("start_date"),
+        end: otherChanges.getValue("end_date"),
+      })
     }
+  }
 
-    return conflicts;
+  return conflicts
 }
 ```
 
@@ -330,51 +327,50 @@ function checkChangeConflicts(changeSysId) {
 
 ### Change States
 
-| State | Next States | Conditions |
-|-------|-------------|------------|
-| New | Assess | Submitted |
-| Assess | Authorize, Cancelled | Assessment complete |
-| Authorize | Scheduled, Cancelled | Approvals complete |
+| State     | Next States          | Conditions                |
+| --------- | -------------------- | ------------------------- |
+| New       | Assess               | Submitted                 |
+| Assess    | Authorize, Cancelled | Assessment complete       |
+| Authorize | Scheduled, Cancelled | Approvals complete        |
 | Scheduled | Implement, Cancelled | Within maintenance window |
-| Implement | Review, Cancelled | Tasks completed |
-| Review | Closed | PIR complete |
-| Closed | - | Final state |
+| Implement | Review, Cancelled    | Tasks completed           |
+| Review    | Closed               | PIR complete              |
+| Closed    | -                    | Final state               |
 
 ### Transition Change (ES5)
 
 ```javascript
 // Move change to next state
 function transitionChange(changeSysId, newState, notes) {
-    var change = new GlideRecord('change_request');
-    if (!change.get(changeSysId)) {
-        gs.error('Change not found: ' + changeSysId);
-        return false;
-    }
+  var change = new GlideRecord("change_request")
+  if (!change.get(changeSysId)) {
+    gs.error("Change not found: " + changeSysId)
+    return false
+  }
 
-    // Validate transition
-    var currentState = change.getValue('state');
-    var validTransitions = {
-        '-5': ['-4', '4'],      // New -> Assess or Cancelled
-        '-4': ['-3', '4'],      // Assess -> Authorize or Cancelled
-        '-3': ['-2', '4'],      // Authorize -> Scheduled or Cancelled
-        '-2': ['-1', '4'],      // Scheduled -> Implement or Cancelled
-        '-1': ['0', '4'],       // Implement -> Review or Cancelled
-        '0': ['3']              // Review -> Closed
-    };
+  // Validate transition
+  var currentState = change.getValue("state")
+  var validTransitions = {
+    "-5": ["-4", "4"], // New -> Assess or Cancelled
+    "-4": ["-3", "4"], // Assess -> Authorize or Cancelled
+    "-3": ["-2", "4"], // Authorize -> Scheduled or Cancelled
+    "-2": ["-1", "4"], // Scheduled -> Implement or Cancelled
+    "-1": ["0", "4"], // Implement -> Review or Cancelled
+    0: ["3"], // Review -> Closed
+  }
 
-    if (!validTransitions[currentState] ||
-        validTransitions[currentState].indexOf(newState) === -1) {
-        gs.error('Invalid state transition: ' + currentState + ' -> ' + newState);
-        return false;
-    }
+  if (!validTransitions[currentState] || validTransitions[currentState].indexOf(newState) === -1) {
+    gs.error("Invalid state transition: " + currentState + " -> " + newState)
+    return false
+  }
 
-    change.setValue('state', newState);
-    if (notes) {
-        change.work_notes = notes;
-    }
-    change.update();
+  change.setValue("state", newState)
+  if (notes) {
+    change.work_notes = notes
+  }
+  change.update()
 
-    return true;
+  return true
 }
 ```
 
@@ -382,44 +378,44 @@ function transitionChange(changeSysId, newState, notes) {
 
 ### Available Change Tools
 
-| Tool | Purpose |
-|------|---------|
-| `snow_create_change_request` | Create change |
-| `snow_create_change_task` | Add tasks |
-| `snow_get_change_request` | Get details |
-| `snow_update_change_state` | Transition state |
-| `snow_search_change_requests` | Find changes |
-| `snow_schedule_cab_meeting` | Schedule CAB |
+| Tool                          | Purpose          |
+| ----------------------------- | ---------------- |
+| `snow_create_change_request`  | Create change    |
+| `snow_create_change_task`     | Add tasks        |
+| `snow_get_change_request`     | Get details      |
+| `snow_update_change_state`    | Transition state |
+| `snow_search_change_requests` | Find changes     |
+| `snow_schedule_cab_meeting`   | Schedule CAB     |
 
 ### Example Workflow
 
 ```javascript
 // 1. Create change
 var changeId = await snow_create_change_request({
-    short_description: 'Database upgrade',
-    type: 'normal',
-    risk: 'moderate',
-    start_date: '2024-03-20 22:00:00',
-    end_date: '2024-03-21 02:00:00'
-});
+  short_description: "Database upgrade",
+  type: "normal",
+  risk: "moderate",
+  start_date: "2024-03-20 22:00:00",
+  end_date: "2024-03-21 02:00:00",
+})
 
 // 2. Add tasks
 await snow_create_change_task({
-    change: changeId,
-    description: 'Backup database',
-    order: 100
-});
+  change: changeId,
+  description: "Backup database",
+  order: 100,
+})
 
 // 3. Check conflicts
 var conflicts = await snow_check_change_conflicts({
-    change: changeId
-});
+  change: changeId,
+})
 
 // 4. Submit for approval
 await snow_update_change_state({
-    change: changeId,
-    state: 'assess'
-});
+  change: changeId,
+  state: "assess",
+})
 ```
 
 ## Best Practices

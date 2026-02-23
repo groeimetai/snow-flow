@@ -698,8 +698,8 @@ export default function Home() {
               </li>
               <li>
                 <Faq question="How much does Snow-Flow cost?">
-                  Snow-Flow is 100% free to use. It also comes with a set of free models. There might be additional costs
-                  if you connect any other provider.
+                  Snow-Flow is 100% free to use. It also comes with a set of free models. There might be additional
+                  costs if you connect any other provider.
                 </Faq>
               </li>
               <li>

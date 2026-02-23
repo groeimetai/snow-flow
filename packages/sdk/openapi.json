@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.1",
   "info": {
-    "title": "opencode",
-    "description": "opencode api",
+    "title": "snow-flow",
+    "description": "snow-flow api",
     "version": "1.0.0"
   },
   "paths": {
@@ -87,6 +87,24 @@
           {
             "lang": "js",
             "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.global.dispose({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/tui-ws/ws": {
+      "get": {
+        "operationId": "tui.ws.connect",
+        "summary": "Connect to TUI via WebSocket",
+        "description": "Establish a WebSocket connection that spawns a TUI instance as a PTY and streams terminal I/O. Send JSON messages with type 'resize' to change terminal dimensions. All other messages are forwarded as terminal input.",
+        "responses": {
+          "101": {
+            "description": "WebSocket upgrade successful"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createOpencodeClient } from \"@opencode-ai/sdk\n\nconst client = createOpencodeClient()\nawait client.tui.ws.connect({\n  ...\n})"
           }
         ]
       }
@@ -361,6 +379,10 @@
                     "additionalProperties": {
                       "type": "string"
                     }
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": ["shell", "tui"]
                   }
                 }
               }
@@ -5559,9 +5581,12 @@
                       },
                       "location": {
                         "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
                       }
                     },
-                    "required": ["name", "description", "location"]
+                    "required": ["name", "description", "location", "content"]
                   }
                 }
               }
@@ -5823,6 +5848,25 @@
           "type": {
             "type": "string",
             "const": "installation.update-available"
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": ["version"]
+          }
+        },
+        "required": ["type", "properties"]
+      },
+      "Event.installation.updating": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "installation.updating"
           },
           "properties": {
             "type": "object",
@@ -8219,6 +8263,9 @@
             "$ref": "#/components/schemas/Event.installation.update-available"
           },
           {
+            "$ref": "#/components/schemas/Event.installation.updating"
+          },
+          {
             "$ref": "#/components/schemas/Event.project.updated"
           },
           {
@@ -9769,6 +9816,7 @@
             "$ref": "#/components/schemas/PermissionConfig"
           },
           "tools": {
+            "description": "Enable/disable specific tools. Web tools (webfetch, websearch, codesearch) are disabled by default.",
             "type": "object",
             "propertyNames": {
               "type": "string"
@@ -9785,6 +9833,10 @@
                 "type": "string"
               }
             }
+          },
+          "telemetry": {
+            "description": "Enable anonymous usage telemetry (default: true). Set to false to disable.",
+            "type": "boolean"
           },
           "compaction": {
             "type": "object",
@@ -10694,8 +10746,9 @@
           "model": {
             "type": "string"
           },
-          "mcp": {
-            "type": "boolean"
+          "source": {
+            "type": "string",
+            "enum": ["command", "mcp", "skill"]
           },
           "template": {
             "anyOf": [
@@ -10879,6 +10932,242 @@
         },
         "required": ["type", "key", "token"]
       },
+      "ServiceNowOAuth": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "servicenow-oauth"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "number"
+          }
+        },
+        "required": ["type", "instance", "clientId", "clientSecret"]
+      },
+      "ServiceNowBasic": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "servicenow-basic"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": ["type", "instance", "username", "password"]
+      },
+      "Enterprise": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "enterprise"
+          },
+          "licenseKey": {
+            "type": "string"
+          },
+          "enterpriseUrl": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          },
+          "sessionToken": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "machineId": {
+            "type": "string"
+          },
+          "jiraBaseUrl": {
+            "type": "string"
+          },
+          "confluenceUrl": {
+            "type": "string"
+          },
+          "atlassianEmail": {
+            "type": "string"
+          },
+          "atlassianApiToken": {
+            "type": "string"
+          },
+          "azureOrg": {
+            "type": "string"
+          },
+          "azureProject": {
+            "type": "string"
+          },
+          "azurePat": {
+            "type": "string"
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subscriptionStatus": {
+            "type": "string"
+          },
+          "trialEndsAt": {
+            "type": "number"
+          }
+        },
+        "required": ["type"]
+      },
+      "Portal": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "portal"
+          },
+          "token": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "number"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string",
+            "enum": ["individual", "teams"]
+          },
+          "organizationId": {
+            "type": "number"
+          },
+          "organizationName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["owner", "admin", "developer", "stakeholder"]
+          },
+          "machineId": {
+            "type": "string"
+          }
+        },
+        "required": ["type", "token", "userId", "email", "plan"]
+      },
+      "MidServer": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "mid-server"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "midServerName": {
+            "type": "string"
+          },
+          "midServerSysId": {
+            "type": "string"
+          },
+          "authType": {
+            "default": "basic",
+            "type": "string",
+            "enum": ["basic", "oauth", "mutual-tls"]
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "clientSecret": {
+            "type": "string"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "number"
+          },
+          "certPath": {
+            "type": "string"
+          },
+          "keyPath": {
+            "type": "string"
+          },
+          "caPath": {
+            "type": "string"
+          },
+          "midServerUrl": {
+            "type": "string"
+          },
+          "proxyEnabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "routeLlmRequests": {
+            "default": true,
+            "type": "boolean"
+          },
+          "routeApiRequests": {
+            "default": true,
+            "type": "boolean"
+          },
+          "timeout": {
+            "default": 30000,
+            "type": "number"
+          },
+          "retries": {
+            "default": 3,
+            "type": "number"
+          }
+        },
+        "required": ["type", "instance", "midServerName"]
+      },
       "Auth": {
         "anyOf": [
           {
@@ -10889,6 +11178,21 @@
           },
           {
             "$ref": "#/components/schemas/WellKnownAuth"
+          },
+          {
+            "$ref": "#/components/schemas/ServiceNowOAuth"
+          },
+          {
+            "$ref": "#/components/schemas/ServiceNowBasic"
+          },
+          {
+            "$ref": "#/components/schemas/Enterprise"
+          },
+          {
+            "$ref": "#/components/schemas/Portal"
+          },
+          {
+            "$ref": "#/components/schemas/MidServer"
           }
         ]
       }

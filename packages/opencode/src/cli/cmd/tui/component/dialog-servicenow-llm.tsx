@@ -219,9 +219,12 @@ async function lookupModelInModelsDev(
 
         // Partial match
         if (
-          normalizedKey.includes(normalizedId) || normalizedId.includes(normalizedKey) ||
-          normalizedModelId.includes(normalizedId) || normalizedId.includes(normalizedModelId) ||
-          normalizedName.includes(normalizedId) || normalizedId.includes(normalizedName)
+          normalizedKey.includes(normalizedId) ||
+          normalizedId.includes(normalizedKey) ||
+          normalizedModelId.includes(normalizedId) ||
+          normalizedId.includes(normalizedModelId) ||
+          normalizedName.includes(normalizedId) ||
+          normalizedId.includes(normalizedName)
         ) {
           return {
             found: true,
@@ -395,26 +398,24 @@ SnowFlowLLMService.prototype = {
     const siCheckData = await siCheckResponse.json()
 
     if (siCheckData.result && siCheckData.result.length > 0) {
-      await fetch(
-        `${instanceUrl}/api/now/table/sys_script_include/${siCheckData.result[0].sys_id}`,
-        { method: "PATCH", headers, body: JSON.stringify({ script: scriptIncludeScript }) },
-      )
+      await fetch(`${instanceUrl}/api/now/table/sys_script_include/${siCheckData.result[0].sys_id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ script: scriptIncludeScript }),
+      })
     } else {
-      const createResponse = await fetch(
-        `${instanceUrl}/api/now/table/sys_script_include`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            name: "SnowFlowLLMService",
-            api_name: "global.SnowFlowLLMService",
-            script: scriptIncludeScript,
-            active: true,
-            client_callable: false,
-            description: "Snow-Flow LLM Service for MID Server LLM integration",
-          }),
-        },
-      )
+      const createResponse = await fetch(`${instanceUrl}/api/now/table/sys_script_include`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: "SnowFlowLLMService",
+          api_name: "global.SnowFlowLLMService",
+          script: scriptIncludeScript,
+          active: true,
+          client_callable: false,
+          description: "Snow-Flow LLM Service for MID Server LLM integration",
+        }),
+      })
       if (!createResponse.ok) {
         return { success: false, error: `Failed to create Script Include: HTTP ${createResponse.status}` }
       }
@@ -434,19 +435,16 @@ SnowFlowLLMService.prototype = {
       restApiSysId = restCheckData.result[0].sys_id
       apiBaseUri = restCheckData.result[0].base_uri || ""
     } else {
-      const restApiResponse = await fetch(
-        `${instanceUrl}/api/now/table/sys_ws_definition`,
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            name: "Snow-Flow LLM",
-            service_id: "snow_flow",
-            short_description: "Snow-Flow LLM API for MID Server integration",
-            active: true,
-          }),
-        },
-      )
+      const restApiResponse = await fetch(`${instanceUrl}/api/now/table/sys_ws_definition`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: "Snow-Flow LLM",
+          service_id: "snow_flow",
+          short_description: "Snow-Flow LLM API for MID Server integration",
+          active: true,
+        }),
+      })
       if (!restApiResponse.ok) {
         return { success: false, error: `Failed to create REST API: HTTP ${restApiResponse.status}` }
       }
@@ -467,7 +465,9 @@ SnowFlowLLMService.prototype = {
     // Step 3: Create REST Resources
     const resources = [
       {
-        name: "MID Servers", relative_path: "/llm/mid-servers", http_method: "GET",
+        name: "MID Servers",
+        relative_path: "/llm/mid-servers",
+        http_method: "GET",
         operation_script: `(function process(request, response) {
     var service = new SnowFlowLLMService();
     var servers = service.getMidServers();
@@ -476,7 +476,9 @@ SnowFlowLLMService.prototype = {
 })(request, response);`,
       },
       {
-        name: "REST Messages", relative_path: "/llm/rest-messages", http_method: "GET",
+        name: "REST Messages",
+        relative_path: "/llm/rest-messages",
+        http_method: "GET",
         operation_script: `(function process(request, response) {
     var service = new SnowFlowLLMService();
     var messages = service.getRestMessages();
@@ -485,7 +487,9 @@ SnowFlowLLMService.prototype = {
 })(request, response);`,
       },
       {
-        name: "Chat", relative_path: "/llm/chat", http_method: "POST",
+        name: "Chat",
+        relative_path: "/llm/chat",
+        http_method: "POST",
         operation_script: `(function process(request, response) {
     var body = request.body.data;
     var message = body.message;
@@ -500,7 +504,9 @@ SnowFlowLLMService.prototype = {
 })(request, response);`,
       },
       {
-        name: "Chat Completions (OpenAI Compatible)", relative_path: "/llm/chat/completions", http_method: "POST",
+        name: "Chat Completions (OpenAI Compatible)",
+        relative_path: "/llm/chat/completions",
+        http_method: "POST",
         operation_script: `(function process(request, response) {
     var body = request.body.data;
     var model = body.model || 'default';
@@ -533,7 +539,9 @@ SnowFlowLLMService.prototype = {
 })(request, response);`,
       },
       {
-        name: "Models", relative_path: "/llm/models", http_method: "GET",
+        name: "Models",
+        relative_path: "/llm/models",
+        http_method: "GET",
         operation_script: `(function process(request, response) {
     var restMessage = request.queryParams.rest_message;
     if (!restMessage) { response.setStatus(400); return { error: 'rest_message parameter required' }; }
@@ -553,26 +561,24 @@ SnowFlowLLMService.prototype = {
       const resCheckData = await resCheckResponse.json()
 
       if (resCheckData.result && resCheckData.result.length > 0) {
-        await fetch(
-          `${instanceUrl}/api/now/table/sys_ws_operation/${resCheckData.result[0].sys_id}`,
-          { method: "PATCH", headers, body: JSON.stringify({ operation_script: resource.operation_script }) },
-        )
+        await fetch(`${instanceUrl}/api/now/table/sys_ws_operation/${resCheckData.result[0].sys_id}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ operation_script: resource.operation_script }),
+        })
       } else {
-        const createRes = await fetch(
-          `${instanceUrl}/api/now/table/sys_ws_operation`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              name: resource.name,
-              web_service_definition: restApiSysId,
-              http_method: resource.http_method,
-              relative_path: resource.relative_path,
-              operation_script: resource.operation_script,
-              active: true,
-            }),
-          },
-        )
+        const createRes = await fetch(`${instanceUrl}/api/now/table/sys_ws_operation`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            name: resource.name,
+            web_service_definition: restApiSysId,
+            http_method: resource.http_method,
+            relative_path: resource.relative_path,
+            operation_script: resource.operation_script,
+            active: true,
+          }),
+        })
         if (!createRes.ok) {
           return { success: false, error: `Failed to create resource ${resource.name}: HTTP ${createRes.status}` }
         }
@@ -596,19 +602,22 @@ SnowFlowLLMService.prototype = {
         const propCheckData = await propCheckResponse.json()
 
         if (propCheckData.result && propCheckData.result.length > 0) {
-          await fetch(
-            `${instanceUrl}/api/now/table/sys_properties/${propCheckData.result[0].sys_id}`,
-            { method: "PATCH", headers, body: JSON.stringify({ value: prop.value }) },
-          )
+          await fetch(`${instanceUrl}/api/now/table/sys_properties/${propCheckData.result[0].sys_id}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ value: prop.value }),
+          })
         } else {
-          await fetch(
-            `${instanceUrl}/api/now/table/sys_properties`,
-            {
-              method: "POST",
-              headers,
-              body: JSON.stringify({ name: prop.name, value: prop.value, description: "Snow-Flow LLM configuration", type: "string" }),
-            },
-          )
+          await fetch(`${instanceUrl}/api/now/table/sys_properties`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              name: prop.name,
+              value: prop.value,
+              description: "Snow-Flow LLM configuration",
+              type: "string",
+            }),
+          })
         }
       }
     }
@@ -718,9 +727,8 @@ export function DialogAuthServiceNowLLM() {
   let manualModelInput: TextareaRenderable
 
   const getAuthHeaders = (): Record<string, string> => {
-    const base = authType() === "basic"
-      ? { Authorization: `Basic ${authToken()}` }
-      : { Authorization: `Bearer ${authToken()}` }
+    const base =
+      authType() === "basic" ? { Authorization: `Basic ${authToken()}` } : { Authorization: `Bearer ${authToken()}` }
     return { ...base, Accept: "application/json", "Content-Type": "application/json" }
   }
 
@@ -742,7 +750,12 @@ export function DialogAuthServiceNowLLM() {
 
             if (response.ok) {
               const data = await response.json()
-              if (data.success && data.instance?.instanceUrl && data.instance?.clientId && data.instance?.clientSecret) {
+              if (
+                data.success &&
+                data.instance?.instanceUrl &&
+                data.instance?.clientId &&
+                data.instance?.clientSecret
+              ) {
                 await Auth.set("servicenow", {
                   type: "servicenow-oauth",
                   instance: data.instance.instanceUrl,
@@ -750,7 +763,11 @@ export function DialogAuthServiceNowLLM() {
                   clientSecret: data.instance.clientSecret,
                 })
                 snAuth = await Auth.get("servicenow")
-                toast.show({ variant: "info", message: "ServiceNow credentials loaded from enterprise portal", duration: 3000 })
+                toast.show({
+                  variant: "info",
+                  message: "ServiceNow credentials loaded from enterprise portal",
+                  duration: 3000,
+                })
               }
             }
           } catch {
@@ -936,7 +953,11 @@ export function DialogAuthServiceNowLLM() {
       setModels(discovered)
       setStep("select-model")
     } else {
-      toast.show({ variant: "info", message: "Model discovery unavailable. Please enter model ID manually.", duration: 3000 })
+      toast.show({
+        variant: "info",
+        message: "Model discovery unavailable. Please enter model ID manually.",
+        duration: 3000,
+      })
       setStep("manual-model")
       setTimeout(() => manualModelInput?.focus(), 10)
     }
@@ -950,7 +971,11 @@ export function DialogAuthServiceNowLLM() {
       if (lookup.found && lookup.contextWindow) {
         finalModel.contextWindow = lookup.contextWindow
         finalModel.maxTokens = lookup.maxTokens
-        toast.show({ variant: "info", message: `Found in models.dev: ${lookup.matchedModel} (${formatContextWindow(lookup.contextWindow)})`, duration: 3000 })
+        toast.show({
+          variant: "info",
+          message: `Found in models.dev: ${lookup.matchedModel} (${formatContextWindow(lookup.contextWindow)})`,
+          duration: 3000,
+        })
       }
     }
     setSelectedModel(finalModel)
@@ -1150,7 +1175,11 @@ export function DialogAuthServiceNowLLM() {
     const contextWindow = lookup.found ? lookup.contextWindow : undefined
     const maxTokens = lookup.found ? lookup.maxTokens : undefined
     if (lookup.found) {
-      toast.show({ variant: "info", message: `Found in models.dev: ${lookup.matchedModel} (${formatContextWindow(lookup.contextWindow)})`, duration: 3000 })
+      toast.show({
+        variant: "info",
+        message: `Found in models.dev: ${lookup.matchedModel} (${formatContextWindow(lookup.contextWindow)})`,
+        duration: 3000,
+      })
     }
 
     setSelectedModel({
@@ -1255,10 +1284,7 @@ export function DialogAuthServiceNowLLM() {
 
       {/* Select HTTP Method */}
       <Show when={step() === "select-method"}>
-        <DialogSelect
-          title="Select HTTP Method for chat completions"
-          options={methodOptions()}
-        />
+        <DialogSelect title="Select HTTP Method for chat completions" options={methodOptions()} />
       </Show>
 
       {/* Select Model */}
@@ -1284,12 +1310,11 @@ export function DialogAuthServiceNowLLM() {
       {/* Deploy confirmation */}
       <Show when={step() === "deploy-confirm"}>
         <box gap={1}>
-          <text fg={theme.text}>
-            Selected: {selectedModel()?.name || selectedModel()?.id}
-          </text>
+          <text fg={theme.text}>Selected: {selectedModel()?.name || selectedModel()?.id}</text>
           <Show when={selectedModel()?.contextWindow}>
             <text fg={theme.textMuted}>
-              Context: {selectedModel()!.contextWindow!.toLocaleString()} tokens | Max output: {(selectedModel()!.maxTokens || 4096).toLocaleString()} tokens
+              Context: {selectedModel()!.contextWindow!.toLocaleString()} tokens | Max output:{" "}
+              {(selectedModel()!.maxTokens || 4096).toLocaleString()} tokens
             </text>
           </Show>
           <box paddingTop={1}>
@@ -1345,9 +1370,7 @@ export function DialogAuthServiceNowLLM() {
       {/* Manual URL */}
       <Show when={step() === "manual-url"}>
         <box gap={1}>
-          <text fg={theme.textMuted}>
-            Enter the base URL for the LLM endpoint
-          </text>
+          <text fg={theme.textMuted}>Enter the base URL for the LLM endpoint</text>
           <textarea
             ref={(val: TextareaRenderable) => (manualUrlInput = val)}
             height={3}
@@ -1367,9 +1390,7 @@ export function DialogAuthServiceNowLLM() {
       {/* Manual model */}
       <Show when={step() === "manual-model"}>
         <box gap={1}>
-          <text fg={theme.textMuted}>
-            Enter the model ID (e.g., qwen3-1.7b, llama3-8b, Qwen/Qwen3-1.7B)
-          </text>
+          <text fg={theme.textMuted}>Enter the model ID (e.g., qwen3-1.7b, llama3-8b, Qwen/Qwen3-1.7B)</text>
           <textarea
             ref={(val: TextareaRenderable) => (manualModelInput = val)}
             height={3}

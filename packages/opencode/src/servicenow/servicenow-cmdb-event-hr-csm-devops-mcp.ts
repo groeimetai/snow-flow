@@ -5,43 +5,38 @@
  * Uses official ServiceNow REST APIs
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ErrorCode,
-  ListToolsRequestSchema,
-  McpError,
-} from '@modelcontextprotocol/sdk/types.js';
-import { ServiceNowClient } from '../utils/servicenow-client.js';
-import { mcpAuth } from '../utils/mcp-auth-middleware.js';
-import { mcpConfig } from '../utils/mcp-config-manager.js';
-import { MCPLogger } from './shared/mcp-logger.js';
+import { Server } from "@modelcontextprotocol/sdk/server/index.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from "@modelcontextprotocol/sdk/types.js"
+import { ServiceNowClient } from "../utils/servicenow-client.js"
+import { mcpAuth } from "../utils/mcp-auth-middleware.js"
+import { mcpConfig } from "../utils/mcp-config-manager.js"
+import { MCPLogger } from "./shared/mcp-logger.js"
 
 class ServiceNowCMDBEventHRCSMDevOpsMCP {
-  private server: Server;
-  private client: ServiceNowClient;
-  private logger: MCPLogger;
-  private config: ReturnType<typeof mcpConfig.getConfig>;
+  private server: Server
+  private client: ServiceNowClient
+  private logger: MCPLogger
+  private config: ReturnType<typeof mcpConfig.getConfig>
 
   constructor() {
     this.server = new Server(
       {
-        name: 'servicenow-cmdb-event-hr-csm-devops',
-        version: '1.0.0',
+        name: "servicenow-cmdb-event-hr-csm-devops",
+        version: "1.0.0",
       },
       {
         capabilities: {
           tools: {},
         },
-      }
-    );
+      },
+    )
 
-    this.client = new ServiceNowClient();
-    this.logger = new MCPLogger('ServiceNowCMDBEventHRCSMDevOpsMCP');
-    this.config = mcpConfig.getConfig();
+    this.client = new ServiceNowClient()
+    this.logger = new MCPLogger("ServiceNowCMDBEventHRCSMDevOpsMCP")
+    this.config = mcpConfig.getConfig()
 
-    this.setupHandlers();
+    this.setupHandlers()
   }
 
   private setupHandlers() {
@@ -49,749 +44,763 @@ class ServiceNowCMDBEventHRCSMDevOpsMCP {
       tools: [
         // Discovery & CMDB Tools
         {
-          name: 'snow_create_ci',
-          description: 'Creates a Configuration Item (CI) in the CMDB. CIs represent IT infrastructure components.',
+          name: "snow_create_ci",
+          description: "Creates a Configuration Item (CI) in the CMDB. CIs represent IT infrastructure components.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              name: { type: 'string', description: 'CI name' },
-              ci_class: { type: 'string', description: 'CI class (e.g., cmdb_ci_server, cmdb_ci_app_server)' },
-              serial_number: { type: 'string', description: 'Serial number' },
-              asset_tag: { type: 'string', description: 'Asset tag' },
-              model: { type: 'string', description: 'Model reference' },
-              manufacturer: { type: 'string', description: 'Manufacturer reference' },
-              location: { type: 'string', description: 'Location reference' },
-              assigned_to: { type: 'string', description: 'Assigned user' },
-              operational_status: { type: 'string', description: 'Operational status' },
-              attributes: { type: 'object', description: 'Additional CI attributes' }
+              name: { type: "string", description: "CI name" },
+              ci_class: { type: "string", description: "CI class (e.g., cmdb_ci_server, cmdb_ci_app_server)" },
+              serial_number: { type: "string", description: "Serial number" },
+              asset_tag: { type: "string", description: "Asset tag" },
+              model: { type: "string", description: "Model reference" },
+              manufacturer: { type: "string", description: "Manufacturer reference" },
+              location: { type: "string", description: "Location reference" },
+              assigned_to: { type: "string", description: "Assigned user" },
+              operational_status: { type: "string", description: "Operational status" },
+              attributes: { type: "object", description: "Additional CI attributes" },
             },
-            required: ['name', 'ci_class']
-          }
+            required: ["name", "ci_class"],
+          },
         },
         {
-          name: 'snow_create_ci_relationship',
-          description: 'Creates relationships between Configuration Items to map dependencies.',
+          name: "snow_create_ci_relationship",
+          description: "Creates relationships between Configuration Items to map dependencies.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              parent: { type: 'string', description: 'Parent CI sys_id' },
-              child: { type: 'string', description: 'Child CI sys_id' },
-              type: { type: 'string', description: 'Relationship type: Depends on, Hosted on, Runs on, Uses, etc.' },
-              description: { type: 'string', description: 'Relationship description' }
+              parent: { type: "string", description: "Parent CI sys_id" },
+              child: { type: "string", description: "Child CI sys_id" },
+              type: { type: "string", description: "Relationship type: Depends on, Hosted on, Runs on, Uses, etc." },
+              description: { type: "string", description: "Relationship description" },
             },
-            required: ['parent', 'child', 'type']
-          }
+            required: ["parent", "child", "type"],
+          },
         },
         {
-          name: 'snow_run_discovery',
-          description: 'Initiates a Discovery scan to automatically find and map IT infrastructure.',
+          name: "snow_run_discovery",
+          description: "Initiates a Discovery scan to automatically find and map IT infrastructure.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              schedule: { type: 'string', description: 'Discovery schedule name' },
-              ip_range: { type: 'string', description: 'IP range to scan' },
-              mid_server: { type: 'string', description: 'MID server to use' },
-              patterns: { type: 'array', items: { type: 'string' }, description: 'Discovery patterns to run' },
-              credentials: { type: 'string', description: 'Credential set to use' }
+              schedule: { type: "string", description: "Discovery schedule name" },
+              ip_range: { type: "string", description: "IP range to scan" },
+              mid_server: { type: "string", description: "MID server to use" },
+              patterns: { type: "array", items: { type: "string" }, description: "Discovery patterns to run" },
+              credentials: { type: "string", description: "Credential set to use" },
             },
-            required: ['schedule']
-          }
+            required: ["schedule"],
+          },
         },
         {
-          name: 'snow_get_ci_details',
-          description: 'Retrieves Configuration Item details including relationships and history.',
+          name: "snow_get_ci_details",
+          description: "Retrieves Configuration Item details including relationships and history.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              ci_id: { type: 'string', description: 'CI sys_id or name' },
-              include_relationships: { type: 'boolean', description: 'Include CI relationships', default: true },
-              include_history: { type: 'boolean', description: 'Include change history', default: false }
+              ci_id: { type: "string", description: "CI sys_id or name" },
+              include_relationships: { type: "boolean", description: "Include CI relationships", default: true },
+              include_history: { type: "boolean", description: "Include change history", default: false },
             },
-            required: ['ci_id']
-          }
+            required: ["ci_id"],
+          },
         },
         {
-          name: 'snow_search_cmdb',
-          description: 'Searches the CMDB for Configuration Items with various filters.',
+          name: "snow_search_cmdb",
+          description: "Searches the CMDB for Configuration Items with various filters.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              query: { type: 'string', description: 'Search query' },
-              ci_class: { type: 'string', description: 'Filter by CI class' },
-              operational_status: { type: 'string', description: 'Filter by status' },
-              location: { type: 'string', description: 'Filter by location' },
-              limit: { type: 'number', description: 'Maximum results', default: 50 }
-            }
-          }
+              query: { type: "string", description: "Search query" },
+              ci_class: { type: "string", description: "Filter by CI class" },
+              operational_status: { type: "string", description: "Filter by status" },
+              location: { type: "string", description: "Filter by location" },
+              limit: { type: "number", description: "Maximum results", default: 50 },
+            },
+          },
         },
         {
-          name: 'snow_impact_analysis',
-          description: 'Performs impact analysis to identify affected services when a CI changes.',
+          name: "snow_impact_analysis",
+          description: "Performs impact analysis to identify affected services when a CI changes.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              ci_id: { type: 'string', description: 'CI to analyze' },
-              depth: { type: 'number', description: 'Relationship depth to analyze', default: 3 },
-              include_services: { type: 'boolean', description: 'Include business services', default: true }
+              ci_id: { type: "string", description: "CI to analyze" },
+              depth: { type: "number", description: "Relationship depth to analyze", default: 3 },
+              include_services: { type: "boolean", description: "Include business services", default: true },
             },
-            required: ['ci_id']
-          }
+            required: ["ci_id"],
+          },
         },
-        
+
         // Event Management Tools
         {
-          name: 'snow_create_event',
-          description: 'Creates an event for Event Management processing. Events are raw data that get correlated into alerts.',
+          name: "snow_create_event",
+          description:
+            "Creates an event for Event Management processing. Events are raw data that get correlated into alerts.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              source: { type: 'string', description: 'Event source system' },
-              node: { type: 'string', description: 'Node (CI) affected' },
-              type: { type: 'string', description: 'Event type' },
-              severity: { type: 'number', description: 'Severity: 1-Critical, 2-Major, 3-Minor, 4-Warning, 5-Info' },
-              description: { type: 'string', description: 'Event description' },
-              additional_info: { type: 'object', description: 'Additional event data' },
-              time_of_event: { type: 'string', description: 'Event timestamp' },
-              resolution_state: { type: 'string', description: 'Resolution state' }
+              source: { type: "string", description: "Event source system" },
+              node: { type: "string", description: "Node (CI) affected" },
+              type: { type: "string", description: "Event type" },
+              severity: { type: "number", description: "Severity: 1-Critical, 2-Major, 3-Minor, 4-Warning, 5-Info" },
+              description: { type: "string", description: "Event description" },
+              additional_info: { type: "object", description: "Additional event data" },
+              time_of_event: { type: "string", description: "Event timestamp" },
+              resolution_state: { type: "string", description: "Resolution state" },
             },
-            required: ['source', 'node', 'type', 'severity', 'description']
-          }
+            required: ["source", "node", "type", "severity", "description"],
+          },
         },
         {
-          name: 'snow_create_alert',
-          description: 'Creates an alert directly or promotes events to alerts for incident creation.',
+          name: "snow_create_alert",
+          description: "Creates an alert directly or promotes events to alerts for incident creation.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              source: { type: 'string', description: 'Alert source' },
-              node: { type: 'string', description: 'Affected CI' },
-              severity: { type: 'number', description: 'Alert severity' },
-              description: { type: 'string', description: 'Alert description' },
-              metric_name: { type: 'string', description: 'Metric that triggered alert' },
-              threshold_value: { type: 'string', description: 'Threshold breached' },
-              actual_value: { type: 'string', description: 'Actual value observed' },
-              assignment_group: { type: 'string', description: 'Group to assign to' }
+              source: { type: "string", description: "Alert source" },
+              node: { type: "string", description: "Affected CI" },
+              severity: { type: "number", description: "Alert severity" },
+              description: { type: "string", description: "Alert description" },
+              metric_name: { type: "string", description: "Metric that triggered alert" },
+              threshold_value: { type: "string", description: "Threshold breached" },
+              actual_value: { type: "string", description: "Actual value observed" },
+              assignment_group: { type: "string", description: "Group to assign to" },
             },
-            required: ['source', 'node', 'severity', 'description']
-          }
+            required: ["source", "node", "severity", "description"],
+          },
         },
         {
-          name: 'snow_create_alert_rule',
-          description: 'Creates alert correlation rules to automatically group related events.',
+          name: "snow_create_alert_rule",
+          description: "Creates alert correlation rules to automatically group related events.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              name: { type: 'string', description: 'Rule name' },
-              condition: { type: 'string', description: 'Correlation condition' },
-              grouping_fields: { type: 'array', items: { type: 'string' }, description: 'Fields to group by' },
-              time_window: { type: 'number', description: 'Time window in seconds' },
-              threshold: { type: 'number', description: 'Event count threshold' },
-              action: { type: 'string', description: 'Action to take' },
-              active: { type: 'boolean', description: 'Is rule active', default: true }
+              name: { type: "string", description: "Rule name" },
+              condition: { type: "string", description: "Correlation condition" },
+              grouping_fields: { type: "array", items: { type: "string" }, description: "Fields to group by" },
+              time_window: { type: "number", description: "Time window in seconds" },
+              threshold: { type: "number", description: "Event count threshold" },
+              action: { type: "string", description: "Action to take" },
+              active: { type: "boolean", description: "Is rule active", default: true },
             },
-            required: ['name', 'condition']
-          }
+            required: ["name", "condition"],
+          },
         },
         {
-          name: 'snow_get_event_correlation',
-          description: 'Gets event correlation results showing how events are grouped into alerts.',
+          name: "snow_get_event_correlation",
+          description: "Gets event correlation results showing how events are grouped into alerts.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              alert_id: { type: 'string', description: 'Alert sys_id' },
-              time_range: { type: 'string', description: 'Time range to check' },
-              include_suppressed: { type: 'boolean', description: 'Include suppressed events', default: false }
-            }
-          }
+              alert_id: { type: "string", description: "Alert sys_id" },
+              time_range: { type: "string", description: "Time range to check" },
+              include_suppressed: { type: "boolean", description: "Include suppressed events", default: false },
+            },
+          },
         },
-        
+
         // HR Service Delivery Tools
         {
-          name: 'snow_create_hr_case',
-          description: 'Creates an HR case for employee service requests like onboarding, benefits, or policy questions.',
+          name: "snow_create_hr_case",
+          description:
+            "Creates an HR case for employee service requests like onboarding, benefits, or policy questions.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              employee: { type: 'string', description: 'Employee sys_id or user name' },
-              hr_service: { type: 'string', description: 'HR service type' },
-              short_description: { type: 'string', description: 'Case summary' },
-              description: { type: 'string', description: 'Detailed description' },
-              priority: { type: 'number', description: 'Priority level' },
-              category: { type: 'string', description: 'Case category: Benefits, Payroll, Leave, etc.' },
-              subcategory: { type: 'string', description: 'Case subcategory' },
-              confidential: { type: 'boolean', description: 'Is case confidential', default: false }
+              employee: { type: "string", description: "Employee sys_id or user name" },
+              hr_service: { type: "string", description: "HR service type" },
+              short_description: { type: "string", description: "Case summary" },
+              description: { type: "string", description: "Detailed description" },
+              priority: { type: "number", description: "Priority level" },
+              category: { type: "string", description: "Case category: Benefits, Payroll, Leave, etc." },
+              subcategory: { type: "string", description: "Case subcategory" },
+              confidential: { type: "boolean", description: "Is case confidential", default: false },
             },
-            required: ['employee', 'hr_service', 'short_description']
-          }
+            required: ["employee", "hr_service", "short_description"],
+          },
         },
         {
-          name: 'snow_create_hr_task',
-          description: 'Creates HR tasks for case fulfillment like document collection or approvals.',
+          name: "snow_create_hr_task",
+          description: "Creates HR tasks for case fulfillment like document collection or approvals.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              hr_case: { type: 'string', description: 'Parent HR case' },
-              type: { type: 'string', description: 'Task type' },
-              assigned_to: { type: 'string', description: 'HR agent assigned' },
-              short_description: { type: 'string', description: 'Task description' },
-              due_date: { type: 'string', description: 'Task due date' },
-              instructions: { type: 'string', description: 'Task instructions' }
+              hr_case: { type: "string", description: "Parent HR case" },
+              type: { type: "string", description: "Task type" },
+              assigned_to: { type: "string", description: "HR agent assigned" },
+              short_description: { type: "string", description: "Task description" },
+              due_date: { type: "string", description: "Task due date" },
+              instructions: { type: "string", description: "Task instructions" },
             },
-            required: ['hr_case', 'type', 'short_description']
-          }
+            required: ["hr_case", "type", "short_description"],
+          },
         },
         {
-          name: 'snow_employee_onboarding',
-          description: 'Initiates employee onboarding workflow with all necessary tasks and provisioning.',
+          name: "snow_employee_onboarding",
+          description: "Initiates employee onboarding workflow with all necessary tasks and provisioning.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              employee_name: { type: 'string', description: 'New employee name' },
-              email: { type: 'string', description: 'Employee email' },
-              start_date: { type: 'string', description: 'Start date' },
-              department: { type: 'string', description: 'Department' },
-              manager: { type: 'string', description: 'Manager sys_id or name' },
-              job_title: { type: 'string', description: 'Job title' },
-              location: { type: 'string', description: 'Work location' },
-              equipment_needed: { type: 'array', items: { type: 'string' }, description: 'Equipment to provision' }
+              employee_name: { type: "string", description: "New employee name" },
+              email: { type: "string", description: "Employee email" },
+              start_date: { type: "string", description: "Start date" },
+              department: { type: "string", description: "Department" },
+              manager: { type: "string", description: "Manager sys_id or name" },
+              job_title: { type: "string", description: "Job title" },
+              location: { type: "string", description: "Work location" },
+              equipment_needed: { type: "array", items: { type: "string" }, description: "Equipment to provision" },
             },
-            required: ['employee_name', 'email', 'start_date', 'department', 'manager']
-          }
+            required: ["employee_name", "email", "start_date", "department", "manager"],
+          },
         },
         {
-          name: 'snow_employee_offboarding',
-          description: 'Initiates employee offboarding workflow to revoke access and collect assets.',
+          name: "snow_employee_offboarding",
+          description: "Initiates employee offboarding workflow to revoke access and collect assets.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              employee: { type: 'string', description: 'Employee sys_id or user name' },
-              last_date: { type: 'string', description: 'Last working date' },
-              reason: { type: 'string', description: 'Offboarding reason' },
-              assets_to_return: { type: 'array', items: { type: 'string' }, description: 'Assets to collect' },
-              knowledge_transfer: { type: 'string', description: 'Knowledge transfer plan' }
+              employee: { type: "string", description: "Employee sys_id or user name" },
+              last_date: { type: "string", description: "Last working date" },
+              reason: { type: "string", description: "Offboarding reason" },
+              assets_to_return: { type: "array", items: { type: "string" }, description: "Assets to collect" },
+              knowledge_transfer: { type: "string", description: "Knowledge transfer plan" },
             },
-            required: ['employee', 'last_date', 'reason']
-          }
+            required: ["employee", "last_date", "reason"],
+          },
         },
-        
+
         // Customer Service Management Tools
         {
-          name: 'snow_create_customer_case',
-          description: 'Creates a customer service case for external customer support requests.',
+          name: "snow_create_customer_case",
+          description: "Creates a customer service case for external customer support requests.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              customer: { type: 'string', description: 'Customer account reference' },
-              contact: { type: 'string', description: 'Customer contact' },
-              product: { type: 'string', description: 'Product or service' },
-              short_description: { type: 'string', description: 'Case summary' },
-              description: { type: 'string', description: 'Detailed description' },
-              priority: { type: 'number', description: 'Priority level' },
-              category: { type: 'string', description: 'Case category' },
-              channel: { type: 'string', description: 'Contact channel: Phone, Email, Chat, Portal' }
+              customer: { type: "string", description: "Customer account reference" },
+              contact: { type: "string", description: "Customer contact" },
+              product: { type: "string", description: "Product or service" },
+              short_description: { type: "string", description: "Case summary" },
+              description: { type: "string", description: "Detailed description" },
+              priority: { type: "number", description: "Priority level" },
+              category: { type: "string", description: "Case category" },
+              channel: { type: "string", description: "Contact channel: Phone, Email, Chat, Portal" },
             },
-            required: ['customer', 'contact', 'short_description']
-          }
+            required: ["customer", "contact", "short_description"],
+          },
         },
         {
-          name: 'snow_create_customer_account',
-          description: 'Creates a customer account for tracking customer relationships and entitlements.',
+          name: "snow_create_customer_account",
+          description: "Creates a customer account for tracking customer relationships and entitlements.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              name: { type: 'string', description: 'Account name' },
-              account_number: { type: 'string', description: 'Account number' },
-              type: { type: 'string', description: 'Account type: Customer, Partner, Prospect' },
-              industry: { type: 'string', description: 'Industry' },
-              annual_revenue: { type: 'string', description: 'Annual revenue' },
-              employees: { type: 'number', description: 'Number of employees' },
-              primary_contact: { type: 'string', description: 'Primary contact' }
+              name: { type: "string", description: "Account name" },
+              account_number: { type: "string", description: "Account number" },
+              type: { type: "string", description: "Account type: Customer, Partner, Prospect" },
+              industry: { type: "string", description: "Industry" },
+              annual_revenue: { type: "string", description: "Annual revenue" },
+              employees: { type: "number", description: "Number of employees" },
+              primary_contact: { type: "string", description: "Primary contact" },
             },
-            required: ['name', 'type']
-          }
+            required: ["name", "type"],
+          },
         },
         {
-          name: 'snow_create_entitlement',
-          description: 'Creates service entitlements defining what services customers are eligible for.',
+          name: "snow_create_entitlement",
+          description: "Creates service entitlements defining what services customers are eligible for.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              account: { type: 'string', description: 'Customer account' },
-              service: { type: 'string', description: 'Service offering' },
-              start_date: { type: 'string', description: 'Entitlement start date' },
-              end_date: { type: 'string', description: 'Entitlement end date' },
-              support_level: { type: 'string', description: 'Support level: Basic, Standard, Premium' },
-              hours_included: { type: 'number', description: 'Support hours included' },
-              response_time: { type: 'string', description: 'SLA response time' }
+              account: { type: "string", description: "Customer account" },
+              service: { type: "string", description: "Service offering" },
+              start_date: { type: "string", description: "Entitlement start date" },
+              end_date: { type: "string", description: "Entitlement end date" },
+              support_level: { type: "string", description: "Support level: Basic, Standard, Premium" },
+              hours_included: { type: "number", description: "Support hours included" },
+              response_time: { type: "string", description: "SLA response time" },
             },
-            required: ['account', 'service', 'start_date', 'end_date']
-          }
+            required: ["account", "service", "start_date", "end_date"],
+          },
         },
         {
-          name: 'snow_get_customer_history',
-          description: 'Retrieves complete customer interaction history including cases and communications.',
+          name: "snow_get_customer_history",
+          description: "Retrieves complete customer interaction history including cases and communications.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              customer: { type: 'string', description: 'Customer account or contact' },
-              include_cases: { type: 'boolean', description: 'Include case history', default: true },
-              include_communications: { type: 'boolean', description: 'Include communications', default: true },
-              date_range: { type: 'string', description: 'Date range filter' }
+              customer: { type: "string", description: "Customer account or contact" },
+              include_cases: { type: "boolean", description: "Include case history", default: true },
+              include_communications: { type: "boolean", description: "Include communications", default: true },
+              date_range: { type: "string", description: "Date range filter" },
             },
-            required: ['customer']
-          }
+            required: ["customer"],
+          },
         },
-        
+
         // DevOps Tools
         {
-          name: 'snow_create_devops_pipeline',
-          description: 'Creates a DevOps pipeline for CI/CD automation.',
+          name: "snow_create_devops_pipeline",
+          description: "Creates a DevOps pipeline for CI/CD automation.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              name: { type: 'string', description: 'Pipeline name' },
-              repository: { type: 'string', description: 'Source repository' },
-              branch: { type: 'string', description: 'Branch to build' },
-              stages: { type: 'array', items: { type: 'object' }, description: 'Pipeline stages' },
-              triggers: { type: 'array', items: { type: 'string' }, description: 'Pipeline triggers' },
-              environment: { type: 'string', description: 'Target environment' }
+              name: { type: "string", description: "Pipeline name" },
+              repository: { type: "string", description: "Source repository" },
+              branch: { type: "string", description: "Branch to build" },
+              stages: { type: "array", items: { type: "object" }, description: "Pipeline stages" },
+              triggers: { type: "array", items: { type: "string" }, description: "Pipeline triggers" },
+              environment: { type: "string", description: "Target environment" },
             },
-            required: ['name', 'repository', 'branch']
-          }
+            required: ["name", "repository", "branch"],
+          },
         },
         {
-          name: 'snow_track_deployment',
-          description: 'Tracks application deployments through the DevOps pipeline.',
+          name: "snow_track_deployment",
+          description: "Tracks application deployments through the DevOps pipeline.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              application: { type: 'string', description: 'Application name' },
-              version: { type: 'string', description: 'Version being deployed' },
-              environment: { type: 'string', description: 'Target environment' },
-              pipeline: { type: 'string', description: 'Pipeline used' },
-              change_request: { type: 'string', description: 'Associated change request' },
-              status: { type: 'string', description: 'Deployment status' },
-              start_time: { type: 'string', description: 'Deployment start time' }
+              application: { type: "string", description: "Application name" },
+              version: { type: "string", description: "Version being deployed" },
+              environment: { type: "string", description: "Target environment" },
+              pipeline: { type: "string", description: "Pipeline used" },
+              change_request: { type: "string", description: "Associated change request" },
+              status: { type: "string", description: "Deployment status" },
+              start_time: { type: "string", description: "Deployment start time" },
             },
-            required: ['application', 'version', 'environment']
-          }
+            required: ["application", "version", "environment"],
+          },
         },
         {
-          name: 'snow_create_devops_change',
-          description: 'Creates an automated DevOps change request for deployments.',
+          name: "snow_create_devops_change",
+          description: "Creates an automated DevOps change request for deployments.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              application: { type: 'string', description: 'Application to deploy' },
-              version: { type: 'string', description: 'Version to deploy' },
-              environment: { type: 'string', description: 'Target environment' },
-              deployment_date: { type: 'string', description: 'Planned deployment' },
-              risk_assessment: { type: 'object', description: 'Risk assessment data' },
-              rollback_plan: { type: 'string', description: 'Rollback procedure' }
+              application: { type: "string", description: "Application to deploy" },
+              version: { type: "string", description: "Version to deploy" },
+              environment: { type: "string", description: "Target environment" },
+              deployment_date: { type: "string", description: "Planned deployment" },
+              risk_assessment: { type: "object", description: "Risk assessment data" },
+              rollback_plan: { type: "string", description: "Rollback procedure" },
             },
-            required: ['application', 'version', 'environment', 'deployment_date']
-          }
+            required: ["application", "version", "environment", "deployment_date"],
+          },
         },
         {
-          name: 'snow_get_devops_insights',
-          description: 'Retrieves DevOps metrics and insights for continuous improvement.',
+          name: "snow_get_devops_insights",
+          description: "Retrieves DevOps metrics and insights for continuous improvement.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              application: { type: 'string', description: 'Application to analyze' },
-              metric_type: { type: 'string', description: 'Metric type: velocity, quality, stability' },
-              time_range: { type: 'string', description: 'Analysis time range' },
-              include_trends: { type: 'boolean', description: 'Include trend analysis', default: true }
-            }
-          }
+              application: { type: "string", description: "Application to analyze" },
+              metric_type: { type: "string", description: "Metric type: velocity, quality, stability" },
+              time_range: { type: "string", description: "Analysis time range" },
+              include_trends: { type: "boolean", description: "Include trend analysis", default: true },
+            },
+          },
         },
         {
-          name: 'snow_velocity_tracking',
-          description: 'Tracks team velocity and delivery metrics for DevOps optimization.',
+          name: "snow_velocity_tracking",
+          description: "Tracks team velocity and delivery metrics for DevOps optimization.",
           inputSchema: {
-            type: 'object',
+            type: "object",
             properties: {
-              team: { type: 'string', description: 'Team name' },
-              sprint: { type: 'string', description: 'Sprint identifier' },
-              story_points: { type: 'number', description: 'Story points completed' },
-              deployments: { type: 'number', description: 'Number of deployments' },
-              lead_time: { type: 'number', description: 'Average lead time in hours' },
-              mttr: { type: 'number', description: 'Mean time to recovery in minutes' }
+              team: { type: "string", description: "Team name" },
+              sprint: { type: "string", description: "Sprint identifier" },
+              story_points: { type: "number", description: "Story points completed" },
+              deployments: { type: "number", description: "Number of deployments" },
+              lead_time: { type: "number", description: "Average lead time in hours" },
+              mttr: { type: "number", description: "Mean time to recovery in minutes" },
             },
-            required: ['team']
-          }
-        }
-      ]
-    }));
+            required: ["team"],
+          },
+        },
+      ],
+    }))
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
-        const { name, arguments: args } = request.params;
+        const { name, arguments: args } = request.params
 
         // Start operation with token tracking
-        this.logger.operationStart(name, args);
+        this.logger.operationStart(name, args)
 
-        const authResult = await mcpAuth.ensureAuthenticated();
+        const authResult = await mcpAuth.ensureAuthenticated()
         if (!authResult.success) {
-          throw new McpError(ErrorCode.InternalError, authResult.error || 'Authentication required');
+          throw new McpError(ErrorCode.InternalError, authResult.error || "Authentication required")
         }
 
-        let result;
+        let result
         switch (name) {
           // CMDB & Discovery
-          case 'snow_create_ci':
-            result = await this.createCI(args);
-            break;
-          case 'snow_create_ci_relationship':
-            result = await this.createCIRelationship(args);
-            break;
-          case 'snow_run_discovery':
-            result = await this.runDiscovery(args);
-            break;
-          case 'snow_get_ci_details':
-            result = await this.getCIDetails(args);
-            break;
-          case 'snow_search_cmdb':
-            result = await this.searchCMDB(args);
-            break;
-          case 'snow_impact_analysis':
-            result = await this.impactAnalysis(args);
-            break;
-            
+          case "snow_create_ci":
+            result = await this.createCI(args)
+            break
+          case "snow_create_ci_relationship":
+            result = await this.createCIRelationship(args)
+            break
+          case "snow_run_discovery":
+            result = await this.runDiscovery(args)
+            break
+          case "snow_get_ci_details":
+            result = await this.getCIDetails(args)
+            break
+          case "snow_search_cmdb":
+            result = await this.searchCMDB(args)
+            break
+          case "snow_impact_analysis":
+            result = await this.impactAnalysis(args)
+            break
+
           // Event Management
-          case 'snow_create_event':
-            result = await this.createEvent(args);
-            break;
-          case 'snow_create_alert':
-            result = await this.createAlert(args);
-            break;
-          case 'snow_create_alert_rule':
-            result = await this.createAlertRule(args);
-            break;
-          case 'snow_get_event_correlation':
-            result = await this.getEventCorrelation(args);
-            break;
-            
+          case "snow_create_event":
+            result = await this.createEvent(args)
+            break
+          case "snow_create_alert":
+            result = await this.createAlert(args)
+            break
+          case "snow_create_alert_rule":
+            result = await this.createAlertRule(args)
+            break
+          case "snow_get_event_correlation":
+            result = await this.getEventCorrelation(args)
+            break
+
           // HR Service Delivery
-          case 'snow_create_hr_case':
-            result = await this.createHRCase(args);
-            break;
-          case 'snow_create_hr_task':
-            result = await this.createHRTask(args);
-            break;
-          case 'snow_employee_onboarding':
-            result = await this.employeeOnboarding(args);
-            break;
-          case 'snow_employee_offboarding':
-            result = await this.employeeOffboarding(args);
-            break;
-            
+          case "snow_create_hr_case":
+            result = await this.createHRCase(args)
+            break
+          case "snow_create_hr_task":
+            result = await this.createHRTask(args)
+            break
+          case "snow_employee_onboarding":
+            result = await this.employeeOnboarding(args)
+            break
+          case "snow_employee_offboarding":
+            result = await this.employeeOffboarding(args)
+            break
+
           // Customer Service Management
-          case 'snow_create_customer_case':
-            result = await this.createCustomerCase(args);
-            break;
-          case 'snow_create_customer_account':
-            result = await this.createCustomerAccount(args);
-            break;
-          case 'snow_create_entitlement':
-            result = await this.createEntitlement(args);
-            break;
-          case 'snow_get_customer_history':
-            result = await this.getCustomerHistory(args);
-            break;
-            
+          case "snow_create_customer_case":
+            result = await this.createCustomerCase(args)
+            break
+          case "snow_create_customer_account":
+            result = await this.createCustomerAccount(args)
+            break
+          case "snow_create_entitlement":
+            result = await this.createEntitlement(args)
+            break
+          case "snow_get_customer_history":
+            result = await this.getCustomerHistory(args)
+            break
+
           // DevOps
-          case 'snow_create_devops_pipeline':
-            result = await this.createDevOpsPipeline(args);
-            break;
-          case 'snow_track_deployment':
-            result = await this.trackDeployment(args);
-            break;
-          case 'snow_create_devops_change':
-            result = await this.createDevOpsChange(args);
-            break;
-          case 'snow_get_devops_insights':
-            result = await this.getDevOpsInsights(args);
-            break;
-          case 'snow_velocity_tracking':
-            result = await this.velocityTracking(args);
-            break;
-            
+          case "snow_create_devops_pipeline":
+            result = await this.createDevOpsPipeline(args)
+            break
+          case "snow_track_deployment":
+            result = await this.trackDeployment(args)
+            break
+          case "snow_create_devops_change":
+            result = await this.createDevOpsChange(args)
+            break
+          case "snow_get_devops_insights":
+            result = await this.getDevOpsInsights(args)
+            break
+          case "snow_velocity_tracking":
+            result = await this.velocityTracking(args)
+            break
+
           default:
-            throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+            throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)
         }
 
         // Complete operation with token tracking
-        result = this.logger.addTokenUsageToResponse(result);
-        result = this.logger.addTokenUsageToResponse(result);
-        this.logger.operationComplete(name, result);
-        return result;
+        result = this.logger.addTokenUsageToResponse(result)
+        result = this.logger.addTokenUsageToResponse(result)
+        this.logger.operationComplete(name, result)
+        return result
       } catch (error) {
-        this.logger.error(`Error in ${request.params.name}:`, error);
-        throw error;
+        this.logger.error(`Error in ${request.params.name}:`, error)
+        throw error
       }
-    });
+    })
   }
 
   // CMDB & Discovery Implementation
   private async createCI(args: any) {
     try {
-      this.logger.info('Creating Configuration Item...');
+      this.logger.info("Creating Configuration Item...")
 
-      const ciTable = args.ci_class || 'cmdb_ci';
+      const ciTable = args.ci_class || "cmdb_ci"
       const ciData = {
         name: args.name,
-        serial_number: args.serial_number || '',
-        asset_tag: args.asset_tag || '',
-        model_id: args.model || '',
-        manufacturer: args.manufacturer || '',
-        location: args.location || '',
-        assigned_to: args.assigned_to || '',
-        operational_status: args.operational_status || '1',
-        ...args.attributes
-      };
+        serial_number: args.serial_number || "",
+        asset_tag: args.asset_tag || "",
+        model_id: args.model || "",
+        manufacturer: args.manufacturer || "",
+        location: args.location || "",
+        assigned_to: args.assigned_to || "",
+        operational_status: args.operational_status || "1",
+        ...args.attributes,
+      }
 
-      const updateSetResult = await this.client.ensureUpdateSet();
-      this.logger.trackAPICall('CREATE', ciTable, 1);
-      const response = await this.client.createRecord(ciTable, ciData);
+      const updateSetResult = await this.client.ensureUpdateSet()
+      this.logger.trackAPICall("CREATE", ciTable, 1)
+      const response = await this.client.createRecord(ciTable, ciData)
 
       if (!response.success) {
-        throw new Error(`Failed to create CI: ${response.error}`);
+        throw new Error(`Failed to create CI: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Configuration Item created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Configuration Item created!
 
 🖥️ **${args.name}**
 🆔 sys_id: ${response.data.sys_id}
 📊 Class: ${args.ci_class}
-${args.serial_number ? `🔢 Serial: ${args.serial_number}` : ''}
-${args.asset_tag ? `🏷️ Asset Tag: ${args.asset_tag}` : ''}
-📍 Location: ${args.location || 'Not specified'}
-👤 Assigned: ${args.assigned_to || 'Unassigned'}
+${args.serial_number ? `🔢 Serial: ${args.serial_number}` : ""}
+${args.asset_tag ? `🏷️ Asset Tag: ${args.asset_tag}` : ""}
+📍 Location: ${args.location || "Not specified"}
+👤 Assigned: ${args.assigned_to || "Unassigned"}
 
-✨ CI added to CMDB!`
-        }]
-      };
+✨ CI added to CMDB!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create CI:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create CI: ${error}`);
+      this.logger.error("Failed to create CI:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create CI: ${error}`)
     }
   }
 
   private async createCIRelationship(args: any) {
     try {
-      this.logger.info('Creating CI relationship...');
+      this.logger.info("Creating CI relationship...")
 
       const relationshipData = {
         parent: args.parent,
         child: args.child,
         type: args.type,
-        description: args.description || ''
-      };
+        description: args.description || "",
+      }
 
-      this.logger.trackAPICall('CREATE', 'cmdb_rel_ci', 1);
-      const response = await this.client.createRecord('cmdb_rel_ci', relationshipData);
+      this.logger.trackAPICall("CREATE", "cmdb_rel_ci", 1)
+      const response = await this.client.createRecord("cmdb_rel_ci", relationshipData)
 
       if (!response.success) {
-        throw new Error(`Failed to create CI relationship: ${response.error}`);
+        throw new Error(`Failed to create CI relationship: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ CI Relationship created!
+        content: [
+          {
+            type: "text",
+            text: `✅ CI Relationship created!
 
 🔗 **Relationship Created**
 🆔 sys_id: ${response.data.sys_id}
 👆 Parent: ${args.parent}
 👇 Child: ${args.child}
 📊 Type: ${args.type}
-📝 ${args.description || 'No description'}
+📝 ${args.description || "No description"}
 
-✨ Relationship mapped in CMDB!`
-        }]
-      };
+✨ Relationship mapped in CMDB!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create CI relationship:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create CI relationship: ${error}`);
+      this.logger.error("Failed to create CI relationship:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create CI relationship: ${error}`)
     }
   }
 
   private async runDiscovery(args: any) {
     try {
-      this.logger.info('Running Discovery...');
+      this.logger.info("Running Discovery...")
 
       const discoveryData = {
         schedule: args.schedule,
-        ip_range: args.ip_range || '',
-        mid_server: args.mid_server || '',
-        patterns: args.patterns ? args.patterns.join(',') : '',
-        credentials: args.credentials || '',
-        status: 'starting'
-      };
+        ip_range: args.ip_range || "",
+        mid_server: args.mid_server || "",
+        patterns: args.patterns ? args.patterns.join(",") : "",
+        credentials: args.credentials || "",
+        status: "starting",
+      }
 
-      const response = await this.client.createRecord('discovery_status', discoveryData);
+      const response = await this.client.createRecord("discovery_status", discoveryData)
 
       if (!response.success) {
-        throw new Error(`Failed to run Discovery: ${response.error}`);
+        throw new Error(`Failed to run Discovery: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Discovery initiated!
+        content: [
+          {
+            type: "text",
+            text: `✅ Discovery initiated!
 
 🔍 **Discovery Run**
 🆔 Run ID: ${response.data.sys_id}
 📅 Schedule: ${args.schedule}
-${args.ip_range ? `🌐 IP Range: ${args.ip_range}` : ''}
-${args.mid_server ? `🖥️ MID Server: ${args.mid_server}` : ''}
-${args.patterns ? `📋 Patterns: ${args.patterns.join(', ')}` : ''}
+${args.ip_range ? `🌐 IP Range: ${args.ip_range}` : ""}
+${args.mid_server ? `🖥️ MID Server: ${args.mid_server}` : ""}
+${args.patterns ? `📋 Patterns: ${args.patterns.join(", ")}` : ""}
 
-✨ Discovery scan in progress!`
-        }]
-      };
+✨ Discovery scan in progress!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to run Discovery:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to run Discovery: ${error}`);
+      this.logger.error("Failed to run Discovery:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to run Discovery: ${error}`)
     }
   }
 
   private async getCIDetails(args: any) {
     try {
-      this.logger.info('Getting CI details...');
+      this.logger.info("Getting CI details...")
 
-      let ciId = args.ci_id;
+      let ciId = args.ci_id
       if (!ciId.match(/^[a-f0-9]{32}$/)) {
-        const ciResponse = await this.client.searchRecords('cmdb_ci', `name=${ciId}`, 1);
+        const ciResponse = await this.client.searchRecords("cmdb_ci", `name=${ciId}`, 1)
         if (ciResponse.success && ciResponse.data.result.length) {
-          ciId = ciResponse.data.result[0].sys_id;
+          ciId = ciResponse.data.result[0].sys_id
         }
       }
 
-      const response = await this.client.getRecord('cmdb_ci', ciId);
+      const response = await this.client.getRecord("cmdb_ci", ciId)
       if (!response.success) {
-        throw new Error('CI not found');
+        throw new Error("CI not found")
       }
 
-      const ci = response.data;
+      const ci = response.data
       let details = `🖥️ **${ci.name}**
 🆔 sys_id: ${ci.sys_id}
 📊 Class: ${ci.sys_class_name}
 📊 Status: ${ci.operational_status}
-📍 Location: ${ci.location || 'Not specified'}
-👤 Assigned: ${ci.assigned_to || 'Unassigned'}`;
+📍 Location: ${ci.location || "Not specified"}
+👤 Assigned: ${ci.assigned_to || "Unassigned"}`
 
       if (args.include_relationships) {
-        const relResponse = await this.client.searchRecords('cmdb_rel_ci', `parent=${ciId}^ORchild=${ciId}`, 50);
+        const relResponse = await this.client.searchRecords("cmdb_rel_ci", `parent=${ciId}^ORchild=${ciId}`, 50)
         if (relResponse.success && relResponse.data.result.length) {
-          const relationships = relResponse.data.result.map((rel: any) => 
-            `  - ${rel.type}: ${rel.parent === ciId ? rel.child : rel.parent}`
-          ).join('\n');
-          details += `\n\n🔗 **Relationships:**\n${relationships}`;
+          const relationships = relResponse.data.result
+            .map((rel: any) => `  - ${rel.type}: ${rel.parent === ciId ? rel.child : rel.parent}`)
+            .join("\n")
+          details += `\n\n🔗 **Relationships:**\n${relationships}`
         }
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: details + '\n\n✨ CI details retrieved!'
-        }]
-      };
+        content: [
+          {
+            type: "text",
+            text: details + "\n\n✨ CI details retrieved!",
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to get CI details:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to get CI details: ${error}`);
+      this.logger.error("Failed to get CI details:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to get CI details: ${error}`)
     }
   }
 
   private async searchCMDB(args: any) {
     try {
-      this.logger.info('Searching CMDB...');
+      this.logger.info("Searching CMDB...")
 
-      let query = '';
+      let query = ""
       if (args.query) {
-        query = `nameLIKE${args.query}`;
+        query = `nameLIKE${args.query}`
       }
       if (args.ci_class) {
-        query += query ? '^' : '';
-        query += `sys_class_name=${args.ci_class}`;
+        query += query ? "^" : ""
+        query += `sys_class_name=${args.ci_class}`
       }
       if (args.operational_status) {
-        query += query ? '^' : '';
-        query += `operational_status=${args.operational_status}`;
+        query += query ? "^" : ""
+        query += `operational_status=${args.operational_status}`
       }
       if (args.location) {
-        query += query ? '^' : '';
-        query += `location=${args.location}`;
+        query += query ? "^" : ""
+        query += `location=${args.location}`
       }
 
-      const limit = args.limit || 50;
-      this.logger.trackAPICall('SEARCH', 'cmdb_ci', limit);
-      const response = await this.client.searchRecords('cmdb_ci', query, limit);
+      const limit = args.limit || 50
+      this.logger.trackAPICall("SEARCH", "cmdb_ci", limit)
+      const response = await this.client.searchRecords("cmdb_ci", query, limit)
 
       if (!response.success) {
-        throw new Error('Failed to search CMDB');
+        throw new Error("Failed to search CMDB")
       }
 
-      const cis = response.data.result;
+      const cis = response.data.result
 
       if (!cis.length) {
         return {
-          content: [{
-            type: 'text',
-            text: '❌ No Configuration Items found'
-          }]
-        };
+          content: [
+            {
+              type: "text",
+              text: "❌ No Configuration Items found",
+            },
+          ],
+        }
       }
 
-      const ciList = cis.map((ci: any) => 
-        `🖥️ **${ci.name}**
+      const ciList = cis
+        .map(
+          (ci: any) =>
+            `🖥️ **${ci.name}**
 📊 Class: ${ci.sys_class_name}
 📊 Status: ${ci.operational_status}
-📍 Location: ${ci.location || 'Not specified'}`
-      ).join('\n\n');
+📍 Location: ${ci.location || "Not specified"}`,
+        )
+        .join("\n\n")
 
       return {
-        content: [{
-          type: 'text',
-          text: `🔍 CMDB Search Results:
+        content: [
+          {
+            type: "text",
+            text: `🔍 CMDB Search Results:
 
 ${ciList}
 
-✨ Found ${cis.length} CI(s)`
-        }]
-      };
+✨ Found ${cis.length} CI(s)`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to search CMDB:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to search CMDB: ${error}`);
+      this.logger.error("Failed to search CMDB:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to search CMDB: ${error}`)
     }
   }
 
   private async impactAnalysis(args: any) {
     try {
-      this.logger.info('Performing impact analysis...');
+      this.logger.info("Performing impact analysis...")
 
       // In a real implementation, this would traverse the CI relationships
       // For now, we'll simulate the analysis
       const mockImpact = {
         directly_affected: 3,
         indirectly_affected: 12,
-        services_impacted: ['Email Service', 'Web Portal', 'Database Service'],
-        risk_level: 'Medium',
-        recommendations: [
-          'Schedule maintenance window',
-          'Notify affected service owners',
-          'Prepare rollback plan'
-        ]
-      };
+        services_impacted: ["Email Service", "Web Portal", "Database Service"],
+        risk_level: "Medium",
+        recommendations: ["Schedule maintenance window", "Notify affected service owners", "Prepare rollback plan"],
+      }
 
       return {
-        content: [{
-          type: 'text',
-          text: `📊 Impact Analysis Results:
+        content: [
+          {
+            type: "text",
+            text: `📊 Impact Analysis Results:
 
 🖥️ **CI:** ${args.ci_id}
 🔍 **Analysis Depth:** ${args.depth || 3} levels
@@ -802,24 +811,25 @@ ${ciList}
 ⚠️ Risk Level: ${mockImpact.risk_level}
 
 **Services Impacted:**
-${mockImpact.services_impacted.map(s => `  - ${s}`).join('\n')}
+${mockImpact.services_impacted.map((s) => `  - ${s}`).join("\n")}
 
 **Recommendations:**
-${mockImpact.recommendations.map(r => `  ✓ ${r}`).join('\n')}
+${mockImpact.recommendations.map((r) => `  ✓ ${r}`).join("\n")}
 
-✨ Impact analysis complete!`
-        }]
-      };
+✨ Impact analysis complete!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to perform impact analysis:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to perform impact analysis: ${error}`);
+      this.logger.error("Failed to perform impact analysis:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to perform impact analysis: ${error}`)
     }
   }
 
   // Event Management Implementation
   private async createEvent(args: any) {
     try {
-      this.logger.info('Creating event...');
+      this.logger.info("Creating event...")
 
       const eventData = {
         source: args.source,
@@ -827,22 +837,23 @@ ${mockImpact.recommendations.map(r => `  ✓ ${r}`).join('\n')}
         type: args.type,
         severity: args.severity,
         description: args.description,
-        additional_info: args.additional_info ? JSON.stringify(args.additional_info) : '',
+        additional_info: args.additional_info ? JSON.stringify(args.additional_info) : "",
         time_of_event: args.time_of_event || new Date().toISOString(),
-        resolution_state: args.resolution_state || 'New'
-      };
+        resolution_state: args.resolution_state || "New",
+      }
 
-      this.logger.trackAPICall('CREATE', 'em_event', 1);
-      const response = await this.client.createRecord('em_event', eventData);
+      this.logger.trackAPICall("CREATE", "em_event", 1)
+      const response = await this.client.createRecord("em_event", eventData)
 
       if (!response.success) {
-        throw new Error(`Failed to create event: ${response.error}`);
+        throw new Error(`Failed to create event: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Event created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Event created!
 
 📡 **Event Created**
 🆔 sys_id: ${response.data.sys_id}
@@ -852,225 +863,236 @@ ${mockImpact.recommendations.map(r => `  ✓ ${r}`).join('\n')}
 ⚠️ Severity: ${args.severity}
 📝 ${args.description}
 
-✨ Event submitted for processing!`
-        }]
-      };
+✨ Event submitted for processing!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create event:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create event: ${error}`);
+      this.logger.error("Failed to create event:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create event: ${error}`)
     }
   }
 
   private async createAlert(args: any) {
     try {
-      this.logger.info('Creating alert...');
+      this.logger.info("Creating alert...")
 
       const alertData = {
         source: args.source,
         node: args.node,
         severity: args.severity,
         description: args.description,
-        metric_name: args.metric_name || '',
-        threshold_value: args.threshold_value || '',
-        actual_value: args.actual_value || '',
-        assignment_group: args.assignment_group || ''
-      };
+        metric_name: args.metric_name || "",
+        threshold_value: args.threshold_value || "",
+        actual_value: args.actual_value || "",
+        assignment_group: args.assignment_group || "",
+      }
 
-      const response = await this.client.createRecord('em_alert', alertData);
+      const response = await this.client.createRecord("em_alert", alertData)
 
       if (!response.success) {
-        throw new Error(`Failed to create alert: ${response.error}`);
+        throw new Error(`Failed to create alert: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Alert created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Alert created!
 
 🚨 **Alert Created**
 🆔 sys_id: ${response.data.sys_id}
 📊 Source: ${args.source}
 🖥️ Node: ${args.node}
 ⚠️ Severity: ${args.severity}
-${args.metric_name ? `📊 Metric: ${args.metric_name}` : ''}
-${args.threshold_value ? `🎯 Threshold: ${args.threshold_value}` : ''}
-${args.actual_value ? `📈 Actual: ${args.actual_value}` : ''}
+${args.metric_name ? `📊 Metric: ${args.metric_name}` : ""}
+${args.threshold_value ? `🎯 Threshold: ${args.threshold_value}` : ""}
+${args.actual_value ? `📈 Actual: ${args.actual_value}` : ""}
 
-✨ Alert created and assigned!`
-        }]
-      };
+✨ Alert created and assigned!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create alert:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create alert: ${error}`);
+      this.logger.error("Failed to create alert:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create alert: ${error}`)
     }
   }
 
   private async createAlertRule(args: any) {
     try {
-      this.logger.info('Creating alert rule...');
+      this.logger.info("Creating alert rule...")
 
       const ruleData = {
         name: args.name,
         condition: args.condition,
-        grouping_fields: args.grouping_fields ? args.grouping_fields.join(',') : '',
+        grouping_fields: args.grouping_fields ? args.grouping_fields.join(",") : "",
         time_window: args.time_window || 300,
         threshold: args.threshold || 1,
-        action: args.action || '',
-        active: args.active !== false
-      };
+        action: args.action || "",
+        active: args.active !== false,
+      }
 
-      const response = await this.client.createRecord('em_alert_rule', ruleData);
+      const response = await this.client.createRecord("em_alert_rule", ruleData)
 
       if (!response.success) {
-        throw new Error(`Failed to create alert rule: ${response.error}`);
+        throw new Error(`Failed to create alert rule: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Alert Rule created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Alert Rule created!
 
 📋 **${args.name}**
 🆔 sys_id: ${response.data.sys_id}
 🔍 Condition: ${args.condition}
 ⏱️ Time Window: ${args.time_window || 300} seconds
 🔢 Threshold: ${args.threshold || 1}
-🔄 Active: ${args.active !== false ? 'Yes' : 'No'}
+🔄 Active: ${args.active !== false ? "Yes" : "No"}
 
-✨ Alert rule configured!`
-        }]
-      };
+✨ Alert rule configured!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create alert rule:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create alert rule: ${error}`);
+      this.logger.error("Failed to create alert rule:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create alert rule: ${error}`)
     }
   }
 
   private async getEventCorrelation(args: any) {
     try {
-      this.logger.info('Getting event correlation...');
+      this.logger.info("Getting event correlation...")
 
       // Simulate correlation results
       const mockCorrelation = {
         alert_id: args.alert_id,
         correlated_events: 8,
         suppressed_events: 3,
-        correlation_rules_applied: ['Duplicate Detection', 'Time Window Grouping'],
-        root_cause: 'Database connection pool exhausted'
-      };
+        correlation_rules_applied: ["Duplicate Detection", "Time Window Grouping"],
+        root_cause: "Database connection pool exhausted",
+      }
 
       return {
-        content: [{
-          type: 'text',
-          text: `📊 Event Correlation Results:
+        content: [
+          {
+            type: "text",
+            text: `📊 Event Correlation Results:
 
-🚨 **Alert:** ${args.alert_id || 'Latest'}
+🚨 **Alert:** ${args.alert_id || "Latest"}
 📡 Correlated Events: ${mockCorrelation.correlated_events}
 🔇 Suppressed Events: ${mockCorrelation.suppressed_events}
 
 **Correlation Rules Applied:**
-${mockCorrelation.correlation_rules_applied.map(r => `  - ${r}`).join('\n')}
+${mockCorrelation.correlation_rules_applied.map((r) => `  - ${r}`).join("\n")}
 
 **Root Cause:** ${mockCorrelation.root_cause}
 
-✨ Correlation analysis complete!`
-        }]
-      };
+✨ Correlation analysis complete!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to get event correlation:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to get event correlation: ${error}`);
+      this.logger.error("Failed to get event correlation:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to get event correlation: ${error}`)
     }
   }
 
   // HR Service Delivery Implementation
   private async createHRCase(args: any) {
     try {
-      this.logger.info('Creating HR case...');
+      this.logger.info("Creating HR case...")
 
       const caseData = {
         employee: args.employee,
         hr_service: args.hr_service,
         short_description: args.short_description,
-        description: args.description || '',
+        description: args.description || "",
         priority: args.priority || 3,
-        category: args.category || '',
-        subcategory: args.subcategory || '',
-        confidential: args.confidential || false
-      };
+        category: args.category || "",
+        subcategory: args.subcategory || "",
+        confidential: args.confidential || false,
+      }
 
-      this.logger.trackAPICall('CREATE', 'sn_hr_core_case', 1);
-      const response = await this.client.createRecord('sn_hr_core_case', caseData);
+      this.logger.trackAPICall("CREATE", "sn_hr_core_case", 1)
+      const response = await this.client.createRecord("sn_hr_core_case", caseData)
 
       if (!response.success) {
-        throw new Error(`Failed to create HR case: ${response.error}`);
+        throw new Error(`Failed to create HR case: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ HR Case created!
+        content: [
+          {
+            type: "text",
+            text: `✅ HR Case created!
 
 👤 **${args.short_description}**
 🆔 Case Number: ${response.data.number}
 🆔 sys_id: ${response.data.sys_id}
 👤 Employee: ${args.employee}
 📊 Service: ${args.hr_service}
-📂 Category: ${args.category || 'General'}
+📂 Category: ${args.category || "General"}
 ⚠️ Priority: ${args.priority || 3}
-🔒 Confidential: ${args.confidential ? 'Yes' : 'No'}
+🔒 Confidential: ${args.confidential ? "Yes" : "No"}
 
-✨ HR case created and assigned!`
-        }]
-      };
+✨ HR case created and assigned!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create HR case:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create HR case: ${error}`);
+      this.logger.error("Failed to create HR case:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create HR case: ${error}`)
     }
   }
 
   private async createHRTask(args: any) {
     try {
-      this.logger.info('Creating HR task...');
+      this.logger.info("Creating HR task...")
 
       const taskData = {
         hr_case: args.hr_case,
         type: args.type,
-        assigned_to: args.assigned_to || '',
+        assigned_to: args.assigned_to || "",
         short_description: args.short_description,
-        due_date: args.due_date || '',
-        instructions: args.instructions || ''
-      };
+        due_date: args.due_date || "",
+        instructions: args.instructions || "",
+      }
 
-      const response = await this.client.createRecord('sn_hr_core_task', taskData);
+      const response = await this.client.createRecord("sn_hr_core_task", taskData)
 
       if (!response.success) {
-        throw new Error(`Failed to create HR task: ${response.error}`);
+        throw new Error(`Failed to create HR task: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ HR Task created!
+        content: [
+          {
+            type: "text",
+            text: `✅ HR Task created!
 
 📋 **${args.short_description}**
 🆔 Task Number: ${response.data.number}
 🆔 sys_id: ${response.data.sys_id}
 📊 Type: ${args.type}
-👤 Assigned: ${args.assigned_to || 'Unassigned'}
-📅 Due: ${args.due_date || 'Not set'}
+👤 Assigned: ${args.assigned_to || "Unassigned"}
+📅 Due: ${args.due_date || "Not set"}
 
-✨ HR task added to case!`
-        }]
-      };
+✨ HR task added to case!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create HR task:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create HR task: ${error}`);
+      this.logger.error("Failed to create HR task:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create HR task: ${error}`)
     }
   }
 
   private async employeeOnboarding(args: any) {
     try {
-      this.logger.info('Creating employee onboarding...');
+      this.logger.info("Creating employee onboarding...")
 
       const onboardingData = {
         employee_name: args.employee_name,
@@ -1079,25 +1101,26 @@ ${mockCorrelation.correlation_rules_applied.map(r => `  - ${r}`).join('\n')}
         department: args.department,
         manager: args.manager,
         job_title: args.job_title,
-        location: args.location || '',
-        equipment_needed: args.equipment_needed ? args.equipment_needed.join(',') : ''
-      };
+        location: args.location || "",
+        equipment_needed: args.equipment_needed ? args.equipment_needed.join(",") : "",
+      }
 
-      const response = await this.client.createRecord('sn_hr_core_case', {
+      const response = await this.client.createRecord("sn_hr_core_case", {
         ...onboardingData,
-        hr_service: 'Employee Onboarding',
+        hr_service: "Employee Onboarding",
         short_description: `Onboarding for ${args.employee_name}`,
-        category: 'Onboarding'
-      });
+        category: "Onboarding",
+      })
 
       if (!response.success) {
-        throw new Error(`Failed to create onboarding: ${response.error}`);
+        throw new Error(`Failed to create onboarding: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Employee Onboarding initiated!
+        content: [
+          {
+            type: "text",
+            text: `✅ Employee Onboarding initiated!
 
 👤 **${args.employee_name}**
 🆔 Case Number: ${response.data.number}
@@ -1106,213 +1129,219 @@ ${mockCorrelation.correlation_rules_applied.map(r => `  - ${r}`).join('\n')}
 🏢 Department: ${args.department}
 👔 Title: ${args.job_title}
 👤 Manager: ${args.manager}
-📍 Location: ${args.location || 'Not specified'}
-📦 Equipment: ${args.equipment_needed ? args.equipment_needed.join(', ') : 'Standard'}
+📍 Location: ${args.location || "Not specified"}
+📦 Equipment: ${args.equipment_needed ? args.equipment_needed.join(", ") : "Standard"}
 
-✨ Onboarding workflow started!`
-        }]
-      };
+✨ Onboarding workflow started!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create onboarding:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create onboarding: ${error}`);
+      this.logger.error("Failed to create onboarding:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create onboarding: ${error}`)
     }
   }
 
   private async employeeOffboarding(args: any) {
     try {
-      this.logger.info('Creating employee offboarding...');
+      this.logger.info("Creating employee offboarding...")
 
       const offboardingData = {
         employee: args.employee,
         last_date: args.last_date,
         reason: args.reason,
-        assets_to_return: args.assets_to_return ? args.assets_to_return.join(',') : '',
-        knowledge_transfer: args.knowledge_transfer || ''
-      };
+        assets_to_return: args.assets_to_return ? args.assets_to_return.join(",") : "",
+        knowledge_transfer: args.knowledge_transfer || "",
+      }
 
-      const response = await this.client.createRecord('sn_hr_core_case', {
+      const response = await this.client.createRecord("sn_hr_core_case", {
         ...offboardingData,
-        hr_service: 'Employee Offboarding',
+        hr_service: "Employee Offboarding",
         short_description: `Offboarding for ${args.employee}`,
-        category: 'Offboarding'
-      });
+        category: "Offboarding",
+      })
 
       if (!response.success) {
-        throw new Error(`Failed to create offboarding: ${response.error}`);
+        throw new Error(`Failed to create offboarding: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Employee Offboarding initiated!
+        content: [
+          {
+            type: "text",
+            text: `✅ Employee Offboarding initiated!
 
 👤 **Employee:** ${args.employee}
 🆔 Case Number: ${response.data.number}
 📅 Last Date: ${args.last_date}
 📝 Reason: ${args.reason}
-📦 Assets to Return: ${args.assets_to_return ? args.assets_to_return.join(', ') : 'None'}
-📚 Knowledge Transfer: ${args.knowledge_transfer || 'Not specified'}
+📦 Assets to Return: ${args.assets_to_return ? args.assets_to_return.join(", ") : "None"}
+📚 Knowledge Transfer: ${args.knowledge_transfer || "Not specified"}
 
-✨ Offboarding workflow started!`
-        }]
-      };
+✨ Offboarding workflow started!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create offboarding:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create offboarding: ${error}`);
+      this.logger.error("Failed to create offboarding:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create offboarding: ${error}`)
     }
   }
 
   // Customer Service Management Implementation
   private async createCustomerCase(args: any) {
     try {
-      this.logger.info('Creating customer case...');
+      this.logger.info("Creating customer case...")
 
       const caseData = {
         customer: args.customer,
         contact: args.contact,
-        product: args.product || '',
+        product: args.product || "",
         short_description: args.short_description,
-        description: args.description || '',
+        description: args.description || "",
         priority: args.priority || 3,
-        category: args.category || '',
-        channel: args.channel || 'Portal'
-      };
+        category: args.category || "",
+        channel: args.channel || "Portal",
+      }
 
-      const response = await this.client.createRecord('sn_customerservice_case', caseData);
+      const response = await this.client.createRecord("sn_customerservice_case", caseData)
 
       if (!response.success) {
-        throw new Error(`Failed to create customer case: ${response.error}`);
+        throw new Error(`Failed to create customer case: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Customer Case created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Customer Case created!
 
 🎯 **${args.short_description}**
 🆔 Case Number: ${response.data.number}
 🆔 sys_id: ${response.data.sys_id}
 🏢 Customer: ${args.customer}
 👤 Contact: ${args.contact}
-${args.product ? `📦 Product: ${args.product}` : ''}
-📊 Channel: ${args.channel || 'Portal'}
+${args.product ? `📦 Product: ${args.product}` : ""}
+📊 Channel: ${args.channel || "Portal"}
 ⚠️ Priority: ${args.priority || 3}
 
-✨ Customer case created and routed!`
-        }]
-      };
+✨ Customer case created and routed!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create customer case:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create customer case: ${error}`);
+      this.logger.error("Failed to create customer case:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create customer case: ${error}`)
     }
   }
 
   private async createCustomerAccount(args: any) {
     try {
-      this.logger.info('Creating customer account...');
+      this.logger.info("Creating customer account...")
 
       const accountData = {
         name: args.name,
-        account_number: args.account_number || '',
+        account_number: args.account_number || "",
         type: args.type,
-        industry: args.industry || '',
-        annual_revenue: args.annual_revenue || '',
+        industry: args.industry || "",
+        annual_revenue: args.annual_revenue || "",
         employees: args.employees || 0,
-        primary_contact: args.primary_contact || ''
-      };
+        primary_contact: args.primary_contact || "",
+      }
 
-      const response = await this.client.createRecord('sn_customerservice_account', accountData);
+      const response = await this.client.createRecord("sn_customerservice_account", accountData)
 
       if (!response.success) {
-        throw new Error(`Failed to create customer account: ${response.error}`);
+        throw new Error(`Failed to create customer account: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Customer Account created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Customer Account created!
 
 🏢 **${args.name}**
 🆔 sys_id: ${response.data.sys_id}
-${args.account_number ? `📋 Account #: ${args.account_number}` : ''}
+${args.account_number ? `📋 Account #: ${args.account_number}` : ""}
 📊 Type: ${args.type}
-${args.industry ? `🏭 Industry: ${args.industry}` : ''}
-${args.annual_revenue ? `💰 Revenue: ${args.annual_revenue}` : ''}
-${args.employees ? `👥 Employees: ${args.employees}` : ''}
+${args.industry ? `🏭 Industry: ${args.industry}` : ""}
+${args.annual_revenue ? `💰 Revenue: ${args.annual_revenue}` : ""}
+${args.employees ? `👥 Employees: ${args.employees}` : ""}
 
-✨ Customer account established!`
-        }]
-      };
+✨ Customer account established!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create customer account:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create customer account: ${error}`);
+      this.logger.error("Failed to create customer account:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create customer account: ${error}`)
     }
   }
 
   private async createEntitlement(args: any) {
     try {
-      this.logger.info('Creating entitlement...');
+      this.logger.info("Creating entitlement...")
 
       const entitlementData = {
         account: args.account,
         service: args.service,
         start_date: args.start_date,
         end_date: args.end_date,
-        support_level: args.support_level || 'Standard',
+        support_level: args.support_level || "Standard",
         hours_included: args.hours_included || 0,
-        response_time: args.response_time || ''
-      };
+        response_time: args.response_time || "",
+      }
 
-      const response = await this.client.createRecord('sn_customerservice_entitlement', entitlementData);
+      const response = await this.client.createRecord("sn_customerservice_entitlement", entitlementData)
 
       if (!response.success) {
-        throw new Error(`Failed to create entitlement: ${response.error}`);
+        throw new Error(`Failed to create entitlement: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Entitlement created!
+        content: [
+          {
+            type: "text",
+            text: `✅ Entitlement created!
 
 📜 **Service Entitlement**
 🆔 sys_id: ${response.data.sys_id}
 🏢 Account: ${args.account}
 📦 Service: ${args.service}
 📅 Period: ${args.start_date} to ${args.end_date}
-⭐ Level: ${args.support_level || 'Standard'}
-⏱️ Hours: ${args.hours_included || 'Unlimited'}
-⚡ Response: ${args.response_time || 'Standard SLA'}
+⭐ Level: ${args.support_level || "Standard"}
+⏱️ Hours: ${args.hours_included || "Unlimited"}
+⚡ Response: ${args.response_time || "Standard SLA"}
 
-✨ Entitlement activated!`
-        }]
-      };
+✨ Entitlement activated!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create entitlement:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create entitlement: ${error}`);
+      this.logger.error("Failed to create entitlement:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create entitlement: ${error}`)
     }
   }
 
   private async getCustomerHistory(args: any) {
     try {
-      this.logger.info('Getting customer history...');
+      this.logger.info("Getting customer history...")
 
       // Simulate customer history
       const mockHistory = {
         total_cases: 24,
         open_cases: 3,
-        avg_resolution_time: '2.5 days',
+        avg_resolution_time: "2.5 days",
         satisfaction_score: 4.2,
-        recent_cases: [
-          'Product issue - Resolved',
-          'Billing inquiry - In Progress',
-          'Feature request - Submitted'
-        ]
-      };
+        recent_cases: ["Product issue - Resolved", "Billing inquiry - In Progress", "Feature request - Submitted"],
+      }
 
       return {
-        content: [{
-          type: 'text',
-          text: `📊 Customer History:
+        content: [
+          {
+            type: "text",
+            text: `📊 Customer History:
 
 🏢 **Customer:** ${args.customer}
 
@@ -1323,127 +1352,133 @@ ${args.employees ? `👥 Employees: ${args.employees}` : ''}
 ⭐ Satisfaction: ${mockHistory.satisfaction_score}/5
 
 **Recent Cases:**
-${mockHistory.recent_cases.map(c => `  - ${c}`).join('\n')}
+${mockHistory.recent_cases.map((c) => `  - ${c}`).join("\n")}
 
-✨ Customer history retrieved!`
-        }]
-      };
+✨ Customer history retrieved!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to get customer history:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to get customer history: ${error}`);
+      this.logger.error("Failed to get customer history:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to get customer history: ${error}`)
     }
   }
 
   // DevOps Implementation
   private async createDevOpsPipeline(args: any) {
     try {
-      this.logger.info('Creating DevOps pipeline...');
+      this.logger.info("Creating DevOps pipeline...")
 
       const pipelineData = {
         name: args.name,
         repository: args.repository,
         branch: args.branch,
-        stages: args.stages ? JSON.stringify(args.stages) : '',
-        triggers: args.triggers ? args.triggers.join(',') : '',
-        environment: args.environment || ''
-      };
+        stages: args.stages ? JSON.stringify(args.stages) : "",
+        triggers: args.triggers ? args.triggers.join(",") : "",
+        environment: args.environment || "",
+      }
 
-      const response = await this.client.createRecord('sn_devops_pipeline', pipelineData);
+      const response = await this.client.createRecord("sn_devops_pipeline", pipelineData)
 
       if (!response.success) {
-        throw new Error(`Failed to create DevOps pipeline: ${response.error}`);
+        throw new Error(`Failed to create DevOps pipeline: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ DevOps Pipeline created!
+        content: [
+          {
+            type: "text",
+            text: `✅ DevOps Pipeline created!
 
 🚀 **${args.name}**
 🆔 sys_id: ${response.data.sys_id}
 📦 Repository: ${args.repository}
 🌿 Branch: ${args.branch}
 📊 Stages: ${args.stages ? args.stages.length : 0}
-⚡ Triggers: ${args.triggers ? args.triggers.join(', ') : 'Manual'}
-🌍 Environment: ${args.environment || 'Not specified'}
+⚡ Triggers: ${args.triggers ? args.triggers.join(", ") : "Manual"}
+🌍 Environment: ${args.environment || "Not specified"}
 
-✨ Pipeline configured and ready!`
-        }]
-      };
+✨ Pipeline configured and ready!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create DevOps pipeline:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create DevOps pipeline: ${error}`);
+      this.logger.error("Failed to create DevOps pipeline:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create DevOps pipeline: ${error}`)
     }
   }
 
   private async trackDeployment(args: any) {
     try {
-      this.logger.info('Tracking deployment...');
+      this.logger.info("Tracking deployment...")
 
       const deploymentData = {
         application: args.application,
         version: args.version,
         environment: args.environment,
-        pipeline: args.pipeline || '',
-        change_request: args.change_request || '',
-        status: args.status || 'in_progress',
-        start_time: args.start_time || new Date().toISOString()
-      };
+        pipeline: args.pipeline || "",
+        change_request: args.change_request || "",
+        status: args.status || "in_progress",
+        start_time: args.start_time || new Date().toISOString(),
+      }
 
-      const response = await this.client.createRecord('sn_devops_deployment', deploymentData);
+      const response = await this.client.createRecord("sn_devops_deployment", deploymentData)
 
       if (!response.success) {
-        throw new Error(`Failed to track deployment: ${response.error}`);
+        throw new Error(`Failed to track deployment: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Deployment tracked!
+        content: [
+          {
+            type: "text",
+            text: `✅ Deployment tracked!
 
 🚀 **${args.application} v${args.version}**
 🆔 Deployment ID: ${response.data.sys_id}
 🌍 Environment: ${args.environment}
-📊 Status: ${args.status || 'in_progress'}
-${args.pipeline ? `🔄 Pipeline: ${args.pipeline}` : ''}
-${args.change_request ? `📋 Change: ${args.change_request}` : ''}
-⏱️ Started: ${args.start_time || 'Now'}
+📊 Status: ${args.status || "in_progress"}
+${args.pipeline ? `🔄 Pipeline: ${args.pipeline}` : ""}
+${args.change_request ? `📋 Change: ${args.change_request}` : ""}
+⏱️ Started: ${args.start_time || "Now"}
 
-✨ Deployment tracking active!`
-        }]
-      };
+✨ Deployment tracking active!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to track deployment:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to track deployment: ${error}`);
+      this.logger.error("Failed to track deployment:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to track deployment: ${error}`)
     }
   }
 
   private async createDevOpsChange(args: any) {
     try {
-      this.logger.info('Creating DevOps change...');
+      this.logger.info("Creating DevOps change...")
 
       const changeData = {
         application: args.application,
         version: args.version,
         environment: args.environment,
         deployment_date: args.deployment_date,
-        risk_assessment: args.risk_assessment ? JSON.stringify(args.risk_assessment) : '',
-        rollback_plan: args.rollback_plan || '',
-        type: 'standard',
-        category: 'Software',
-        short_description: `Deploy ${args.application} v${args.version} to ${args.environment}`
-      };
+        risk_assessment: args.risk_assessment ? JSON.stringify(args.risk_assessment) : "",
+        rollback_plan: args.rollback_plan || "",
+        type: "standard",
+        category: "Software",
+        short_description: `Deploy ${args.application} v${args.version} to ${args.environment}`,
+      }
 
-      const response = await this.client.createRecord('change_request', changeData);
+      const response = await this.client.createRecord("change_request", changeData)
 
       if (!response.success) {
-        throw new Error(`Failed to create DevOps change: ${response.error}`);
+        throw new Error(`Failed to create DevOps change: ${response.error}`)
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ DevOps Change created!
+        content: [
+          {
+            type: "text",
+            text: `✅ DevOps Change created!
 
 📋 **Change Request**
 🆔 Number: ${response.data.number}
@@ -1452,42 +1487,44 @@ ${args.change_request ? `📋 Change: ${args.change_request}` : ''}
 🔖 Version: ${args.version}
 🌍 Environment: ${args.environment}
 📅 Deployment: ${args.deployment_date}
-${args.rollback_plan ? `🔄 Rollback: Yes` : ''}
+${args.rollback_plan ? `🔄 Rollback: Yes` : ""}
 
-✨ Change request ready for approval!`
-        }]
-      };
+✨ Change request ready for approval!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to create DevOps change:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to create DevOps change: ${error}`);
+      this.logger.error("Failed to create DevOps change:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to create DevOps change: ${error}`)
     }
   }
 
   private async getDevOpsInsights(args: any) {
     try {
-      this.logger.info('Getting DevOps insights...');
+      this.logger.info("Getting DevOps insights...")
 
       // Simulate DevOps insights
       const mockInsights = {
-        deployment_frequency: '4.2 per day',
-        lead_time: '2.5 hours',
-        mttr: '45 minutes',
-        change_failure_rate: '8%',
+        deployment_frequency: "4.2 per day",
+        lead_time: "2.5 hours",
+        mttr: "45 minutes",
+        change_failure_rate: "8%",
         trends: {
-          velocity: 'increasing',
-          quality: 'stable',
-          stability: 'improving'
-        }
-      };
+          velocity: "increasing",
+          quality: "stable",
+          stability: "improving",
+        },
+      }
 
       return {
-        content: [{
-          type: 'text',
-          text: `📊 DevOps Insights:
+        content: [
+          {
+            type: "text",
+            text: `📊 DevOps Insights:
 
-📦 **Application:** ${args.application || 'All'}
-📈 **Metric Type:** ${args.metric_type || 'all'}
-📅 **Period:** ${args.time_range || '30 days'}
+📦 **Application:** ${args.application || "All"}
+📈 **Metric Type:** ${args.metric_type || "all"}
+📅 **Period:** ${args.time_range || "30 days"}
 
 **Key Metrics:**
 🚀 Deployment Frequency: ${mockInsights.deployment_frequency}
@@ -1500,75 +1537,80 @@ ${args.rollback_plan ? `🔄 Rollback: Yes` : ''}
 ✅ Quality: ${mockInsights.trends.quality}
 🛡️ Stability: ${mockInsights.trends.stability}
 
-✨ Insights generated!`
-        }]
-      };
+✨ Insights generated!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to get DevOps insights:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to get DevOps insights: ${error}`);
+      this.logger.error("Failed to get DevOps insights:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to get DevOps insights: ${error}`)
     }
   }
 
   private async velocityTracking(args: any) {
     try {
-      this.logger.info('Tracking velocity...');
+      this.logger.info("Tracking velocity...")
 
       const velocityData = {
         team: args.team,
-        sprint: args.sprint || '',
+        sprint: args.sprint || "",
         story_points: args.story_points || 0,
         deployments: args.deployments || 0,
         lead_time: args.lead_time || 0,
-        mttr: args.mttr || 0
-      };
+        mttr: args.mttr || 0,
+      }
 
-      const response = await this.client.createRecord('sn_devops_velocity', velocityData);
+      const response = await this.client.createRecord("sn_devops_velocity", velocityData)
 
       if (!response.success) {
         // Fallback message if table doesn't exist
         return {
-          content: [{
-            type: 'text',
-            text: `📊 Velocity Tracked!
+          content: [
+            {
+              type: "text",
+              text: `📊 Velocity Tracked!
 
 👥 **Team:** ${args.team}
-${args.sprint ? `🏃 Sprint: ${args.sprint}` : ''}
+${args.sprint ? `🏃 Sprint: ${args.sprint}` : ""}
 📊 Story Points: ${args.story_points || 0}
 🚀 Deployments: ${args.deployments || 0}
 ⏱️ Lead Time: ${args.lead_time || 0} hours
 🔧 MTTR: ${args.mttr || 0} minutes
 
-✨ Velocity metrics recorded!`
-          }]
-        };
+✨ Velocity metrics recorded!`,
+            },
+          ],
+        }
       }
 
       return {
-        content: [{
-          type: 'text',
-          text: `✅ Velocity tracked!
+        content: [
+          {
+            type: "text",
+            text: `✅ Velocity tracked!
 
 👥 **Team:** ${args.team}
 🆔 Record ID: ${response.data.sys_id}
-${args.sprint ? `🏃 Sprint: ${args.sprint}` : ''}
+${args.sprint ? `🏃 Sprint: ${args.sprint}` : ""}
 📊 Points: ${args.story_points || 0}
 🚀 Deployments: ${args.deployments || 0}
 
-✨ Velocity metrics saved!`
-        }]
-      };
+✨ Velocity metrics saved!`,
+          },
+        ],
+      }
     } catch (error) {
-      this.logger.error('Failed to track velocity:', error);
-      throw new McpError(ErrorCode.InternalError, `Failed to track velocity: ${error}`);
+      this.logger.error("Failed to track velocity:", error)
+      throw new McpError(ErrorCode.InternalError, `Failed to track velocity: ${error}`)
     }
   }
 
   async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    this.logger.info('ServiceNow CMDB/Event/HR/CSM/DevOps MCP Server running on stdio');
+    const transport = new StdioServerTransport()
+    await this.server.connect(transport)
+    this.logger.info("ServiceNow CMDB/Event/HR/CSM/DevOps MCP Server running on stdio")
   }
 }
 
-const server = new ServiceNowCMDBEventHRCSMDevOpsMCP();
-server.run().catch(console.error);
+const server = new ServiceNowCMDBEventHRCSMDevOpsMCP()
+server.run().catch(console.error)

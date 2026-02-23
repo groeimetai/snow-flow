@@ -8,8 +8,17 @@
  */
 
 // Merged Tools (v8.2.0)
-export { toolDefinition as snow_update_set_manage_def, execute as snow_update_set_manage_exec } from './snow_update_set_manage.js';
-export { toolDefinition as snow_update_set_query_def, execute as snow_update_set_query_exec } from './snow_update_set_query.js';
+export {
+  toolDefinition as snow_update_set_manage_def,
+  execute as snow_update_set_manage_exec,
+} from "./snow_update_set_manage.js"
+export {
+  toolDefinition as snow_update_set_query_def,
+  execute as snow_update_set_query_exec,
+} from "./snow_update_set_query.js"
 
 // Complex Logic Tools (Kept)
-export { toolDefinition as snow_ensure_active_update_set_def, execute as snow_ensure_active_update_set_exec } from './snow_ensure_active_update_set.js';
+export {
+  toolDefinition as snow_ensure_active_update_set_def,
+  execute as snow_ensure_active_update_set_exec,
+} from "./snow_ensure_active_update_set.js"

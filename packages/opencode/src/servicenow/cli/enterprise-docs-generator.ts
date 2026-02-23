@@ -535,7 +535,7 @@ Use \`tool_search\` with these queries:
 **Your mission: Make ServiceNow data accessible and understandable for everyone, empowering stakeholders with insights while respecting your read-only boundaries.**
 
 **Remember: You are a powerful data analyst, not a developer. Help stakeholders understand their ServiceNow environment through data, metrics, and actionable insights.**
-`;
+`
 }
 
 /**
@@ -543,53 +543,53 @@ Use \`tool_search\` with these queries:
  * This function is called by updateDocumentationWithEnterprise() in auth.ts
  */
 export function generateEnterpriseInstructions(enabledServices: string[]): string {
-  const hasJira = enabledServices.includes('jira');
-  const hasAzdo = enabledServices.includes('azure-devops');
-  const hasConfluence = enabledServices.includes('confluence');
-  const hasGitHub = enabledServices.includes('github');
-  const hasGitLab = enabledServices.includes('gitlab');
+  const hasJira = enabledServices.includes("jira")
+  const hasAzdo = enabledServices.includes("azure-devops")
+  const hasConfluence = enabledServices.includes("confluence")
+  const hasGitHub = enabledServices.includes("github")
+  const hasGitLab = enabledServices.includes("gitlab")
 
-  let instructions = `\n\n---\n\n# 🚀 ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW\n\n`;
-  instructions += `**YOU HAVE ACCESS TO ENTERPRISE TOOLS:** ${enabledServices.map(s => s.toUpperCase()).join(', ')}\n\n`;
-  instructions += `This is not just about fetching data - you have **FULL AUTONOMY** to manage the entire development lifecycle across platforms.\n\n`;
+  let instructions = `\n\n---\n\n# 🚀 ENTERPRISE INTEGRATIONS - AUTONOMOUS DEVELOPMENT WORKFLOW\n\n`
+  instructions += `**YOU HAVE ACCESS TO ENTERPRISE TOOLS:** ${enabledServices.map((s) => s.toUpperCase()).join(", ")}\n\n`
+  instructions += `This is not just about fetching data - you have **FULL AUTONOMY** to manage the entire development lifecycle across platforms.\n\n`
 
   // Add CRITICAL direct tool call instructions FIRST (before anything else)
-  instructions += generateDirectToolCallInstructions();
+  instructions += generateDirectToolCallInstructions()
 
   // Add Activity Tracking instructions (ALWAYS for enterprise users)
-  instructions += generateActivityTrackingInstructions();
+  instructions += generateActivityTrackingInstructions()
 
   // Add Jira instructions
   if (hasJira) {
-    instructions += generateJiraInstructions();
+    instructions += generateJiraInstructions()
   }
 
   // Add Azure DevOps instructions
   if (hasAzdo) {
-    instructions += generateAzureDevOpsInstructions();
+    instructions += generateAzureDevOpsInstructions()
   }
 
   // Add Confluence instructions
   if (hasConfluence) {
-    instructions += generateConfluenceInstructions();
+    instructions += generateConfluenceInstructions()
   }
 
   // Add GitHub instructions
   if (hasGitHub) {
-    instructions += generateGitHubInstructions();
+    instructions += generateGitHubInstructions()
   }
 
   // Add GitLab instructions
   if (hasGitLab) {
-    instructions += generateGitLabInstructions();
+    instructions += generateGitLabInstructions()
   }
 
   // Add cross-platform workflow
   if (enabledServices.length > 1) {
-    instructions += generateCrossPlatformWorkflow(hasJira, hasAzdo, hasConfluence, hasGitHub, hasGitLab);
+    instructions += generateCrossPlatformWorkflow(hasJira, hasAzdo, hasConfluence, hasGitHub, hasGitLab)
   }
 
-  return instructions;
+  return instructions
 }
 
 /**
@@ -663,7 +663,7 @@ await tool_search({ query: "incident" });
 
 ---
 
-`;
+`
 }
 
 /**
@@ -930,9 +930,8 @@ If you don't track activities:
 
 **REMEMBER: Track EVERYTHING. Queries, questions, development, bugs - ALL OF IT. This is how your work becomes visible to the organization!**
 
-`;
+`
 }
-
 
 function generateJiraInstructions(): string {
   return `## 🎯 JIRA - AUTONOMOUS STORY MANAGEMENT
@@ -1133,7 +1132,7 @@ await tool_search({ query: "jira transition" });
 
 **YOU ARE AN AUTONOMOUS AGILE DEVELOPER. BUILD AMAZING THINGS! 🚀**
 
-`;
+`
 }
 
 function generateAzureDevOpsInstructions(): string {
@@ -1213,7 +1212,7 @@ await tool_search({ query: "azdo comment" });
 | Add comments | \`tool_search("azdo comment")\` |
 | Link work items | \`tool_search("azdo link")\` |
 
-`;
+`
 }
 
 function generateConfluenceInstructions(): string {
@@ -1265,7 +1264,7 @@ await tool_search({ query: "jira comment" });
 | Search content | \`tool_search("confluence search")\` |
 | List space pages | \`tool_search("confluence list pages")\` |
 
-`;
+`
 }
 
 function generateGitHubInstructions(): string {
@@ -1513,7 +1512,7 @@ await tool_search({ query: "snow artifact manage" });
 5. Upload sensitive data to public repositories
 6. Skip the file list check after download
 
-`;
+`
 }
 
 function generateGitLabInstructions(): string {
@@ -1706,13 +1705,19 @@ await tool_search({ query: "gitlab list releases" });
 3. Work in silence without issue updates
 4. Skip code review process
 
-`;
+`
 }
 
-function generateCrossPlatformWorkflow(hasJira: boolean, hasAzdo: boolean, hasConfluence: boolean, hasGitHub: boolean = false, hasGitLab: boolean = false): string {
+function generateCrossPlatformWorkflow(
+  hasJira: boolean,
+  hasAzdo: boolean,
+  hasConfluence: boolean,
+  hasGitHub: boolean = false,
+  hasGitLab: boolean = false,
+): string {
   let workflow = `## 🔄 CROSS-PLATFORM AUTONOMOUS WORKFLOW
 
-`;
+`
 
   if (hasJira && hasConfluence) {
     workflow += `### JIRA + SERVICENOW + CONFLUENCE
@@ -1730,7 +1735,7 @@ function generateCrossPlatformWorkflow(hasJira: boolean, hasAzdo: boolean, hasCo
 7. Final Jira comment with Update Set + Confluence links → discovered via \`tool_search("jira comment")\`
 8. Transition to "Done" → discovered via \`tool_search("jira transition")\`
 
-`;
+`
   }
 
   if (hasAzdo && hasConfluence) {
@@ -1744,7 +1749,7 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 - Update work items → \`tool_search("azdo update")\`
 - Add comments → \`tool_search("azdo comment")\`
 
-`;
+`
   }
 
   // GitHub + ServiceNow workflow
@@ -1765,7 +1770,7 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 8. Create release if needed → discovered via \`tool_search("github create release")\`
 9. Close issue → discovered via \`tool_search("github update issue")\` with state: "closed"
 
-`;
+`
   }
 
   // GitLab + ServiceNow workflow
@@ -1786,7 +1791,7 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 8. Create release if needed → discovered via \`tool_search("gitlab create release")\`
 9. Close issue → discovered via \`tool_search("gitlab update issue")\` with stateEvent: "close"
 
-`;
+`
   }
 
   // GitHub + Jira workflow
@@ -1807,7 +1812,7 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 8. Merge PR → discovered via \`tool_search("github merge")\`
 9. Complete Jira story → discovered via \`tool_search("jira transition")\`
 
-`;
+`
   }
 
   // GitLab + Jira workflow
@@ -1828,12 +1833,12 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 8. Accept MR → discovered via \`tool_search("gitlab accept mr")\`
 9. Complete Jira story → discovered via \`tool_search("jira transition")\`
 
-`;
+`
   }
 
   // GitHub/GitLab + Confluence workflow
   if ((hasGitHub || hasGitLab) && hasConfluence) {
-    const vcs = hasGitHub ? 'GitHub' : 'GitLab';
+    const vcs = hasGitHub ? "GitHub" : "GitLab"
 
     workflow += `### ${vcs.toUpperCase()} + CONFLUENCE + SERVICENOW
 
@@ -1843,13 +1848,13 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 **Complete Flow:**
 1. Get issue from ${vcs} → discovered via \`tool_search("${vcs.toLowerCase()} issues")\`
 2. Create Update Set in ServiceNow → discovered via \`tool_search("snow update set")\`
-3. Develop + update ${vcs} issues → discovered via \`tool_search("${vcs.toLowerCase()} ${hasGitHub ? 'comment' : 'note'}")\`
-4. Create ${hasGitHub ? 'PR' : 'MR'} when ready → discovered via \`tool_search("${vcs.toLowerCase()} create ${hasGitHub ? 'pr' : 'mr'}")\`
+3. Develop + update ${vcs} issues → discovered via \`tool_search("${vcs.toLowerCase()} ${hasGitHub ? "comment" : "note"}")\`
+4. Create ${hasGitHub ? "PR" : "MR"} when ready → discovered via \`tool_search("${vcs.toLowerCase()} create ${hasGitHub ? "pr" : "mr"}")\`
 5. Create Confluence documentation → discovered via \`tool_search("confluence create page")\`
-6. Link documentation to ${vcs} issue → discovered via \`tool_search("${vcs.toLowerCase()} ${hasGitHub ? 'comment' : 'note'}")\`
+6. Link documentation to ${vcs} issue → discovered via \`tool_search("${vcs.toLowerCase()} ${hasGitHub ? "comment" : "note"}")\`
 7. Complete and close
 
-`;
+`
   }
 
   workflow += `### 🎯 AUTONOMY PRINCIPLES
@@ -1861,7 +1866,7 @@ Same flow as Jira, use Azure DevOps tools discovered via \`tool_search\`:
 5. **BE PROACTIVE** - Handle blockers, create tickets, manage dependencies
 6. **MONITOR CI/CD** - Check GitHub Actions / GitLab Pipelines after changes
 
-`;
+`
 
-  return workflow;
+  return workflow
 }

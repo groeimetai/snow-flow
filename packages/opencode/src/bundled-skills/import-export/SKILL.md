@@ -39,12 +39,12 @@ Export Process
 
 ## Key Tables
 
-| Table | Purpose |
-|-------|---------|
-| `sys_import_set` | Import set records |
-| `sys_data_source` | Data sources |
-| `sys_transform_map` | Transform maps |
-| `sys_export_set` | Export sets |
+| Table               | Purpose            |
+| ------------------- | ------------------ |
+| `sys_import_set`    | Import set records |
+| `sys_data_source`   | Data sources       |
+| `sys_transform_map` | Transform maps     |
+| `sys_export_set`    | Export sets        |
 
 ## Data Import (ES5)
 
@@ -53,81 +53,84 @@ Export Process
 ```javascript
 // Import CSV data (ES5 ONLY!)
 function importCSVData(csvContent, importSetTable) {
-    var loader = new GlideImportSetLoader();
+  var loader = new GlideImportSetLoader()
 
-    // Create import set
-    var importSet = new GlideRecord('sys_import_set');
-    importSet.initialize();
-    importSet.setValue('table_name', importSetTable);
-    importSet.setValue('state', 'loading');
-    var importSetSysId = importSet.insert();
+  // Create import set
+  var importSet = new GlideRecord("sys_import_set")
+  importSet.initialize()
+  importSet.setValue("table_name", importSetTable)
+  importSet.setValue("state", "loading")
+  var importSetSysId = importSet.insert()
 
-    // Parse CSV
-    var lines = csvContent.split('\n');
-    var headers = lines[0].split(',');
+  // Parse CSV
+  var lines = csvContent.split("\n")
+  var headers = lines[0].split(",")
 
-    // Clean headers
-    for (var h = 0; h < headers.length; h++) {
-        headers[h] = headers[h].trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+  // Clean headers
+  for (var h = 0; h < headers.length; h++) {
+    headers[h] = headers[h]
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "_")
+  }
+
+  // Import rows
+  var rowCount = 0
+  for (var i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue
+
+    var values = parseCSVLine(lines[i])
+
+    // Create import set row
+    var row = new GlideRecord(importSetTable)
+    row.initialize()
+    row.setValue("sys_import_set", importSetSysId)
+
+    for (var j = 0; j < headers.length && j < values.length; j++) {
+      var fieldName = "u_" + headers[j]
+      if (row.isValidField(fieldName)) {
+        row.setValue(fieldName, values[j])
+      }
     }
 
-    // Import rows
-    var rowCount = 0;
-    for (var i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
+    row.insert()
+    rowCount++
+  }
 
-        var values = parseCSVLine(lines[i]);
+  // Update import set
+  importSet = new GlideRecord("sys_import_set")
+  if (importSet.get(importSetSysId)) {
+    importSet.setValue("state", "loaded")
+    importSet.setValue("row_count", rowCount)
+    importSet.update()
+  }
 
-        // Create import set row
-        var row = new GlideRecord(importSetTable);
-        row.initialize();
-        row.setValue('sys_import_set', importSetSysId);
-
-        for (var j = 0; j < headers.length && j < values.length; j++) {
-            var fieldName = 'u_' + headers[j];
-            if (row.isValidField(fieldName)) {
-                row.setValue(fieldName, values[j]);
-            }
-        }
-
-        row.insert();
-        rowCount++;
-    }
-
-    // Update import set
-    importSet = new GlideRecord('sys_import_set');
-    if (importSet.get(importSetSysId)) {
-        importSet.setValue('state', 'loaded');
-        importSet.setValue('row_count', rowCount);
-        importSet.update();
-    }
-
-    return {
-        import_set: importSetSysId,
-        rows: rowCount
-    };
+  return {
+    import_set: importSetSysId,
+    rows: rowCount,
+  }
 }
 
 function parseCSVLine(line) {
-    var values = [];
-    var current = '';
-    var inQuotes = false;
+  var values = []
+  var current = ""
+  var inQuotes = false
 
-    for (var i = 0; i < line.length; i++) {
-        var char = line[i];
+  for (var i = 0; i < line.length; i++) {
+    var char = line[i]
 
-        if (char === '"') {
-            inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-            values.push(current.trim());
-            current = '';
-        } else {
-            current += char;
-        }
+    if (char === '"') {
+      inQuotes = !inQuotes
+    } else if (char === "," && !inQuotes) {
+      values.push(current.trim())
+      current = ""
+    } else {
+      current += char
     }
-    values.push(current.trim());
+  }
+  values.push(current.trim())
 
-    return values;
+  return values
 }
 ```
 
@@ -136,50 +139,50 @@ function parseCSVLine(line) {
 ```javascript
 // Run transform on import set (ES5 ONLY!)
 function runTransform(importSetSysId, transformMapName) {
-    var importSet = new GlideRecord('sys_import_set');
-    if (!importSet.get(importSetSysId)) {
-        return { success: false, message: 'Import set not found' };
-    }
+  var importSet = new GlideRecord("sys_import_set")
+  if (!importSet.get(importSetSysId)) {
+    return { success: false, message: "Import set not found" }
+  }
 
-    // Get transform map
-    var transformMap = new GlideRecord('sys_transform_map');
-    if (!transformMap.get('name', transformMapName)) {
-        return { success: false, message: 'Transform map not found' };
-    }
+  // Get transform map
+  var transformMap = new GlideRecord("sys_transform_map")
+  if (!transformMap.get("name", transformMapName)) {
+    return { success: false, message: "Transform map not found" }
+  }
 
-    // Run transform
-    var transformer = new GlideImportSetTransformer();
-    transformer.setImportSetID(importSetSysId);
-    transformer.setTransformMapID(transformMap.getUniqueValue());
-    transformer.transform();
+  // Run transform
+  var transformer = new GlideImportSetTransformer()
+  transformer.setImportSetID(importSetSysId)
+  transformer.setTransformMapID(transformMap.getUniqueValue())
+  transformer.transform()
 
-    // Get results
-    var results = {
-        success: true,
-        inserted: 0,
-        updated: 0,
-        ignored: 0,
-        error: 0
-    };
+  // Get results
+  var results = {
+    success: true,
+    inserted: 0,
+    updated: 0,
+    ignored: 0,
+    error: 0,
+  }
 
-    // Count results from import set rows
-    var ga = new GlideAggregate(importSet.getValue('table_name'));
-    ga.addQuery('sys_import_set', importSetSysId);
-    ga.addAggregate('COUNT');
-    ga.groupBy('sys_import_state');
-    ga.query();
+  // Count results from import set rows
+  var ga = new GlideAggregate(importSet.getValue("table_name"))
+  ga.addQuery("sys_import_set", importSetSysId)
+  ga.addAggregate("COUNT")
+  ga.groupBy("sys_import_state")
+  ga.query()
 
-    while (ga.next()) {
-        var state = ga.getValue('sys_import_state');
-        var count = parseInt(ga.getAggregate('COUNT'), 10);
+  while (ga.next()) {
+    var state = ga.getValue("sys_import_state")
+    var count = parseInt(ga.getAggregate("COUNT"), 10)
 
-        if (state === 'inserted') results.inserted = count;
-        else if (state === 'updated') results.updated = count;
-        else if (state === 'ignored') results.ignored = count;
-        else if (state === 'error') results.error = count;
-    }
+    if (state === "inserted") results.inserted = count
+    else if (state === "updated") results.updated = count
+    else if (state === "ignored") results.ignored = count
+    else if (state === "error") results.error = count
+  }
 
-    return results;
+  return results
 }
 ```
 
@@ -190,43 +193,39 @@ function runTransform(importSetSysId, transformMapName) {
 ```javascript
 // Export table data to CSV (ES5 ONLY!)
 function exportToCSV(tableName, encodedQuery, fields) {
-    var fieldList = fields.split(',');
-    var csv = '';
+  var fieldList = fields.split(",")
+  var csv = ""
 
-    // Header row
-    csv += fieldList.join(',') + '\n';
+  // Header row
+  csv += fieldList.join(",") + "\n"
 
-    // Data rows
-    var gr = new GlideRecord(tableName);
-    if (encodedQuery) {
-        gr.addEncodedQuery(encodedQuery);
+  // Data rows
+  var gr = new GlideRecord(tableName)
+  if (encodedQuery) {
+    gr.addEncodedQuery(encodedQuery)
+  }
+  gr.query()
+
+  while (gr.next()) {
+    var row = []
+    for (var i = 0; i < fieldList.length; i++) {
+      var field = fieldList[i].trim()
+      var value = gr.getDisplayValue(field) || ""
+
+      // Escape for CSV
+      if (value.indexOf(",") !== -1 || value.indexOf('"') !== -1 || value.indexOf("\n") !== -1) {
+        value = '"' + value.replace(/"/g, '""') + '"'
+      }
+      row.push(value)
     }
-    gr.query();
+    csv += row.join(",") + "\n"
+  }
 
-    while (gr.next()) {
-        var row = [];
-        for (var i = 0; i < fieldList.length; i++) {
-            var field = fieldList[i].trim();
-            var value = gr.getDisplayValue(field) || '';
-
-            // Escape for CSV
-            if (value.indexOf(',') !== -1 || value.indexOf('"') !== -1 || value.indexOf('\n') !== -1) {
-                value = '"' + value.replace(/"/g, '""') + '"';
-            }
-            row.push(value);
-        }
-        csv += row.join(',') + '\n';
-    }
-
-    return csv;
+  return csv
 }
 
 // Example
-var csvData = exportToCSV(
-    'incident',
-    'active=true^priority<=2',
-    'number,short_description,priority,state,assigned_to'
-);
+var csvData = exportToCSV("incident", "active=true^priority<=2", "number,short_description,priority,state,assigned_to")
 ```
 
 ### Export to JSON
@@ -234,29 +233,29 @@ var csvData = exportToCSV(
 ```javascript
 // Export to JSON (ES5 ONLY!)
 function exportToJSON(tableName, encodedQuery, fields) {
-    var fieldList = fields.split(',');
-    var records = [];
+  var fieldList = fields.split(",")
+  var records = []
 
-    var gr = new GlideRecord(tableName);
-    if (encodedQuery) {
-        gr.addEncodedQuery(encodedQuery);
+  var gr = new GlideRecord(tableName)
+  if (encodedQuery) {
+    gr.addEncodedQuery(encodedQuery)
+  }
+  gr.query()
+
+  while (gr.next()) {
+    var record = {}
+    for (var i = 0; i < fieldList.length; i++) {
+      var field = fieldList[i].trim()
+      record[field] = {
+        value: gr.getValue(field),
+        display_value: gr.getDisplayValue(field),
+      }
     }
-    gr.query();
+    record.sys_id = gr.getUniqueValue()
+    records.push(record)
+  }
 
-    while (gr.next()) {
-        var record = {};
-        for (var i = 0; i < fieldList.length; i++) {
-            var field = fieldList[i].trim();
-            record[field] = {
-                value: gr.getValue(field),
-                display_value: gr.getDisplayValue(field)
-            };
-        }
-        record.sys_id = gr.getUniqueValue();
-        records.push(record);
-    }
-
-    return JSON.stringify(records, null, 2);
+  return JSON.stringify(records, null, 2)
 }
 ```
 
@@ -265,24 +264,24 @@ function exportToJSON(tableName, encodedQuery, fields) {
 ```javascript
 // Export records to XML (ES5 ONLY!)
 function exportToXML(tableName, encodedQuery) {
-    var exporter = new GlideRecordXMLSerializer();
+  var exporter = new GlideRecordXMLSerializer()
 
-    var gr = new GlideRecord(tableName);
-    if (encodedQuery) {
-        gr.addEncodedQuery(encodedQuery);
-    }
-    gr.query();
+  var gr = new GlideRecord(tableName)
+  if (encodedQuery) {
+    gr.addEncodedQuery(encodedQuery)
+  }
+  gr.query()
 
-    var xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<records>\n';
+  var xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+  xml += "<records>\n"
 
-    while (gr.next()) {
-        xml += exporter.serialize(gr) + '\n';
-    }
+  while (gr.next()) {
+    xml += exporter.serialize(gr) + "\n"
+  }
 
-    xml += '</records>';
+  xml += "</records>"
 
-    return xml;
+  return xml
 }
 ```
 
@@ -292,65 +291,65 @@ function exportToXML(tableName, encodedQuery) {
 
 ```javascript
 // Create scheduled data import (ES5 ONLY!)
-var dataSource = new GlideRecord('sys_data_source');
-dataSource.initialize();
+var dataSource = new GlideRecord("sys_data_source")
+dataSource.initialize()
 
 // Data source config
-dataSource.setValue('name', 'Daily Employee Sync');
-dataSource.setValue('type', 'File');
-dataSource.setValue('format', 'CSV');
+dataSource.setValue("name", "Daily Employee Sync")
+dataSource.setValue("type", "File")
+dataSource.setValue("format", "CSV")
 
 // File location
-dataSource.setValue('file_path', '/import/employees.csv');
+dataSource.setValue("file_path", "/import/employees.csv")
 
 // Import set table
-dataSource.setValue('import_set_table_name', 'u_employee_import');
+dataSource.setValue("import_set_table_name", "u_employee_import")
 
 // Schedule
-dataSource.setValue('schedule', scheduleId);  // Reference to scheduled job
+dataSource.setValue("schedule", scheduleId) // Reference to scheduled job
 
 // Active
-dataSource.setValue('active', true);
+dataSource.setValue("active", true)
 
-dataSource.insert();
+dataSource.insert()
 ```
 
 ### Scheduled Export
 
 ```javascript
 // Scheduled export job (ES5 ONLY!)
-(function executeScheduledJob() {
-    var LOG_PREFIX = '[ScheduledExport] ';
+;(function executeScheduledJob() {
+  var LOG_PREFIX = "[ScheduledExport] "
 
-    // Export data
-    var csvData = exportToCSV(
-        'incident',
-        'closed_at>=javascript:gs.daysAgoStart(1)^closed_at<javascript:gs.daysAgoStart(0)',
-        'number,short_description,resolved_at,resolution_code,resolved_by'
-    );
+  // Export data
+  var csvData = exportToCSV(
+    "incident",
+    "closed_at>=javascript:gs.daysAgoStart(1)^closed_at<javascript:gs.daysAgoStart(0)",
+    "number,short_description,resolved_at,resolution_code,resolved_by",
+  )
 
-    // Create attachment on export record
-    var exportRecord = new GlideRecord('sys_export_set');
-    exportRecord.initialize();
-    exportRecord.setValue('name', 'Daily Incident Export - ' + new GlideDateTime().getLocalDate());
-    exportRecord.setValue('table', 'incident');
-    var exportSysId = exportRecord.insert();
+  // Create attachment on export record
+  var exportRecord = new GlideRecord("sys_export_set")
+  exportRecord.initialize()
+  exportRecord.setValue("name", "Daily Incident Export - " + new GlideDateTime().getLocalDate())
+  exportRecord.setValue("table", "incident")
+  var exportSysId = exportRecord.insert()
 
-    // Attach CSV
-    var attachment = new GlideSysAttachment();
-    attachment.write(
-        'sys_export_set',
-        exportSysId,
-        'incident_export_' + new GlideDateTime().getLocalDate() + '.csv',
-        'text/csv',
-        csvData
-    );
+  // Attach CSV
+  var attachment = new GlideSysAttachment()
+  attachment.write(
+    "sys_export_set",
+    exportSysId,
+    "incident_export_" + new GlideDateTime().getLocalDate() + ".csv",
+    "text/csv",
+    csvData,
+  )
 
-    gs.info(LOG_PREFIX + 'Export completed');
+  gs.info(LOG_PREFIX + "Export completed")
 
-    // Notify
-    gs.eventQueue('export.complete', exportRecord, '', '');
-})();
+  // Notify
+  gs.eventQueue("export.complete", exportRecord, "", "")
+})()
 ```
 
 ## Bulk Operations (ES5)
@@ -360,48 +359,44 @@ dataSource.insert();
 ```javascript
 // Bulk update records (ES5 ONLY!)
 function bulkUpdate(tableName, encodedQuery, updates) {
-    var updateCount = 0;
-    var errors = [];
+  var updateCount = 0
+  var errors = []
 
-    var gr = new GlideRecord(tableName);
-    if (encodedQuery) {
-        gr.addEncodedQuery(encodedQuery);
-    }
-    gr.query();
+  var gr = new GlideRecord(tableName)
+  if (encodedQuery) {
+    gr.addEncodedQuery(encodedQuery)
+  }
+  gr.query()
 
-    while (gr.next()) {
-        try {
-            for (var field in updates) {
-                if (updates.hasOwnProperty(field) && gr.isValidField(field)) {
-                    gr.setValue(field, updates[field]);
-                }
-            }
-            gr.update();
-            updateCount++;
-        } catch (e) {
-            errors.push({
-                sys_id: gr.getUniqueValue(),
-                error: e.message
-            });
+  while (gr.next()) {
+    try {
+      for (var field in updates) {
+        if (updates.hasOwnProperty(field) && gr.isValidField(field)) {
+          gr.setValue(field, updates[field])
         }
+      }
+      gr.update()
+      updateCount++
+    } catch (e) {
+      errors.push({
+        sys_id: gr.getUniqueValue(),
+        error: e.message,
+      })
     }
+  }
 
-    return {
-        updated: updateCount,
-        errors: errors
-    };
+  return {
+    updated: updateCount,
+    errors: errors,
+  }
 }
 
 // Example: Close old incidents
-var result = bulkUpdate(
-    'incident',
-    'active=true^sys_updated_on<javascript:gs.daysAgo(90)',
-    {
-        state: 7,
-        close_code: 'Closed/Resolved by Caller',
-        close_notes: 'Auto-closed due to inactivity'
-    }
-);
+var result = bulkUpdate("incident", "active=true^sys_updated_on<javascript:gs.daysAgo(90)", {
+  state: 7,
+  close_code: "Closed/Resolved by Caller",
+  close_notes: "Auto-closed due to inactivity",
+})
 ```
 
 ### Bulk Delete
@@ -409,34 +404,34 @@ var result = bulkUpdate(
 ```javascript
 // Bulk delete with safety checks (ES5 ONLY!)
 function bulkDelete(tableName, encodedQuery, maxRecords) {
-    maxRecords = maxRecords || 1000;
+  maxRecords = maxRecords || 1000
 
-    var gr = new GlideRecord(tableName);
-    if (encodedQuery) {
-        gr.addEncodedQuery(encodedQuery);
-    }
-    gr.setLimit(maxRecords);
-    gr.query();
+  var gr = new GlideRecord(tableName)
+  if (encodedQuery) {
+    gr.addEncodedQuery(encodedQuery)
+  }
+  gr.setLimit(maxRecords)
+  gr.query()
 
-    var count = gr.getRowCount();
+  var count = gr.getRowCount()
 
-    if (count > maxRecords) {
-        return {
-            success: false,
-            message: 'Too many records (' + count + '). Max allowed: ' + maxRecords
-        };
-    }
-
-    // Use deleteMultiple for efficiency
-    gr = new GlideRecord(tableName);
-    gr.addEncodedQuery(encodedQuery);
-    gr.setLimit(maxRecords);
-    gr.deleteMultiple();
-
+  if (count > maxRecords) {
     return {
-        success: true,
-        deleted: count
-    };
+      success: false,
+      message: "Too many records (" + count + "). Max allowed: " + maxRecords,
+    }
+  }
+
+  // Use deleteMultiple for efficiency
+  gr = new GlideRecord(tableName)
+  gr.addEncodedQuery(encodedQuery)
+  gr.setLimit(maxRecords)
+  gr.deleteMultiple()
+
+  return {
+    success: true,
+    deleted: count,
+  }
 }
 ```
 
@@ -444,37 +439,37 @@ function bulkDelete(tableName, encodedQuery, maxRecords) {
 
 ### Available Tools
 
-| Tool | Purpose |
-|------|---------|
-| `snow_create_import_set` | Create import sets |
-| `snow_create_transform_map` | Create transforms |
+| Tool                              | Purpose            |
+| --------------------------------- | ------------------ |
+| `snow_create_import_set`          | Create import sets |
+| `snow_create_transform_map`       | Create transforms  |
 | `snow_execute_script_with_output` | Test import/export |
-| `snow_query_table` | Query data |
+| `snow_query_table`                | Query data         |
 
 ### Example Workflow
 
 ```javascript
 // 1. Query import sets
 await snow_query_table({
-    table: 'sys_import_set',
-    query: 'state=loaded',
-    fields: 'table_name,row_count,state,sys_created_on'
-});
+  table: "sys_import_set",
+  query: "state=loaded",
+  fields: "table_name,row_count,state,sys_created_on",
+})
 
 // 2. Export data
 await snow_execute_script_with_output({
-    script: `
+  script: `
         var csv = exportToCSV('incident', 'active=true', 'number,short_description,state');
         gs.info('Exported ' + csv.split('\\n').length + ' rows');
-    `
-});
+    `,
+})
 
 // 3. Check transform maps
 await snow_query_table({
-    table: 'sys_transform_map',
-    query: 'active=true',
-    fields: 'name,source_table,target_table'
-});
+  table: "sys_transform_map",
+  query: "active=true",
+  fields: "name,source_table,target_table",
+})
 ```
 
 ## Best Practices

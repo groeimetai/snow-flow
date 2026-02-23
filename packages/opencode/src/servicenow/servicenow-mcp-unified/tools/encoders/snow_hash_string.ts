@@ -2,43 +2,43 @@
  * snow_hash_string
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
-import crypto from 'crypto';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
+import crypto from "crypto"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_hash_string',
-  description: 'Hash string using various algorithms',
+  name: "snow_hash_string",
+  description: "Hash string using various algorithms",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'advanced',
-  subcategory: 'utilities',
-  use_cases: ['hashing', 'cryptography', 'security'],
-  complexity: 'beginner',
-  frequency: 'low',
+  category: "advanced",
+  subcategory: "utilities",
+  use_cases: ["hashing", "cryptography", "security"],
+  complexity: "beginner",
+  frequency: "low",
 
   // Permission enforcement
   // Classification: READ - Utility function - hashes string locally
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: "read",
+  allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      text: { type: 'string', description: 'Text to hash' },
-      algorithm: { type: 'string', enum: ['md5', 'sha1', 'sha256', 'sha512'], default: 'sha256' }
+      text: { type: "string", description: "Text to hash" },
+      algorithm: { type: "string", enum: ["md5", "sha1", "sha256", "sha512"], default: "sha256" },
     },
-    required: ['text']
-  }
-};
+    required: ["text"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { text, algorithm = 'sha256' } = args;
+  const { text, algorithm = "sha256" } = args
   try {
-    const hash = crypto.createHash(algorithm).update(text).digest('hex');
-    return createSuccessResult({ hash, algorithm, original_length: text.length });
+    const hash = crypto.createHash(algorithm).update(text).digest("hex")
+    return createSuccessResult({ hash, algorithm, original_length: text.length })
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = "1.0.0"
+export const author = "Snow-Flow SDK Migration"

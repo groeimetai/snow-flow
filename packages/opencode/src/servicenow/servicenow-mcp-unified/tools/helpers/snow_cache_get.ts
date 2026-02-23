@@ -2,44 +2,44 @@
  * snow_cache_get
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_cache_get',
-  description: 'Get value from cache',
+  name: "snow_cache_get",
+  description: "Get value from cache",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'advanced',
-  subcategory: 'performance',
-  use_cases: ['caching', 'performance', 'optimization'],
-  complexity: 'beginner',
-  frequency: 'medium',
+  category: "advanced",
+  subcategory: "performance",
+  use_cases: ["caching", "performance", "optimization"],
+  complexity: "beginner",
+  frequency: "medium",
 
   // Permission enforcement
   // Classification: READ - Query/analysis operation
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: "read",
+  allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      key: { type: 'string', description: 'Cache key' }
+      key: { type: "string", description: "Cache key" },
     },
-    required: ['key']
-  }
-};
+    required: ["key"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { key } = args;
+  const { key } = args
   try {
     return createSuccessResult({
       key,
       cached: false,
-      value: null
-    });
+      value: null,
+    })
   } catch (error: any) {
-    return createErrorResult(error.message);
+    return createErrorResult(error.message)
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = "1.0.0"
+export const author = "Snow-Flow SDK Migration"

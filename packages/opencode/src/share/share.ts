@@ -67,11 +67,15 @@ export namespace Share {
   }
 
   export const URL =
-    process.env["SNOW_CODE_API"] ?? process.env["OPENCODE_API"] ??
+    process.env["SNOW_CODE_API"] ??
+    process.env["OPENCODE_API"] ??
     (Installation.isPreview() || Installation.isLocal() ? "https://api.dev.snow-flow.dev" : "https://api.snow-flow.dev")
 
-  const disabled = process.env["SNOW_CODE_DISABLE_SHARE"] === "true" || process.env["SNOW_CODE_DISABLE_SHARE"] === "1" ||
-    process.env["OPENCODE_DISABLE_SHARE"] === "true" || process.env["OPENCODE_DISABLE_SHARE"] === "1"
+  const disabled =
+    process.env["SNOW_CODE_DISABLE_SHARE"] === "true" ||
+    process.env["SNOW_CODE_DISABLE_SHARE"] === "1" ||
+    process.env["OPENCODE_DISABLE_SHARE"] === "true" ||
+    process.env["OPENCODE_DISABLE_SHARE"] === "1"
 
   export async function create(sessionID: string) {
     if (disabled) return { url: "", secret: "" }

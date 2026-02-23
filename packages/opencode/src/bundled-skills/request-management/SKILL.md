@@ -31,13 +31,13 @@ Request (sc_request)
 
 ## Key Tables
 
-| Table | Purpose |
-|-------|---------|
-| `sc_request` | Parent request record |
-| `sc_req_item` | Requested items (RITM) |
-| `sc_task` | Fulfillment tasks |
-| `sc_item_option_mtom` | Variable values |
-| `sc_cat_item` | Catalog item definitions |
+| Table                 | Purpose                  |
+| --------------------- | ------------------------ |
+| `sc_request`          | Parent request record    |
+| `sc_req_item`         | Requested items (RITM)   |
+| `sc_task`             | Fulfillment tasks        |
+| `sc_item_option_mtom` | Variable values          |
+| `sc_cat_item`         | Catalog item definitions |
 
 ## Request Items (ES5)
 
@@ -46,54 +46,54 @@ Request (sc_request)
 ```javascript
 // Create request and RITM (ES5 ONLY!)
 function createServiceRequest(catalogItemName, requestedFor, variables) {
-    // Get catalog item
-    var catItem = new GlideRecord('sc_cat_item');
-    if (!catItem.get('name', catalogItemName)) {
-        gs.error('Catalog item not found: ' + catalogItemName);
-        return null;
-    }
+  // Get catalog item
+  var catItem = new GlideRecord("sc_cat_item")
+  if (!catItem.get("name", catalogItemName)) {
+    gs.error("Catalog item not found: " + catalogItemName)
+    return null
+  }
 
-    // Create request
-    var request = new GlideRecord('sc_request');
-    request.initialize();
-    request.setValue('requested_for', requestedFor);
-    request.setValue('opened_by', gs.getUserID());
-    request.setValue('description', 'Request for ' + catalogItemName);
-    var requestSysId = request.insert();
+  // Create request
+  var request = new GlideRecord("sc_request")
+  request.initialize()
+  request.setValue("requested_for", requestedFor)
+  request.setValue("opened_by", gs.getUserID())
+  request.setValue("description", "Request for " + catalogItemName)
+  var requestSysId = request.insert()
 
-    // Create RITM
-    var ritm = new GlideRecord('sc_req_item');
-    ritm.initialize();
-    ritm.setValue('request', requestSysId);
-    ritm.setValue('cat_item', catItem.getUniqueValue());
-    ritm.setValue('requested_for', requestedFor);
-    ritm.setValue('quantity', 1);
+  // Create RITM
+  var ritm = new GlideRecord("sc_req_item")
+  ritm.initialize()
+  ritm.setValue("request", requestSysId)
+  ritm.setValue("cat_item", catItem.getUniqueValue())
+  ritm.setValue("requested_for", requestedFor)
+  ritm.setValue("quantity", 1)
 
-    var ritmSysId = ritm.insert();
+  var ritmSysId = ritm.insert()
 
-    // Set variables
-    if (variables) {
-        setRITMVariables(ritmSysId, variables);
-    }
+  // Set variables
+  if (variables) {
+    setRITMVariables(ritmSysId, variables)
+  }
 
-    return {
-        request: request.getValue('number'),
-        ritm: ritm.getValue('number'),
-        request_sys_id: requestSysId,
-        ritm_sys_id: ritmSysId
-    };
+  return {
+    request: request.getValue("number"),
+    ritm: ritm.getValue("number"),
+    request_sys_id: requestSysId,
+    ritm_sys_id: ritmSysId,
+  }
 }
 
 function setRITMVariables(ritmSysId, variables) {
-    var ritm = new GlideRecord('sc_req_item');
-    if (!ritm.get(ritmSysId)) return;
+  var ritm = new GlideRecord("sc_req_item")
+  if (!ritm.get(ritmSysId)) return
 
-    for (var varName in variables) {
-        if (variables.hasOwnProperty(varName)) {
-            ritm.variables[varName] = variables[varName];
-        }
+  for (var varName in variables) {
+    if (variables.hasOwnProperty(varName)) {
+      ritm.variables[varName] = variables[varName]
     }
-    ritm.update();
+  }
+  ritm.update()
 }
 ```
 
@@ -102,33 +102,33 @@ function setRITMVariables(ritmSysId, variables) {
 ```javascript
 // Get user's open requests (ES5 ONLY!)
 function getUserRequests(userSysId, includeCompleted) {
-    var requests = [];
+  var requests = []
 
-    var ritm = new GlideRecord('sc_req_item');
-    ritm.addQuery('requested_for', userSysId);
+  var ritm = new GlideRecord("sc_req_item")
+  ritm.addQuery("requested_for", userSysId)
 
-    if (!includeCompleted) {
-        ritm.addQuery('state', '!=', '3');  // Not Closed Complete
-        ritm.addQuery('state', '!=', '4');  // Not Closed Incomplete
-    }
+  if (!includeCompleted) {
+    ritm.addQuery("state", "!=", "3") // Not Closed Complete
+    ritm.addQuery("state", "!=", "4") // Not Closed Incomplete
+  }
 
-    ritm.orderByDesc('sys_created_on');
-    ritm.query();
+  ritm.orderByDesc("sys_created_on")
+  ritm.query()
 
-    while (ritm.next()) {
-        requests.push({
-            sys_id: ritm.getUniqueValue(),
-            number: ritm.getValue('number'),
-            short_description: ritm.getValue('short_description'),
-            cat_item: ritm.cat_item.getDisplayValue(),
-            state: ritm.state.getDisplayValue(),
-            stage: ritm.stage.getDisplayValue(),
-            opened_at: ritm.getValue('sys_created_on'),
-            due_date: ritm.getValue('due_date')
-        });
-    }
+  while (ritm.next()) {
+    requests.push({
+      sys_id: ritm.getUniqueValue(),
+      number: ritm.getValue("number"),
+      short_description: ritm.getValue("short_description"),
+      cat_item: ritm.cat_item.getDisplayValue(),
+      state: ritm.state.getDisplayValue(),
+      stage: ritm.stage.getDisplayValue(),
+      opened_at: ritm.getValue("sys_created_on"),
+      due_date: ritm.getValue("due_date"),
+    })
+  }
 
-    return requests;
+  return requests
 }
 ```
 
@@ -139,79 +139,79 @@ function getUserRequests(userSysId, includeCompleted) {
 ```javascript
 // Create fulfillment tasks for RITM (ES5 ONLY!)
 function createFulfillmentTasks(ritmSysId, taskDefinitions) {
-    var ritm = new GlideRecord('sc_req_item');
-    if (!ritm.get(ritmSysId)) {
-        return [];
+  var ritm = new GlideRecord("sc_req_item")
+  if (!ritm.get(ritmSysId)) {
+    return []
+  }
+
+  var createdTasks = []
+
+  for (var i = 0; i < taskDefinitions.length; i++) {
+    var taskDef = taskDefinitions[i]
+
+    var task = new GlideRecord("sc_task")
+    task.initialize()
+    task.setValue("request_item", ritmSysId)
+    task.setValue("request", ritm.getValue("request"))
+    task.setValue("short_description", taskDef.description)
+    task.setValue("assignment_group", taskDef.assignmentGroup)
+    task.setValue("order", (i + 1) * 100)
+
+    // Calculate due date if specified
+    if (taskDef.daysToComplete) {
+      var dueDate = new GlideDateTime()
+      dueDate.addDaysLocalTime(taskDef.daysToComplete)
+      task.setValue("due_date", dueDate)
     }
 
-    var createdTasks = [];
+    var taskSysId = task.insert()
+    createdTasks.push({
+      sys_id: taskSysId,
+      number: task.getValue("number"),
+    })
+  }
 
-    for (var i = 0; i < taskDefinitions.length; i++) {
-        var taskDef = taskDefinitions[i];
-
-        var task = new GlideRecord('sc_task');
-        task.initialize();
-        task.setValue('request_item', ritmSysId);
-        task.setValue('request', ritm.getValue('request'));
-        task.setValue('short_description', taskDef.description);
-        task.setValue('assignment_group', taskDef.assignmentGroup);
-        task.setValue('order', (i + 1) * 100);
-
-        // Calculate due date if specified
-        if (taskDef.daysToComplete) {
-            var dueDate = new GlideDateTime();
-            dueDate.addDaysLocalTime(taskDef.daysToComplete);
-            task.setValue('due_date', dueDate);
-        }
-
-        var taskSysId = task.insert();
-        createdTasks.push({
-            sys_id: taskSysId,
-            number: task.getValue('number')
-        });
-    }
-
-    return createdTasks;
+  return createdTasks
 }
 
 // Example usage
 var tasks = createFulfillmentTasks(ritmSysId, [
-    { description: 'Verify request details', assignmentGroup: 'Service Desk', daysToComplete: 1 },
-    { description: 'Provision access', assignmentGroup: 'IAM Team', daysToComplete: 2 },
-    { description: 'Notify user', assignmentGroup: 'Service Desk', daysToComplete: 1 }
-]);
+  { description: "Verify request details", assignmentGroup: "Service Desk", daysToComplete: 1 },
+  { description: "Provision access", assignmentGroup: "IAM Team", daysToComplete: 2 },
+  { description: "Notify user", assignmentGroup: "Service Desk", daysToComplete: 1 },
+])
 ```
 
 ### Auto-close RITM on Task Completion
 
 ```javascript
 // Business Rule: after, update, sc_task (ES5 ONLY!)
-(function executeRule(current, previous) {
-    // Check if task was just closed
-    if (current.state.changesTo('3') || current.state.changesTo('4')) {
-        checkAndCloseRITM(current.getValue('request_item'));
-    }
-})(current, previous);
+;(function executeRule(current, previous) {
+  // Check if task was just closed
+  if (current.state.changesTo("3") || current.state.changesTo("4")) {
+    checkAndCloseRITM(current.getValue("request_item"))
+  }
+})(current, previous)
 
 function checkAndCloseRITM(ritmSysId) {
-    // Check if all tasks are complete
-    var openTasks = new GlideAggregate('sc_task');
-    openTasks.addQuery('request_item', ritmSysId);
-    openTasks.addQuery('state', 'NOT IN', '3,4,7');  // Not closed or cancelled
-    openTasks.addAggregate('COUNT');
-    openTasks.query();
+  // Check if all tasks are complete
+  var openTasks = new GlideAggregate("sc_task")
+  openTasks.addQuery("request_item", ritmSysId)
+  openTasks.addQuery("state", "NOT IN", "3,4,7") // Not closed or cancelled
+  openTasks.addAggregate("COUNT")
+  openTasks.query()
 
-    if (openTasks.next()) {
-        var count = parseInt(openTasks.getAggregate('COUNT'), 10);
-        if (count === 0) {
-            // All tasks complete, close RITM
-            var ritm = new GlideRecord('sc_req_item');
-            if (ritm.get(ritmSysId)) {
-                ritm.state = 3;  // Closed Complete
-                ritm.update();
-            }
-        }
+  if (openTasks.next()) {
+    var count = parseInt(openTasks.getAggregate("COUNT"), 10)
+    if (count === 0) {
+      // All tasks complete, close RITM
+      var ritm = new GlideRecord("sc_req_item")
+      if (ritm.get(ritmSysId)) {
+        ritm.state = 3 // Closed Complete
+        ritm.update()
+      }
     }
+  }
 }
 ```
 
@@ -222,41 +222,42 @@ function checkAndCloseRITM(ritmSysId) {
 ```javascript
 // Get variable values from RITM (ES5 ONLY!)
 function getRITMVariables(ritmSysId) {
-    var variables = {};
+  var variables = {}
 
-    var ritm = new GlideRecord('sc_req_item');
-    if (!ritm.get(ritmSysId)) {
-        return variables;
-    }
+  var ritm = new GlideRecord("sc_req_item")
+  if (!ritm.get(ritmSysId)) {
+    return variables
+  }
 
-    // Get all variable values
-    var varValue = new GlideRecord('sc_item_option_mtom');
-    varValue.addQuery('request_item', ritmSysId);
-    varValue.query();
+  // Get all variable values
+  var varValue = new GlideRecord("sc_item_option_mtom")
+  varValue.addQuery("request_item", ritmSysId)
+  varValue.query()
 
-    while (varValue.next()) {
-        var varName = varValue.sc_item_option.item_option_new.name.toString();
-        var value = varValue.getValue('sc_item_option');
+  while (varValue.next()) {
+    var varName = varValue.sc_item_option.item_option_new.name.toString()
+    var value = varValue.getValue("sc_item_option")
 
-        // Get display value for reference fields
-        var varDef = varValue.sc_item_option.item_option_new.getRefRecord();
-        if (varDef.getValue('type') === '8') {  // Reference
-            var refRecord = new GlideRecord(varDef.getValue('reference'));
-            if (refRecord.get(value)) {
-                variables[varName] = {
-                    value: value,
-                    display_value: refRecord.getDisplayValue()
-                };
-            }
-        } else {
-            variables[varName] = {
-                value: value,
-                display_value: varValue.sc_item_option.getDisplayValue()
-            };
+    // Get display value for reference fields
+    var varDef = varValue.sc_item_option.item_option_new.getRefRecord()
+    if (varDef.getValue("type") === "8") {
+      // Reference
+      var refRecord = new GlideRecord(varDef.getValue("reference"))
+      if (refRecord.get(value)) {
+        variables[varName] = {
+          value: value,
+          display_value: refRecord.getDisplayValue(),
         }
+      }
+    } else {
+      variables[varName] = {
+        value: value,
+        display_value: varValue.sc_item_option.getDisplayValue(),
+      }
     }
+  }
 
-    return variables;
+  return variables
 }
 ```
 
@@ -265,31 +266,31 @@ function getRITMVariables(ritmSysId) {
 ```javascript
 // Validate RITM variables (ES5 ONLY!)
 function validateRITMVariables(ritmSysId) {
-    var errors = [];
+  var errors = []
 
-    var ritm = new GlideRecord('sc_req_item');
-    if (!ritm.get(ritmSysId)) {
-        return ['RITM not found'];
+  var ritm = new GlideRecord("sc_req_item")
+  if (!ritm.get(ritmSysId)) {
+    return ["RITM not found"]
+  }
+
+  // Get catalog item variable definitions
+  var catItem = ritm.cat_item.getRefRecord()
+
+  var varDef = new GlideRecord("item_option_new")
+  varDef.addQuery("cat_item", catItem.getUniqueValue())
+  varDef.addQuery("mandatory", true)
+  varDef.query()
+
+  while (varDef.next()) {
+    var varName = varDef.getValue("name")
+    var varValue = ritm.variables[varName]
+
+    if (!varValue || varValue.toString() === "") {
+      errors.push("Missing required variable: " + varDef.getValue("question_text"))
     }
+  }
 
-    // Get catalog item variable definitions
-    var catItem = ritm.cat_item.getRefRecord();
-
-    var varDef = new GlideRecord('item_option_new');
-    varDef.addQuery('cat_item', catItem.getUniqueValue());
-    varDef.addQuery('mandatory', true);
-    varDef.query();
-
-    while (varDef.next()) {
-        var varName = varDef.getValue('name');
-        var varValue = ritm.variables[varName];
-
-        if (!varValue || varValue.toString() === '') {
-            errors.push('Missing required variable: ' + varDef.getValue('question_text'));
-        }
-    }
-
-    return errors;
+  return errors
 }
 ```
 
@@ -300,42 +301,42 @@ function validateRITMVariables(ritmSysId) {
 ```javascript
 // Get approval status for request (ES5 ONLY!)
 function getRequestApprovalStatus(requestSysId) {
-    var approvals = [];
+  var approvals = []
 
-    var approval = new GlideRecord('sysapproval_approver');
-    approval.addQuery('sysapproval', requestSysId);
-    approval.query();
+  var approval = new GlideRecord("sysapproval_approver")
+  approval.addQuery("sysapproval", requestSysId)
+  approval.query()
 
-    while (approval.next()) {
-        approvals.push({
-            approver: approval.approver.getDisplayValue(),
-            state: approval.state.getDisplayValue(),
-            comments: approval.getValue('comments'),
-            sys_updated_on: approval.getValue('sys_updated_on')
-        });
-    }
+  while (approval.next()) {
+    approvals.push({
+      approver: approval.approver.getDisplayValue(),
+      state: approval.state.getDisplayValue(),
+      comments: approval.getValue("comments"),
+      sys_updated_on: approval.getValue("sys_updated_on"),
+    })
+  }
 
-    // Determine overall status
-    var pending = 0;
-    var approved = 0;
-    var rejected = 0;
+  // Determine overall status
+  var pending = 0
+  var approved = 0
+  var rejected = 0
 
-    for (var i = 0; i < approvals.length; i++) {
-        var state = approvals[i].state;
-        if (state === 'Requested') pending++;
-        else if (state === 'Approved') approved++;
-        else if (state === 'Rejected') rejected++;
-    }
+  for (var i = 0; i < approvals.length; i++) {
+    var state = approvals[i].state
+    if (state === "Requested") pending++
+    else if (state === "Approved") approved++
+    else if (state === "Rejected") rejected++
+  }
 
-    return {
-        approvals: approvals,
-        summary: {
-            pending: pending,
-            approved: approved,
-            rejected: rejected,
-            overall: rejected > 0 ? 'Rejected' : (pending > 0 ? 'Pending' : 'Approved')
-        }
-    };
+  return {
+    approvals: approvals,
+    summary: {
+      pending: pending,
+      approved: approved,
+      rejected: rejected,
+      overall: rejected > 0 ? "Rejected" : pending > 0 ? "Pending" : "Approved",
+    },
+  }
 }
 ```
 
@@ -343,37 +344,37 @@ function getRequestApprovalStatus(requestSysId) {
 
 ### Available Tools
 
-| Tool | Purpose |
-|------|---------|
-| `snow_query_table` | Query requests and RITMs |
-| `snow_find_artifact` | Find catalog items |
-| `snow_execute_script_with_output` | Test request scripts |
-| `snow_create_catalog_item` | Create catalog items |
+| Tool                              | Purpose                  |
+| --------------------------------- | ------------------------ |
+| `snow_query_table`                | Query requests and RITMs |
+| `snow_find_artifact`              | Find catalog items       |
+| `snow_execute_script_with_output` | Test request scripts     |
+| `snow_create_catalog_item`        | Create catalog items     |
 
 ### Example Workflow
 
 ```javascript
 // 1. Query open requests
 await snow_query_table({
-    table: 'sc_req_item',
-    query: 'state!=3^state!=4^requested_for=javascript:gs.getUserID()',
-    fields: 'number,short_description,cat_item,state,stage'
-});
+  table: "sc_req_item",
+  query: "state!=3^state!=4^requested_for=javascript:gs.getUserID()",
+  fields: "number,short_description,cat_item,state,stage",
+})
 
 // 2. Get request details
 await snow_execute_script_with_output({
-    script: `
+  script: `
         var vars = getRITMVariables('ritm_sys_id');
         gs.info(JSON.stringify(vars));
-    `
-});
+    `,
+})
 
 // 3. Check approvals
 await snow_query_table({
-    table: 'sysapproval_approver',
-    query: 'sysapproval=request_sys_id',
-    fields: 'approver,state,comments'
-});
+  table: "sysapproval_approver",
+  query: "sysapproval=request_sys_id",
+  fields: "approver,state,comments",
+})
 ```
 
 ## Best Practices

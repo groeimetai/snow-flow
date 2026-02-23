@@ -130,7 +130,12 @@ export function DialogDeployments() {
             })
             if (response.ok) {
               const data = await response.json()
-              if (data.success && data.instance?.instanceUrl && data.instance?.clientId && data.instance?.clientSecret) {
+              if (
+                data.success &&
+                data.instance?.instanceUrl &&
+                data.instance?.clientId &&
+                data.instance?.clientSecret
+              ) {
                 await Auth.set("servicenow", {
                   type: "servicenow-oauth",
                   instance: data.instance.instanceUrl,
@@ -404,10 +409,7 @@ export function DialogDeployments() {
             Created by {selectedSet()!.sys_created_by} · {timeAgo(selectedSet()!.sys_created_on)}
           </text>
         </box>
-        <box
-          paddingTop={1}
-          onMouseUp={() => openInBrowser(selectedSet()!.sys_id)}
-        >
+        <box paddingTop={1} onMouseUp={() => openInBrowser(selectedSet()!.sys_id)}>
           <text fg={theme.primary}>Open in ServiceNow</text>
         </box>
       </Show>

@@ -4,56 +4,57 @@
  * Identifies dependencies, suggests reusable components, and creates implementation roadmaps.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_analyze_requirements',
-  description: 'Analyzes development requirements to identify dependencies, suggest reusable components, and create implementation roadmaps.',
+  name: "snow_analyze_requirements",
+  description:
+    "Analyzes development requirements to identify dependencies, suggest reusable components, and create implementation roadmaps.",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'development',
-  subcategory: 'analysis',
-  use_cases: ['requirements', 'planning', 'roadmap'],
-  complexity: 'intermediate',
-  frequency: 'medium',
+  category: "development",
+  subcategory: "analysis",
+  use_cases: ["requirements", "planning", "roadmap"],
+  complexity: "intermediate",
+  frequency: "medium",
 
   // Permission enforcement
   // Classification: READ - Analysis operation - reads data
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: "read",
+  allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
       objective: {
-        type: 'string',
-        description: 'Development objective (e.g., "iPhone provisioning for new users")'
+        type: "string",
+        description: 'Development objective (e.g., "iPhone provisioning for new users")',
       },
       auto_discover_dependencies: {
-        type: 'boolean',
-        description: 'Automatically discover required dependencies',
-        default: true
+        type: "boolean",
+        description: "Automatically discover required dependencies",
+        default: true,
       },
       suggest_existing_components: {
-        type: 'boolean',
-        description: 'Suggest reuse of existing components',
-        default: true
+        type: "boolean",
+        description: "Suggest reuse of existing components",
+        default: true,
       },
       create_dependency_map: {
-        type: 'boolean',
-        description: 'Create visual dependency map',
-        default: true
+        type: "boolean",
+        description: "Create visual dependency map",
+        default: true,
       },
       scope_preference: {
-        type: 'string',
-        enum: ['global', 'scoped', 'auto'],
-        description: 'Deployment scope preference',
-        default: 'auto'
-      }
+        type: "string",
+        enum: ["global", "scoped", "auto"],
+        description: "Deployment scope preference",
+        default: "auto",
+      },
     },
-    required: ['objective']
-  }
-};
+    required: ["objective"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
@@ -61,54 +62,54 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     auto_discover_dependencies = true,
     suggest_existing_components = true,
     create_dependency_map = true,
-    scope_preference = 'auto'
-  } = args;
+    scope_preference = "auto",
+  } = args
 
   try {
-    const client = await getAuthenticatedClient(context);
+    const client = await getAuthenticatedClient(context)
 
     // Parse objective to identify key components
-    const keywords = objective.toLowerCase();
+    const keywords = objective.toLowerCase()
     const analysis = {
       objective,
       scope: scope_preference,
       requiredComponents: [] as any[],
       existingComponents: [] as any[],
       dependencyMap: {} as any,
-      implementationPlan: [] as any[]
-    };
+      implementationPlan: [] as any[],
+    }
 
     // Identify required components based on keywords
-    if (keywords.includes('workflow') || keywords.includes('flow')) {
+    if (keywords.includes("workflow") || keywords.includes("flow")) {
       analysis.requiredComponents.push({
-        type: 'flow',
-        table: 'sys_hub_flow',
-        purpose: 'Process automation'
-      });
+        type: "flow",
+        table: "sys_hub_flow",
+        purpose: "Process automation",
+      })
     }
 
-    if (keywords.includes('widget') || keywords.includes('portal')) {
+    if (keywords.includes("widget") || keywords.includes("portal")) {
       analysis.requiredComponents.push({
-        type: 'widget',
-        table: 'sp_widget',
-        purpose: 'User interface'
-      });
+        type: "widget",
+        table: "sp_widget",
+        purpose: "User interface",
+      })
     }
 
-    if (keywords.includes('notification') || keywords.includes('email')) {
+    if (keywords.includes("notification") || keywords.includes("email")) {
       analysis.requiredComponents.push({
-        type: 'notification',
-        table: 'sysevent_email_action',
-        purpose: 'Email notifications'
-      });
+        type: "notification",
+        table: "sysevent_email_action",
+        purpose: "Email notifications",
+      })
     }
 
-    if (keywords.includes('table') || keywords.includes('data')) {
+    if (keywords.includes("table") || keywords.includes("data")) {
       analysis.requiredComponents.push({
-        type: 'table',
-        table: 'sys_db_object',
-        purpose: 'Data storage'
-      });
+        type: "table",
+        table: "sys_db_object",
+        purpose: "Data storage",
+      })
     }
 
     // Search for existing components if requested
@@ -116,9 +117,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       for (const component of analysis.requiredComponents) {
         try {
           const response = await client.query(component.table, {
-            query: `nameLIKE${objective.split(' ')[0]}^active=true`,
-            limit: 5
-          });
+            query: `nameLIKE${objective.split(" ")[0]}^active=true`,
+            limit: 5,
+          })
 
           if (response.data?.result?.length > 0) {
             analysis.existingComponents.push({
@@ -126,9 +127,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               found: response.data.result.map((r: any) => ({
                 sys_id: r.sys_id,
                 name: r.name || r.title,
-                description: r.short_description
-              }))
-            });
+                description: r.short_description,
+              })),
+            })
           }
         } catch (error) {
           // Continue if search fails
@@ -139,71 +140,63 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Create dependency map
     if (create_dependency_map) {
       analysis.dependencyMap = {
-        nodes: analysis.requiredComponents.map(c => ({
+        nodes: analysis.requiredComponents.map((c) => ({
           id: c.type,
           label: c.type.toUpperCase(),
-          table: c.table
+          table: c.table,
         })),
-        edges: []
-      };
+        edges: [],
+      }
     }
 
     // Create implementation plan
     analysis.implementationPlan = [
       {
         phase: 1,
-        name: 'Planning',
-        tasks: [
-          'Define scope and requirements',
-          'Review existing components',
-          'Identify dependencies'
-        ],
-        estimated_days: 2
+        name: "Planning",
+        tasks: ["Define scope and requirements", "Review existing components", "Identify dependencies"],
+        estimated_days: 2,
       },
       {
         phase: 2,
-        name: 'Development',
-        tasks: analysis.requiredComponents.map(c => `Create ${c.type}`),
-        estimated_days: 5
+        name: "Development",
+        tasks: analysis.requiredComponents.map((c) => `Create ${c.type}`),
+        estimated_days: 5,
       },
       {
         phase: 3,
-        name: 'Testing',
-        tasks: [
-          'Unit testing',
-          'Integration testing',
-          'User acceptance testing'
-        ],
-        estimated_days: 3
+        name: "Testing",
+        tasks: ["Unit testing", "Integration testing", "User acceptance testing"],
+        estimated_days: 3,
       },
       {
         phase: 4,
-        name: 'Deployment',
-        tasks: [
-          'Create update set',
-          'Deploy to production',
-          'Monitor and validate'
-        ],
-        estimated_days: 1
-      }
-    ];
+        name: "Deployment",
+        tasks: ["Create update set", "Deploy to production", "Monitor and validate"],
+        estimated_days: 1,
+      },
+    ]
 
-    return createSuccessResult({
-      analysis,
-      summary: `Requirements analyzed: ${analysis.requiredComponents.length} components needed, ${analysis.existingComponents.length} existing components found`,
-      recommendations: [
-        analysis.existingComponents.length > 0 ? 'Consider reusing existing components to save development time' : null,
-        'Follow ServiceNow best practices for component development',
-        'Test in sub-production environment before deploying'
-      ].filter(Boolean)
-    }, {
-      objective,
-      components_needed: analysis.requiredComponents.length,
-      existing_found: analysis.existingComponents.length
-    });
-
+    return createSuccessResult(
+      {
+        analysis,
+        summary: `Requirements analyzed: ${analysis.requiredComponents.length} components needed, ${analysis.existingComponents.length} existing components found`,
+        recommendations: [
+          analysis.existingComponents.length > 0
+            ? "Consider reusing existing components to save development time"
+            : null,
+          "Follow ServiceNow best practices for component development",
+          "Test in sub-production environment before deploying",
+        ].filter(Boolean),
+      },
+      {
+        objective,
+        components_needed: analysis.requiredComponents.length,
+        existing_found: analysis.existingComponents.length,
+      },
+    )
   } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return createErrorResult(errorMessage, { objective });
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return createErrorResult(errorMessage, { objective })
   }
 }

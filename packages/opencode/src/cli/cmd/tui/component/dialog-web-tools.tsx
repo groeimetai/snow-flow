@@ -67,12 +67,5 @@ export function DialogWebTools() {
     },
   ])
 
-  return (
-    <DialogSelect
-      title="Web Tools"
-      options={options()}
-      keybind={keybinds()}
-      onSelect={() => {}}
-    />
-  )
+  return <DialogSelect title="Web Tools" options={options()} keybind={keybinds()} onSelect={() => {}} />
 }

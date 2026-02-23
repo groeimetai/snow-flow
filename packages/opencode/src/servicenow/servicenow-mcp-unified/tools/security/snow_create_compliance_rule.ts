@@ -3,36 +3,37 @@
  * Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.
  */
 
-import { MCPToolDefinition, ToolResult, ServiceNowContext } from '../../shared/types.js';
+import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/types.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_create_compliance_rule',
-  description: 'Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.',
-  category: 'security',
-  subcategory: 'compliance',
-  use_cases: ['rules', 'security', 'compliance'],
-  complexity: 'intermediate',
-  frequency: 'medium',
+  name: "snow_create_compliance_rule",
+  description:
+    "Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.",
+  category: "security",
+  subcategory: "compliance",
+  use_cases: ["rules", "security", "compliance"],
+  complexity: "intermediate",
+  frequency: "medium",
 
   // Permission enforcement
   // Classification: WRITE - Creation/configuration operation
-  permission: 'write',
-  allowedRoles: ['developer', 'admin'],
+  permission: "write",
+  allowedRoles: ["developer", "admin"],
 
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      name: { type: 'string', description: 'Compliance rule name' },
-      framework: { type: 'string', description: 'Compliance framework (SOX, GDPR, HIPAA, etc.)' },
-      requirement: { type: 'string', description: 'Specific requirement or control' },
-      validation: { type: 'string', description: 'Validation script or condition' },
-      remediation: { type: 'string', description: 'Remediation actions' },
-      severity: { type: 'string', description: 'Severity level (critical, high, medium, low)' },
-      active: { type: 'boolean', description: 'Rule active status' }
+      name: { type: "string", description: "Compliance rule name" },
+      framework: { type: "string", description: "Compliance framework (SOX, GDPR, HIPAA, etc.)" },
+      requirement: { type: "string", description: "Specific requirement or control" },
+      validation: { type: "string", description: "Validation script or condition" },
+      remediation: { type: "string", description: "Remediation actions" },
+      severity: { type: "string", description: "Severity level (critical, high, medium, low)" },
+      active: { type: "boolean", description: "Rule active status" },
     },
-    required: ['name', 'framework', 'requirement', 'validation']
-  }
-};
+    required: ["name", "framework", "requirement", "validation"],
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   // TODO: Implement full compliance rule creation with ServiceNow client
@@ -44,10 +45,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       framework: args.framework,
       requirement: args.requirement,
       validation: args.validation,
-      remediation: args.remediation || '',
-      severity: args.severity || 'medium',
-      active: args.active !== false
+      remediation: args.remediation || "",
+      severity: args.severity || "medium",
+      active: args.active !== false,
     },
-    summary: `Compliance rule "${args.name}" prepared for framework: ${args.framework}`
-  };
+    summary: `Compliance rule "${args.name}" prepared for framework: ${args.framework}`,
+  }
 }

@@ -4,200 +4,198 @@
  * Prevents overwhelming the system with too much data
  */
 
-import { ServiceNowClient } from '../utils/servicenow-client.js';
-import { Logger } from '../utils/logger.js';
+import { ServiceNowClient } from "../utils/servicenow-client.js"
+import { Logger } from "../utils/logger.js"
 
 export interface IndexingStrategy {
-  mode: 'lazy' | 'eager' | 'progressive' | 'context-aware';
-  maxInitialArtifacts: number;
-  relevanceThreshold: number;
-  contextWindow: number;
+  mode: "lazy" | "eager" | "progressive" | "context-aware"
+  maxInitialArtifacts: number
+  relevanceThreshold: number
+  contextWindow: number
 }
 
 export interface ArtifactRelevance {
-  artifact_id: string;
-  relevance_score: number;
-  last_accessed: Date;
-  access_count: number;
-  related_to_current_task: boolean;
+  artifact_id: string
+  relevance_score: number
+  last_accessed: Date
+  access_count: number
+  related_to_current_task: boolean
 }
 
 export class ServiceNowProgressiveIndexer {
-  private logger: Logger;
-  private client: ServiceNowClient;
-  private indexedArtifacts: Set<string> = new Set();
-  private relevanceMap: Map<string, ArtifactRelevance> = new Map();
-  private currentContext: string = '';
+  private logger: Logger
+  private client: ServiceNowClient
+  private indexedArtifacts: Set<string> = new Set()
+  private relevanceMap: Map<string, ArtifactRelevance> = new Map()
+  private currentContext: string = ""
 
   constructor() {
-    this.logger = new Logger('ProgressiveIndexer');
-    this.client = new ServiceNowClient();
+    this.logger = new Logger("ProgressiveIndexer")
+    this.client = new ServiceNowClient()
   }
 
   /**
    * Smart indexing based on current task context
    */
   async indexForContext(context: string, userInstruction: string): Promise<any> {
-    this.currentContext = context;
-    this.logger.info('Progressive indexing for context', { context, instruction: userInstruction });
+    this.currentContext = context
+    this.logger.info("Progressive indexing for context", { context, instruction: userInstruction })
 
     // Step 1: Extract key concepts from instruction
-    const concepts = this.extractConcepts(userInstruction);
-    
+    const concepts = this.extractConcepts(userInstruction)
+
     // Step 2: Find most relevant artifacts (not everything!)
     const relevantArtifacts = await this.findRelevantArtifacts(concepts, {
       limit: 10, // Start with just 10 most relevant
-      types: this.determineRelevantTypes(userInstruction)
-    });
+      types: this.determineRelevantTypes(userInstruction),
+    })
 
     // Step 3: Index only what's needed
     const indexingPlan = {
-      immediate: relevantArtifacts.filter(a => a.relevance > 0.8),
-      lazy: relevantArtifacts.filter(a => a.relevance > 0.5 && a.relevance <= 0.8),
-      skip: relevantArtifacts.filter(a => a.relevance <= 0.5)
-    };
+      immediate: relevantArtifacts.filter((a) => a.relevance > 0.8),
+      lazy: relevantArtifacts.filter((a) => a.relevance > 0.5 && a.relevance <= 0.8),
+      skip: relevantArtifacts.filter((a) => a.relevance <= 0.5),
+    }
 
     // Step 4: Progressive indexing
-    await this.indexArtifacts(indexingPlan.immediate, 'immediate');
-    
+    await this.indexArtifacts(indexingPlan.immediate, "immediate")
+
     // Lazy load others as needed
-    this.scheduleLazyIndexing(indexingPlan.lazy);
+    this.scheduleLazyIndexing(indexingPlan.lazy)
 
     return {
       indexed_immediately: indexingPlan.immediate.length,
       scheduled_for_lazy: indexingPlan.lazy.length,
       skipped: indexingPlan.skip.length,
-      strategy: this.getIndexingStrategy(concepts)
-    };
+      strategy: this.getIndexingStrategy(concepts),
+    }
   }
 
   /**
    * Extract key concepts from natural language
    */
   private extractConcepts(instruction: string): string[] {
-    const concepts: string[] = [];
-    const lower = instruction.toLowerCase();
+    const concepts: string[] = []
+    const lower = instruction.toLowerCase()
 
     // Common ServiceNow concepts
     const conceptMap = {
-      'incident': ['incident', 'ticket', 'issue', 'problem'],
-      'widget': ['widget', 'ui', 'dashboard', 'interface', 'component'],
-      'flow': ['flow', 'workflow', 'automation', 'process'],
-      'approval': ['approval', 'approve', 'goedkeuring', 'review'],
-      'script': ['script', 'code', 'function', 'api'],
-      'table': ['table', 'data', 'record', 'database'],
-      'integration': ['integration', 'connect', 'api', 'external'],
-      'notification': ['notification', 'email', 'alert', 'message']
-    };
+      incident: ["incident", "ticket", "issue", "problem"],
+      widget: ["widget", "ui", "dashboard", "interface", "component"],
+      flow: ["flow", "workflow", "automation", "process"],
+      approval: ["approval", "approve", "goedkeuring", "review"],
+      script: ["script", "code", "function", "api"],
+      table: ["table", "data", "record", "database"],
+      integration: ["integration", "connect", "api", "external"],
+      notification: ["notification", "email", "alert", "message"],
+    }
 
     for (const [concept, keywords] of Object.entries(conceptMap)) {
-      if (keywords.some(keyword => lower.includes(keyword))) {
-        concepts.push(concept);
+      if (keywords.some((keyword) => lower.includes(keyword))) {
+        concepts.push(concept)
       }
     }
 
-    return concepts;
+    return concepts
   }
 
   /**
    * Determine which artifact types are relevant
    */
   private determineRelevantTypes(instruction: string): string[] {
-    const types: string[] = [];
-    const lower = instruction.toLowerCase();
+    const types: string[] = []
+    const lower = instruction.toLowerCase()
 
-    if (lower.includes('widget') || lower.includes('dashboard') || lower.includes('ui')) {
-      types.push('widget', 'client_script', 'ui_script');
-    }
-    
-    if (lower.includes('flow') || lower.includes('workflow') || lower.includes('automation')) {
-      types.push('flow', 'script_include', 'business_rule');
-    }
-    
-    if (lower.includes('script') || lower.includes('api') || lower.includes('function')) {
-      types.push('script_include', 'business_rule');
+    if (lower.includes("widget") || lower.includes("dashboard") || lower.includes("ui")) {
+      types.push("widget", "client_script", "ui_script")
     }
 
-    if (lower.includes('table') || lower.includes('data') || lower.includes('record')) {
-      types.push('table', 'business_rule');
+    if (lower.includes("flow") || lower.includes("workflow") || lower.includes("automation")) {
+      types.push("flow", "script_include", "business_rule")
+    }
+
+    if (lower.includes("script") || lower.includes("api") || lower.includes("function")) {
+      types.push("script_include", "business_rule")
+    }
+
+    if (lower.includes("table") || lower.includes("data") || lower.includes("record")) {
+      types.push("table", "business_rule")
     }
 
     // Default to common types if nothing specific found
     if (types.length === 0) {
-      types.push('widget', 'flow', 'script_include');
+      types.push("widget", "flow", "script_include")
     }
 
-    return [...new Set(types)]; // Remove duplicates
+    return [...new Set(types)] // Remove duplicates
   }
 
   /**
    * Find artifacts relevant to concepts
    */
   private async findRelevantArtifacts(concepts: string[], options: any): Promise<any[]> {
-    const artifacts: any[] = [];
+    const artifacts: any[] = []
 
     // Build smart query based on concepts
-    const searchQueries = concepts.map(concept => {
+    const searchQueries = concepts.map((concept) => {
       switch (concept) {
-        case 'incident':
-          return 'nameLIKEincident^ORdescriptionLIKEincident^ORtableLIKEincident';
-        case 'widget':
-          return 'sys_class_name=sp_widget^ORcategoryLIKEdashboard';
-        case 'flow':
-          return 'sys_class_name=sys_hub_flow^ORnameLIKEflow^ORnameLIKEworkflow';
-        case 'approval':
-          return 'nameLIKEapproval^ORdescriptionLIKEapproval^ORscriptLIKEapproval';
+        case "incident":
+          return "nameLIKEincident^ORdescriptionLIKEincident^ORtableLIKEincident"
+        case "widget":
+          return "sys_class_name=sp_widget^ORcategoryLIKEdashboard"
+        case "flow":
+          return "sys_class_name=sys_hub_flow^ORnameLIKEflow^ORnameLIKEworkflow"
+        case "approval":
+          return "nameLIKEapproval^ORdescriptionLIKEapproval^ORscriptLIKEapproval"
         default:
-          return `nameLIKE${concept}^ORdescriptionLIKE${concept}`;
+          return `nameLIKE${concept}^ORdescriptionLIKE${concept}`
       }
-    });
+    })
 
     // Search each type with relevance scoring
     for (const type of options.types) {
-      const results = await this.searchArtifactsByType(type, searchQueries, options.limit);
-      
+      const results = await this.searchArtifactsByType(type, searchQueries, options.limit)
+
       // Score each result
       results.forEach((artifact: any) => {
-        artifact.relevance = this.calculateRelevance(artifact, concepts);
-        artifacts.push(artifact);
-      });
+        artifact.relevance = this.calculateRelevance(artifact, concepts)
+        artifacts.push(artifact)
+      })
     }
 
     // Sort by relevance and limit
-    return artifacts
-      .sort((a, b) => b.relevance - a.relevance)
-      .slice(0, options.limit);
+    return artifacts.sort((a, b) => b.relevance - a.relevance).slice(0, options.limit)
   }
 
   /**
    * Calculate relevance score
    */
   private calculateRelevance(artifact: any, concepts: string[]): number {
-    let score = 0;
-    const name = (artifact.name || '').toLowerCase();
-    const description = (artifact.description || '').toLowerCase();
-    const content = (artifact.script || artifact.template || '').toLowerCase();
+    let score = 0
+    const name = (artifact.name || "").toLowerCase()
+    const description = (artifact.description || "").toLowerCase()
+    const content = (artifact.script || artifact.template || "").toLowerCase()
 
     // Name matches are most important
-    concepts.forEach(concept => {
-      if (name.includes(concept)) score += 0.4;
-      if (description.includes(concept)) score += 0.2;
-      if (content.includes(concept)) score += 0.1;
-    });
+    concepts.forEach((concept) => {
+      if (name.includes(concept)) score += 0.4
+      if (description.includes(concept)) score += 0.2
+      if (content.includes(concept)) score += 0.1
+    })
 
     // Recent artifacts are more relevant
-    const lastUpdated = new Date(artifact.sys_updated_on || artifact.sys_created_on);
-    const daysSinceUpdate = (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysSinceUpdate < 7) score += 0.2;
-    else if (daysSinceUpdate < 30) score += 0.1;
+    const lastUpdated = new Date(artifact.sys_updated_on || artifact.sys_created_on)
+    const daysSinceUpdate = (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24)
+    if (daysSinceUpdate < 7) score += 0.2
+    else if (daysSinceUpdate < 30) score += 0.1
 
     // Popular artifacts (based on past usage)
-    const relevance = this.relevanceMap.get(artifact.sys_id);
+    const relevance = this.relevanceMap.get(artifact.sys_id)
     if (relevance) {
-      score += Math.min(relevance.access_count * 0.05, 0.2);
+      score += Math.min(relevance.access_count * 0.05, 0.2)
     }
 
-    return Math.min(score, 1.0);
+    return Math.min(score, 1.0)
   }
 
   /**
@@ -205,25 +203,25 @@ export class ServiceNowProgressiveIndexer {
    */
   private async searchArtifactsByType(type: string, queries: string[], limit: number): Promise<any[]> {
     const tableMap: Record<string, string> = {
-      'widget': 'sp_widget',
-      'flow': 'sys_hub_flow',
-      'script_include': 'sys_script_include',
-      'business_rule': 'sys_script',
-      'table': 'sys_db_object',
-      'client_script': 'sys_ui_script',
-      'ui_script': 'sys_ui_script'
-    };
+      widget: "sp_widget",
+      flow: "sys_hub_flow",
+      script_include: "sys_script_include",
+      business_rule: "sys_script",
+      table: "sys_db_object",
+      client_script: "sys_ui_script",
+      ui_script: "sys_ui_script",
+    }
 
-    const table = tableMap[type];
-    if (!table) return [];
+    const table = tableMap[type]
+    if (!table) return []
 
     try {
-      const query = queries.join('^OR');
-      const response = await this.client.searchRecords(table, query, limit);
-      return response.success ? response.data.result : [];
+      const query = queries.join("^OR")
+      const response = await this.client.searchRecords(table, query, limit)
+      return response.success ? response.data.result : []
     } catch (error) {
-      this.logger.error(`Failed to search ${type}`, error);
-      return [];
+      this.logger.error(`Failed to search ${type}`, error)
+      return []
     }
   }
 
@@ -231,16 +229,16 @@ export class ServiceNowProgressiveIndexer {
    * Index artifacts immediately
    */
   private async indexArtifacts(artifacts: any[], priority: string): Promise<void> {
-    this.logger.info(`Indexing ${artifacts.length} artifacts with ${priority} priority`);
+    this.logger.info(`Indexing ${artifacts.length} artifacts with ${priority} priority`)
 
     for (const artifact of artifacts) {
       if (!this.indexedArtifacts.has(artifact.sys_id)) {
         // Index in Neo4j
-        await this.indexInGraph(artifact);
-        
+        await this.indexInGraph(artifact)
+
         // Track indexing
-        this.indexedArtifacts.add(artifact.sys_id);
-        this.updateRelevance(artifact.sys_id, artifact.relevance);
+        this.indexedArtifacts.add(artifact.sys_id)
+        this.updateRelevance(artifact.sys_id, artifact.relevance)
       }
     }
   }
@@ -250,15 +248,15 @@ export class ServiceNowProgressiveIndexer {
    */
   private scheduleLazyIndexing(artifacts: any[]): void {
     // Index these when Claude actually needs them
-    artifacts.forEach(artifact => {
+    artifacts.forEach((artifact) => {
       this.relevanceMap.set(artifact.sys_id, {
         artifact_id: artifact.sys_id,
         relevance_score: artifact.relevance,
         last_accessed: new Date(),
         access_count: 0,
-        related_to_current_task: true
-      });
-    });
+        related_to_current_task: true,
+      })
+    })
   }
 
   /**
@@ -266,7 +264,7 @@ export class ServiceNowProgressiveIndexer {
    */
   private async indexInGraph(artifact: any): Promise<void> {
     // This would call the Neo4j MCP
-    this.logger.info(`Indexing ${artifact.name} in graph database`);
+    this.logger.info(`Indexing ${artifact.name} in graph database`)
     // Implementation would use snow_graph_index_artifact
   }
 
@@ -274,19 +272,19 @@ export class ServiceNowProgressiveIndexer {
    * Update relevance tracking
    */
   private updateRelevance(artifactId: string, score: number): void {
-    const existing = this.relevanceMap.get(artifactId);
+    const existing = this.relevanceMap.get(artifactId)
     if (existing) {
-      existing.relevance_score = score;
-      existing.last_accessed = new Date();
-      existing.access_count++;
+      existing.relevance_score = score
+      existing.last_accessed = new Date()
+      existing.access_count++
     } else {
       this.relevanceMap.set(artifactId, {
         artifact_id: artifactId,
         relevance_score: score,
         last_accessed: new Date(),
         access_count: 1,
-        related_to_current_task: true
-      });
+        related_to_current_task: true,
+      })
     }
   }
 
@@ -297,51 +295,49 @@ export class ServiceNowProgressiveIndexer {
     // Simple tasks need less indexing
     if (concepts.length <= 2) {
       return {
-        mode: 'lazy',
+        mode: "lazy",
         maxInitialArtifacts: 5,
         relevanceThreshold: 0.8,
-        contextWindow: 10
-      };
+        contextWindow: 10,
+      }
     }
 
     // Complex tasks need more context
     if (concepts.length > 5) {
       return {
-        mode: 'eager',
+        mode: "eager",
         maxInitialArtifacts: 20,
         relevanceThreshold: 0.5,
-        contextWindow: 50
-      };
+        contextWindow: 50,
+      }
     }
 
     // Default progressive strategy
     return {
-      mode: 'progressive',
+      mode: "progressive",
       maxInitialArtifacts: 10,
       relevanceThreshold: 0.7,
-      contextWindow: 25
-    };
+      contextWindow: 25,
+    }
   }
 
   /**
    * Clean up old irrelevant artifacts
    */
   async cleanupIrrelevantArtifacts(): Promise<number> {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    let cleaned = 0;
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    let cleaned = 0
 
     for (const [id, relevance] of this.relevanceMap.entries()) {
-      if (relevance.last_accessed < thirtyDaysAgo && 
-          relevance.access_count < 2 &&
-          relevance.relevance_score < 0.5) {
-        this.relevanceMap.delete(id);
-        this.indexedArtifacts.delete(id);
-        cleaned++;
+      if (relevance.last_accessed < thirtyDaysAgo && relevance.access_count < 2 && relevance.relevance_score < 0.5) {
+        this.relevanceMap.delete(id)
+        this.indexedArtifacts.delete(id)
+        cleaned++
       }
     }
 
-    this.logger.info(`Cleaned up ${cleaned} irrelevant artifacts`);
-    return cleaned;
+    this.logger.info(`Cleaned up ${cleaned} irrelevant artifacts`)
+    return cleaned
   }
 
   /**
@@ -355,16 +351,16 @@ export class ServiceNowProgressiveIndexer {
       relevance_distribution: {
         high: 0,
         medium: 0,
-        low: 0
-      }
-    };
-
-    for (const relevance of this.relevanceMap.values()) {
-      if (relevance.relevance_score > 0.8) stats.relevance_distribution.high++;
-      else if (relevance.relevance_score > 0.5) stats.relevance_distribution.medium++;
-      else stats.relevance_distribution.low++;
+        low: 0,
+      },
     }
 
-    return stats;
+    for (const relevance of this.relevanceMap.values()) {
+      if (relevance.relevance_score > 0.8) stats.relevance_distribution.high++
+      else if (relevance.relevance_score > 0.5) stats.relevance_distribution.medium++
+      else stats.relevance_distribution.low++
+    }
+
+    return stats
   }
 }

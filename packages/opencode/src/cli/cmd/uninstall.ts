@@ -270,7 +270,12 @@ async function getShellConfigFile(): Promise<string | null> {
     const content = await Bun.file(file)
       .text()
       .catch(() => "")
-    if (content.includes("# opencode") || content.includes("# snow-code") || content.includes(".opencode/bin") || content.includes(".snow-code/bin")) {
+    if (
+      content.includes("# opencode") ||
+      content.includes("# snow-code") ||
+      content.includes(".opencode/bin") ||
+      content.includes(".snow-code/bin")
+    ) {
       return file
     }
   }
@@ -295,13 +300,18 @@ async function cleanShellConfig(file: string) {
 
     if (skip) {
       skip = false
-      if (trimmed.includes(".opencode/bin") || trimmed.includes(".snow-code/bin") || trimmed.includes("fish_add_path")) {
+      if (
+        trimmed.includes(".opencode/bin") ||
+        trimmed.includes(".snow-code/bin") ||
+        trimmed.includes("fish_add_path")
+      ) {
         continue
       }
     }
 
     if (
-      (trimmed.startsWith("export PATH=") && (trimmed.includes(".opencode/bin") || trimmed.includes(".snow-code/bin"))) ||
+      (trimmed.startsWith("export PATH=") &&
+        (trimmed.includes(".opencode/bin") || trimmed.includes(".snow-code/bin"))) ||
       (trimmed.startsWith("fish_add_path") && (trimmed.includes(".opencode") || trimmed.includes(".snow-code")))
     ) {
       continue

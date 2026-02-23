@@ -8,22 +8,22 @@
  * @module timer-registry
  */
 
-import { Logger } from './logger.js';
+import { Logger } from "./logger.js"
 
 /**
  * Shutdown handler function type
  */
-type ShutdownHandler = () => Promise<void> | void;
+type ShutdownHandler = () => Promise<void> | void
 
 /**
  * Timer info for tracking
  */
 interface TimerInfo {
-  id: string;
-  type: 'interval' | 'timeout';
-  timer: NodeJS.Timeout;
-  createdAt: number;
-  callback: string; // Function name for debugging
+  id: string
+  type: "interval" | "timeout"
+  timer: NodeJS.Timeout
+  createdAt: number
+  callback: string // Function name for debugging
 }
 
 /**
@@ -36,17 +36,17 @@ interface TimerInfo {
  * - Statistics and monitoring
  */
 export class TimerRegistry {
-  private static instance: TimerRegistry;
-  private intervals: Map<string, TimerInfo> = new Map();
-  private timeouts: Map<string, TimerInfo> = new Map();
-  private shutdownHandlers: ShutdownHandler[] = [];
-  private logger: Logger;
-  private isShuttingDown = false;
-  private shutdownHandlersRegistered = false;
+  private static instance: TimerRegistry
+  private intervals: Map<string, TimerInfo> = new Map()
+  private timeouts: Map<string, TimerInfo> = new Map()
+  private shutdownHandlers: ShutdownHandler[] = []
+  private logger: Logger
+  private isShuttingDown = false
+  private shutdownHandlersRegistered = false
 
   private constructor() {
-    this.logger = new Logger('TimerRegistry');
-    this.registerGlobalShutdownHandlers();
+    this.logger = new Logger("TimerRegistry")
+    this.registerGlobalShutdownHandlers()
   }
 
   /**
@@ -54,30 +54,30 @@ export class TimerRegistry {
    */
   static getInstance(): TimerRegistry {
     if (!TimerRegistry.instance) {
-      TimerRegistry.instance = new TimerRegistry();
+      TimerRegistry.instance = new TimerRegistry()
     }
-    return TimerRegistry.instance;
+    return TimerRegistry.instance
   }
 
   /**
    * Register global shutdown handlers (only once)
    */
   private registerGlobalShutdownHandlers(): void {
-    if (this.shutdownHandlersRegistered) return;
+    if (this.shutdownHandlersRegistered) return
 
     const shutdownHandler = async (signal: string) => {
-      if (this.isShuttingDown) return;
-      this.isShuttingDown = true;
+      if (this.isShuttingDown) return
+      this.isShuttingDown = true
 
-      await this.cleanup();
-    };
+      await this.cleanup()
+    }
 
     // Use once() to avoid listener accumulation
-    process.once('beforeExit', () => shutdownHandler('beforeExit'));
-    process.once('SIGTERM', () => shutdownHandler('SIGTERM'));
-    process.once('SIGINT', () => shutdownHandler('SIGINT'));
+    process.once("beforeExit", () => shutdownHandler("beforeExit"))
+    process.once("SIGTERM", () => shutdownHandler("SIGTERM"))
+    process.once("SIGINT", () => shutdownHandler("SIGINT"))
 
-    this.shutdownHandlersRegistered = true;
+    this.shutdownHandlersRegistered = true
   }
 
   /**
@@ -89,38 +89,33 @@ export class TimerRegistry {
    * @param unref If true, don't keep the process alive for this timer (default: true)
    * @returns The NodeJS.Timeout object
    */
-  registerInterval(
-    id: string,
-    callback: () => void | Promise<void>,
-    ms: number,
-    unref = true
-  ): NodeJS.Timeout {
+  registerInterval(id: string, callback: () => void | Promise<void>, ms: number, unref = true): NodeJS.Timeout {
     // Clear existing interval with same id
-    this.clearInterval(id);
+    this.clearInterval(id)
 
     const wrappedCallback = async () => {
       try {
-        await callback();
+        await callback()
       } catch (error) {
-        this.logger.error(`Interval ${id} error:`, error);
+        this.logger.error(`Interval ${id} error:`, error)
       }
-    };
+    }
 
-    const timer = setInterval(wrappedCallback, ms);
-    if (unref) timer.unref();
+    const timer = setInterval(wrappedCallback, ms)
+    if (unref) timer.unref()
 
     const info: TimerInfo = {
       id,
-      type: 'interval',
+      type: "interval",
       timer,
       createdAt: Date.now(),
-      callback: callback.name || 'anonymous'
-    };
+      callback: callback.name || "anonymous",
+    }
 
-    this.intervals.set(id, info);
-    this.logger.debug(`Registered interval: ${id} (${ms}ms)`);
+    this.intervals.set(id, info)
+    this.logger.debug(`Registered interval: ${id} (${ms}ms)`)
 
-    return timer;
+    return timer
   }
 
   /**
@@ -131,37 +126,33 @@ export class TimerRegistry {
    * @param ms Delay in milliseconds
    * @returns The NodeJS.Timeout object
    */
-  registerTimeout(
-    id: string,
-    callback: () => void | Promise<void>,
-    ms: number
-  ): NodeJS.Timeout {
+  registerTimeout(id: string, callback: () => void | Promise<void>, ms: number): NodeJS.Timeout {
     // Clear existing timeout with same id
-    this.clearTimeout(id);
+    this.clearTimeout(id)
 
     const wrappedCallback = async () => {
-      this.timeouts.delete(id);
+      this.timeouts.delete(id)
       try {
-        await callback();
+        await callback()
       } catch (error) {
-        this.logger.error(`Timeout ${id} error:`, error);
+        this.logger.error(`Timeout ${id} error:`, error)
       }
-    };
+    }
 
-    const timer = setTimeout(wrappedCallback, ms);
+    const timer = setTimeout(wrappedCallback, ms)
 
     const info: TimerInfo = {
       id,
-      type: 'timeout',
+      type: "timeout",
       timer,
       createdAt: Date.now(),
-      callback: callback.name || 'anonymous'
-    };
+      callback: callback.name || "anonymous",
+    }
 
-    this.timeouts.set(id, info);
-    this.logger.debug(`Registered timeout: ${id} (${ms}ms)`);
+    this.timeouts.set(id, info)
+    this.logger.debug(`Registered timeout: ${id} (${ms}ms)`)
 
-    return timer;
+    return timer
   }
 
   /**
@@ -169,11 +160,11 @@ export class TimerRegistry {
    * @param id The interval identifier
    */
   clearInterval(id: string): void {
-    const info = this.intervals.get(id);
+    const info = this.intervals.get(id)
     if (info) {
-      clearInterval(info.timer);
-      this.intervals.delete(id);
-      this.logger.debug(`Cleared interval: ${id}`);
+      clearInterval(info.timer)
+      this.intervals.delete(id)
+      this.logger.debug(`Cleared interval: ${id}`)
     }
   }
 
@@ -182,11 +173,11 @@ export class TimerRegistry {
    * @param id The timeout identifier
    */
   clearTimeout(id: string): void {
-    const info = this.timeouts.get(id);
+    const info = this.timeouts.get(id)
     if (info) {
-      clearTimeout(info.timer);
-      this.timeouts.delete(id);
-      this.logger.debug(`Cleared timeout: ${id}`);
+      clearTimeout(info.timer)
+      this.timeouts.delete(id)
+      this.logger.debug(`Cleared timeout: ${id}`)
     }
   }
 
@@ -195,7 +186,7 @@ export class TimerRegistry {
    * @param id The interval identifier
    */
   hasInterval(id: string): boolean {
-    return this.intervals.has(id);
+    return this.intervals.has(id)
   }
 
   /**
@@ -203,7 +194,7 @@ export class TimerRegistry {
    * @param id The timeout identifier
    */
   hasTimeout(id: string): boolean {
-    return this.timeouts.has(id);
+    return this.timeouts.has(id)
   }
 
   /**
@@ -213,8 +204,8 @@ export class TimerRegistry {
    * @param handler Async function to call during shutdown
    */
   registerShutdownHandler(handler: ShutdownHandler): void {
-    this.shutdownHandlers.push(handler);
-    this.logger.debug(`Registered shutdown handler (total: ${this.shutdownHandlers.length})`);
+    this.shutdownHandlers.push(handler)
+    this.logger.debug(`Registered shutdown handler (total: ${this.shutdownHandlers.length})`)
   }
 
   /**
@@ -222,10 +213,10 @@ export class TimerRegistry {
    * @param handler The handler to remove
    */
   removeShutdownHandler(handler: ShutdownHandler): void {
-    const idx = this.shutdownHandlers.indexOf(handler);
+    const idx = this.shutdownHandlers.indexOf(handler)
     if (idx > -1) {
-      this.shutdownHandlers.splice(idx, 1);
-      this.logger.debug(`Removed shutdown handler (total: ${this.shutdownHandlers.length})`);
+      this.shutdownHandlers.splice(idx, 1)
+      this.logger.debug(`Removed shutdown handler (total: ${this.shutdownHandlers.length})`)
     }
   }
 
@@ -234,29 +225,29 @@ export class TimerRegistry {
    */
   async cleanup(): Promise<void> {
     // Clear all intervals
-    const intervalCount = this.intervals.size;
+    const intervalCount = this.intervals.size
     this.intervals.forEach((info) => {
-      clearInterval(info.timer);
-    });
-    this.intervals.clear();
+      clearInterval(info.timer)
+    })
+    this.intervals.clear()
 
     // Clear all timeouts
-    const timeoutCount = this.timeouts.size;
+    const timeoutCount = this.timeouts.size
     this.timeouts.forEach((info) => {
-      clearTimeout(info.timer);
-    });
-    this.timeouts.clear();
+      clearTimeout(info.timer)
+    })
+    this.timeouts.clear()
 
     // Run shutdown handlers in reverse order (LIFO)
-    const handlerCount = this.shutdownHandlers.length;
-    const handlers = [...this.shutdownHandlers].reverse();
-    this.shutdownHandlers = [];
+    const handlerCount = this.shutdownHandlers.length
+    const handlers = [...this.shutdownHandlers].reverse()
+    this.shutdownHandlers = []
 
     for (const handler of handlers) {
       try {
-        await handler();
+        await handler()
       } catch (error) {
-        this.logger.error('Shutdown handler error:', error);
+        this.logger.error("Shutdown handler error:", error)
       }
     }
   }
@@ -265,44 +256,44 @@ export class TimerRegistry {
    * Get statistics about registered timers
    */
   getStats(): {
-    intervals: number;
-    timeouts: number;
-    shutdownHandlers: number;
-    intervalIds: string[];
-    timeoutIds: string[];
+    intervals: number
+    timeouts: number
+    shutdownHandlers: number
+    intervalIds: string[]
+    timeoutIds: string[]
   } {
     return {
       intervals: this.intervals.size,
       timeouts: this.timeouts.size,
       shutdownHandlers: this.shutdownHandlers.length,
       intervalIds: Array.from(this.intervals.keys()),
-      timeoutIds: Array.from(this.timeouts.keys())
-    };
+      timeoutIds: Array.from(this.timeouts.keys()),
+    }
   }
 
   /**
    * Get detailed information about all timers
    */
   getDetailedStats(): {
-    intervals: Array<{ id: string; ageMs: number; callback: string }>;
-    timeouts: Array<{ id: string; ageMs: number; callback: string }>;
-    shutdownHandlerCount: number;
+    intervals: Array<{ id: string; ageMs: number; callback: string }>
+    timeouts: Array<{ id: string; ageMs: number; callback: string }>
+    shutdownHandlerCount: number
   } {
-    const now = Date.now();
+    const now = Date.now()
 
     return {
-      intervals: Array.from(this.intervals.values()).map(info => ({
+      intervals: Array.from(this.intervals.values()).map((info) => ({
         id: info.id,
         ageMs: now - info.createdAt,
-        callback: info.callback
+        callback: info.callback,
       })),
-      timeouts: Array.from(this.timeouts.values()).map(info => ({
+      timeouts: Array.from(this.timeouts.values()).map((info) => ({
         id: info.id,
         ageMs: now - info.createdAt,
-        callback: info.callback
+        callback: info.callback,
       })),
-      shutdownHandlerCount: this.shutdownHandlers.length
-    };
+      shutdownHandlerCount: this.shutdownHandlers.length,
+    }
   }
 
   /**
@@ -312,39 +303,39 @@ export class TimerRegistry {
    * @param prefix The prefix to match (e.g., 'mcp-' clears 'mcp-auth', 'mcp-metrics', etc.)
    */
   clearByPrefix(prefix: string): { intervals: number; timeouts: number } {
-    let intervalCount = 0;
-    let timeoutCount = 0;
+    let intervalCount = 0
+    let timeoutCount = 0
 
     // Collect keys to clear (can't modify while iterating)
-    const intervalsToClear: string[] = [];
-    const timeoutsToClear: string[] = [];
+    const intervalsToClear: string[] = []
+    const timeoutsToClear: string[] = []
 
     this.intervals.forEach((_, id) => {
       if (id.startsWith(prefix)) {
-        intervalsToClear.push(id);
+        intervalsToClear.push(id)
       }
-    });
+    })
 
     this.timeouts.forEach((_, id) => {
       if (id.startsWith(prefix)) {
-        timeoutsToClear.push(id);
+        timeoutsToClear.push(id)
       }
-    });
+    })
 
     // Clear collected timers
-    intervalsToClear.forEach(id => {
-      this.clearInterval(id);
-      intervalCount++;
-    });
+    intervalsToClear.forEach((id) => {
+      this.clearInterval(id)
+      intervalCount++
+    })
 
-    timeoutsToClear.forEach(id => {
-      this.clearTimeout(id);
-      timeoutCount++;
-    });
+    timeoutsToClear.forEach((id) => {
+      this.clearTimeout(id)
+      timeoutCount++
+    })
 
-    this.logger.debug(`Cleared by prefix '${prefix}': ${intervalCount} intervals, ${timeoutCount} timeouts`);
+    this.logger.debug(`Cleared by prefix '${prefix}': ${intervalCount} intervals, ${timeoutCount} timeouts`)
 
-    return { intervals: intervalCount, timeouts: timeoutCount };
+    return { intervals: intervalCount, timeouts: timeoutCount }
   }
 }
 
@@ -352,4 +343,4 @@ export class TimerRegistry {
  * Singleton instance of TimerRegistry
  * Use this for all timer management in snow-flow
  */
-export const timerRegistry = TimerRegistry.getInstance();
+export const timerRegistry = TimerRegistry.getInstance()

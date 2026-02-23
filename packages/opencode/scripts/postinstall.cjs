@@ -1,49 +1,49 @@
 #!/usr/bin/env node
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { execSync } = require('child_process');
+const https = require("https")
+const fs = require("fs")
+const path = require("path")
+const os = require("os")
+const { execSync } = require("child_process")
 
-const pkg = require('../package.json');
-const VERSION = pkg.version;
-const REPO = 'groeimetai/snow-flow';
+const pkg = require("../package.json")
+const VERSION = pkg.version
+const REPO = "groeimetai/snow-flow"
 
-const platformMap = { darwin: 'darwin', linux: 'linux', win32: 'windows' };
-const archMap = { x64: 'x64', arm64: 'arm64' };
+const platformMap = { darwin: "darwin", linux: "linux", win32: "windows" }
+const archMap = { x64: "x64", arm64: "arm64" }
 
-const platform = platformMap[os.platform()] || os.platform();
-const arch = archMap[os.arch()] || os.arch();
-const tarballName = 'snow-flow-' + platform + '-' + arch + '.tar.gz';
+const platform = platformMap[os.platform()] || os.platform()
+const arch = archMap[os.arch()] || os.arch()
+const tarballName = "snow-flow-" + platform + "-" + arch + ".tar.gz"
 
-const pkgDir = path.join(__dirname, '..');
-const binaryName = platform === 'windows' ? 'snow-code.exe' : 'snow-code';
-const binaryPath = path.join(pkgDir, 'bin', binaryName);
+const pkgDir = path.join(__dirname, "..")
+const binaryName = platform === "windows" ? "snow-code.exe" : "snow-code"
+const binaryPath = path.join(pkgDir, "bin", binaryName)
 
 // Verify the binary matches the current platform by checking magic bytes
 function binaryMatchesPlatform(filePath) {
   try {
-    var fd = fs.openSync(filePath, 'r');
-    var buf = Buffer.alloc(4);
-    fs.readSync(fd, buf, 0, 4, 0);
-    fs.closeSync(fd);
-    var magic = buf.toString('hex');
+    var fd = fs.openSync(filePath, "r")
+    var buf = Buffer.alloc(4)
+    fs.readSync(fd, buf, 0, 4, 0)
+    fs.closeSync(fd)
+    var magic = buf.toString("hex")
 
-    if (platform === 'darwin') {
+    if (platform === "darwin") {
       // Mach-O: cffaedfe (64-bit LE), feedfacf (64-bit BE), cafebabe (universal/fat)
-      return magic === 'cffaedfe' || magic === 'feedfacf' || magic === 'cafebabe';
+      return magic === "cffaedfe" || magic === "feedfacf" || magic === "cafebabe"
     }
-    if (platform === 'linux') {
+    if (platform === "linux") {
       // ELF: 7f454c46
-      return magic === '7f454c46';
+      return magic === "7f454c46"
     }
-    if (platform === 'windows') {
+    if (platform === "windows") {
       // PE/MZ: 4d5a
-      return magic.startsWith('4d5a');
+      return magic.startsWith("4d5a")
     }
-    return false;
+    return false
   } catch (e) {
-    return false;
+    return false
   }
 }
 
@@ -51,52 +51,54 @@ function binaryMatchesPlatform(filePath) {
 // Launcher scripts are small (~2KB), actual binaries are 20MB+
 // Also verify the binary is for the current platform (not a leftover from CI)
 if (fs.existsSync(binaryPath)) {
-  var stats = fs.statSync(binaryPath);
+  var stats = fs.statSync(binaryPath)
   if (stats.size > 100000 && binaryMatchesPlatform(binaryPath)) {
-    console.log('snow-code: Binary already exists');
-    process.exit(0);
+    console.log("snow-code: Binary already exists")
+    process.exit(0)
   }
   if (stats.size > 100000) {
-    console.log('snow-code: Binary exists but is for wrong platform, re-downloading...');
+    console.log("snow-code: Binary exists but is for wrong platform, re-downloading...")
   }
 }
 
-const releaseUrl = 'https://github.com/' + REPO + '/releases/download/v' + VERSION + '/' + tarballName;
-console.log('snow-code: Downloading binary for ' + platform + '-' + arch + '...');
+const releaseUrl = "https://github.com/" + REPO + "/releases/download/v" + VERSION + "/" + tarballName
+console.log("snow-code: Downloading binary for " + platform + "-" + arch + "...")
 
 function followRedirects(url, callback) {
-  https.get(url, { headers: { 'User-Agent': 'snow-code' } }, function(res) {
+  https.get(url, { headers: { "User-Agent": "snow-code" } }, function (res) {
     if (res.statusCode === 302 || res.statusCode === 301) {
-      followRedirects(res.headers.location, callback);
+      followRedirects(res.headers.location, callback)
     } else {
-      callback(res);
+      callback(res)
     }
-  });
+  })
 }
 
-var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snow-flow-'));
-var tarPath = path.join(tmpDir, tarballName);
-var file = fs.createWriteStream(tarPath);
+var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "snow-flow-"))
+var tarPath = path.join(tmpDir, tarballName)
+var file = fs.createWriteStream(tarPath)
 
-followRedirects(releaseUrl, function(res) {
+followRedirects(releaseUrl, function (res) {
   if (res.statusCode !== 200) {
-    console.warn('snow-code: Could not download binary (HTTP ' + res.statusCode + ')');
-    console.warn('snow-code: Download manually from: https://github.com/' + REPO + '/releases');
-    process.exit(0);
+    console.warn("snow-code: Could not download binary (HTTP " + res.statusCode + ")")
+    console.warn("snow-code: Download manually from: https://github.com/" + REPO + "/releases")
+    process.exit(0)
   }
 
-  res.pipe(file);
-  file.on('finish', function() {
-    file.close();
+  res.pipe(file)
+  file.on("finish", function () {
+    file.close()
     try {
-      execSync('tar -xzf "' + tarPath + '" -C "' + pkgDir + '"', { stdio: 'pipe' });
-      if (platform !== 'windows' && fs.existsSync(binaryPath)) {
-        fs.chmodSync(binaryPath, 493);
+      execSync('tar -xzf "' + tarPath + '" -C "' + pkgDir + '"', { stdio: "pipe" })
+      if (platform !== "windows" && fs.existsSync(binaryPath)) {
+        fs.chmodSync(binaryPath, 493)
       }
-      console.log('snow-code: Binary installed successfully!');
+      console.log("snow-code: Binary installed successfully!")
     } catch (e) {
-      console.warn('snow-code: Could not extract binary');
+      console.warn("snow-code: Could not extract binary")
     }
-    try { fs.rmSync(tmpDir, { recursive: true }); } catch (e) {}
-  });
-});
+    try {
+      fs.rmSync(tmpDir, { recursive: true })
+    } catch (e) {}
+  })
+})

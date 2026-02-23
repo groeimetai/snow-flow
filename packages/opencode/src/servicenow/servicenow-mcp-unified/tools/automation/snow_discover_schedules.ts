@@ -4,58 +4,58 @@
  * Discovers schedules (business hours, maintenance windows) in the instance.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from '../../shared/types.js';
-import { getAuthenticatedClient } from '../../shared/auth.js';
-import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from '../../shared/error-handler.js';
+import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import { getAuthenticatedClient } from "../../shared/auth.js"
+import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: 'snow_discover_schedules',
-  description: 'Discovers schedules (business hours, maintenance windows) in the instance.',
+  name: "snow_discover_schedules",
+  description: "Discovers schedules (business hours, maintenance windows) in the instance.",
   // Metadata for tool discovery (not sent to LLM)
-  category: 'automation',
-  subcategory: 'discovery',
-  use_cases: ['automation', 'schedules', 'discovery'],
-  complexity: 'beginner',
-  frequency: 'low',
+  category: "automation",
+  subcategory: "discovery",
+  use_cases: ["automation", "schedules", "discovery"],
+  complexity: "beginner",
+  frequency: "low",
 
   // Permission enforcement
   // Classification: READ - Discovery operation - reads metadata
-  permission: 'read',
-  allowedRoles: ['developer', 'stakeholder', 'admin'],
+  permission: "read",
+  allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
-    type: 'object',
+    type: "object",
     properties: {
-      nameContains: { type: 'string', description: 'Search by schedule name pattern' },
-      type: { type: 'string', description: 'Filter by schedule type' },
-      limit: { type: 'number', description: 'Maximum number of schedules to return', default: 50 }
-    }
-  }
-};
+      nameContains: { type: "string", description: "Search by schedule name pattern" },
+      type: { type: "string", description: "Filter by schedule type" },
+      limit: { type: "number", description: "Maximum number of schedules to return", default: 50 },
+    },
+  },
+}
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { nameContains, type, limit = 50 } = args;
+  const { nameContains, type, limit = 50 } = args
 
   try {
-    const client = await getAuthenticatedClient(context);
+    const client = await getAuthenticatedClient(context)
 
     // Build query
-    const queryParts: string[] = [];
+    const queryParts: string[] = []
 
     if (type) {
-      queryParts.push(`type=${type}`);
+      queryParts.push(`type=${type}`)
     }
 
     if (nameContains) {
-      queryParts.push(`nameLIKE${nameContains}`);
+      queryParts.push(`nameLIKE${nameContains}`)
     }
 
-    const query = queryParts.join('^');
+    const query = queryParts.join("^")
 
     const response = await client.get(
-      `/api/now/table/cmn_schedule?sysparm_query=${query}&sysparm_limit=${limit}&sysparm_display_value=true`
-    );
+      `/api/now/table/cmn_schedule?sysparm_query=${query}&sysparm_limit=${limit}&sysparm_display_value=true`,
+    )
 
-    const schedules = response.data.result;
+    const schedules = response.data.result
 
     const formattedSchedules = schedules.map((schedule: any) => ({
       sys_id: schedule.sys_id,
@@ -65,23 +65,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       time_zone: schedule.time_zone,
       parent_schedule: schedule.parent?.display_value || null,
       created_on: schedule.sys_created_on,
-      updated_on: schedule.sys_updated_on
-    }));
+      updated_on: schedule.sys_updated_on,
+    }))
 
     return createSuccessResult({
       found: true,
       count: formattedSchedules.length,
-      schedules: formattedSchedules
-    });
-
+      schedules: formattedSchedules,
+    })
   } catch (error: any) {
     return createErrorResult(
       error instanceof SnowFlowError
         ? error
-        : new SnowFlowError(ErrorType.UNKNOWN_ERROR, error.message, { originalError: error })
-    );
+        : new SnowFlowError(ErrorType.UNKNOWN_ERROR, error.message, { originalError: error }),
+    )
   }
 }
 
-export const version = '1.0.0';
-export const author = 'Snow-Flow SDK Migration';
+export const version = "1.0.0"
+export const author = "Snow-Flow SDK Migration"

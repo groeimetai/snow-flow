@@ -255,11 +255,10 @@ export namespace MCP {
             ],
           }
 
-        return cached.client.callTool(
-          { name: toolName, arguments: args },
-          CallToolResultSchema,
-          { resetTimeoutOnProgress: true, timeout },
-        )
+        return cached.client.callTool({ name: toolName, arguments: args }, CallToolResultSchema, {
+          resetTimeoutOnProgress: true,
+          timeout,
+        })
       },
     })
   }

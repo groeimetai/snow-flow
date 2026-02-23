@@ -55,8 +55,8 @@ Or pre-configure in `snow-flow.jsonc`:
 {
   "$schema": "https://snow-flow.dev/config.json",
   "provider": {
-    "anthropic": {}
-  }
+    "anthropic": {},
+  },
 }
 ```
 
@@ -164,20 +164,20 @@ Connect to your ServiceNow instance and access **200+ tools**:
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "...",
-        "SERVICENOW_CLIENT_SECRET": "..."
-      }
-    }
-  }
+        "SERVICENOW_CLIENT_SECRET": "...",
+      },
+    },
+  },
 }
 ```
 
 ## Agents
 
-| Agent | Description |
-|:------|:------------|
-| **build** | Full access agent for development work |
-| **plan** | Read-only agent for analysis — denies edits, asks before bash |
-| **general** | Subagent for complex multi-step tasks (`@general`) |
+| Agent       | Description                                                   |
+| :---------- | :------------------------------------------------------------ |
+| **build**   | Full access agent for development work                        |
+| **plan**    | Read-only agent for analysis — denies edits, asks before bash |
+| **general** | Subagent for complex multi-step tasks (`@general`)            |
 
 ## CLI
 
@@ -197,13 +197,13 @@ snow-flow pr                     # Pull request automation
 
 Config is loaded from (in priority order):
 
-| Priority | Source |
-|:---------|:-------|
-| 1 | Remote/well-known organization configs |
-| 2 | Global config (`~/.snow-flow/`) |
-| 3 | `SNOW_FLOW_CONFIG` env variable |
-| 4 | Project config (`snow-flow.jsonc`) |
-| 5 | `SNOW_FLOW_CONFIG_CONTENT` inline |
+| Priority | Source                                 |
+| :------- | :------------------------------------- |
+| 1        | Remote/well-known organization configs |
+| 2        | Global config (`~/.snow-flow/`)        |
+| 3        | `SNOW_FLOW_CONFIG` env variable        |
+| 4        | Project config (`snow-flow.jsonc`)     |
+| 5        | `SNOW_FLOW_CONFIG_CONTENT` inline      |
 
 <details>
 <summary><b>MCP servers</b></summary>
@@ -213,8 +213,8 @@ Config is loaded from (in priority order):
 {
   "mcp": {
     "my-server": { "type": "local", "command": ["node", "./server.js"] },
-    "remote":    { "type": "remote", "url": "https://example.com/mcp" }
-  }
+    "remote": { "type": "remote", "url": "https://example.com/mcp" },
+  },
 }
 ```
 
@@ -228,7 +228,7 @@ Supports stdio, SSE, and streamable HTTP with OAuth.
 
 ```jsonc
 {
-  "plugin": ["my-snow-flow-plugin", "file://./local-plugin"]
+  "plugin": ["my-snow-flow-plugin", "file://./local-plugin"],
 }
 ```
 
@@ -244,8 +244,8 @@ Supports stdio, SSE, and streamable HTTP with OAuth.
     "bash": "ask",
     "write": "allow",
     "read": "allow",
-    "external_directory": "deny"
-  }
+    "external_directory": "deny",
+  },
 }
 ```
 

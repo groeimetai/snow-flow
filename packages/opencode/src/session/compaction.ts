@@ -38,7 +38,7 @@ export namespace SessionCompaction {
     return count > usable
   }
 
-  export const NEAR_OVERFLOW_RATIO = 0.80
+  export const NEAR_OVERFLOW_RATIO = 0.8
 
   export async function isNearOverflow(input: { tokens: MessageV2.Assistant["tokens"]; model: Provider.Model }) {
     const config = await Config.get()
@@ -61,8 +61,8 @@ export namespace SessionCompaction {
     if (!contextSize || contextSize === 0) {
       return { minimum: PRUNE_MINIMUM, protect: PRUNE_PROTECT }
     }
-    const protect = Math.max(Math.min(Math.round(contextSize * 0.20), PRUNE_PROTECT), 5_000)
-    const minimum = Math.max(Math.min(Math.round(contextSize * 0.10), PRUNE_MINIMUM), 2_500)
+    const protect = Math.max(Math.min(Math.round(contextSize * 0.2), PRUNE_PROTECT), 5_000)
+    const minimum = Math.max(Math.min(Math.round(contextSize * 0.1), PRUNE_MINIMUM), 2_500)
     return { minimum, protect }
   }
 

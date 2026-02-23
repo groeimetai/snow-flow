@@ -51,12 +51,12 @@ SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) modes pr
 
 ### Available Modes
 
-| Mode | Command | Purpose |
-|------|---------|---------|
-| **Orchestrator** | `sparc` | Multi-agent coordination |
-| **Coder** | `sparc run coder` | Direct implementation |
-| **Researcher** | `sparc run researcher` | Investigation and analysis |
-| **TDD** | `sparc tdd` | Test-driven development |
+| Mode             | Command                | Purpose                    |
+| ---------------- | ---------------------- | -------------------------- |
+| **Orchestrator** | `sparc`                | Multi-agent coordination   |
+| **Coder**        | `sparc run coder`      | Direct implementation      |
+| **Researcher**   | `sparc run researcher` | Investigation and analysis |
+| **TDD**          | `sparc tdd`            | Test-driven development    |
 
 ### Usage
 
@@ -91,12 +91,12 @@ snow-flow agent status <agent-id>
 
 ### Agent Types
 
-| Type | Purpose |
-|------|---------|
-| `developer` | ServiceNow artifact creation |
-| `researcher` | Investigation and analysis |
-| `reviewer` | Code review and validation |
-| `tester` | Testing and QA |
+| Type         | Purpose                      |
+| ------------ | ---------------------------- |
+| `developer`  | ServiceNow artifact creation |
+| `researcher` | Investigation and analysis   |
+| `reviewer`   | Code review and validation   |
+| `tester`     | Testing and QA               |
 
 ## Swarm Coordination
 
@@ -115,11 +115,11 @@ snow-flow swarm "objective" --monitor
 
 ### Swarm Strategies
 
-| Strategy | Description |
-|----------|-------------|
-| `parallel` | Agents work simultaneously |
-| `sequential` | Agents work in order |
-| `adaptive` | Dynamic coordination |
+| Strategy     | Description                |
+| ------------ | -------------------------- |
+| `parallel`   | Agents work simultaneously |
+| `sequential` | Agents work in order       |
+| `adaptive`   | Dynamic coordination       |
 
 ## Task Management
 
@@ -192,12 +192,12 @@ snow-flow auth logout
 
 ## Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `SNOWCODE_MODEL` | Default AI model |
-| `SNOWCODE_DEBUG_TOKENS` | Enable token debugging |
-| `SNOWCODE_LOG_LEVEL` | Logging verbosity |
-| `SERVICENOW_INSTANCE` | ServiceNow instance URL |
+| Variable                | Purpose                 |
+| ----------------------- | ----------------------- |
+| `SNOWCODE_MODEL`        | Default AI model        |
+| `SNOWCODE_DEBUG_TOKENS` | Enable token debugging  |
+| `SNOWCODE_LOG_LEVEL`    | Logging verbosity       |
+| `SERVICENOW_INSTANCE`   | ServiceNow instance URL |
 
 ## Common Workflows
 
@@ -236,15 +236,15 @@ snow-flow monitor
 
 Inside the interactive TUI:
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+C` | Cancel current operation |
-| `Ctrl+D` | Exit |
-| `Tab` | Autocomplete |
-| `Up/Down` | Navigate history |
-| `/help` | Show help |
-| `/clear` | Clear screen |
-| `/debug` | Toggle debug mode |
+| Key       | Action                   |
+| --------- | ------------------------ |
+| `Ctrl+C`  | Cancel current operation |
+| `Ctrl+D`  | Exit                     |
+| `Tab`     | Autocomplete             |
+| `Up/Down` | Navigate history         |
+| `/help`   | Show help                |
+| `/clear`  | Clear screen             |
+| `/debug`  | Toggle debug mode        |
 
 ## Best Practices
 

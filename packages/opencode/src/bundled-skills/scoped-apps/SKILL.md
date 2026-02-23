@@ -20,17 +20,18 @@ Scoped applications provide isolation and portability for custom development in 
 
 ## Why Use Scoped Apps?
 
-| Feature | Global Scope | Scoped App |
-|---------|--------------|------------|
-| Naming conflicts | Possible | Prevented (x_prefix) |
-| Portability | Difficult | Easy (Update Sets) |
-| Security | Open | Controlled (Cross-scope) |
-| Store publishing | No | Yes |
-| Dependencies | Implicit | Explicit |
+| Feature          | Global Scope | Scoped App               |
+| ---------------- | ------------ | ------------------------ |
+| Naming conflicts | Possible     | Prevented (x_prefix)     |
+| Portability      | Difficult    | Easy (Update Sets)       |
+| Security         | Open         | Controlled (Cross-scope) |
+| Store publishing | No           | Yes                      |
+| Dependencies     | Implicit     | Explicit                 |
 
 ## Creating a Scoped Application
 
 ### Via Studio (Recommended)
+
 ```
 1. Navigate: System Applications > Studio
 2. Click: Create Application
@@ -43,13 +44,14 @@ Scoped applications provide isolation and portability for custom development in 
 ```
 
 ### Via MCP
+
 ```javascript
 snow_create_application({
   name: "My Custom Application",
   scope: "x_mycom_custom",
   version: "1.0.0",
-  description: "Custom application for..."
-});
+  description: "Custom application for...",
+})
 ```
 
 ## Scope Naming Convention
@@ -71,83 +73,83 @@ Examples:
 // Actual table name: "x_mycom_myapp_task_tracker"
 
 // Creating records
-var gr = new GlideRecord('x_mycom_myapp_task_tracker');
-gr.initialize();
-gr.setValue('name', 'My Task');
-gr.insert();
+var gr = new GlideRecord("x_mycom_myapp_task_tracker")
+gr.initialize()
+gr.setValue("name", "My Task")
+gr.insert()
 ```
 
 ## Script Include in Scoped App
 
 ```javascript
-var TaskManager = Class.create();
+var TaskManager = Class.create()
 TaskManager.prototype = {
-  initialize: function() {
-    this.tableName = 'x_mycom_myapp_task_tracker';
+  initialize: function () {
+    this.tableName = "x_mycom_myapp_task_tracker"
   },
 
-  createTask: function(name, description) {
-    var gr = new GlideRecord(this.tableName);
-    gr.initialize();
-    gr.setValue('name', name);
-    gr.setValue('description', description);
-    return gr.insert();
+  createTask: function (name, description) {
+    var gr = new GlideRecord(this.tableName)
+    gr.initialize()
+    gr.setValue("name", name)
+    gr.setValue("description", description)
+    return gr.insert()
   },
 
   // Mark as accessible from other scopes
   // Requires: "Accessible from: All application scopes"
-  getTask: function(sysId) {
-    var gr = new GlideRecord(this.tableName);
+  getTask: function (sysId) {
+    var gr = new GlideRecord(this.tableName)
     if (gr.get(sysId)) {
       return {
-        name: gr.getValue('name'),
-        description: gr.getValue('description')
-      };
+        name: gr.getValue("name"),
+        description: gr.getValue("description"),
+      }
     }
-    return null;
+    return null
   },
 
-  type: 'TaskManager'
-};
+  type: "TaskManager",
+}
 ```
 
 ## Cross-Scope Access
 
 ### Calling Other Scope's Script Include
+
 ```javascript
 // From scope: x_mycom_otherapp
 // Calling: x_mycom_myapp.TaskManager
 
 // Option 1: Direct call (if accessible)
-var tm = new x_mycom_myapp.TaskManager();
-var task = tm.getTask(sysId);
+var tm = new x_mycom_myapp.TaskManager()
+var task = tm.getTask(sysId)
 
 // Option 2: GlideScopedEvaluator
-var evaluator = new GlideScopedEvaluator();
-evaluator.putVariable('sysId', sysId);
-var result = evaluator.evaluateScript(
-  'x_mycom_myapp',
-  'new TaskManager().getTask(sysId)'
-);
+var evaluator = new GlideScopedEvaluator()
+evaluator.putVariable("sysId", sysId)
+var result = evaluator.evaluateScript("x_mycom_myapp", "new TaskManager().getTask(sysId)")
 ```
 
 ### Accessing Other Scope's Tables
+
 ```javascript
 // Check if cross-scope access is allowed
-var gr = new GlideRecord('x_other_app_table');
+var gr = new GlideRecord("x_other_app_table")
 if (!gr.isValid()) {
-  gs.error('No access to x_other_app_table');
-  return;
+  gs.error("No access to x_other_app_table")
+  return
 }
 
 // If accessible, query normally
-gr.addQuery('active', true);
-gr.query();
+gr.addQuery("active", true)
+gr.query()
 ```
 
 ## Application Properties
 
 ### Define Properties
+
 ```javascript
 // In Application > Properties
 // Name: x_mycom_myapp.default_priority
@@ -160,12 +162,13 @@ gr.query();
 ```
 
 ### Use Properties
+
 ```javascript
 // Get property value
-var defaultPriority = gs.getProperty('x_mycom_myapp.default_priority', '3');
+var defaultPriority = gs.getProperty("x_mycom_myapp.default_priority", "3")
 
 // Set property value (requires admin)
-gs.setProperty('x_mycom_myapp.default_priority', '2');
+gs.setProperty("x_mycom_myapp.default_priority", "2")
 ```
 
 ## Application Files Structure
@@ -194,33 +197,34 @@ x_mycom_myapp/
 ## REST API in Scoped App
 
 ### Define Scripted REST API
+
 ```javascript
 // Resource: /api/x_mycom_myapp/tasks
 // HTTP Method: GET
 
-(function process(request, response) {
-  var tasks = [];
-  var gr = new GlideRecord('x_mycom_myapp_task_tracker');
-  gr.addQuery('active', true);
-  gr.query();
+;(function process(request, response) {
+  var tasks = []
+  var gr = new GlideRecord("x_mycom_myapp_task_tracker")
+  gr.addQuery("active", true)
+  gr.query()
 
   while (gr.next()) {
     tasks.push({
       sys_id: gr.getUniqueValue(),
-      name: gr.getValue('name'),
-      status: gr.getValue('status')
-    });
+      name: gr.getValue("name"),
+      status: gr.getValue("status"),
+    })
   }
 
   response.setBody({
     result: tasks,
-    count: tasks.length
-  });
-
-})(request, response);
+    count: tasks.length,
+  })
+})(request, response)
 ```
 
 ### Calling the API
+
 ```bash
 curl -X GET \
   "https://instance.service-now.com/api/x_mycom_myapp/tasks" \
@@ -230,6 +234,7 @@ curl -X GET \
 ## Application Dependencies
 
 ### Declare Dependencies
+
 ```
 Application > Dependencies
 Add:
@@ -238,17 +243,19 @@ Add:
 ```
 
 ### Check Dependencies in Code
+
 ```javascript
 // Check if plugin is active
-if (GlidePluginManager.isActive('com.snc.hr.core')) {
+if (GlidePluginManager.isActive("com.snc.hr.core")) {
   // HR Core is available
-  var hrCase = new sn_hr_core.hr_case();
+  var hrCase = new sn_hr_core.hr_case()
 }
 ```
 
 ## Publishing to Store
 
 ### Checklist Before Publishing
+
 ```
 □ All tables have proper ACLs
 □ No hard-coded sys_ids
@@ -262,6 +269,7 @@ if (GlidePluginManager.isActive('com.snc.hr.core')) {
 ```
 
 ### Version Management
+
 ```
 Major.Minor.Patch
 1.0.0 - Initial release
@@ -272,13 +280,13 @@ Major.Minor.Patch
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Global modifications | Won't deploy cleanly | Keep changes in scope |
-| Hard-coded sys_ids | Fails on other instances | Use properties or lookups |
-| Missing ACLs | Security vulnerabilities | Create ACLs for all tables |
-| No error handling | Silent failures | Add try/catch, logging |
-| Accessing global tables directly | Upgrade conflicts | Use references, not copies |
+| Mistake                          | Problem                  | Solution                   |
+| -------------------------------- | ------------------------ | -------------------------- |
+| Global modifications             | Won't deploy cleanly     | Keep changes in scope      |
+| Hard-coded sys_ids               | Fails on other instances | Use properties or lookups  |
+| Missing ACLs                     | Security vulnerabilities | Create ACLs for all tables |
+| No error handling                | Silent failures          | Add try/catch, logging     |
+| Accessing global tables directly | Upgrade conflicts        | Use references, not copies |
 
 ## Best Practices
 

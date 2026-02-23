@@ -13,4 +13,4 @@
  * A valid ServiceNow subscription and credentials are required to use this tool.
  */
 
-export { toolDefinition as snow_manage_flow_def, execute as snow_manage_flow_exec } from './snow_manage_flow.js';
+export { toolDefinition as snow_manage_flow_def, execute as snow_manage_flow_exec } from "./snow_manage_flow.js"

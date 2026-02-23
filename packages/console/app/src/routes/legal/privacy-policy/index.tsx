@@ -295,8 +295,8 @@ export default function PrivacyPolicy() {
                 requirements and enforcing legal terms including: fulfilling our legal obligations under applicable law,
                 regulation, court order or other legal process, such as preventing, detecting and investigating security
                 incidents and potentially illegal or prohibited activities; protecting the rights, property or safety of
-                you, Snow-Flow or another party; enforcing any agreements with you; responding to claims that any posting
-                or other content violates third-party rights; and resolving disputes.
+                you, Snow-Flow or another party; enforcing any agreements with you; responding to claims that any
+                posting or other content violates third-party rights; and resolving disputes.
               </p>
 
               <p>
