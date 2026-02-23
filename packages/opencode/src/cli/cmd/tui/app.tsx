@@ -146,14 +146,11 @@ export function tui(input: {
       },
     } as Parameters<typeof render>[1]
 
-    // On Linux, @opentui disables Zig renderer threading which prevents output.
-    // OTUI_FORCE_THREAD=1 overrides this for hosted PTY environments (Docker/Cloud Run).
-    let rendererOrConfig: any = renderConfig
+    // On Linux, @opentui disables Zig renderer threading which prevents PTY output.
+    // OTUI_FORCE_THREAD=1 temporarily spoofs platform so @opentui keeps threading enabled.
     if (process.env.OTUI_FORCE_THREAD) {
-      const { createCliRenderer } = await import("@opentui/core")
-      const cliRenderer = await createCliRenderer(renderConfig as any)
-      ;(cliRenderer as any).useThread = true
-      rendererOrConfig = cliRenderer
+      console.log("[snow-flow] forcing renderer threading (OTUI_FORCE_THREAD)")
+      Object.defineProperty(process, "platform", { value: "darwin", configurable: true })
     }
 
     try {
@@ -205,7 +202,7 @@ export function tui(input: {
             </ErrorBoundary>
           )
         },
-        rendererOrConfig,
+        renderConfig,
       )
     } catch (e) {
       console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)
