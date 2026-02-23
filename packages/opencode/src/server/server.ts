@@ -47,6 +47,28 @@ import { MDNS } from "./mdns"
 // @ts-ignore This global is needed to prevent ai-sdk from logging warnings to stdout https://github.com/vercel/ai/blob/2dc67e0ef538307f21368db32d5a12345d98831b/packages/ai/src/logger/log-warnings.ts#L85
 globalThis.AI_SDK_LOG_WARNINGS = false
 
+function createRateLimiter(windowMs: number, maxRequests: number) {
+  const requests = new Map<string, { count: number; resetAt: number }>()
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, entry] of requests) {
+      if (now > entry.resetAt) requests.delete(key)
+    }
+  }, windowMs)
+  return (ip: string): boolean => {
+    const now = Date.now()
+    const entry = requests.get(ip)
+    if (!entry || now > entry.resetAt) {
+      requests.set(ip, { count: 1, resetAt: now + windowMs })
+      return true
+    }
+    entry.count++
+    return entry.count <= maxRequests
+  }
+}
+
+const authRateLimiter = createRateLimiter(60_000, 60)
+
 export namespace Server {
   const log = Log.create({ service: "server" })
 
@@ -78,6 +100,9 @@ export namespace Server {
           // SECURITY: Only include the error message in API responses, not the full stack trace.
           // Stack traces can leak internal file paths, dependency versions, and implementation details.
           const message = err instanceof Error ? err.message : "An unexpected error occurred"
+          if (err instanceof Error && err.stack) {
+            log.error("unhandled error", { stack: err.stack })
+          }
           return c.json(new NamedError.Unknown({ message }).toObject(), {
             status: 500,
           })
@@ -105,6 +130,14 @@ export namespace Server {
             timer.stop()
           }
         })
+        .use(async (c, next) => {
+          await next()
+          c.res.headers.set("X-Content-Type-Options", "nosniff")
+          c.res.headers.set("X-Frame-Options", "DENY")
+          c.res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+          c.res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+          c.res.headers.set("X-Permitted-Cross-Domain-Policies", "none")
+        })
         .use(
           cors({
             origin(input) {
@@ -124,8 +157,19 @@ export namespace Server {
 
               return
             },
+            allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            allowHeaders: ["Content-Type", "Authorization", "X-Opencode-Directory"],
+            credentials: true,
+            maxAge: 86400,
           }),
         )
+        .use("/auth/*", async (c, next) => {
+          const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+          if (!authRateLimiter(ip)) {
+            return c.json({ error: "Too many requests" }, { status: 429 })
+          }
+          return next()
+        })
         .route("/global", GlobalRoutes())
         .route("/tui-ws", TuiWsRoutes())
         .route("/tui", TuiClientRoutes())

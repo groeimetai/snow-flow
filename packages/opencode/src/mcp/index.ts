@@ -421,6 +421,22 @@ export namespace MCP {
     let status: Status | undefined = undefined
 
     if (mcp.type === "remote") {
+      const parsedUrl = new URL(mcp.url)
+      if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+        log.error("rejecting MCP remote URL with disallowed scheme", {
+          key,
+          url: mcp.url,
+          protocol: parsedUrl.protocol,
+        })
+        return {
+          mcpClient: undefined,
+          status: {
+            status: "failed" as const,
+            error: `Disallowed URL scheme: ${parsedUrl.protocol}`,
+          },
+        }
+      }
+
       // OAuth is enabled by default for remote servers unless explicitly disabled with oauth: false
       const oauthDisabled = mcp.oauth === false
       const oauthConfig = typeof mcp.oauth === "object" ? mcp.oauth : undefined
@@ -948,6 +964,11 @@ export namespace MCP {
 
     if (mcpConfig.oauth === false) {
       throw new Error(`MCP server ${mcpName} has OAuth explicitly disabled`)
+    }
+
+    const parsedStartAuthUrl = new URL(mcpConfig.url)
+    if (parsedStartAuthUrl.protocol !== "https:" && parsedStartAuthUrl.protocol !== "http:") {
+      throw new Error(`Disallowed URL scheme for MCP server ${mcpName}: ${parsedStartAuthUrl.protocol}`)
     }
 
     // Start the callback server

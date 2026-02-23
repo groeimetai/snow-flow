@@ -53,6 +53,15 @@ const HTML_ERROR = (error: string) => `<!DOCTYPE html>
 </body>
 </html>`
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
 interface PendingAuth {
   resolve: (code: string) => void
   reject: (error: Error) => void
@@ -76,6 +85,7 @@ export namespace McpOAuthCallback {
 
     server = Bun.serve({
       port: OAUTH_CALLBACK_PORT,
+      hostname: "127.0.0.1",
       fetch(req) {
         const url = new URL(req.url)
 
