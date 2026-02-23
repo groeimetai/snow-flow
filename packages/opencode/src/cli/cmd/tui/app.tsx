@@ -116,11 +116,7 @@ export function tui(input: {
 }) {
   _onUpgrade = input.onUpgrade
   const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
-  // In hosted mode, use stderr for pre-render logs to keep terminal clean for the renderer
-  const forceThread = !!process.env.OTUI_FORCE_THREAD
-  const log = forceThread
-    ? (msg: string) => process.stderr.write(`${msg}\n`)
-    : (msg: string) => console.log(msg)
+  const log = (msg: string) => console.log(msg)
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
     let mode: "dark" | "light" = "dark"
@@ -151,9 +147,6 @@ export function tui(input: {
       },
     } as Parameters<typeof render>[1]
 
-    // On Linux, @opentui sets useThread=false which may prevent the Zig renderer
-    // from flushing output. HostedRendererDiag handles starting the loop and flushing.
-
     try {
       log("[snow-flow] starting tui...")
       await render(
@@ -183,7 +176,6 @@ export function tui(input: {
                                         <FrecencyProvider>
                                           <PromptHistoryProvider>
                                             <PromptRefProvider>
-                                              <HostedRendererDiag />
                                               <App />
                                             </PromptRefProvider>
                                           </PromptHistoryProvider>
@@ -212,33 +204,6 @@ export function tui(input: {
       resolve()
     }
   })
-}
-
-function HostedRendererDiag() {
-  if (!process.env.OTUI_FORCE_THREAD) return null
-  const renderer = useRenderer()
-  onMount(() => {
-    const r = renderer as any
-    const log = (msg: string) => process.stderr.write(`[sf-diag] ${msg}\n`)
-    const realWrite = r.realStdoutWrite
-    const stdout = r.stdout
-
-    log(`useThread=${r._useThread} isRunning=${r._isRunning}`)
-
-    // Clear screen for clean rendering
-    realWrite?.call(stdout, "\x1b[2J\x1b[H")
-
-    // Start the render loop (it doesn't auto-start on Linux)
-    if (!r._isRunning) r.start()
-
-    // Key fix: enable Zig output thread AFTER renderer is safely initialized.
-    // On Linux, @opentui creates the renderer with useThread=false.
-    // The setter calls lib.setUseThread(ptr, true) which starts the Zig
-    // thread that drains the render output buffer and writes to fd 1.
-    r.useThread = true
-    log(`after useThread=true: useThread=${r._useThread}`)
-  })
-  return null
 }
 
 function App() {

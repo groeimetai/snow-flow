@@ -278,7 +278,7 @@
     },
     "packages/opencode": {
       "name": "snow-flow",
-      "version": "10.0.87",
+      "version": "10.0.132",
       "bin": {
         "snow-flow": "./bin/snow-code",
         "snow-code": "./bin/snow-code",
@@ -487,6 +487,7 @@
   ],
   "patchedDependencies": {
     "ghostty-web@0.3.0": "patches/ghostty-web@0.3.0.patch",
+    "@opentui/core@0.1.77": "patches/@opentui%2Fcore@0.1.77.patch",
   },
   "overrides": {
     "@types/bun": "catalog:",

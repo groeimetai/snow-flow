@@ -1,0 +1,13 @@
+diff --git a/index-h3dbfsf6.js b/index-h3dbfsf6.js
+index ea77f954792426ee456b40d97f39e7f0ba8e01e0..f38d66172be7f8046d30fde395f7964251df5648 100644
+--- a/index-h3dbfsf6.js
++++ b/index-h3dbfsf6.js
+@@ -15652,7 +15652,7 @@ async function createCliRenderer(config = {}) {
+   if (config.useThread === undefined) {
+     config.useThread = true;
+   }
+-  if (process.platform === "linux") {
++  if (process.platform === "linux" && !process.env.OTUI_FORCE_THREAD) {
+     config.useThread = false;
+   }
+   ziglib.setUseThread(rendererPtr, config.useThread);
