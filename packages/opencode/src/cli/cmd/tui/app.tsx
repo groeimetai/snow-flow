@@ -150,27 +150,38 @@ export function tui(input: {
     diag("altScreen=" + r._useAlternateScreen + " dims=" + r.width + "x" + r.height)
     diag("root=" + !!r.root + " rootChildren=" + r.root?.getChildren?.()?.length)
 
-    // After 3s, check render loop and try manual render
-    setTimeout(() => {
+    // After 3s, check render loop state and try to kick it
+    setTimeout(async () => {
       diag("--- 3s check ---")
       diag("rootChildren=" + r.root?.getChildren?.()?.length)
-      diag("renderScheduled=" + r._renderScheduled + " rendering=" + r.renderingNative)
+      diag("_isRunning=" + r._isRunning)
+      diag("_controlState=" + r._controlState)
+      diag("liveReqs=" + r.liveRequestCounter)
+      diag("rendering=" + r.rendering + " updateScheduled=" + r.updateScheduled)
+      diag("nextRenderBuffer=" + !!r.nextRenderBuffer)
+
+      // Try full render pipeline: root.render → renderNative
       try {
-        r.requestRender()
-        diag("requestRender() called")
+        diag("calling root.render(nextRenderBuffer)...")
+        r.root.render(r.nextRenderBuffer, 16)
+        diag("root.render done, calling renderNative()...")
+        r.renderNative()
+        diag("renderNative done!")
       } catch (e: any) {
-        diag("requestRender FAILED: " + e.message)
+        diag("manual render pipeline FAILED: " + e.message)
+        if (e.stack) diag(e.stack.split("\n").slice(0, 3).join(" | "))
       }
-      // Force a native render directly
-      setTimeout(() => {
-        diag("--- 4s force render ---")
+
+      // Also try kicking the loop directly
+      setTimeout(async () => {
+        diag("--- 5s: calling loop() ---")
         try {
-          r.lib.render(r.rendererPtr, true)
-          diag("lib.render(force=true) called")
+          await r.loop()
+          diag("loop() completed")
         } catch (e: any) {
-          diag("lib.render FAILED: " + e.message)
+          diag("loop() FAILED: " + e.message)
         }
-      }, 1000)
+      }, 2000)
     }, 3000)
 
     await render(
