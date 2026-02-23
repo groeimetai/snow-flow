@@ -12,6 +12,11 @@ type Options = {
 export async function assertExternalDirectory(ctx: Tool.Context, target?: string, options?: Options) {
   if (!target) return
 
+  // Reject null bytes in file paths to prevent null byte injection attacks
+  if (target.includes("\0")) {
+    throw new Error("Invalid path: null bytes are not allowed in file paths")
+  }
+
   if (options?.bypass) return
 
   if (await Instance.containsPathReal(target)) return

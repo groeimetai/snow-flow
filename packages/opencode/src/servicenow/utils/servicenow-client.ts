@@ -451,6 +451,36 @@ export class ServiceNowClient {
   }
 
   /**
+   * Sanitize a value for use in ServiceNow encoded queries.
+   * ServiceNow query operators (^, ^OR, ^NQ, etc.) in user input could
+   * manipulate the query logic. This encodes those characters.
+   */
+  private sanitizeQueryValue(value: string): string {
+    if (!value || typeof value !== "string") return value
+    // Remove ServiceNow encoded query operators from values
+    // ^ is the AND operator, ^OR is OR, ^NQ starts a new query
+    // These should never appear in a field value used for exact matching
+    return value.replace(/\^/g, "").replace(/\n/g, "").replace(/\r/g, "")
+  }
+
+  /**
+   * Validate a ServiceNow table name to prevent path traversal and injection.
+   * ServiceNow table names are alphanumeric with underscores only.
+   */
+  private validateTableName(table: string): string {
+    if (!table || typeof table !== "string") {
+      throw new Error("Table name is required and must be a string")
+    }
+    // ServiceNow table names: only letters, numbers, and underscores
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(table)) {
+      throw new Error(
+        `Invalid ServiceNow table name: "${table}". Table names must start with a letter and contain only letters, numbers, and underscores.`,
+      )
+    }
+    return table
+  }
+
+  /**
    * Sanitize a flow name for use as internal_name
    */
   private sanitizeInternalName(name: string): string {
@@ -964,8 +994,9 @@ export class ServiceNowClient {
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated()
 
+      const sanitizedWidgetId = this.sanitizeQueryValue(widgetId)
       const response = await this.client.get(
-        `${this.getBaseUrl()}/api/now/table/sp_widget?sysparm_query=id=${widgetId}`,
+        `${this.getBaseUrl()}/api/now/table/sp_widget?sysparm_query=id=${sanitizedWidgetId}`,
       )
 
       if (response.data.result.length === 0) {
@@ -1355,9 +1386,10 @@ gs.setProperty('${outputMarker}', JSON.stringify({
     limit: number = 10,
   ): Promise<ServiceNowAPIResponse<any>> {
     try {
+      const validatedTable = this.validateTableName(table)
       await this.ensureAuthenticated()
 
-      const url = `/api/now/table/${table}`
+      const url = `/api/now/table/${validatedTable}`
       const params: any = {
         sysparm_query: query,
         sysparm_limit: limit.toString(),
@@ -1385,19 +1417,20 @@ gs.setProperty('${outputMarker}', JSON.stringify({
    */
   async searchRecords(table: string, query: string, limit: number = 10): Promise<ServiceNowAPIResponse<any>> {
     try {
+      const validatedTable = this.validateTableName(table)
       await this.ensureAuthenticated()
 
       // Detect operation type for intelligent timeout
       const operationType = detectOperationType({
         action: "query",
-        table,
+        table: validatedTable,
         limit,
       })
 
       // Use retry wrapper with intelligent timeout
       const result = await withRetry(
         async () => {
-          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${table}`, {
+          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${validatedTable}`, {
             params: {
               sysparm_query: query,
               sysparm_limit: limit,
@@ -1436,19 +1469,20 @@ gs.setProperty('${outputMarker}', JSON.stringify({
     offset: number = 0,
   ): Promise<ServiceNowAPIResponse<any>> {
     try {
+      const validatedTable = this.validateTableName(table)
       await this.ensureAuthenticated()
 
       // Detect operation type for intelligent timeout
       const operationType = detectOperationType({
         action: "query",
-        table,
+        table: validatedTable,
         limit,
       })
 
       // Use retry wrapper with intelligent timeout
       const result = await withRetry(
         async () => {
-          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${table}`, {
+          const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${validatedTable}`, {
             params: {
               sysparm_query: query,
               sysparm_limit: limit,
@@ -1483,9 +1517,10 @@ gs.setProperty('${outputMarker}', JSON.stringify({
    */
   async createRecord(table: string, data: any): Promise<ServiceNowAPIResponse<any>> {
     try {
+      const validatedTable = this.validateTableName(table)
       await this.ensureAuthenticated()
 
-      const response = await this.client.post(`${this.getBaseUrl()}/api/now/table/${table}`, data)
+      const response = await this.client.post(`${this.getBaseUrl()}/api/now/table/${validatedTable}`, data)
 
       return {
         success: true,
@@ -1505,9 +1540,13 @@ gs.setProperty('${outputMarker}', JSON.stringify({
    */
   async updateRecord(table: string, sysId: string, data: any): Promise<ServiceNowAPIResponse<any>> {
     try {
+      const validatedTable = this.validateTableName(table)
+      if (!/^[a-f0-9]{32}$/.test(sysId)) {
+        throw new Error(`Invalid sys_id format: "${sysId}". Must be a 32-character hex string.`)
+      }
       await this.ensureAuthenticated()
 
-      const response = await this.client.patch(`${this.getBaseUrl()}/api/now/table/${table}/${sysId}`, data)
+      const response = await this.client.patch(`${this.getBaseUrl()}/api/now/table/${validatedTable}/${sysId}`, data)
 
       return {
         success: true,
@@ -1527,9 +1566,13 @@ gs.setProperty('${outputMarker}', JSON.stringify({
    */
   async deleteRecord(table: string, sysId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
+      const validatedTable = this.validateTableName(table)
+      if (!/^[a-f0-9]{32}$/.test(sysId)) {
+        throw new Error(`Invalid sys_id format: "${sysId}". Must be a 32-character hex string.`)
+      }
       await this.ensureAuthenticated()
 
-      const response = await this.client.delete(`${this.getBaseUrl()}/api/now/table/${table}/${sysId}`)
+      const response = await this.client.delete(`${this.getBaseUrl()}/api/now/table/${validatedTable}/${sysId}`)
 
       return {
         success: true,

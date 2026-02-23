@@ -3470,18 +3470,51 @@ ${deploymentList || "No recent deployments found in the last 7 days"}
     }
   }
 
+  /**
+   * Escape a string for safe inclusion in CDATA sections.
+   * The sequence ]]> would prematurely close CDATA, so we split it into
+   * adjacent CDATA sections: ]]]]><![CDATA[>
+   */
+  private escapeCDATA(value: string): string {
+    return value.replace(/\]\]>/g, "]]]]><![CDATA[>")
+  }
+
+  /**
+   * Escape a string for safe inclusion as XML text content (non-CDATA).
+   */
+  private escapeXMLText(value: string): string {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;")
+  }
+
+  /**
+   * Validate that a string is a safe XML element name (alphanumeric + underscore).
+   */
+  private isValidXMLElementName(name: string): boolean {
+    return /^[a-zA-Z_][a-zA-Z0-9_.-]*$/.test(name)
+  }
+
   private generateArtifactUpdateSetXML(artifact: any, tableName: string, type: string): string {
     const timestamp = new Date().toISOString()
 
+    if (!this.isValidXMLElementName(tableName)) {
+      throw new Error(`Invalid table name for XML element: ${tableName}`)
+    }
+
     return `<?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="${timestamp}">
+<unload unload_date="${this.escapeXMLText(timestamp)}">
   <${tableName} action="INSERT_OR_UPDATE">
     ${Object.entries(artifact)
+      .filter(([key]) => this.isValidXMLElementName(key))
       .map(([key, value]) => {
         if (typeof value === "string") {
-          return `    <${key}><![CDATA[${value}]]></${key}>`
+          return `    <${key}><![CDATA[${this.escapeCDATA(value)}]]></${key}>`
         } else {
-          return `    <${key}>${value}</${key}>`
+          return `    <${key}>${this.escapeXMLText(String(value))}</${key}>`
         }
       })
       .join("\n")}
@@ -3497,26 +3530,31 @@ ${deploymentList || "No recent deployments found in the last 7 days"}
     const updateSetSysId = generateServiceNowSysId()
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="${timestamp}">
+<unload unload_date="${this.escapeXMLText(timestamp)}">
   <sys_remote_update_set action="INSERT_OR_UPDATE">
-    <sys_id>${updateSetSysId}</sys_id>
-    <name>${name}</name>
+    <sys_id>${this.escapeXMLText(updateSetSysId)}</sys_id>
+    <name>${this.escapeXMLText(name)}</name>
     <description>Exported artifacts</description>
     <release_date/>
     <state>loaded</state>
     <summary/>
-    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_created_on>${this.escapeXMLText(timestamp)}</sys_created_on>
   </sys_remote_update_set>
 `
 
     for (const artifact of artifacts) {
+      if (!this.isValidXMLElementName(artifact.table)) {
+        this.logger.warn(`Skipping artifact with invalid table name: ${artifact.table}`)
+        continue
+      }
       xml += `  <${artifact.table} action="INSERT_OR_UPDATE">
     ${Object.entries(artifact.data)
+      .filter(([key]) => this.isValidXMLElementName(key))
       .map(([key, value]) => {
         if (typeof value === "string") {
-          return `    <${key}><![CDATA[${value}]]></${key}>`
+          return `    <${key}><![CDATA[${this.escapeCDATA(value)}]]></${key}>`
         } else {
-          return `    <${key}>${value}</${key}>`
+          return `    <${key}>${this.escapeXMLText(String(value))}</${key}>`
         }
       })
       .join("\n")}
@@ -3532,8 +3570,14 @@ ${deploymentList || "No recent deployments found in the last 7 days"}
     try {
       this.logger.info("Importing artifact", { type: args.type, file_path: args.file_path })
 
+      // Validate file path to prevent path traversal
+      const resolvedPath = require("path").resolve(args.file_path)
+      if (resolvedPath.includes("\0")) {
+        throw new Error("Invalid file path: null bytes are not allowed")
+      }
+
       // Read the file
-      const fileContent = await fs.readFile(args.file_path, "utf8")
+      const fileContent = await fs.readFile(resolvedPath, "utf8")
       let artifact: any
 
       // Parse file based on format
@@ -4737,86 +4781,90 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
     const widgetId = this.generateGUID()
     const updateXmlId = this.generateGUID()
 
+    // Helper aliases for readability
+    const esc = (v: string) => this.escapeXMLText(v)
+    const cdata = (v: string) => this.escapeCDATA(v)
+
     const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="${timestamp}">
+<unload unload_date="${esc(timestamp)}">
   <sys_update_set action="INSERT_OR_UPDATE">
     <application display_value="Global">global</application>
     <category>customer</category>
-    <description>Auto-generated Update Set for Service Portal Widget: ${args.name}</description>
+    <description>Auto-generated Update Set for Service Portal Widget: ${esc(args.name)}</description>
     <is_default>false</is_default>
-    <name>${updateSetName}</name>
+    <name>${esc(updateSetName)}</name>
     <origin_sys_id/>
     <release_date/>
     <state>complete</state>
     <sys_created_by>snow-flow</sys_created_by>
-    <sys_created_on>${timestamp}</sys_created_on>
-    <sys_id>${updateSetId}</sys_id>
+    <sys_created_on>${esc(timestamp)}</sys_created_on>
+    <sys_id>${esc(updateSetId)}</sys_id>
     <sys_mod_count>0</sys_mod_count>
     <sys_updated_by>snow-flow</sys_updated_by>
-    <sys_updated_on>${timestamp}</sys_updated_on>
+    <sys_updated_on>${esc(timestamp)}</sys_updated_on>
     <update_count>1</update_count>
   </sys_update_set>
-  
+
   <sys_update_xml action="INSERT_OR_UPDATE">
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <category>customer</category>
     <comments/>
-    <name>sp_widget_${widgetId}</name>
+    <name>sp_widget_${esc(widgetId)}</name>
     <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <record_update table="sp_widget">
   <sp_widget action="INSERT_OR_UPDATE">
-    <category>${args.category || "custom"}</category>
-    <client_script><![CDATA[${args.client_script || ""}]]></client_script>
+    <category>${esc(args.category || "custom")}</category>
+    <client_script><![CDATA[${cdata(args.client_script || "")}]]></client_script>
     <controller_as/>
-    <css><![CDATA[${args.css || ""}]]></css>
+    <css><![CDATA[${cdata(args.css || "")}]]></css>
     <data_table>sp_instance</data_table>
-    <demo_data><![CDATA[${args.demo_data || "{}"}]]></demo_data>
-    <description>${args.description || ""}</description>
+    <demo_data><![CDATA[${cdata(args.demo_data || "{}")}]]></demo_data>
+    <description>${esc(args.description || "")}</description>
     <docs/>
     <field_list/>
     <has_preview>true</has_preview>
-    <id>${args.name}</id>
+    <id>${esc(args.name)}</id>
     <internal>false</internal>
     <link/>
-    <name>${args.name}</name>
-    <option_schema><![CDATA[${args.option_schema || "[]"}]]></option_schema>
+    <name>${esc(args.name)}</name>
+    <option_schema><![CDATA[${cdata(args.option_schema || "[]")}]]></option_schema>
     <public>false</public>
     <roles/>
-    <script><![CDATA[${args.server_script || ""}]]></script>
+    <script><![CDATA[${cdata(args.server_script || "")}]]></script>
     <servicenow>false</servicenow>
     <sys_class_name>sp_widget</sys_class_name>
     <sys_created_by>snow-flow</sys_created_by>
-    <sys_created_on>${timestamp}</sys_created_on>
-    <sys_id>${widgetId}</sys_id>
+    <sys_created_on>${esc(timestamp)}</sys_created_on>
+    <sys_id>${esc(widgetId)}</sys_id>
     <sys_mod_count>0</sys_mod_count>
-    <sys_name>${args.name}</sys_name>
+    <sys_name>${esc(args.name)}</sys_name>
     <sys_package display_value="Global" source="global">global</sys_package>
     <sys_policy/>
     <sys_scope display_value="Global">global</sys_scope>
-    <sys_update_name>sp_widget_${widgetId}</sys_update_name>
+    <sys_update_name>sp_widget_${esc(widgetId)}</sys_update_name>
     <sys_updated_by>snow-flow</sys_updated_by>
-    <sys_updated_on>${timestamp}</sys_updated_on>
-    <template><![CDATA[${args.template}]]></template>
-    <title>${args.title}</title>
+    <sys_updated_on>${esc(timestamp)}</sys_updated_on>
+    <template><![CDATA[${cdata(args.template || "")}]]></template>
+    <title>${esc(args.title || "")}</title>
   </sp_widget>
 </record_update>]]></payload>
     <payload_hash>-1</payload_hash>
-    <record_name>${args.name}</record_name>
+    <record_name>${esc(args.name)}</record_name>
     <reverted_from/>
     <source_table>sp_widget</source_table>
     <state>current</state>
     <sys_created_by>snow-flow</sys_created_by>
-    <sys_created_on>${timestamp}</sys_created_on>
-    <sys_id>${updateXmlId}</sys_id>
+    <sys_created_on>${esc(timestamp)}</sys_created_on>
+    <sys_id>${esc(updateXmlId)}</sys_id>
     <sys_mod_count>0</sys_mod_count>
     <sys_updated_by>snow-flow</sys_updated_by>
-    <sys_updated_on>${timestamp}</sys_updated_on>
+    <sys_updated_on>${esc(timestamp)}</sys_updated_on>
     <table>sp_widget</table>
-    <target_name>${args.name}</target_name>
+    <target_name>${esc(args.name)}</target_name>
     <type>Widget</type>
     <update_domain>global</update_domain>
-    <update_set display_value="${updateSetName}">${updateSetId}</update_set>
+    <update_set display_value="${esc(updateSetName)}">${esc(updateSetId)}</update_set>
     <view/>
   </sys_update_xml>
 </unload>`
@@ -8118,8 +8166,14 @@ Use \`snow_create_artifact\` with type: '${args.type}' and manual configuration.
       throw new Error("XML file path is required for xml_update_set deployment")
     }
 
+    // Validate file path to prevent path traversal
+    const resolvedXmlPath = require("path").resolve(xml_file_path)
+    if (resolvedXmlPath.includes("\0")) {
+      throw new Error("Invalid file path: null bytes are not allowed")
+    }
+
     this.logger.info("🚀 Deploying XML Update Set", {
-      file: xml_file_path,
+      file: resolvedXmlPath,
       auto_preview,
       auto_commit,
     })
@@ -8127,7 +8181,7 @@ Use \`snow_create_artifact\` with type: '${args.type}' and manual configuration.
     try {
       // Read XML file
       const fs = require("fs").promises
-      const xmlContent = await fs.readFile(xml_file_path, "utf-8")
+      const xmlContent = await fs.readFile(resolvedXmlPath, "utf-8")
 
       // Import XML as remote update set
       const importResponse = await this.client.makeRequest({
