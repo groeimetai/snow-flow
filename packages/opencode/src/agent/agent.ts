@@ -123,16 +123,8 @@ export namespace Agent {
         permission: PermissionNext.merge(
           defaults,
           PermissionNext.fromConfig({
-            "*": "deny",
-            grep: "allow",
-            glob: "allow",
-            list: "allow",
-            read: "allow",
-            bash: { "*": "deny", "git log*": "allow", "git diff*": "allow", "git status*": "allow" },
-            webfetch: "allow",
-            websearch: "allow",
-            codesearch: "allow",
             review_exit: "allow",
+            bash: { "*": "deny", "git log*": "allow", "git diff*": "allow", "git status*": "allow" },
             external_directory: {
               [path.join(Global.Path.data, "reviews", "*")]: "allow",
             },
