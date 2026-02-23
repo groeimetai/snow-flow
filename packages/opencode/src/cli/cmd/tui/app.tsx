@@ -115,94 +115,77 @@ export function tui(input: {
   onUpgrade?: () => Promise<{ success: boolean; version?: string; error?: string }>
 }) {
   _onUpgrade = input.onUpgrade
-  const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
-  const log = (msg: string) => console.log(msg)
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
-    let mode: "dark" | "light" = "dark"
-    if (skipThemeDetection) {
-      log("[snow-flow] skipping theme detection")
-    } else {
-      log("[snow-flow] detecting theme...")
-      mode = await getTerminalBackgroundColor()
-      log(`[snow-flow] theme: ${mode}`)
-    }
+    const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
+    const mode = skipThemeDetection ? "dark" : await getTerminalBackgroundColor()
     const onExit = async () => {
       await input.onExit?.()
       resolve()
     }
 
-    const renderConfig = {
-      targetFps: 60,
-      gatherStats: false,
-      exitOnCtrlC: false,
-      useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
-      consoleOptions: {
-        keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-        onCopySelection: (text: string) => {
-          Clipboard.copy(text).catch((error: Error) => {
-            console.error(`Failed to copy console selection to clipboard: ${error}`)
-          })
+    render(
+      () => {
+        return (
+          <ErrorBoundary
+            fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
+          >
+            <ArgsProvider {...input.args}>
+              <ExitProvider onExit={onExit}>
+                <KVProvider>
+                  <ToastProvider>
+                    <RouteProvider>
+                      <SDKProvider
+                        url={input.url}
+                        directory={input.directory}
+                        fetch={input.fetch}
+                        events={input.events}
+                      >
+                        <SyncProvider>
+                          <ThemeProvider mode={mode}>
+                            <LocalProvider>
+                              <KeybindProvider>
+                                <PromptStashProvider>
+                                  <DialogProvider>
+                                    <CommandProvider>
+                                      <FrecencyProvider>
+                                        <PromptHistoryProvider>
+                                          <PromptRefProvider>
+                                            <App />
+                                          </PromptRefProvider>
+                                        </PromptHistoryProvider>
+                                      </FrecencyProvider>
+                                    </CommandProvider>
+                                  </DialogProvider>
+                                </PromptStashProvider>
+                              </KeybindProvider>
+                            </LocalProvider>
+                          </ThemeProvider>
+                        </SyncProvider>
+                      </SDKProvider>
+                    </RouteProvider>
+                  </ToastProvider>
+                </KVProvider>
+              </ExitProvider>
+            </ArgsProvider>
+          </ErrorBoundary>
+        )
+      },
+      {
+        targetFps: 60,
+        gatherStats: false,
+        exitOnCtrlC: false,
+        useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+        consoleOptions: {
+          keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+          onCopySelection: (text: string) => {
+            Clipboard.copy(text).catch((error: Error) => {
+              console.error(`Failed to copy console selection to clipboard: ${error}`)
+            })
+          },
         },
       },
-    } as Parameters<typeof render>[1]
-
-    try {
-      log("[snow-flow] starting tui...")
-      await render(
-        () => {
-          return (
-            <ErrorBoundary
-              fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
-            >
-              <ArgsProvider {...input.args}>
-                <ExitProvider onExit={onExit}>
-                  <KVProvider>
-                    <ToastProvider>
-                      <RouteProvider>
-                        <SDKProvider
-                          url={input.url}
-                          directory={input.directory}
-                          fetch={input.fetch}
-                          events={input.events}
-                        >
-                          <SyncProvider>
-                            <ThemeProvider mode={mode}>
-                              <LocalProvider>
-                                <KeybindProvider>
-                                  <PromptStashProvider>
-                                    <DialogProvider>
-                                      <CommandProvider>
-                                        <FrecencyProvider>
-                                          <PromptHistoryProvider>
-                                            <PromptRefProvider>
-                                              <App />
-                                            </PromptRefProvider>
-                                          </PromptHistoryProvider>
-                                        </FrecencyProvider>
-                                      </CommandProvider>
-                                    </DialogProvider>
-                                  </PromptStashProvider>
-                                </KeybindProvider>
-                              </LocalProvider>
-                            </ThemeProvider>
-                          </SyncProvider>
-                        </SDKProvider>
-                      </RouteProvider>
-                    </ToastProvider>
-                  </KVProvider>
-                </ExitProvider>
-              </ArgsProvider>
-            </ErrorBoundary>
-          )
-        },
-        renderConfig,
-      )
-    } catch (e) {
-      console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)
-      if (e instanceof Error && e.stack) console.error(e.stack)
-      resolve()
-    }
+    )
   })
 }
 
