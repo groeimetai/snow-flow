@@ -143,34 +143,35 @@ export function tui(input: {
       },
     })
 
-    // Diagnostic: check renderer internals
+    // All diagnostics via writeOut so they appear in the terminal
     const r = renderer as any
-    log("renderer.lib=" + !!r.lib)
-    log("renderer.rendererPtr=" + !!r.rendererPtr)
-    log("renderer._useThread=" + r._useThread)
-    log("renderer._useAlternateScreen=" + r._useAlternateScreen)
-    log("renderer.width=" + r.width + " height=" + r.height)
-    if (r.lib) {
-      log("lib.render=" + typeof r.lib.render)
-      log("lib.writeOut=" + typeof r.lib.writeOut)
-    }
+    const diag = (msg: string) => r.writeOut(msg + "\r\n")
+    diag("lib=" + !!r.lib + " ptr=" + !!r.rendererPtr + " thread=" + r._useThread)
+    diag("altScreen=" + r._useAlternateScreen + " dims=" + r.width + "x" + r.height)
+    diag("root=" + !!r.root + " rootChildren=" + r.root?.getChildren?.()?.length)
 
-    // Test: can we write to terminal via renderer.writeOut()?
-    try {
-      r.writeOut("\x1b[2J\x1b[H\x1b[32m=== RENDERER WRITEOUT TEST ===\x1b[0m\r\n")
-      log("writeOut succeeded")
-    } catch (e: any) {
-      log("writeOut FAILED: " + e.message)
-    }
-
-    // Test: can we write to terminal via realStdoutWrite?
-    try {
-      const write = r.realStdoutWrite || process.stdout.write
-      write.call(process.stdout, "\x1b[33m=== REAL STDOUT TEST ===\x1b[0m\r\n")
-      log("realStdoutWrite succeeded")
-    } catch (e: any) {
-      log("realStdoutWrite FAILED: " + e.message)
-    }
+    // After 3s, check render loop and try manual render
+    setTimeout(() => {
+      diag("--- 3s check ---")
+      diag("rootChildren=" + r.root?.getChildren?.()?.length)
+      diag("renderScheduled=" + r._renderScheduled + " rendering=" + r.renderingNative)
+      try {
+        r.requestRender()
+        diag("requestRender() called")
+      } catch (e: any) {
+        diag("requestRender FAILED: " + e.message)
+      }
+      // Force a native render directly
+      setTimeout(() => {
+        diag("--- 4s force render ---")
+        try {
+          r.lib.render(r.rendererPtr, true)
+          diag("lib.render(force=true) called")
+        } catch (e: any) {
+          diag("lib.render FAILED: " + e.message)
+        }
+      }, 1000)
+    }, 3000)
 
     await render(
       () => (
@@ -227,6 +228,16 @@ function App() {
   const dimensions = useTerminalDimensions()
   const renderer = useRenderer()
   renderer.disableStdoutInterception()
+
+  // Diagnostic: check dimensions and renderer state from inside the component
+  const r = renderer as any
+  const diag = (msg: string) => r.writeOut?.("[App] " + msg + "\r\n") ?? process.stderr.write("[App] " + msg + "\n")
+  diag("dims=" + dimensions().width + "x" + dimensions().height)
+  diag("theme loading...")
+  onMount(() => {
+    diag("mounted! dims=" + dimensions().width + "x" + dimensions().height)
+    diag("root children=" + r.root?.getChildren?.()?.length)
+  })
   const dialog = useDialog()
   const local = useLocal()
   const kv = useKV()
