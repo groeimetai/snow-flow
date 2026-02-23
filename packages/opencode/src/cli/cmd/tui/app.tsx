@@ -116,51 +116,91 @@ export function tui(input: {
 }) {
   _onUpgrade = input.onUpgrade
   const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
-  const log = (msg: string) => process.stderr.write("[sf] " + msg + "\n")
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
     let mode: "dark" | "light" = "dark"
-    if (!skipThemeDetection) {
+    if (skipThemeDetection) {
+      console.log("[snow-flow] skipping theme detection")
+    } else {
+      console.log("[snow-flow] detecting theme...")
       mode = await getTerminalBackgroundColor()
+      console.log(`[snow-flow] theme: ${mode}`)
     }
     const onExit = async () => {
       await input.onExit?.()
       resolve()
     }
 
-    const { createCliRenderer } = await import("@opentui/core")
-
-    const renderer = await createCliRenderer({
-      targetFps: 60,
-      gatherStats: false,
-      exitOnCtrlC: false,
-      useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
-      consoleOptions: {
-        keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-        onCopySelection: (text: string) => {
-          Clipboard.copy(text).catch(() => {})
+    try {
+      console.log("[snow-flow] starting tui...")
+      await render(
+        () => {
+          return (
+            <ErrorBoundary
+              fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
+            >
+              <ArgsProvider {...input.args}>
+                <ExitProvider onExit={onExit}>
+                  <KVProvider>
+                    <ToastProvider>
+                      <RouteProvider>
+                        <SDKProvider
+                          url={input.url}
+                          directory={input.directory}
+                          fetch={input.fetch}
+                          events={input.events}
+                        >
+                          <SyncProvider>
+                            <ThemeProvider mode={mode}>
+                              <LocalProvider>
+                                <KeybindProvider>
+                                  <PromptStashProvider>
+                                    <DialogProvider>
+                                      <CommandProvider>
+                                        <FrecencyProvider>
+                                          <PromptHistoryProvider>
+                                            <PromptRefProvider>
+                                              <App />
+                                            </PromptRefProvider>
+                                          </PromptHistoryProvider>
+                                        </FrecencyProvider>
+                                      </CommandProvider>
+                                    </DialogProvider>
+                                  </PromptStashProvider>
+                                </KeybindProvider>
+                              </LocalProvider>
+                            </ThemeProvider>
+                          </SyncProvider>
+                        </SDKProvider>
+                      </RouteProvider>
+                    </ToastProvider>
+                  </KVProvider>
+                </ExitProvider>
+              </ArgsProvider>
+            </ErrorBoundary>
+          )
         },
-      },
-    })
-
-    // Minimal render test: just a colored box with text
-    // If this doesn't render, the issue is fundamental to @opentui on Linux
-    const r = renderer as any
-    const diag = (msg: string) => r.writeOut(msg + "\r\n")
-    diag("starting minimal render test...")
-
-    await render(
-      () => (
-        <box width={134} height={57} backgroundColor="#1a1a2e">
-          <box flexDirection="column" alignItems="center" justifyContent="center" width={134} height={57}>
-            <text fg="#e94560">SNOW FLOW - RENDER TEST</text>
-            <text fg="#ffffff">If you can see this, @opentui rendering works!</text>
-            <text fg="#0f3460">Press Ctrl+C to exit</text>
-          </box>
-        </box>
-      ),
-      renderer,
-    )
+        {
+          targetFps: 60,
+          gatherStats: false,
+          exitOnCtrlC: false,
+          // No remote: true — let opentui render normally to the PTY
+          useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+          consoleOptions: {
+            keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+            onCopySelection: (text) => {
+              Clipboard.copy(text).catch((error) => {
+                console.error(`Failed to copy console selection to clipboard: ${error}`)
+              })
+            },
+          },
+        } as Parameters<typeof render>[1],
+      )
+    } catch (e) {
+      console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)
+      if (e instanceof Error && e.stack) console.error(e.stack)
+      resolve()
+    }
   })
 }
 
