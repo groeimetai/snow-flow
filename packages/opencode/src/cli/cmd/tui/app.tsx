@@ -222,67 +222,21 @@ function HostedRendererDiag() {
     const log = (msg: string) => process.stderr.write(`[sf-diag] ${msg}\n`)
     const realWrite = r.realStdoutWrite
     const stdout = r.stdout
-    const write = (s: string) => realWrite?.call(stdout, s)
 
-    log(`useThread=${r._useThread} isRunning=${r._isRunning} state=${r._controlState}`)
-    log(`platform=${process.platform} altScreen=${r._useAlternateScreen}`)
+    log(`useThread=${r._useThread} isRunning=${r._isRunning}`)
 
-    // Patch renderNative to count calls and try flushing
-    let renderCount = 0
-    if (r.lib && r.rendererPtr) {
-      const origRenderNative = r.renderNative.bind(r)
-      r.renderNative = () => {
-        renderCount++
-        origRenderNative()
-        // Try dumpStdoutBuffer to flush Zig's pending render output
-        try {
-          r.lib.dumpStdoutBuffer(r.rendererPtr, BigInt(Date.now()))
-        } catch (e: any) {
-          if (renderCount === 1) log(`dumpStdoutBuffer error: ${e.message}`)
-        }
-      }
-      log("patched renderNative")
-    }
+    // Clear screen for clean rendering
+    realWrite?.call(stdout, "\x1b[2J\x1b[H")
 
-    // Clear screen and start the render loop
-    write("\x1b[2J\x1b[H")
-    if (!r._isRunning) {
-      r.start()
-      log(`started: isRunning=${r._isRunning}`)
-    }
+    // Start the render loop (it doesn't auto-start on Linux)
+    if (!r._isRunning) r.start()
 
-    // After 3s: report render count and buffer state
-    setTimeout(() => {
-      log(`3s: renderCount=${renderCount} isRunning=${r._isRunning}`)
-
-      // Check if nextRenderBuffer has any content by reading a few cells
-      try {
-        const buf = r.nextRenderBuffer
-        const w = r.lib.getBufferWidth(buf)
-        const h = r.lib.getBufferHeight(buf)
-        log(`buffer: ${w}x${h}`)
-      } catch (e: any) {
-        log(`buffer check error: ${e.message}`)
-      }
-
-      // Check root node children
-      try {
-        const root = r.root
-        log(`root children: ${root?.children?.length ?? "?"}`)
-      } catch {}
-
-      // Write visible marker so user can confirm terminal works
-      write("\x1b[5;1H\x1b[1;31m[sf-diag] terminal output works - render loop ran ${renderCount} frames\x1b[0m\r\n")
-
-      // Try fs.writeSync to test raw POSIX write(1, ...)
-      try {
-        const { writeSync } = require("fs")
-        writeSync(1, "\x1b[7;1H\x1b[1;32m[sf-diag] fs.writeSync(1) works\x1b[0m\r\n")
-        log("fs.writeSync(1) succeeded")
-      } catch (e: any) {
-        log(`fs.writeSync error: ${e.message}`)
-      }
-    }, 3000)
+    // Key fix: enable Zig output thread AFTER renderer is safely initialized.
+    // On Linux, @opentui creates the renderer with useThread=false.
+    // The setter calls lib.setUseThread(ptr, true) which starts the Zig
+    // thread that drains the render output buffer and writes to fd 1.
+    r.useThread = true
+    log(`after useThread=true: useThread=${r._useThread}`)
   })
   return null
 }
