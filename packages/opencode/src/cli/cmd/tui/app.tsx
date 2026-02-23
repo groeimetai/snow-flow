@@ -142,25 +142,39 @@ export function tui(input: {
       resolve()
     }
 
-    console.log("[snow-flow] env: OTUI_USE_ALTERNATE_SCREEN=" + (process.env.OTUI_USE_ALTERNATE_SCREEN ?? "unset"))
-    // Test: can this PTY display ANSI at all?
-    process.stdout.write("\x1b[32m[snow-flow] ANSI test: this should be green\x1b[0m\n")
-    console.log("[snow-flow] stdout.isTTY=" + process.stdout.isTTY + " stdin.isTTY=" + process.stdin.isTTY)
-    console.log("[snow-flow] stdout.columns=" + process.stdout.columns + " stdout.rows=" + process.stdout.rows)
+    // All diagnostics via stderr since @opentui intercepts stdout.write
+    const log = (msg: string) => process.stderr.write("[snow-flow] " + msg + "\n")
+    log("env: OTUI_USE_ALTERNATE_SCREEN=" + (process.env.OTUI_USE_ALTERNATE_SCREEN ?? "unset"))
+    log("stdout.isTTY=" + process.stdout.isTTY + " stdin.isTTY=" + process.stdin.isTTY)
+    log("columns=" + process.stdout.columns + " rows=" + process.stdout.rows)
 
-    // Timeout watchdog: if render doesn't produce output in 10s, log it
-    const watchdog = setTimeout(() => {
-      console.error("[snow-flow] WATCHDOG: render() has been running for 10s without visible output")
-      console.error("[snow-flow] This suggests the Zig renderer is stuck or not writing to stdout")
-    }, 10_000)
+    // Step-by-step renderer creation to find where it hangs
+    const { createCliRenderer: createRenderer } = await import("@opentui/core")
+    log("step 1: @opentui/core imported")
+
+    const renderConfig = {
+      targetFps: 60,
+      gatherStats: false,
+      exitOnCtrlC: false,
+      useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+      consoleOptions: {
+        keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+        onCopySelection: (text: string) => {
+          Clipboard.copy(text).catch((error: Error) => {
+            log("Failed to copy: " + error)
+          })
+        },
+      },
+    } as Parameters<typeof render>[1]
+
+    log("step 2: creating CliRenderer...")
+    const cliRenderer = await createRenderer(renderConfig as any)
+    log("step 3: CliRenderer created! Starting render...")
 
     try {
-      console.log("[snow-flow] calling render()...")
       await render(
         () => {
-          // This callback is invoked when the renderer is ready to build the component tree
-          console.error("[snow-flow] render callback invoked - component tree building")
-          clearTimeout(watchdog)
+          log("step 4: component factory invoked")
           return (
             <ErrorBoundary
               fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
@@ -206,21 +220,7 @@ export function tui(input: {
             </ErrorBoundary>
           )
         },
-        {
-          targetFps: 60,
-          gatherStats: false,
-          exitOnCtrlC: false,
-          // No remote: true — let opentui render normally to the PTY
-          useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
-          consoleOptions: {
-            keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-            onCopySelection: (text) => {
-              Clipboard.copy(text).catch((error) => {
-                console.error(`Failed to copy console selection to clipboard: ${error}`)
-              })
-            },
-          },
-        } as Parameters<typeof render>[1],
+        cliRenderer,
       )
     } catch (e) {
       console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)
