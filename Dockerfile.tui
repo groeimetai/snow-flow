@@ -85,6 +85,8 @@ ENV OPENCODE_DISABLE_KITTY_KEYBOARD=1
 ENV OPENCODE_SKIP_THEME_DETECTION=1
 # Disable alternate screen — Ghostty WebGL terminal doesn't support it over WebSocket
 ENV OTUI_USE_ALTERNATE_SCREEN=0
+# Force Zig renderer threading on Linux — without this, renderer buffers output but never writes it
+ENV OTUI_FORCE_THREAD=1
 # Auto-start snow-flow TUI when terminal opens (PTY reads $SHELL)
 ENV SHELL=/usr/local/bin/snow-flow
 

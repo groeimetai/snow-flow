@@ -131,6 +131,31 @@ export function tui(input: {
       resolve()
     }
 
+    const renderConfig = {
+      targetFps: 60,
+      gatherStats: false,
+      exitOnCtrlC: false,
+      useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+      consoleOptions: {
+        keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+        onCopySelection: (text: string) => {
+          Clipboard.copy(text).catch((error: Error) => {
+            console.error(`Failed to copy console selection to clipboard: ${error}`)
+          })
+        },
+      },
+    } as Parameters<typeof render>[1]
+
+    // On Linux, @opentui disables Zig renderer threading which prevents output.
+    // OTUI_FORCE_THREAD=1 overrides this for hosted PTY environments (Docker/Cloud Run).
+    let rendererOrConfig: any = renderConfig
+    if (process.env.OTUI_FORCE_THREAD) {
+      const { createCliRenderer } = await import("@opentui/core")
+      const cliRenderer = await createCliRenderer(renderConfig as any)
+      ;(cliRenderer as any).useThread = true
+      rendererOrConfig = cliRenderer
+    }
+
     try {
       console.log("[snow-flow] starting tui...")
       await render(
@@ -180,21 +205,7 @@ export function tui(input: {
             </ErrorBoundary>
           )
         },
-        {
-          targetFps: 60,
-          gatherStats: false,
-          exitOnCtrlC: false,
-          // No remote: true — let opentui render normally to the PTY
-          useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
-          consoleOptions: {
-            keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-            onCopySelection: (text) => {
-              Clipboard.copy(text).catch((error) => {
-                console.error(`Failed to copy console selection to clipboard: ${error}`)
-              })
-            },
-          },
-        } as Parameters<typeof render>[1],
+        rendererOrConfig,
       )
     } catch (e) {
       console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)

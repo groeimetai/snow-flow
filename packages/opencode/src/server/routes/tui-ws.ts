@@ -57,6 +57,7 @@ async function spawnTui(cols: number, rows: number, env?: Record<string, string>
         OPENCODE_SKIP_THEME_DETECTION: "1",
         OPENCODE_DISABLE_KITTY_KEYBOARD: "1",
         OTUI_USE_ALTERNATE_SCREEN: "0",
+        OTUI_FORCE_THREAD: "1",
       },
     },
   )
