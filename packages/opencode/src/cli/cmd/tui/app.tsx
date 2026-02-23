@@ -148,7 +148,8 @@ export function tui(input: {
 
     // On Linux, @opentui disables Zig renderer threading which prevents PTY output.
     // OTUI_FORCE_THREAD=1 temporarily spoofs platform so @opentui keeps threading enabled.
-    if (process.env.OTUI_FORCE_THREAD) {
+    const forceThread = !!process.env.OTUI_FORCE_THREAD
+    if (forceThread) {
       console.log("[snow-flow] forcing renderer threading (OTUI_FORCE_THREAD)")
       Object.defineProperty(process, "platform", { value: "darwin", configurable: true })
     }
@@ -182,6 +183,7 @@ export function tui(input: {
                                         <FrecencyProvider>
                                           <PromptHistoryProvider>
                                             <PromptRefProvider>
+                                              <HostedRendererDiag />
                                               <App />
                                             </PromptRefProvider>
                                           </PromptHistoryProvider>
@@ -210,6 +212,59 @@ export function tui(input: {
       resolve()
     }
   })
+}
+
+function HostedRendererDiag() {
+  if (!process.env.OTUI_FORCE_THREAD) return null
+  const renderer = useRenderer()
+  onMount(() => {
+    const r = renderer as any
+    const log = (msg: string) => process.stderr.write(`[sf-diag] ${msg}\n`)
+    log(`useThread=${r._useThread} isRunning=${r._isRunning} state=${r._controlState} live=${r.liveRequestCounter}`)
+    log(`platform=${process.platform} altScreen=${r._useAlternateScreen}`)
+    log(`termSetup=${r._terminalIsSetup} root=${!!r.root} buffer=${!!r.nextRenderBuffer}`)
+
+    // Try 1: force-start the render loop if not running
+    if (!r._isRunning) {
+      log("calling renderer.start()")
+      r.start()
+      log(`after start: isRunning=${r._isRunning} state=${r._controlState}`)
+    }
+
+    // Try 2: after 2s, check state and try manual output
+    setTimeout(() => {
+      log(`2s check: isRunning=${r._isRunning} state=${r._controlState} rendering=${r.rendering}`)
+      // Test direct write via realStdoutWrite (saved reference to actual stdout.write)
+      const realWrite = r.realStdoutWrite
+      if (realWrite) {
+        realWrite.call(r.stdout, "\x1b[2J\x1b[H\x1b[1;31m[sf-diag] REAL STDOUT WRITE OK\x1b[0m\r\n")
+        log("realStdoutWrite sent")
+      }
+      // Test lib.writeOut
+      try {
+        r.writeOut("\x1b[3;1H\x1b[1;32m[sf-diag] WRITEOUT OK\x1b[0m\r\n")
+        log("writeOut sent")
+      } catch (e: any) {
+        log(`writeOut error: ${e.message}`)
+      }
+    }, 2000)
+
+    // Try 3: after 4s, try manual render cycle
+    setTimeout(() => {
+      log(`4s check: isRunning=${r._isRunning} rendering=${r.rendering}`)
+      try {
+        if (r.root && r.nextRenderBuffer) {
+          r.root.render(r.nextRenderBuffer, 0)
+          log("root.render done")
+        }
+        r.renderNative()
+        log("renderNative done")
+      } catch (e: any) {
+        log(`manual render error: ${e.message}`)
+      }
+    }, 4000)
+  })
+  return null
 }
 
 function App() {
