@@ -225,7 +225,7 @@ const OAuthTemplates = {
           </p>
 
           <div class="error-details">
-            ${error}
+            ${escapeHtml(error)}
           </div>
 
           <div class="instruction">
@@ -337,7 +337,7 @@ const OAuthTemplates = {
           </p>
 
           <div class="error-details">
-            ${error}
+            ${escapeHtml(error)}
           </div>
 
           <div class="instruction">
@@ -351,6 +351,18 @@ const OAuthTemplates = {
       </body>
     </html>
   `,
+}
+
+/**
+ * Escape HTML special characters to prevent XSS in error templates
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
 }
 
 export interface ServiceNowAuthResult {
@@ -479,9 +491,14 @@ export class ServiceNowOAuth {
       const parsed = new URL(normalized)
       const hostname = parsed.hostname.toLowerCase()
 
+      // SECURITY: Enforce HTTPS for non-local instances to prevent token leakage
+      const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.")
+      if (parsed.protocol === "http:" && !isLocal) {
+        normalized = normalized.replace(/^http:/, "https:")
+      }
+
       // Check if it's already a valid ServiceNow or local URL
       const isServiceNow = hostname.endsWith(".service-now.com") || hostname.endsWith(".servicenow.com")
-      const isLocal = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.")
 
       if (!isServiceNow && !isLocal) {
         // Assume it's just the instance name, append .service-now.com
@@ -595,12 +612,16 @@ export class ServiceNowOAuth {
       const data = await response.json()
 
       if (data.error) {
+        // SECURITY: Clear PKCE and state parameters after use to minimize exposure window
+        this.clearAuthState()
         return {
           success: false,
           error: `OAuth error: ${data.error} - ${data.error_description || ""}`,
         }
       }
 
+      // SECURITY: Clear PKCE and state parameters after successful exchange
+      this.clearAuthState()
       return {
         success: true,
         accessToken: data.access_token,
@@ -608,11 +629,22 @@ export class ServiceNowOAuth {
         expiresIn: data.expires_in,
       }
     } catch (error) {
+      this.clearAuthState()
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
       }
     }
+  }
+
+  /**
+   * Clear sensitive auth state (PKCE verifier, code challenge, state parameter)
+   * after they have been used in a token exchange to minimize exposure window.
+   */
+  private clearAuthState(): void {
+    this.stateParameter = undefined
+    this.codeVerifier = undefined
+    this.codeChallenge = undefined
   }
 
   /**
@@ -963,7 +995,8 @@ export class ServiceNowOAuth {
         }
       })
 
-      server.listen(port, async () => {
+      // SECURITY: Bind to 127.0.0.1 only to prevent network exposure of the callback server
+      server.listen(port, "127.0.0.1", async () => {
         prompts.log.info(`Callback server started on http://localhost:${port}/callback`)
         prompts.log.info("Waiting for OAuth callback...")
 

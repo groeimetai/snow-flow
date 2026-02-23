@@ -9,6 +9,16 @@ const CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 
 async function authorize(mode: "max" | "console") {
   const pkce = await generatePKCE()
+  // Generate a separate random state for CSRF protection.
+  // The PKCE verifier must NOT be used as the state parameter because:
+  // 1. The state is visible in the URL and can leak via Referer headers
+  // 2. Exposing the verifier defeats the purpose of PKCE
+  const stateBuffer = new Uint8Array(32)
+  crypto.getRandomValues(stateBuffer)
+  const state = btoa(String.fromCharCode(...stateBuffer))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")
 
   const url = new URL(`https://${mode === "console" ? "console.anthropic.com" : "claude.ai"}/oauth/authorize`)
   url.searchParams.set("code", "true")
@@ -18,7 +28,7 @@ async function authorize(mode: "max" | "console") {
   url.searchParams.set("scope", "org:create_api_key user:profile user:inference")
   url.searchParams.set("code_challenge", pkce.challenge)
   url.searchParams.set("code_challenge_method", "S256")
-  url.searchParams.set("state", pkce.verifier)
+  url.searchParams.set("state", state)
   return {
     url: url.toString(),
     verifier: pkce.verifier,

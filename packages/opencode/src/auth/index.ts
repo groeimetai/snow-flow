@@ -182,17 +182,23 @@ export namespace Auth {
   }
 
   export async function set(key: string, info: Info) {
-    const file = Bun.file(filepath)
     const data = await all()
-    await Bun.write(file, JSON.stringify({ ...data, [key]: info }, null, 2))
-    await fs.chmod(file.name!, 0o600)
+    const content = JSON.stringify({ ...data, [key]: info }, null, 2)
+    // Write to a temp file with restrictive permissions, then atomically rename.
+    // This avoids a race condition where auth.json is briefly world-readable.
+    const tmpPath = filepath + ".tmp." + crypto.randomUUID()
+    await Bun.write(tmpPath, content)
+    await fs.chmod(tmpPath, 0o600)
+    await fs.rename(tmpPath, filepath)
   }
 
   export async function remove(key: string) {
-    const file = Bun.file(filepath)
     const data = await all()
     delete data[key]
-    await Bun.write(file, JSON.stringify(data, null, 2))
-    await fs.chmod(file.name!, 0o600)
+    const content = JSON.stringify(data, null, 2)
+    const tmpPath = filepath + ".tmp." + crypto.randomUUID()
+    await Bun.write(tmpPath, content)
+    await fs.chmod(tmpPath, 0o600)
+    await fs.rename(tmpPath, filepath)
   }
 }

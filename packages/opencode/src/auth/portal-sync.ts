@@ -100,6 +100,16 @@ export namespace PortalSync {
 
       // Determine portal URL
       const baseUrl = portalUrl || process.env.SNOW_FLOW_PORTAL_URL || "https://portal.snow-flow.dev"
+
+      // SECURITY: Ensure credentials are only sent over HTTPS (except localhost for dev)
+      const parsedUrl = new URL(baseUrl)
+      if (parsedUrl.protocol !== "https:" && parsedUrl.hostname !== "localhost" && parsedUrl.hostname !== "127.0.0.1") {
+        return {
+          success: false,
+          error: "Refusing to send credentials over non-HTTPS connection. Portal URL must use HTTPS.",
+        }
+      }
+
       const syncUrl = `${baseUrl}/api/credentials/sync-from-cli`
 
       // Send credentials to portal
@@ -202,6 +212,16 @@ export namespace PortalSync {
 
       // Determine portal URL
       const baseUrl = portalUrl || process.env.SNOW_FLOW_PORTAL_URL || "https://portal.snow-flow.dev"
+
+      // SECURITY: Ensure credentials are only fetched over HTTPS (except localhost for dev)
+      const parsedUrl = new URL(baseUrl)
+      if (parsedUrl.protocol !== "https:" && parsedUrl.hostname !== "localhost" && parsedUrl.hostname !== "127.0.0.1") {
+        return {
+          success: false,
+          error: "Refusing to fetch credentials over non-HTTPS connection. Portal URL must use HTTPS.",
+        }
+      }
+
       const fetchUrl = `${baseUrl}/api/credentials/fetch-for-cli`
 
       // Fetch credentials from portal
@@ -362,6 +382,19 @@ export namespace PortalSync {
     token: string,
   ): Promise<{ success: boolean; providers?: AiProviderCredential[]; error?: string }> {
     try {
+      // SECURITY: Ensure credentials are only sent over HTTPS (except localhost for dev)
+      const parsedUrl = new URL(portalUrl)
+      if (
+        parsedUrl.protocol !== "https:" &&
+        parsedUrl.hostname !== "localhost" &&
+        parsedUrl.hostname !== "127.0.0.1"
+      ) {
+        return {
+          success: false,
+          error: "Refusing to send credentials over non-HTTPS connection. Portal URL must use HTTPS.",
+        }
+      }
+
       const response = await fetch(`${portalUrl}/api/chat/providers/for-cli`, {
         method: "GET",
         headers: {

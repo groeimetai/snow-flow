@@ -127,7 +127,10 @@ export const GitHubCopilotAuthProvider: BuiltInAuthProvider = {
           instructions: `Enter code: ${deviceData.user_code}`,
           method: "auto",
           callback: async () => {
-            while (true) {
+            // SECURITY: Enforce a 10-minute timeout on device code polling
+            // to prevent indefinite loops if the user never completes authorization
+            const deadline = Date.now() + 10 * 60 * 1000
+            while (Date.now() < deadline) {
               const response = await fetch(ACCESS_TOKEN_URL, {
                 method: "POST",
                 headers: {
@@ -168,6 +171,7 @@ export const GitHubCopilotAuthProvider: BuiltInAuthProvider = {
               await new Promise((resolve) => setTimeout(resolve, deviceData.interval * 1000))
               continue
             }
+            return { type: "failed" as const }
           },
         }
       },

@@ -75,7 +75,9 @@ export namespace Server {
             return c.json(err.toObject(), { status })
           }
           if (err instanceof HTTPException) return err.getResponse()
-          const message = err instanceof Error && err.stack ? err.stack : err.toString()
+          // SECURITY: Only include the error message in API responses, not the full stack trace.
+          // Stack traces can leak internal file paths, dependency versions, and implementation details.
+          const message = err instanceof Error ? err.message : "An unexpected error occurred"
           return c.json(new NamedError.Unknown({ message }).toObject(), {
             status: 500,
           })
@@ -137,6 +139,13 @@ export namespace Server {
             directory = decodeURIComponent(directory)
           } catch {
             // fallback to original value
+          }
+          // SECURITY: Resolve the directory to an absolute path and reject
+          // path traversal sequences. This prevents attackers from using
+          // "../" sequences to escape the intended directory scope.
+          directory = path.resolve(directory)
+          if (directory.includes("\0")) {
+            return c.json({ error: "Invalid directory path" }, 400)
           }
           return Instance.provide({
             directory,
@@ -538,13 +547,19 @@ export namespace Server {
         )
         .use("/assets/*", serveStatic({ root: "./packages/app/dist" }))
         .get("/*", async (c) => {
-          const filePath = path.join(process.cwd(), "packages/app/dist", c.req.path)
+          const distDir = path.join(process.cwd(), "packages/app/dist")
+          // SECURITY: Resolve the path and ensure it stays within the dist directory
+          // to prevent directory traversal attacks (e.g., /../../etc/passwd)
+          const filePath = path.resolve(distDir, "." + c.req.path)
+          if (!filePath.startsWith(distDir + path.sep) && filePath !== distDir) {
+            return new Response("Forbidden", { status: 403 })
+          }
           const file = Bun.file(filePath)
           if (await file.exists()) {
             return new Response(file)
           }
           // SPA fallback — serve index.html for all non-asset routes
-          return new Response(Bun.file(path.join(process.cwd(), "packages/app/dist/index.html")), {
+          return new Response(Bun.file(path.join(distDir, "index.html")), {
             headers: { "Content-Type": "text/html" },
           })
         }) as unknown as Hono,
