@@ -151,12 +151,8 @@ export function tui(input: {
       },
     } as Parameters<typeof render>[1]
 
-    // On Linux, @opentui disables Zig renderer threading which prevents PTY output.
-    // OTUI_FORCE_THREAD=1 temporarily spoofs platform so @opentui keeps threading enabled.
-    if (forceThread) {
-      log("[snow-flow] forcing renderer threading (OTUI_FORCE_THREAD)")
-      Object.defineProperty(process, "platform", { value: "darwin", configurable: true })
-    }
+    // On Linux, @opentui sets useThread=false which may prevent the Zig renderer
+    // from flushing output. HostedRendererDiag handles starting the loop and flushing.
 
     try {
       log("[snow-flow] starting tui...")
@@ -223,15 +219,48 @@ function HostedRendererDiag() {
   const renderer = useRenderer()
   onMount(() => {
     const r = renderer as any
+    const log = (msg: string) => process.stderr.write(`[sf-diag] ${msg}\n`)
+    log(`useThread=${r._useThread} isRunning=${r._isRunning} state=${r._controlState}`)
+    log(`platform=${process.platform} altScreen=${r._useAlternateScreen} termSetup=${r._terminalIsSetup}`)
 
-    // Clear screen to remove console.log messages, then start render loop
-    if (!r._isRunning) {
-      const realWrite = r.realStdoutWrite
-      if (realWrite) {
-        realWrite.call(r.stdout, "\x1b[2J\x1b[H")
+    // On Linux, useThread=false means Zig render() buffers ANSI but doesn't write to fd 1.
+    // Patch renderNative to manually flush the Zig stdout buffer after each render frame.
+    const realWrite = r.realStdoutWrite
+    const stdout = r.stdout
+    if (realWrite && r.lib && r.rendererPtr) {
+      const origRenderNative = r.renderNative.bind(r)
+      r.renderNative = () => {
+        origRenderNative()
+        // Try to flush Zig's internal stdout buffer by calling writeOut with empty data
+        try {
+          r.lib.writeOut(r.rendererPtr, new Uint8Array(0).buffer, 0)
+        } catch {}
       }
-      r.start()
+      log("patched renderNative with flush")
     }
+
+    // Clear screen and start the render loop
+    if (realWrite) {
+      realWrite.call(stdout, "\x1b[2J\x1b[H")
+    }
+    if (!r._isRunning) {
+      r.start()
+      log(`started: isRunning=${r._isRunning} state=${r._controlState}`)
+    }
+
+    // After 3s, log state and try direct fd write test
+    setTimeout(() => {
+      log(`3s: isRunning=${r._isRunning} rendering=${r.rendering}`)
+      // Direct write to fd 1 to verify terminal connectivity
+      try {
+        const fd1 = Bun.file("/dev/fd/1")
+        Bun.write(fd1, "\x1b[5;1H\x1b[1;31m[sf-diag] FD1 WRITE TEST\x1b[0m\r\n").catch(() => {})
+      } catch {}
+      // Also try realStdoutWrite
+      if (realWrite) {
+        realWrite.call(stdout, "\x1b[7;1H\x1b[1;32m[sf-diag] REAL WRITE TEST\x1b[0m\r\n")
+      }
+    }, 3000)
   })
   return null
 }
