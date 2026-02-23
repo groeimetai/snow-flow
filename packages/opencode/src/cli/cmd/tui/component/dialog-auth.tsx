@@ -934,12 +934,13 @@ function DialogAuthEnterprise() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"plan-type" | "subdomain" | "code" | "verifying">("plan-type")
+  const [step, setStep] = createSignal<"plan-type" | "subdomain" | "code" | "verifying" | "sn-choice">("plan-type")
   const [planType, setPlanType] = createSignal<"individual-teams" | "enterprise" | "">("")
   const [subdomain, setSubdomain] = createSignal("")
   const [sessionId, setSessionId] = createSignal("")
   const [authCode, setAuthCode] = createSignal("")
   const [verificationUrl, setVerificationUrl] = createSignal("")
+  const [portalUrl, setPortalUrl] = createSignal("")
 
   let subdomainInput: TextareaRenderable
   let codeInput: TextareaRenderable
@@ -979,6 +980,9 @@ function DialogAuthEnterprise() {
         setSessionId("")
         setAuthCode("")
         setTimeout(() => subdomainInput?.focus(), 10)
+      } else if (currentStep === "sn-choice") {
+        // Enterprise auth is already saved, just close dialog
+        dialog.clear()
       }
     }
 
@@ -988,6 +992,19 @@ function DialogAuthEnterprise() {
         selectPlanType("individual-teams")
       } else if (evt.name === "2") {
         selectPlanType("enterprise")
+      }
+    }
+
+    // Handle 1/2/3 keypresses for ServiceNow choice
+    if (step() === "sn-choice") {
+      if (evt.name === "1") {
+        tryOpenBrowser(`${portalUrl()}/portal/integrations/servicenow`)
+        toast.show({ variant: "info", message: "Opening portal settings in browser...", duration: 3000 })
+        dialog.clear()
+      } else if (evt.name === "2") {
+        dialog.replace(() => <DialogAuthServiceNowOAuth />)
+      } else if (evt.name === "3") {
+        dialog.replace(() => <DialogAuthServiceNowBasic />)
       }
     }
   })
@@ -1070,10 +1087,10 @@ function DialogAuthEnterprise() {
 
     setStep("verifying")
     const sub = subdomain().trim().toLowerCase()
-    const portalUrl = `https://${sub}.snow-flow.dev`
+    const resolvedPortalUrl = `https://${sub}.snow-flow.dev`
 
     try {
-      const response = await fetch(`${portalUrl}/api/auth/device/verify`, {
+      const response = await fetch(`${resolvedPortalUrl}/api/auth/device/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1109,7 +1126,7 @@ function DialogAuthEnterprise() {
       await Auth.set("enterprise", {
         type: "enterprise",
         token: data.token,
-        enterpriseUrl: portalUrl,
+        enterpriseUrl: resolvedPortalUrl,
         username: data.user?.username || data.user?.email,
         email: data.user?.email,
         role: data.user?.role,
@@ -1142,6 +1159,9 @@ function DialogAuthEnterprise() {
         console.error("[Enterprise] Could not save enterprise.json:", saveErr)
       }
 
+      // Store portalUrl in state for use in sn-choice step
+      setPortalUrl(resolvedPortalUrl)
+
       // Add enterprise MCP server directly (no restart needed)
       try {
         const { MCP } = await import("@/mcp")
@@ -1150,7 +1170,7 @@ function DialogAuthEnterprise() {
           type: "local",
           command: Config.getMcpServerCommand("enterprise-proxy"),
           environment: {
-            SNOW_PORTAL_URL: portalUrl,
+            SNOW_PORTAL_URL: resolvedPortalUrl,
             SNOW_LICENSE_KEY: data.token,
           },
           enabled: true,
@@ -1158,9 +1178,10 @@ function DialogAuthEnterprise() {
 
         // Try to fetch ServiceNow credentials from enterprise portal
         let serviceNowStarted = false
+        let portalInstanceName = ""
         try {
-          // First, try to get ServiceNow credentials from the enterprise portal
-          const portalSnResponse = await fetch(`${portalUrl}/api/user-credentials/servicenow/default`, {
+          // Fetch default ServiceNow instance from the portal (works for all user types)
+          const portalSnResponse = await fetch(`${resolvedPortalUrl}/api/servicenow/instances/default-for-cli`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${data.token}`,
@@ -1173,6 +1194,7 @@ function DialogAuthEnterprise() {
             if (portalSnData.success && portalSnData.instance) {
               const instance = portalSnData.instance
               if (instance.instanceUrl && instance.clientId && instance.clientSecret) {
+                portalInstanceName = instance.instanceName || ""
                 // Save ServiceNow credentials to auth store
                 await Auth.set("servicenow", {
                   type: "servicenow-oauth",
@@ -1226,15 +1248,26 @@ function DialogAuthEnterprise() {
           // ServiceNow credentials not available from portal or local, skip
         }
 
-        const userName = data.user?.username || data.user?.email || "Enterprise"
-        const serverMsg = serviceNowStarted
-          ? "Enterprise + ServiceNow MCP servers are now active."
-          : "Enterprise MCP server is now active."
-        toast.show({
-          variant: "info",
-          message: `Connected as ${userName}! ${serverMsg}`,
-          duration: 5000,
-        })
+        if (serviceNowStarted) {
+          const userName = data.user?.username || data.user?.email || "Enterprise"
+          const snMsg = portalInstanceName
+            ? `Using ServiceNow instance '${portalInstanceName}' from your portal account.`
+            : "Enterprise + ServiceNow MCP servers are now active."
+          toast.show({
+            variant: "info",
+            message: `Connected as ${userName}! ${snMsg}`,
+            duration: 5000,
+          })
+        } else {
+          // No ServiceNow credentials found — will show choice menu after doc update
+          const userName = data.user?.username || data.user?.email || "Enterprise"
+          toast.show({
+            variant: "info",
+            message: `Connected as ${userName}! Enterprise MCP server is now active.`,
+            duration: 3000,
+          })
+          setStep("sn-choice")
+        }
       } catch (mcpError) {
         // MCP add failed, but auth succeeded - user can restart
         const userName = data.user?.username || data.user?.email || data.customer?.name || "Enterprise"
@@ -1247,8 +1280,7 @@ function DialogAuthEnterprise() {
 
       // Update documentation with enterprise instructions (only for active integrations)
       try {
-        const sub = subdomain().trim().toLowerCase()
-        const activeFeatures = await fetchActiveIntegrations(`https://${sub}.snow-flow.dev`, data.token)
+        const activeFeatures = await fetchActiveIntegrations(resolvedPortalUrl, data.token)
         const userRole = data.user?.role || "developer"
         await updateDocumentationWithEnterprise(activeFeatures, userRole)
       } catch (docError) {
@@ -1298,6 +1330,9 @@ function DialogAuthEnterprise() {
       } catch {
         // Non-critical, skip toast on error
       }
+
+      // If no ServiceNow credentials found, show choice menu instead of closing
+      if (step() === "sn-choice") return
 
       dialog.clear()
     } catch (e) {
@@ -1422,6 +1457,60 @@ function DialogAuthEnterprise() {
           <text fg={theme.textMuted}>Validating authorization code with {subdomain()}.snow-flow.dev</text>
         </box>
       </Show>
+
+      <Show when={step() === "sn-choice"}>
+        <box gap={1}>
+          <text fg={theme.success}>✓ Enterprise connected!</text>
+          <box paddingTop={1}>
+            <text fg={theme.textMuted}>ServiceNow not configured in your portal account.</text>
+          </box>
+          <box paddingTop={1} gap={1}>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[1] Configure in portal</text>
+              <text fg={theme.textMuted}>- Opens portal settings in browser</text>
+            </box>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[2] Set up locally — OAuth</text>
+              <text fg={theme.textMuted}>- OAuth2 + PKCE</text>
+            </box>
+            <box
+              flexDirection="row"
+              gap={2}
+              borderStyle="single"
+              borderColor={theme.border}
+              paddingLeft={1}
+              paddingRight={1}
+            >
+              <text fg={theme.text}>[3] Set up locally — Basic Auth</text>
+              <text fg={theme.textMuted}>- Username/Password</text>
+            </box>
+          </box>
+          <box paddingTop={1} flexDirection="row">
+            <text fg={theme.text}>1 </text>
+            <text fg={theme.textMuted}>portal</text>
+            <text fg={theme.text}> 2 </text>
+            <text fg={theme.textMuted}>OAuth</text>
+            <text fg={theme.text}> 3 </text>
+            <text fg={theme.textMuted}>Basic</text>
+            <text fg={theme.text}> esc </text>
+            <text fg={theme.textMuted}>skip</text>
+          </box>
+        </box>
+      </Show>
     </box>
   )
 }
@@ -1465,7 +1554,7 @@ function DialogAuthSelectInstance() {
     }>
   > => {
     try {
-      const response = await fetch(`${url}/api/user-credentials/servicenow/instances`, {
+      const response = await fetch(`${url}/api/servicenow/instances`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${bearerToken}`,
@@ -1487,7 +1576,7 @@ function DialogAuthSelectInstance() {
     instanceId: number,
   ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
     try {
-      const response = await fetch(`${url}/api/user-credentials/servicenow/instances/${instanceId}`, {
+      const response = await fetch(`${url}/api/servicenow/instances/${instanceId}/for-cli`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${bearerToken}`,
@@ -2053,7 +2142,7 @@ function DialogAuthEnterpriseCombined() {
     }>
   > => {
     try {
-      const response = await fetch(`${portalUrl}/api/user-credentials/servicenow/instances`, {
+      const response = await fetch(`${portalUrl}/api/servicenow/instances`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2075,7 +2164,7 @@ function DialogAuthEnterpriseCombined() {
     instanceId: number,
   ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
     try {
-      const response = await fetch(`${portalUrl}/api/user-credentials/servicenow/instances/${instanceId}`, {
+      const response = await fetch(`${portalUrl}/api/servicenow/instances/${instanceId}/for-cli`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
