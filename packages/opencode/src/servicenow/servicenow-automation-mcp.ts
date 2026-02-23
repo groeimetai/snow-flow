@@ -13,6 +13,7 @@ import { mcpAuth } from "../utils/mcp-auth-middleware.js"
 import { mcpConfig } from "../utils/mcp-config-manager.js"
 import { MCPLogger } from "./shared/mcp-logger.js"
 import { ServiceNowAuditLogger, getAuditLogger } from "../utils/servicenow-audit-logger.js"
+import crypto from "crypto"
 
 interface SchedulePattern {
   type: "daily" | "weekly" | "monthly" | "interval" | "cron"
@@ -1237,7 +1238,7 @@ class ServiceNowAutomationMCP {
         this.logger.warn("⚠️ AUTO-CONFIRM MODE: Executing script without user confirmation")
 
         // Log the auto-execution for audit trail
-        const executionId = `snow_flow_exec_auto_${Date.now()}_${Math.random().toString(36).substring(7)}`
+        const executionId = `snow_flow_exec_auto_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
         this.logger.info(`Auto-executing script with ID: ${executionId}`, {
           description,
           riskLevel: securityAnalysis.riskLevel,
@@ -2048,7 +2049,7 @@ ${groupedResults.suites
       this.logger.info("Executing script with output retrieval...")
 
       // Create a unique execution ID
-      const executionId = `snow_flow_exec_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const executionId = `snow_flow_exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
 
       // Log script execution start
       await this.getAuditLogger().logOperation("script_execution_start", "INFO", {
@@ -2303,7 +2304,7 @@ ${groupedResults.suites
       const timeout = args.timeout || 30000 // Default 30 seconds
 
       // Create a polling script that executes and returns immediately
-      const executionId = `sync_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const executionId = `sync_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
 
       const executionScript = `
         var result = {};
@@ -2753,7 +2754,7 @@ ${groupedResults.suites
     try {
       this.logger.info("Tracing execution...")
 
-      const traceId = `trace_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const traceId = `trace_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
 
       // Enhanced script with detailed tracing
       const tracedScript = `

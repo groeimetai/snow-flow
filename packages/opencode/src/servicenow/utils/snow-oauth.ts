@@ -42,6 +42,17 @@ interface OAuthCredentials {
   redirectUri: string
 }
 
+/**
+ * Timing-safe string comparison to prevent timing attacks on security tokens.
+ * Returns true if both strings are equal, using constant-time comparison.
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  const bufA = Buffer.from(a, "utf8")
+  const bufB = Buffer.from(b, "utf8")
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
 export class ServiceNowOAuth {
   private credentials?: OAuthCredentials
   private tokenPath: string
@@ -85,9 +96,10 @@ export class ServiceNowOAuth {
 
   /**
    * Generate a random state parameter for CSRF protection
+   * Uses crypto.randomBytes for cryptographic security instead of Math.random()
    */
   private generateState(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    return crypto.randomBytes(32).toString("base64url")
   }
 
   /**
@@ -425,7 +437,7 @@ export class ServiceNowOAuth {
             const state = url.searchParams.get("state")
 
             // Validate state parameter
-            if (state !== this.stateParameter) {
+            if (!state || !this.stateParameter || !timingSafeCompare(state, this.stateParameter)) {
               res.writeHead(400, { "Content-Type": "text/html" })
               res.end(OAuthTemplates.securityError)
 
@@ -607,7 +619,7 @@ export class ServiceNowOAuth {
               const error = url.searchParams.get("error")
 
               // Validate state
-              if (state !== this.stateParameter) {
+              if (!state || !this.stateParameter || !timingSafeCompare(state, this.stateParameter)) {
                 cleanup()
                 resolve({
                   success: false,

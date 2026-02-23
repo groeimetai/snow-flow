@@ -1,3 +1,4 @@
+import nodeCrypto from "node:crypto"
 import { dynamicTool, type Tool, jsonSchema, type JSONSchema7 } from "ai"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js"
@@ -1059,9 +1060,14 @@ export namespace MCP {
     // Wait for callback using the already-registered promise
     const code = await callbackPromise
 
-    // Validate and clear the state
+    // Validate and clear the state using timing-safe comparison
     const storedState = await McpAuth.getOAuthState(mcpName)
-    if (storedState !== oauthState) {
+    if (
+      !storedState ||
+      !oauthState ||
+      storedState.length !== oauthState.length ||
+      !nodeCrypto.timingSafeEqual(Buffer.from(storedState, "utf8"), Buffer.from(oauthState, "utf8"))
+    ) {
       await McpAuth.clearOAuthState(mcpName)
       throw new Error("OAuth state mismatch - potential CSRF attack")
     }

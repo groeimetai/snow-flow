@@ -17,6 +17,7 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/t
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
 import { summary } from "../../shared/output-formatter.js"
+import crypto from "crypto"
 
 // ── helpers ────────────────────────────────────────────────────────────
 
@@ -141,10 +142,7 @@ function jsToGraphQL(val: any): string {
 }
 
 function generateUUID(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16)
-  })
+  return crypto.randomUUID()
 }
 
 /**

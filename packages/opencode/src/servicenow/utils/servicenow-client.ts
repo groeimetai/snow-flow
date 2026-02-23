@@ -6,6 +6,7 @@
 
 import axios, { AxiosInstance } from "axios"
 import https from "https"
+import crypto from "crypto"
 import { ServiceNowOAuth, ServiceNowCredentials } from "./snow-oauth"
 import { ActionTypeCache } from "./action-type-cache"
 import { snowFlowConfig } from "../config/snow-flow-config.js"
@@ -1064,7 +1065,7 @@ export class ServiceNowClient {
     try {
       this.logger.info("⚡ Executing ServiceNow script via Scheduled Job + sys_trigger...")
 
-      const executionId = `exec_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      const executionId = `exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
       const outputMarker = `SNOW_FLOW_EXEC_${executionId}`
 
       // Wrap script with output capture

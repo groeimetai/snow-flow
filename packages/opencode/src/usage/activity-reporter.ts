@@ -3,6 +3,7 @@ import { Bus } from "@/bus"
 import { MessageV2 } from "@/session/message-v2"
 import { Auth } from "@/auth"
 import { Log } from "@/util/log"
+import crypto from "crypto"
 
 const log = Log.create({ service: "usage.activity" })
 
@@ -139,7 +140,7 @@ async function handleUpdateSetCreate(
   const data = parseToolOutput(output)
   if (!data?.sys_id || !data?.name) return undefined
 
-  const activityId = `act-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+  const activityId = `act-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`
 
   const body = {
     licenseKey: authCache.licenseKey,

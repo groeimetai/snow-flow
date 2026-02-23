@@ -6,6 +6,7 @@
 import Database from "better-sqlite3"
 import * as path from "path"
 import * as fs from "fs"
+import crypto from "crypto"
 import { Logger } from "../utils/logger.js"
 
 export interface AgentContext {
@@ -371,7 +372,7 @@ export class MCPMemoryManager {
   // Send message between agents
   async sendAgentMessage(message: Omit<AgentMessage, "id" | "timestamp" | "processed">): Promise<void> {
     try {
-      const id = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const id = `msg_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
 
       const stmt = this.db.prepare(`
         INSERT INTO agent_messages 
@@ -465,7 +466,7 @@ export class MCPMemoryManager {
     error_details?: string,
   ): Promise<void> {
     try {
-      const id = `deploy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const id = `deploy_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
 
       const stmt = this.db.prepare(`
         INSERT INTO deployment_history 

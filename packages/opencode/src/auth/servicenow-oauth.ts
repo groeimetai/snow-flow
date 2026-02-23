@@ -428,6 +428,17 @@ export function isRemoteEnvironment(): boolean {
   return false
 }
 
+/**
+ * Timing-safe string comparison to prevent timing attacks on security tokens.
+ * Returns true if both strings are equal, using constant-time comparison.
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  const bufA = Buffer.from(a, "utf8")
+  const bufB = Buffer.from(b, "utf8")
+  return crypto.timingSafeEqual(bufA, bufB)
+}
+
 export class ServiceNowOAuth {
   private stateParameter?: string
   private codeVerifier?: string
@@ -734,7 +745,7 @@ export class ServiceNowOAuth {
       const error = parsedUrl.searchParams.get("error")
       const state = parsedUrl.searchParams.get("state")
 
-      if (state !== this.stateParameter) {
+      if (!state || !this.stateParameter || !timingSafeCompare(state, this.stateParameter)) {
         return { success: false, error: "Invalid state parameter - possible CSRF attack" }
       }
 
@@ -932,7 +943,7 @@ export class ServiceNowOAuth {
             const state = url.searchParams.get("state")
 
             // Validate state parameter
-            if (state !== this.stateParameter) {
+            if (!state || !this.stateParameter || !timingSafeCompare(state, this.stateParameter)) {
               res.writeHead(400, { "Content-Type": "text/html" })
               res.end(OAuthTemplates.securityError)
               server.close()
@@ -1040,7 +1051,7 @@ export class ServiceNowOAuth {
                   const state = parsedUrl.searchParams.get("state")
 
                   // Validate state parameter
-                  if (state !== this.stateParameter) {
+                  if (!state || !this.stateParameter || !timingSafeCompare(state, this.stateParameter)) {
                     server.close()
                     resolved = true
                     resolve({ success: false, error: "Invalid state parameter - possible CSRF attack" })

@@ -13,6 +13,7 @@
  */
 
 import axios, { AxiosError } from "axios"
+import crypto from "crypto"
 import { machineIdSync } from "node-machine-id"
 import fs from "fs"
 import path from "path"
@@ -82,7 +83,7 @@ try {
   INSTANCE_ID = machineIdSync()
 } catch {
   // Fallback if machine ID generation fails
-  INSTANCE_ID = `fallback-${Date.now()}-${Math.random().toString(36).substring(7)}`
+  INSTANCE_ID = `fallback-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`
 }
 
 // JWT token cache

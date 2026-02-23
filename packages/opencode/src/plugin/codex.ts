@@ -2,6 +2,7 @@ import type { Hooks, PluginInput } from "@opencode-ai/plugin"
 import { Log } from "../util/log"
 import { Installation } from "../installation"
 import { Auth, OAUTH_DUMMY_KEY } from "../auth"
+import nodeCrypto from "node:crypto"
 import os from "os"
 
 const log = Log.create({ service: "plugin.codex" })
@@ -280,7 +281,12 @@ async function startOAuthServer(): Promise<{ port: number; redirectUri: string }
           })
         }
 
-        if (!pendingOAuth || state !== pendingOAuth.state) {
+        const stateValid =
+          pendingOAuth &&
+          state &&
+          state.length === pendingOAuth.state.length &&
+          nodeCrypto.timingSafeEqual(Buffer.from(state, "utf8"), Buffer.from(pendingOAuth.state, "utf8"))
+        if (!stateValid) {
           const errorMsg = "Invalid state - potential CSRF attack"
           pendingOAuth?.reject(new Error(errorMsg))
           pendingOAuth = undefined

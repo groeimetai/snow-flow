@@ -22,6 +22,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
+import crypto from "crypto"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_schedule_script_job",
@@ -187,7 +188,7 @@ async function executeScript(
     str.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "\\r")
 
   // Create unique execution ID for tracking
-  const executionId = `exec_${Date.now()}_${Math.random().toString(36).substring(7)}`
+  const executionId = `exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
   const outputMarker = `SNOW_FLOW_EXEC_${executionId}`
 
   // Wrap script with comprehensive output capture

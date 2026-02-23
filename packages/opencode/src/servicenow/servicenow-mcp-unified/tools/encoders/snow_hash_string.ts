@@ -33,8 +33,19 @@ export const toolDefinition: MCPToolDefinition = {
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const { text, algorithm = "sha256" } = args
   try {
+    // Warn about weak algorithms that should not be used for security purposes
+    const weakAlgorithms = ["md5", "sha1"]
+    const warning = weakAlgorithms.includes(algorithm)
+      ? `WARNING: ${algorithm.toUpperCase()} is cryptographically weak and must NOT be used for security purposes (password hashing, integrity verification, digital signatures). Use SHA-256 or SHA-512 instead.`
+      : undefined
+
     const hash = crypto.createHash(algorithm).update(text).digest("hex")
-    return createSuccessResult({ hash, algorithm, original_length: text.length })
+    return createSuccessResult({
+      hash,
+      algorithm,
+      original_length: text.length,
+      ...(warning ? { security_warning: warning } : {}),
+    })
   } catch (error: any) {
     return createErrorResult(error.message)
   }

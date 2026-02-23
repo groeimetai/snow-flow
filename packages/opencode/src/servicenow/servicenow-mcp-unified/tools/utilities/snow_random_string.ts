@@ -4,6 +4,7 @@
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
+import crypto from "crypto"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_random_string",
@@ -41,8 +42,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const chars = charsets[charset]
     let result = ""
 
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    // Use crypto.randomBytes for cryptographic security instead of Math.random()
+    const limit = 256 - (256 % chars.length) // rejection threshold to avoid modulo bias
+    while (result.length < length) {
+      const bytes = crypto.randomBytes(length - result.length + 16)
+      for (let i = 0; i < bytes.length && result.length < length; i++) {
+        if (bytes[i] < limit) result += chars.charAt(bytes[i] % chars.length)
+      }
     }
 
     return createSuccessResult({ random_string: result, length, charset })

@@ -586,7 +586,41 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Derive a machine-specific encryption key for token cache
+   * Get path for the encryption salt file
+   */
+  private getSaltPath(): string {
+    const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir()
+    return path.join(homeDir, ".snow-flow", ".token-cache-salt")
+  }
+
+  /**
+   * Get or create a persistent random salt for key derivation.
+   * The salt is generated once and stored on disk to ensure deterministic
+   * decryption across restarts.
+   */
+  private getOrCreateSalt(): Buffer {
+    const saltPath = this.getSaltPath()
+    try {
+      const existing = require("fs").readFileSync(saltPath)
+      if (existing.length === 32) return existing
+    } catch {
+      // Salt doesn't exist yet, create it
+    }
+    const salt = crypto.randomBytes(32)
+    try {
+      const saltDir = path.dirname(saltPath)
+      require("fs").mkdirSync(saltDir, { recursive: true, mode: 0o700 })
+      require("fs").writeFileSync(saltPath, salt, { mode: 0o600 })
+    } catch {
+      // If we can't persist the salt, use it ephemerally (cache won't survive restart)
+    }
+    return salt
+  }
+
+  /**
+   * Derive a machine-specific encryption key for token cache using PBKDF2.
+   * Uses machine identity as the password and a persistent random salt
+   * to prevent the key from being trivially reconstructable from known machine info.
    */
   private deriveEncryptionKey(): Buffer {
     const hostname = os.hostname()
@@ -597,8 +631,9 @@ export class ServiceNowAuthManager {
       username = process.env.USER || process.env.USERNAME || "default"
     }
     const platform = os.platform()
-    const seed = `snow-flow-token-cache:${hostname}:${username}:${platform}`
-    return crypto.createHash("sha256").update(seed).digest()
+    const password = `snow-flow-token-cache:${hostname}:${username}:${platform}`
+    const salt = this.getOrCreateSalt()
+    return crypto.pbkdf2Sync(password, salt, 100000, 32, "sha256")
   }
 
   /**
