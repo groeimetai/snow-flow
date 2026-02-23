@@ -118,115 +118,77 @@ export function tui(input: {
   const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
-    // Crash handlers for debugging PTY rendering issues
-    process.on("uncaughtException", (err) => {
-      console.error("[snow-flow] UNCAUGHT:", err.message, err.stack)
-    })
-    process.on("unhandledRejection", (err) => {
-      console.error("[snow-flow] UNHANDLED:", err)
-    })
-    process.on("exit", (code) => {
-      if (code !== 0) console.error("[snow-flow] EXIT code:", code)
-    })
-
     let mode: "dark" | "light" = "dark"
-    if (skipThemeDetection) {
-      console.log("[snow-flow] skipping theme detection")
-    } else {
-      console.log("[snow-flow] detecting theme...")
+    if (!skipThemeDetection) {
       mode = await getTerminalBackgroundColor()
-      console.log(`[snow-flow] theme: ${mode}`)
     }
     const onExit = async () => {
       await input.onExit?.()
       resolve()
     }
 
-    // All diagnostics via stderr since @opentui intercepts stdout.write
-    const log = (msg: string) => process.stderr.write("[snow-flow] " + msg + "\n")
-    log("env: OTUI_USE_ALTERNATE_SCREEN=" + (process.env.OTUI_USE_ALTERNATE_SCREEN ?? "unset"))
-    log("stdout.isTTY=" + process.stdout.isTTY + " stdin.isTTY=" + process.stdin.isTTY)
-    log("columns=" + process.stdout.columns + " rows=" + process.stdout.rows)
+    // Clear screen before render — ensures terminal viewport starts at row 0
+    // so @opentui's absolute ANSI positioning aligns with visible area
+    process.stdout.write("\x1b[2J\x1b[H")
 
-    // Step-by-step renderer creation to find where it hangs
-    const { createCliRenderer: createRenderer } = await import("@opentui/core")
-    log("step 1: @opentui/core imported")
-
-    const renderConfig = {
-      targetFps: 60,
-      gatherStats: false,
-      exitOnCtrlC: false,
-      useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
-      consoleOptions: {
-        keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-        onCopySelection: (text: string) => {
-          Clipboard.copy(text).catch((error: Error) => {
-            log("Failed to copy: " + error)
-          })
+    await render(
+      () => (
+        <ErrorBoundary
+          fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
+        >
+          <ArgsProvider {...input.args}>
+            <ExitProvider onExit={onExit}>
+              <KVProvider>
+                <ToastProvider>
+                  <RouteProvider>
+                    <SDKProvider
+                      url={input.url}
+                      directory={input.directory}
+                      fetch={input.fetch}
+                      events={input.events}
+                    >
+                      <SyncProvider>
+                        <ThemeProvider mode={mode}>
+                          <LocalProvider>
+                            <KeybindProvider>
+                              <PromptStashProvider>
+                                <DialogProvider>
+                                  <CommandProvider>
+                                    <FrecencyProvider>
+                                      <PromptHistoryProvider>
+                                        <PromptRefProvider>
+                                          <App />
+                                        </PromptRefProvider>
+                                      </PromptHistoryProvider>
+                                    </FrecencyProvider>
+                                  </CommandProvider>
+                                </DialogProvider>
+                              </PromptStashProvider>
+                            </KeybindProvider>
+                          </LocalProvider>
+                        </ThemeProvider>
+                      </SyncProvider>
+                    </SDKProvider>
+                  </RouteProvider>
+                </ToastProvider>
+              </KVProvider>
+            </ExitProvider>
+          </ArgsProvider>
+        </ErrorBoundary>
+      ),
+      {
+        targetFps: 60,
+        gatherStats: false,
+        exitOnCtrlC: false,
+        useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+        consoleOptions: {
+          keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+          onCopySelection: (text: string) => {
+            Clipboard.copy(text).catch(() => {})
+          },
         },
       },
-    } as Parameters<typeof render>[1]
-
-    log("step 2: creating CliRenderer...")
-    const cliRenderer = await createRenderer(renderConfig as any)
-    log("step 3: CliRenderer created! Starting render...")
-
-    try {
-      await render(
-        () => {
-          log("step 4: component factory invoked")
-          return (
-            <ErrorBoundary
-              fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
-            >
-              <ArgsProvider {...input.args}>
-                <ExitProvider onExit={onExit}>
-                  <KVProvider>
-                    <ToastProvider>
-                      <RouteProvider>
-                        <SDKProvider
-                          url={input.url}
-                          directory={input.directory}
-                          fetch={input.fetch}
-                          events={input.events}
-                        >
-                          <SyncProvider>
-                            <ThemeProvider mode={mode}>
-                              <LocalProvider>
-                                <KeybindProvider>
-                                  <PromptStashProvider>
-                                    <DialogProvider>
-                                      <CommandProvider>
-                                        <FrecencyProvider>
-                                          <PromptHistoryProvider>
-                                            <PromptRefProvider>
-                                              <App />
-                                            </PromptRefProvider>
-                                          </PromptHistoryProvider>
-                                        </FrecencyProvider>
-                                      </CommandProvider>
-                                    </DialogProvider>
-                                  </PromptStashProvider>
-                                </KeybindProvider>
-                              </LocalProvider>
-                            </ThemeProvider>
-                          </SyncProvider>
-                        </SDKProvider>
-                      </RouteProvider>
-                    </ToastProvider>
-                  </KVProvider>
-                </ExitProvider>
-              </ArgsProvider>
-            </ErrorBoundary>
-          )
-        },
-        cliRenderer,
-      )
-    } catch (e) {
-      console.error("[snow-flow] render failed:", e instanceof Error ? e.message : e)
-      if (e instanceof Error && e.stack) console.error(e.stack)
-      resolve()
-    }
+    )
   })
 }
 
