@@ -81,8 +81,8 @@ ENV OPENCODE_CONFIG_CONTENT='{"disabled_providers":["opencode"]}'
 ENV SNOW_CODE_DEFAULT_DIRECTORY=/workspace
 # Fix TUI rendering in web terminal (Ghostty WebGL doesn't support kitty keyboard)
 ENV OPENCODE_DISABLE_KITTY_KEYBOARD=1
-# Mark as remote/hosted environment
-ENV OPENCODE_REMOTE_TUI=1
+# Skip terminal theme detection in hosted environment
+ENV OPENCODE_SKIP_THEME_DETECTION=1
 # Auto-start snow-flow TUI when terminal opens (PTY reads $SHELL)
 ENV SHELL=/usr/local/bin/snow-flow
 

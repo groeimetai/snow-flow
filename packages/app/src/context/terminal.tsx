@@ -103,7 +103,10 @@ function createTerminalSession(sdk: ReturnType<typeof useSDK>, dir: string, sess
         ) ?? 1
 
       sdk.client.pty
-        .create({ title: `Terminal ${nextNumber}` })
+        .create({
+          title: `Terminal ${nextNumber}`,
+          ...(import.meta.env.VITE_SNOW_FLOW_HOSTED ? { mode: "tui" as const } : {}),
+        })
         .then((pty) => {
           const id = pty.data?.id
           if (!id) return
@@ -144,6 +147,7 @@ function createTerminalSession(sdk: ReturnType<typeof useSDK>, dir: string, sess
       const clone = await sdk.client.pty
         .create({
           title: pty.title,
+          ...(import.meta.env.VITE_SNOW_FLOW_HOSTED ? { mode: "tui" as const } : {}),
         })
         .catch((e) => {
           console.error("Failed to clone terminal", e)

@@ -1782,6 +1782,10 @@ export type Config = {
      */
     url?: string
   }
+  /**
+   * Enable anonymous usage telemetry (default: true). Set to false to disable.
+   */
+  telemetry?: boolean
   compaction?: {
     /**
      * Enable automatic compaction when context is full (default: true)
@@ -2207,6 +2211,9 @@ export type Enterprise = {
   azureOrg?: string
   azureProject?: string
   azurePat?: string
+  features?: Array<string>
+  subscriptionStatus?: string
+  trialEndsAt?: number
 }
 
 export type Portal = {
@@ -2300,6 +2307,13 @@ export type GlobalDisposeResponses = {
 }
 
 export type GlobalDisposeResponse = GlobalDisposeResponses[keyof GlobalDisposeResponses]
+
+export type TuiWsConnectData = {
+  body?: never
+  path?: never
+  query?: never
+  url: "/tui-ws/ws"
+}
 
 export type ProjectListData = {
   body?: never
@@ -2410,6 +2424,7 @@ export type PtyCreateData = {
     env?: {
       [key: string]: string
     }
+    mode?: "shell" | "tui"
   }
   path?: never
   query?: {
@@ -4912,6 +4927,7 @@ export type AppSkillsResponses = {
     name: string
     description: string
     location: string
+    content: string
   }>
 }
 

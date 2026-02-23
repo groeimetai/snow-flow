@@ -40,21 +40,25 @@ async function spawnTui(cols: number, rows: number, env?: Record<string, string>
   const { spawn } = await import("bun-pty")
   const id = crypto.randomUUID()
 
-  const ptyProcess = spawn("bun", ["run", "--conditions=browser", "src/index.ts", "--connect", "http://localhost:4096"], {
-    name: "xterm-256color",
-    cols,
-    rows,
-    cwd: new URL("../../../", import.meta.url).pathname.replace(/\/$/, ""),
-    env: {
-      ...process.env,
-      ...env,
-      TERM: "xterm-256color",
-      COLORTERM: "truecolor",
-      FORCE_COLOR: "3",
-      OPENCODE_REMOTE_TUI: "1",
-      OPENCODE_DISABLE_KITTY_KEYBOARD: "1",
+  const ptyProcess = spawn(
+    "bun",
+    ["run", "--conditions=browser", "src/index.ts", "--connect", "http://localhost:4096"],
+    {
+      name: "xterm-256color",
+      cols,
+      rows,
+      cwd: new URL("../../../", import.meta.url).pathname.replace(/\/$/, ""),
+      env: {
+        ...process.env,
+        ...env,
+        TERM: "xterm-256color",
+        COLORTERM: "truecolor",
+        FORCE_COLOR: "3",
+        OPENCODE_SKIP_THEME_DETECTION: "1",
+        OPENCODE_DISABLE_KITTY_KEYBOARD: "1",
+      },
     },
-  })
+  )
 
   const session: TuiSession = { pty: ptyProcess, lastActivity: Date.now() }
   sessions.set(id, session)

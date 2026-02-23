@@ -40,6 +40,7 @@ export namespace Pty {
     cwd: z.string().optional(),
     title: z.string().optional(),
     env: z.record(z.string(), z.string()).optional(),
+    mode: z.enum(["shell", "tui"]).optional(),
   })
 
   export type CreateInput = z.infer<typeof CreateInput>
@@ -95,15 +96,35 @@ export namespace Pty {
 
   export async function create(input: CreateInput) {
     const id = Identifier.create("pty", false)
-    const command = input.command || Shell.preferred()
-    const args = input.args || []
-    if (command.endsWith("sh")) {
+    let command = input.command || Shell.preferred()
+    let args = input.args || []
+    let cwd = input.cwd || Instance.directory
+    let extraEnv: Record<string, string> = {}
+
+    if (input.mode === "tui") {
+      const packageRoot = new URL("../../", import.meta.url).pathname.replace(/\/$/, "")
+      command = "bun"
+      args = [
+        "run",
+        "--conditions=browser",
+        "src/index.ts",
+        "--connect",
+        `http://127.0.0.1:${process.env.PORT || "4096"}`,
+      ]
+      cwd = packageRoot
+      extraEnv = {
+        OPENCODE_SKIP_THEME_DETECTION: "1",
+        OPENCODE_DISABLE_KITTY_KEYBOARD: "1",
+        COLORTERM: "truecolor",
+        FORCE_COLOR: "3",
+      }
+    } else if (command.endsWith("sh")) {
       args.push("-l")
     }
 
-    const cwd = input.cwd || Instance.directory
     const env = {
       ...process.env,
+      ...extraEnv,
       ...input.env,
       TERM: "xterm-256color",
       SNOW_CODE_TERMINAL: "1",

@@ -115,12 +115,12 @@ export function tui(input: {
   onUpgrade?: () => Promise<{ success: boolean; version?: string; error?: string }>
 }) {
   _onUpgrade = input.onUpgrade
-  const isRemote = !!process.env.OPENCODE_REMOTE_TUI
+  const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
     let mode: "dark" | "light" = "dark"
-    if (isRemote) {
-      console.log("[snow-flow] remote mode, skipping theme detection")
+    if (skipThemeDetection) {
+      console.log("[snow-flow] skipping theme detection")
     } else {
       console.log("[snow-flow] detecting theme...")
       mode = await getTerminalBackgroundColor()
@@ -184,7 +184,7 @@ export function tui(input: {
           targetFps: 60,
           gatherStats: false,
           exitOnCtrlC: false,
-          ...(isRemote ? { remote: true } : {}),
+          // No remote: true — let opentui render normally to the PTY
           useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
           consoleOptions: {
             keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
@@ -675,9 +675,7 @@ function App() {
         kv.set("telemetry_enabled", !enabled)
         await Config.updateGlobal({ telemetry: !enabled }).catch(() => {})
         toast.show({
-          message: enabled
-            ? "Telemetry disabled. Takes effect next session."
-            : "Telemetry enabled. Thank you!",
+          message: enabled ? "Telemetry disabled. Takes effect next session." : "Telemetry enabled. Thank you!",
           variant: "info",
         })
         dialog.clear()
