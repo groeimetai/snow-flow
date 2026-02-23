@@ -641,7 +641,7 @@ export const McpDebugCommand = cmd({
 
         const entry = await McpAuth.get(serverName)
         if (entry?.tokens) {
-          prompts.log.info(`  Access token: ${entry.tokens.accessToken.substring(0, 20)}...`)
+          prompts.log.info(`  Access token: present (${entry.tokens.accessToken.length} chars)`)
           if (entry.tokens.expiresAt) {
             const expiresDate = new Date(entry.tokens.expiresAt * 1000)
             const isExpired = entry.tokens.expiresAt < Date.now() / 1000
@@ -652,7 +652,7 @@ export const McpDebugCommand = cmd({
           }
         }
         if (entry?.clientInfo) {
-          prompts.log.info(`  Client ID: ${entry.clientInfo.clientId}`)
+          prompts.log.info(`  Client ID: ${entry.clientInfo.clientId.substring(0, 8)}...`)
           if (entry.clientInfo.clientSecretExpiresAt) {
             const expiresDate = new Date(entry.clientInfo.clientSecretExpiresAt * 1000)
             prompts.log.info(`  Client secret expires: ${expiresDate.toISOString()}`)
@@ -730,7 +730,7 @@ export const McpDebugCommand = cmd({
                 // Check if dynamic registration would be attempted
                 const clientInfo = await authProvider.clientInformation()
                 if (clientInfo) {
-                  prompts.log.info(`Client ID available: ${clientInfo.client_id}`)
+                  prompts.log.info(`Client ID available: ${clientInfo.client_id.substring(0, 8)}...`)
                 } else {
                   prompts.log.info("No client ID - dynamic registration will be attempted")
                 }

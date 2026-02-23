@@ -34,3 +34,16 @@ packages/opencode/src/**/*.js
 opencode-dev
 logs/
 *.bun-build
+
+# Credential and secret files
+auth.json
+mcp-auth.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+.env.*
+!.env.example
+credentials.json
+service-account*.json

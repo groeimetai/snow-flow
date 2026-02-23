@@ -5,9 +5,24 @@ import { Config } from "../../config/config"
 import { Provider } from "../../provider/provider"
 import { ModelsDev } from "../../provider/models"
 import { ProviderAuth } from "../../provider/auth"
-import { mapValues } from "remeda"
+import { mapValues, omit } from "remeda"
 import { errors } from "../error"
 import { lazy } from "../../util/lazy"
+
+/**
+ * Strip sensitive fields (API keys, secrets) from provider info before
+ * sending over the wire. The `key` field holds the raw API key and
+ * `options` may contain `apiKey` or other credential material.
+ */
+function redactProvider(provider: Provider.Info) {
+  const safeOptions = { ...provider.options }
+  delete safeOptions["apiKey"]
+  delete safeOptions["clientSecret"]
+  return {
+    ...omit(provider, ["key"]),
+    options: safeOptions,
+  }
+}
 
 export const ProviderRoutes = lazy(() =>
   new Hono()
@@ -53,7 +68,7 @@ export const ProviderRoutes = lazy(() =>
           connected,
         )
         return c.json({
-          all: Object.values(providers),
+          all: Object.values(providers).map(redactProvider),
           default: mapValues(providers, (item) => Provider.sort(Object.values(item.models))[0].id),
           connected: Object.keys(connected),
         })
