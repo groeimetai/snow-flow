@@ -115,6 +115,7 @@ export namespace Pty {
       extraEnv = {
         OPENCODE_SKIP_THEME_DETECTION: "1",
         OPENCODE_DISABLE_KITTY_KEYBOARD: "1",
+        OTUI_USE_ALTERNATE_SCREEN: "0",
         COLORTERM: "truecolor",
         FORCE_COLOR: "3",
       }

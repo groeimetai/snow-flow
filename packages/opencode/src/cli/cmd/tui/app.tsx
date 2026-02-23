@@ -116,6 +116,7 @@ export function tui(input: {
 }) {
   _onUpgrade = input.onUpgrade
   const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
+  const log = (msg: string) => process.stderr.write("[sf] " + msg + "\n")
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
     let mode: "dark" | "light" = "dark"
@@ -127,9 +128,49 @@ export function tui(input: {
       resolve()
     }
 
-    // Clear screen before render — ensures terminal viewport starts at row 0
-    // so @opentui's absolute ANSI positioning aligns with visible area
-    process.stdout.write("\x1b[2J\x1b[H")
+    const { createCliRenderer } = await import("@opentui/core")
+
+    const renderer = await createCliRenderer({
+      targetFps: 60,
+      gatherStats: false,
+      exitOnCtrlC: false,
+      useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
+      consoleOptions: {
+        keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
+        onCopySelection: (text: string) => {
+          Clipboard.copy(text).catch(() => {})
+        },
+      },
+    })
+
+    // Diagnostic: check renderer internals
+    const r = renderer as any
+    log("renderer.lib=" + !!r.lib)
+    log("renderer.rendererPtr=" + !!r.rendererPtr)
+    log("renderer._useThread=" + r._useThread)
+    log("renderer._useAlternateScreen=" + r._useAlternateScreen)
+    log("renderer.width=" + r.width + " height=" + r.height)
+    if (r.lib) {
+      log("lib.render=" + typeof r.lib.render)
+      log("lib.writeOut=" + typeof r.lib.writeOut)
+    }
+
+    // Test: can we write to terminal via renderer.writeOut()?
+    try {
+      r.writeOut("\x1b[2J\x1b[H\x1b[32m=== RENDERER WRITEOUT TEST ===\x1b[0m\r\n")
+      log("writeOut succeeded")
+    } catch (e: any) {
+      log("writeOut FAILED: " + e.message)
+    }
+
+    // Test: can we write to terminal via realStdoutWrite?
+    try {
+      const write = r.realStdoutWrite || process.stdout.write
+      write.call(process.stdout, "\x1b[33m=== REAL STDOUT TEST ===\x1b[0m\r\n")
+      log("realStdoutWrite succeeded")
+    } catch (e: any) {
+      log("realStdoutWrite FAILED: " + e.message)
+    }
 
     await render(
       () => (
@@ -176,18 +217,7 @@ export function tui(input: {
           </ArgsProvider>
         </ErrorBoundary>
       ),
-      {
-        targetFps: 60,
-        gatherStats: false,
-        exitOnCtrlC: false,
-        useKittyKeyboard: process.env.OPENCODE_DISABLE_KITTY_KEYBOARD ? undefined : {},
-        consoleOptions: {
-          keyBindings: [{ name: "y", ctrl: true, action: "copy-selection" }],
-          onCopySelection: (text: string) => {
-            Clipboard.copy(text).catch(() => {})
-          },
-        },
-      },
+      renderer,
     )
   })
 }
