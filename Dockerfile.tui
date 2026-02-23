@@ -83,6 +83,8 @@ ENV SNOW_CODE_DEFAULT_DIRECTORY=/workspace
 ENV OPENCODE_DISABLE_KITTY_KEYBOARD=1
 # Skip terminal theme detection in hosted environment
 ENV OPENCODE_SKIP_THEME_DETECTION=1
+# Disable alternate screen buffer — PTY over WebSocket doesn't need it
+ENV OTUI_USE_ALTERNATE_SCREEN=0
 # Auto-start snow-flow TUI when terminal opens (PTY reads $SHELL)
 ENV SHELL=/usr/local/bin/snow-flow
 

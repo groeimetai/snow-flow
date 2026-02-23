@@ -118,6 +118,17 @@ export function tui(input: {
   const skipThemeDetection = !!process.env.OPENCODE_SKIP_THEME_DETECTION || !!process.env.OPENCODE_REMOTE_TUI
   // promise to prevent immediate exit
   return new Promise<void>(async (resolve) => {
+    // Crash handlers for debugging PTY rendering issues
+    process.on("uncaughtException", (err) => {
+      console.error("[snow-flow] UNCAUGHT:", err.message, err.stack)
+    })
+    process.on("unhandledRejection", (err) => {
+      console.error("[snow-flow] UNHANDLED:", err)
+    })
+    process.on("exit", (code) => {
+      if (code !== 0) console.error("[snow-flow] EXIT code:", code)
+    })
+
     let mode: "dark" | "light" = "dark"
     if (skipThemeDetection) {
       console.log("[snow-flow] skipping theme detection")
@@ -131,6 +142,7 @@ export function tui(input: {
       resolve()
     }
 
+    console.log("[snow-flow] env: OTUI_USE_ALTERNATE_SCREEN=" + (process.env.OTUI_USE_ALTERNATE_SCREEN ?? "unset"))
     try {
       console.log("[snow-flow] starting tui...")
       await render(
