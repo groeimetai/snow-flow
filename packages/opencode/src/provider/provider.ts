@@ -86,15 +86,23 @@ export namespace Provider {
     options?: Record<string, any>
   }>
 
-  function createSSEStream(content: string, model: string, usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number }): string[] {
+  function createSSEStream(
+    content: string,
+    model: string,
+    usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number },
+  ): string[] {
     const id = `chatcmpl-${crypto.randomUUID()}`
     const chunks: string[] = []
 
     // Role chunk
-    chunks.push(`data: ${JSON.stringify({
-      id, object: "chat.completion.chunk", model,
-      choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }],
-    })}\n\n`)
+    chunks.push(
+      `data: ${JSON.stringify({
+        id,
+        object: "chat.completion.chunk",
+        model,
+        choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }],
+      })}\n\n`,
+    )
 
     // Content chunks (~10 chars per chunk for smooth streaming
     const words = content.split(/(\s+)/)
@@ -102,26 +110,38 @@ export namespace Provider {
     for (const word of words) {
       current += word
       if (current.length >= 10 || word.includes("\n")) {
-        chunks.push(`data: ${JSON.stringify({
-          id, object: "chat.completion.chunk", model,
-          choices: [{ index: 0, delta: { content: current }, finish_reason: null }],
-        })}\n\n`)
+        chunks.push(
+          `data: ${JSON.stringify({
+            id,
+            object: "chat.completion.chunk",
+            model,
+            choices: [{ index: 0, delta: { content: current }, finish_reason: null }],
+          })}\n\n`,
+        )
         current = ""
       }
     }
     if (current) {
-      chunks.push(`data: ${JSON.stringify({
-        id, object: "chat.completion.chunk", model,
-        choices: [{ index: 0, delta: { content: current }, finish_reason: null }],
-      })}\n\n`)
+      chunks.push(
+        `data: ${JSON.stringify({
+          id,
+          object: "chat.completion.chunk",
+          model,
+          choices: [{ index: 0, delta: { content: current }, finish_reason: null }],
+        })}\n\n`,
+      )
     }
 
     // Finish chunk
-    chunks.push(`data: ${JSON.stringify({
-      id, object: "chat.completion.chunk", model,
-      choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
-      usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    })}\n\n`)
+    chunks.push(
+      `data: ${JSON.stringify({
+        id,
+        object: "chat.completion.chunk",
+        model,
+        choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+        usage: usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      })}\n\n`,
+    )
 
     chunks.push("data: [DONE]\n\n")
     return chunks
@@ -538,6 +558,82 @@ export namespace Provider {
         },
       }
     },
+    ollama: async (input) => {
+      const host = (Env.get("OLLAMA_HOST") || "http://localhost:11434").replace(/\/+$/, "")
+      try {
+        const response = await fetch(`${host}/api/tags`, {
+          signal: AbortSignal.timeout(2000),
+        })
+        if (!response.ok) return { autoload: false }
+        const data = (await response.json()) as { models?: Array<{ name: string; details?: { parameter_size?: string; family?: string } }> }
+        if (!data.models?.length) return { autoload: false }
+
+        for (const model of data.models) {
+          if (input.models[model.name]) continue
+          input.models[model.name] = fromModelsDevModel(
+            { id: "ollama", name: "Ollama", npm: "@ai-sdk/openai-compatible", api: `${host}/v1`, env: ["OLLAMA_HOST"], models: {} },
+            {
+              id: model.name,
+              name: model.name,
+              family: model.details?.family ?? model.name.split(":")[0],
+              attachment: false,
+              reasoning: false,
+              tool_call: true,
+              temperature: true,
+              release_date: "2024-01-01",
+              modalities: { input: ["text"], output: ["text"] },
+              cost: { input: 0, output: 0, cache_read: 0, cache_write: 0 },
+              limit: { context: 131072, output: 32768 },
+              options: {},
+            },
+          )
+        }
+        return {
+          autoload: true,
+          options: { baseURL: `${host}/v1`, apiKey: "ollama" },
+        }
+      } catch {
+        return { autoload: false }
+      }
+    },
+    lmstudio: async (input) => {
+      const host = (Env.get("LMSTUDIO_HOST") || "http://127.0.0.1:1234").replace(/\/+$/, "")
+      try {
+        const response = await fetch(`${host}/v1/models`, {
+          signal: AbortSignal.timeout(2000),
+        })
+        if (!response.ok) return { autoload: false }
+        const data = (await response.json()) as { data?: Array<{ id: string }> }
+        if (!data.data?.length) return { autoload: false }
+
+        for (const model of data.data) {
+          if (input.models[model.id]) continue
+          input.models[model.id] = fromModelsDevModel(
+            { id: "lmstudio", name: "LM Studio", npm: "@ai-sdk/openai-compatible", api: `${host}/v1`, env: ["LMSTUDIO_HOST"], models: {} },
+            {
+              id: model.id,
+              name: model.id,
+              family: model.id.split("/").pop()?.split("-")[0] ?? model.id,
+              attachment: false,
+              reasoning: false,
+              tool_call: true,
+              temperature: true,
+              release_date: "2024-01-01",
+              modalities: { input: ["text"], output: ["text"] },
+              cost: { input: 0, output: 0, cache_read: 0, cache_write: 0 },
+              limit: { context: 131072, output: 32768 },
+              options: {},
+            },
+          )
+        }
+        return {
+          autoload: true,
+          options: { baseURL: `${host}/v1`, apiKey: "lm-studio" },
+        }
+      } catch {
+        return { autoload: false }
+      }
+    },
     cerebras: async () => {
       return {
         autoload: false,
@@ -565,7 +661,12 @@ export namespace Provider {
             })
             if (response.ok) {
               const data = await response.json()
-              if (data.success && data.instance?.instanceUrl && data.instance?.clientId && data.instance?.clientSecret) {
+              if (
+                data.success &&
+                data.instance?.instanceUrl &&
+                data.instance?.clientId &&
+                data.instance?.clientSecret
+              ) {
                 await Auth.set("servicenow", {
                   type: "servicenow-oauth",
                   instance: data.instance.instanceUrl,
@@ -776,6 +877,16 @@ export namespace Provider {
     const config = await Config.get()
     const modelsDev = await ModelsDev.get()
     const database = mapValues(modelsDev, fromModelsDevProvider)
+
+    // Ensure local providers exist in the database so CUSTOM_LOADERS can discover them
+    for (const local of [
+      { id: "ollama", name: "Ollama", npm: "@ai-sdk/openai-compatible", api: "http://localhost:11434/v1", env: ["OLLAMA_HOST"] },
+      { id: "lmstudio", name: "LM Studio", npm: "@ai-sdk/openai-compatible", api: "http://127.0.0.1:1234/v1", env: ["LMSTUDIO_HOST"] },
+    ] as const) {
+      if (!database[local.id]) {
+        database[local.id] = fromModelsDevProvider({ id: local.id, name: local.name, npm: local.npm, api: local.api, env: [...local.env], models: {} })
+      }
+    }
 
     const disabled = new Set(config.disabled_providers ?? [])
     const enabled = config.enabled_providers ? new Set(config.enabled_providers) : null
@@ -1201,10 +1312,10 @@ export namespace Provider {
               // Error response
               else if (unwrapped && unwrapped.success === false && unwrapped.error) {
                 log.warn("servicenow-llm: ServiceNow error", { error: unwrapped.error })
-                return new Response(
-                  JSON.stringify({ error: { message: unwrapped.error, type: "servicenow_error" } }),
-                  { status: 500, headers: { "content-type": "application/json" } },
-                )
+                return new Response(JSON.stringify({ error: { message: unwrapped.error, type: "servicenow_error" } }), {
+                  status: 500,
+                  headers: { "content-type": "application/json" },
+                })
               }
             }
             // Direct OpenAI format (no wrapper)
@@ -1234,7 +1345,7 @@ export namespace Provider {
                   headers: {
                     "content-type": "text/event-stream",
                     "cache-control": "no-cache",
-                    "connection": "keep-alive",
+                    connection: "keep-alive",
                   },
                 })
               } else {
