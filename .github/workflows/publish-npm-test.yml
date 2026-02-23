@@ -200,7 +200,7 @@ jobs:
           ls -la *.tar.gz 2>/dev/null || echo "No tarballs created"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@c062e08bd532815e2082a375ba9e5c637d29f148 # v2.3.2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Snow-Flow Test v${{ steps.version.outputs.version }}

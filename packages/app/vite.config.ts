@@ -4,8 +4,7 @@ import desktopPlugin from "./vite"
 export default defineConfig({
   plugins: [desktopPlugin] as any,
   server: {
-    host: "0.0.0.0",
-    allowedHosts: true,
+    host: "127.0.0.1",
     port: 3000,
   },
   build: {

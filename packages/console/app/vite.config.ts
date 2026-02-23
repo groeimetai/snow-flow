@@ -14,7 +14,7 @@ export default defineConfig({
     }) as any,
   ],
   server: {
-    allowedHosts: true,
+    host: "127.0.0.1",
   },
   build: {
     rollupOptions: {

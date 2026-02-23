@@ -3,6 +3,10 @@ node_modules
 .worktrees
 .sst
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 .idea
 .vscode
 *~

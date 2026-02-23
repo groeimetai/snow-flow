@@ -22,16 +22,19 @@ jobs:
       - name: Install snow-code
         run: curl -fsSL https://snow-flow.dev/install | bash
 
+      - name: Fetch issue data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }} \
+            --jq '{ title: .title, body: .body }' > /tmp/issue_data.json
+
       - name: Triage issue
         env:
           SNOW_CODE_API_KEY: ${{ secrets.SNOW_CODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          snow-code run --agent triage "The following issue was just opened, triage it:
-
-          Title: $ISSUE_TITLE
-
-          $ISSUE_BODY"
+          ISSUE_TITLE=$(jq -r '.title' /tmp/issue_data.json)
+          ISSUE_BODY=$(jq -r '.body' /tmp/issue_data.json)
+          snow-code run --agent triage -f /tmp/issue_data.json "The following issue was just opened, triage it. The issue data is in the attached file."

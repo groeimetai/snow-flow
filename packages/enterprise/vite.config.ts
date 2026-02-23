@@ -27,8 +27,7 @@ export default defineConfig({
     }) as any,
   ],
   server: {
-    host: "0.0.0.0",
-    allowedHosts: true,
+    host: "127.0.0.1",
   },
   worker: {
     format: "es",

@@ -68,6 +68,11 @@ RUN mkdir -p /workspace && \
     printf '# My Project\n\nUse `snow-flow` in the terminal to get started.\n\n> **Note:** This workspace is ephemeral. Files are lost when your session ends.\n> Maximum workspace size: 512MB.\n' > /workspace/README.md && \
     cd /workspace && git add -A && git -c user.name="Snow-Flow" -c user.email="noreply@snow-flow.dev" commit -m "initial workspace"
 
+# Create non-root user for runtime
+RUN groupadd --gid 1001 snowflow && \
+    useradd --uid 1001 --gid snowflow --shell /bin/bash --create-home snowflow && \
+    chown -R snowflow:snowflow /app /workspace
+
 # Set terminal environment
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
@@ -87,6 +92,8 @@ ENV OPENCODE_SKIP_THEME_DETECTION=1
 ENV OTUI_FORCE_THREAD=1
 # Auto-start snow-flow TUI when terminal opens (PTY reads $SHELL)
 ENV SHELL=/usr/local/bin/snow-flow
+
+USER snowflow
 
 EXPOSE 4096
 

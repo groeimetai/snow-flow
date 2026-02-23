@@ -53,7 +53,15 @@ async function fetchProviderIcons() {
     providers.map((provider) =>
       fetch(`${url}/logos/${provider}.svg`)
         .then((res) => res.text())
-        .then((svg) => fs.writeFileSync(`./src/assets/icons/provider/${provider}.svg`, svg)),
+        .then((svg) => {
+          // Sanitize SVG: strip script tags and event handlers to prevent XSS
+          const sanitized = svg
+            .replace(/<script[\s\S]*?<\/script>/gi, "")
+            .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "")
+          // Only allow alphanumeric provider names to prevent path traversal
+          if (!/^[a-zA-Z0-9_-]+$/.test(provider)) return
+          fs.writeFileSync(`./src/assets/icons/provider/${provider}.svg`, sanitized)
+        }),
     ),
   )
 }
