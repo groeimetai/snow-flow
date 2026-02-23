@@ -143,91 +143,21 @@ export function tui(input: {
       },
     })
 
-    // All diagnostics via writeOut so they appear in the terminal
+    // Minimal render test: just a colored box with text
+    // If this doesn't render, the issue is fundamental to @opentui on Linux
     const r = renderer as any
     const diag = (msg: string) => r.writeOut(msg + "\r\n")
-    diag("lib=" + !!r.lib + " ptr=" + !!r.rendererPtr + " thread=" + r._useThread)
-    diag("altScreen=" + r._useAlternateScreen + " dims=" + r.width + "x" + r.height)
-    diag("root=" + !!r.root + " rootChildren=" + r.root?.getChildren?.()?.length)
-
-    // After 3s, check render loop state and try to kick it
-    setTimeout(async () => {
-      diag("--- 3s check ---")
-      diag("rootChildren=" + r.root?.getChildren?.()?.length)
-      diag("_isRunning=" + r._isRunning)
-      diag("_controlState=" + r._controlState)
-      diag("liveReqs=" + r.liveRequestCounter)
-      diag("rendering=" + r.rendering + " updateScheduled=" + r.updateScheduled)
-      diag("nextRenderBuffer=" + !!r.nextRenderBuffer)
-
-      // Try full render pipeline: root.render → renderNative
-      try {
-        diag("calling root.render(nextRenderBuffer)...")
-        r.root.render(r.nextRenderBuffer, 16)
-        diag("root.render done, calling renderNative()...")
-        r.renderNative()
-        diag("renderNative done!")
-      } catch (e: any) {
-        diag("manual render pipeline FAILED: " + e.message)
-        if (e.stack) diag(e.stack.split("\n").slice(0, 3).join(" | "))
-      }
-
-      // Also try kicking the loop directly
-      setTimeout(async () => {
-        diag("--- 5s: calling loop() ---")
-        try {
-          await r.loop()
-          diag("loop() completed")
-        } catch (e: any) {
-          diag("loop() FAILED: " + e.message)
-        }
-      }, 2000)
-    }, 3000)
+    diag("starting minimal render test...")
 
     await render(
       () => (
-        <ErrorBoundary
-          fallback={(error, reset) => <ErrorComponent error={error} reset={reset} onExit={onExit} mode={mode} />}
-        >
-          <ArgsProvider {...input.args}>
-            <ExitProvider onExit={onExit}>
-              <KVProvider>
-                <ToastProvider>
-                  <RouteProvider>
-                    <SDKProvider
-                      url={input.url}
-                      directory={input.directory}
-                      fetch={input.fetch}
-                      events={input.events}
-                    >
-                      <SyncProvider>
-                        <ThemeProvider mode={mode}>
-                          <LocalProvider>
-                            <KeybindProvider>
-                              <PromptStashProvider>
-                                <DialogProvider>
-                                  <CommandProvider>
-                                    <FrecencyProvider>
-                                      <PromptHistoryProvider>
-                                        <PromptRefProvider>
-                                          <App />
-                                        </PromptRefProvider>
-                                      </PromptHistoryProvider>
-                                    </FrecencyProvider>
-                                  </CommandProvider>
-                                </DialogProvider>
-                              </PromptStashProvider>
-                            </KeybindProvider>
-                          </LocalProvider>
-                        </ThemeProvider>
-                      </SyncProvider>
-                    </SDKProvider>
-                  </RouteProvider>
-                </ToastProvider>
-              </KVProvider>
-            </ExitProvider>
-          </ArgsProvider>
-        </ErrorBoundary>
+        <box width={134} height={57} backgroundColor="#1a1a2e">
+          <box flexDirection="column" alignItems="center" justifyContent="center" width={134} height={57}>
+            <text fg="#e94560">SNOW FLOW - RENDER TEST</text>
+            <text fg="#ffffff">If you can see this, @opentui rendering works!</text>
+            <text fg="#0f3460">Press Ctrl+C to exit</text>
+          </box>
+        </box>
       ),
       renderer,
     )
@@ -239,16 +169,6 @@ function App() {
   const dimensions = useTerminalDimensions()
   const renderer = useRenderer()
   renderer.disableStdoutInterception()
-
-  // Diagnostic: check dimensions and renderer state from inside the component
-  const r = renderer as any
-  const diag = (msg: string) => r.writeOut?.("[App] " + msg + "\r\n") ?? process.stderr.write("[App] " + msg + "\n")
-  diag("dims=" + dimensions().width + "x" + dimensions().height)
-  diag("theme loading...")
-  onMount(() => {
-    diag("mounted! dims=" + dimensions().width + "x" + dimensions().height)
-    diag("root children=" + r.root?.getChildren?.()?.length)
-  })
   const dialog = useDialog()
   const local = useLocal()
   const kv = useKV()
