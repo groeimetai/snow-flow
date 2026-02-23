@@ -220,45 +220,67 @@ function HostedRendererDiag() {
   onMount(() => {
     const r = renderer as any
     const log = (msg: string) => process.stderr.write(`[sf-diag] ${msg}\n`)
-    log(`useThread=${r._useThread} isRunning=${r._isRunning} state=${r._controlState}`)
-    log(`platform=${process.platform} altScreen=${r._useAlternateScreen} termSetup=${r._terminalIsSetup}`)
-
-    // On Linux, useThread=false means Zig render() buffers ANSI but doesn't write to fd 1.
-    // Patch renderNative to manually flush the Zig stdout buffer after each render frame.
     const realWrite = r.realStdoutWrite
     const stdout = r.stdout
-    if (realWrite && r.lib && r.rendererPtr) {
+    const write = (s: string) => realWrite?.call(stdout, s)
+
+    log(`useThread=${r._useThread} isRunning=${r._isRunning} state=${r._controlState}`)
+    log(`platform=${process.platform} altScreen=${r._useAlternateScreen}`)
+
+    // Patch renderNative to count calls and try flushing
+    let renderCount = 0
+    if (r.lib && r.rendererPtr) {
       const origRenderNative = r.renderNative.bind(r)
       r.renderNative = () => {
+        renderCount++
         origRenderNative()
-        // Try to flush Zig's internal stdout buffer by calling writeOut with empty data
+        // Try dumpStdoutBuffer to flush Zig's pending render output
         try {
-          r.lib.writeOut(r.rendererPtr, new Uint8Array(0).buffer, 0)
-        } catch {}
+          r.lib.dumpStdoutBuffer(r.rendererPtr, BigInt(Date.now()))
+        } catch (e: any) {
+          if (renderCount === 1) log(`dumpStdoutBuffer error: ${e.message}`)
+        }
       }
-      log("patched renderNative with flush")
+      log("patched renderNative")
     }
 
     // Clear screen and start the render loop
-    if (realWrite) {
-      realWrite.call(stdout, "\x1b[2J\x1b[H")
-    }
+    write("\x1b[2J\x1b[H")
     if (!r._isRunning) {
       r.start()
-      log(`started: isRunning=${r._isRunning} state=${r._controlState}`)
+      log(`started: isRunning=${r._isRunning}`)
     }
 
-    // After 3s, log state and try direct fd write test
+    // After 3s: report render count and buffer state
     setTimeout(() => {
-      log(`3s: isRunning=${r._isRunning} rendering=${r.rendering}`)
-      // Direct write to fd 1 to verify terminal connectivity
+      log(`3s: renderCount=${renderCount} isRunning=${r._isRunning}`)
+
+      // Check if nextRenderBuffer has any content by reading a few cells
       try {
-        const fd1 = Bun.file("/dev/fd/1")
-        Bun.write(fd1, "\x1b[5;1H\x1b[1;31m[sf-diag] FD1 WRITE TEST\x1b[0m\r\n").catch(() => {})
+        const buf = r.nextRenderBuffer
+        const w = r.lib.getBufferWidth(buf)
+        const h = r.lib.getBufferHeight(buf)
+        log(`buffer: ${w}x${h}`)
+      } catch (e: any) {
+        log(`buffer check error: ${e.message}`)
+      }
+
+      // Check root node children
+      try {
+        const root = r.root
+        log(`root children: ${root?.children?.length ?? "?"}`)
       } catch {}
-      // Also try realStdoutWrite
-      if (realWrite) {
-        realWrite.call(stdout, "\x1b[7;1H\x1b[1;32m[sf-diag] REAL WRITE TEST\x1b[0m\r\n")
+
+      // Write visible marker so user can confirm terminal works
+      write("\x1b[5;1H\x1b[1;31m[sf-diag] terminal output works - render loop ran ${renderCount} frames\x1b[0m\r\n")
+
+      // Try fs.writeSync to test raw POSIX write(1, ...)
+      try {
+        const { writeSync } = require("fs")
+        writeSync(1, "\x1b[7;1H\x1b[1;32m[sf-diag] fs.writeSync(1) works\x1b[0m\r\n")
+        log("fs.writeSync(1) succeeded")
+      } catch (e: any) {
+        log(`fs.writeSync error: ${e.message}`)
       }
     }, 3000)
   })
