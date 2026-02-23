@@ -45,6 +45,10 @@ export function createDialogProviderOptions() {
           category: provider.id in PROVIDER_PRIORITY ? "Popular" : "Other",
           footer: isConnected ? "Connected" : undefined,
           async onSelect() {
+            // Auto-loaded local providers (e.g. Ollama, LM Studio) are already connected — skip auth
+            if (isConnected && !sync.data.provider_auth[provider.id]) {
+              return dialog.replace(() => <DialogModel providerID={provider.id} />)
+            }
             const methods = sync.data.provider_auth[provider.id] ?? [
               {
                 type: "api",
