@@ -1,0 +1,87 @@
+FROM codercom/code-server:latest AS base
+
+USER root
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    git \
+    curl \
+    ripgrep \
+    ca-certificates \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash
+
+WORKDIR /opt/snow-flow
+
+COPY package.json bun.lock turbo.json ./
+COPY patches/ patches/
+
+COPY packages/opencode/package.json packages/opencode/
+COPY packages/util/package.json packages/util/
+COPY packages/plugin/package.json packages/plugin/
+COPY packages/sdk/js/package.json packages/sdk/js/
+COPY packages/ui/package.json packages/ui/
+COPY packages/app/package.json packages/app/
+COPY packages/desktop/package.json packages/desktop/
+COPY packages/enterprise/package.json packages/enterprise/
+COPY packages/function/package.json packages/function/
+COPY packages/script/package.json packages/script/
+COPY packages/slack/package.json packages/slack/
+COPY packages/console/app/package.json packages/console/app/
+COPY packages/console/core/package.json packages/console/core/
+COPY packages/console/function/package.json packages/console/function/
+COPY packages/console/mail/package.json packages/console/mail/
+COPY packages/console/resource/package.json packages/console/resource/
+COPY packages/mobile/package.json packages/mobile/
+
+COPY packages/opencode/scripts/ packages/opencode/scripts/
+
+RUN bun install --frozen-lockfile
+
+COPY packages/opencode/src/ packages/opencode/src/
+COPY packages/opencode/tsconfig.json packages/opencode/
+COPY packages/util/src/ packages/util/src/
+COPY packages/util/tsconfig.json packages/util/
+COPY packages/plugin/src/ packages/plugin/src/
+COPY packages/plugin/tsconfig.json packages/plugin/
+COPY packages/sdk/js/src/ packages/sdk/js/src/
+COPY packages/sdk/js/tsconfig.json packages/sdk/js/
+
+RUN printf '#!/bin/sh\nexec bun run --conditions=browser /opt/snow-flow/packages/opencode/src/index.ts "$@"\n' \
+    > /usr/local/bin/snow-flow && chmod +x /usr/local/bin/snow-flow && \
+    ln -s /usr/local/bin/snow-flow /usr/local/bin/snow-code
+
+COPY sdks/vscode/ /tmp/snow-code-ext/
+RUN cd /tmp/snow-code-ext && \
+    bun install && \
+    bun esbuild.js --production && \
+    python3 -c "import json,sys;p=json.load(open('package.json'));p.get('scripts',{}).pop('vscode:prepublish',None);json.dump(p,open('package.json','w'),indent=2)" && \
+    bun x @vscode/vsce package --no-git-tag-version --no-dependencies --skip-license -o /tmp/snow-code.vsix && \
+    mkdir -p /home/coder/.local/share/code-server/extensions && \
+    code-server --extensions-dir /home/coder/.local/share/code-server/extensions --install-extension /tmp/snow-code.vsix && \
+    rm -rf /tmp/snow-code-ext /tmp/snow-code.vsix
+
+RUN mkdir -p /home/coder/workspace && \
+    git init /home/coder/workspace && \
+    printf '# My Project\n\nUse `snow-flow` in the terminal or press `Cmd+Esc` / `Ctrl+Esc` to get started.\n\n> **Note:** This workspace is ephemeral. Files are lost when your session ends.\n' > /home/coder/workspace/README.md && \
+    cd /home/coder/workspace && git add -A && git -c user.name="Snow-Flow" -c user.email="noreply@snow-flow.dev" commit -m "initial workspace" && \
+    chown -R coder:coder /home/coder/workspace /home/coder/.local /opt/snow-flow
+
+USER coder
+
+ENV TERM=xterm-256color
+ENV COLORTERM=truecolor
+ENV FORCE_COLOR=3
+ENV OPENCODE_SKIP_THEME_DETECTION=1
+ENV OPENCODE_DISABLE_KITTY_KEYBOARD=1
+ENV OTUI_FORCE_THREAD=1
+ENV SNOW_CODE_DEFAULT_DIRECTORY=/home/coder/workspace
+ENV OPENCODE_DISABLE_DEFAULT_PLUGINS=true
+
+EXPOSE 8080
+
+ENTRYPOINT ["code-server", "--bind-addr", "0.0.0.0:8080", "--auth", "password", "/home/coder/workspace"]
