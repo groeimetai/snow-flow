@@ -207,7 +207,9 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
       if (max > 0) return max
     }
   } catch (e: any) {
-    console.warn("[snow_manage_flow] getMaxOrderFromVersion processflow API failed for flow=" + flowId + ": " + (e.message || ""))
+    console.warn(
+      "[snow_manage_flow] getMaxOrderFromVersion processflow API failed for flow=" + flowId + ": " + (e.message || ""),
+    )
   }
 
   // Strategy 2: sys_hub_flow_version.payload (may be stale after rapid mutations)
@@ -226,7 +228,9 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
       if (max > 0) return max
     }
   } catch (e: any) {
-    console.warn("[snow_manage_flow] getMaxOrderFromVersion version payload failed for flow=" + flowId + ": " + (e.message || ""))
+    console.warn(
+      "[snow_manage_flow] getMaxOrderFromVersion version payload failed for flow=" + flowId + ": " + (e.message || ""),
+    )
   }
 
   return 0
@@ -439,7 +443,13 @@ async function ensureFlowEditingLock(
 
   // Lock acquisition failed — proceed anyway (advisory, not blocking)
   // The GraphQL mutation itself will fail with a specific error if there's a real lock issue
-  console.warn("[snow_manage_flow] Lock acquisition failed for flow " + flowId + ": " + (acquireResult.error || "unknown") + " — proceeding anyway")
+  console.warn(
+    "[snow_manage_flow] Lock acquisition failed for flow " +
+      flowId +
+      ": " +
+      (acquireResult.error || "unknown") +
+      " — proceeding anyway",
+  )
   return { success: true, warning: acquireResult.error || "Could not verify editing lock" }
 }
 
@@ -521,7 +531,9 @@ async function ensureUpdateSetForFlow(
       return { updateSetId: existingSet.sys_id, updateSetName: existingSet.name }
     }
   } catch (e: any) {
-    console.warn("[snow_manage_flow] ensureUpdateSetForFlow: lookup failed, falling through to create: " + (e.message || ""))
+    console.warn(
+      "[snow_manage_flow] ensureUpdateSetForFlow: lookup failed, falling through to create: " + (e.message || ""),
+    )
   }
 
   // Create a new update set
@@ -550,9 +562,7 @@ async function ensureUpdateSetForFlow(
 function withUpdateSetContext(data: any, ctx: { updateSetId?: string; updateSetName?: string; warning?: string }): any {
   if (!ctx.updateSetId && !ctx.warning) return data
   return Object.assign({}, data, {
-    update_set: ctx.updateSetId
-      ? { sys_id: ctx.updateSetId, name: ctx.updateSetName }
-      : undefined,
+    update_set: ctx.updateSetId ? { sys_id: ctx.updateSetId, name: ctx.updateSetName } : undefined,
     update_set_warning: ctx.warning || undefined,
   })
 }
@@ -733,7 +743,9 @@ async function buildActionInputsForInsert(
     })
     actionParams = resp.data.result || []
   } catch (e: any) {
-    console.warn("[snow_manage_flow] sys_hub_action_input query failed for model=" + actionDefId + ": " + (e.message || ""))
+    console.warn(
+      "[snow_manage_flow] sys_hub_action_input query failed for model=" + actionDefId + ": " + (e.message || ""),
+    )
   }
 
   // Fuzzy-match user-provided values to actual field names.
@@ -942,7 +954,14 @@ async function validateTableExtends(
     })
     return { valid: !!match, validOptions: validOptions, tableLabel: match ? str(match.label) : "" }
   } catch (e: any) {
-    console.warn("[snow_manage_flow] validateTableExtends failed for " + tableName + " extends " + parentTable + ": " + (e.message || ""))
+    console.warn(
+      "[snow_manage_flow] validateTableExtends failed for " +
+        tableName +
+        " extends " +
+        parentTable +
+        ": " +
+        (e.message || ""),
+    )
     return { valid: false, validOptions: [], tableLabel: "" }
   }
 }
@@ -1013,16 +1032,17 @@ async function buildFlowLogicInputsForInsert(
       return str(p.element)
     })
     for (var [key, value] of Object.entries(userValues)) {
+      var strValue = typeof value === "object" && value !== null ? JSON.stringify(value) : String(value ?? "")
       if (paramElements.includes(key)) {
-        resolvedInputs[key] = value
+        resolvedInputs[key] = strValue
         continue
       }
       var match = defParams.find(function (p: any) {
         var el = str(p.element)
         return el.endsWith("_" + key) || el === key || str(p.label).toLowerCase() === key.toLowerCase()
       })
-      if (match) resolvedInputs[str(match.element)] = value
-      else resolvedInputs[key] = value
+      if (match) resolvedInputs[str(match.element)] = strValue
+      else resolvedInputs[key] = strValue
     }
   }
 
@@ -3946,12 +3966,16 @@ async function addFlowLogicViaGraphQL(
     !rawCondition.includes(".") &&
     !rawCondition.startsWith("fd_data")
   ) {
-    var BARE_FIELD_RE = /(^|\^(?:OR)?|\^NQ)(\w+)\s*(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*/g
+    var BARE_FIELD_RE =
+      /(^|\^(?:OR)?|\^NQ)(\w+)\s*(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*/g
     if (BARE_FIELD_RE.test(rawCondition)) {
       BARE_FIELD_RE.lastIndex = 0
-      rawCondition = rawCondition.replace(BARE_FIELD_RE, function (_m: string, prefix: string, field: string, op: string) {
-        return prefix + "trigger.current." + field + op
-      })
+      rawCondition = rawCondition.replace(
+        BARE_FIELD_RE,
+        function (_m: string, prefix: string, field: string, op: string) {
+          return prefix + "trigger.current." + field + op
+        },
+      )
       steps.bare_field_rewrite = { original: conditionInput?.value?.value, rewritten: rawCondition }
     }
   }
@@ -4323,7 +4347,11 @@ async function addFlowLogicViaGraphQL(
         } catch (rollbackErr: any) {
           steps.flow_logic_rollback = { success: false, error: rollbackErr.message }
         }
-        return { success: false, steps, error: "Flow logic created but condition UPDATE failed (rolled back): " + ue.message }
+        return {
+          success: false,
+          steps,
+          error: "Flow logic created but condition UPDATE failed (rolled back): " + ue.message,
+        }
       }
     }
 
@@ -4690,7 +4718,13 @@ async function createFlowViaProcessFlowAPI(
       versionCreateError = vcErr.message || "version creation failed"
     }
 
-    return { success: true, flowSysId, versionCreated, flowData: flowResult, diagnostics: versionCreateError ? { version_create_error: versionCreateError } : undefined }
+    return {
+      success: true,
+      flowSysId,
+      versionCreated,
+      flowData: flowResult,
+      diagnostics: versionCreateError ? { version_create_error: versionCreateError } : undefined,
+    }
   } catch (e: any) {
     var msg = e.message || ""
     try {
@@ -4754,9 +4788,7 @@ async function resolveFlowId(client: any, flowId: string): Promise<string> {
 
   throw new SnowFlowError(
     ErrorType.NOT_FOUND,
-    "Flow not found: '" +
-      flowId +
-      "'. Use the 'list' action to find available flows, or provide a sys_id.",
+    "Flow not found: '" + flowId + "'. Use the 'list' action to find available flows, or provide a sys_id.",
   )
 }
 
@@ -5116,10 +5148,25 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     // ── Update Set tracking (opt-in via ensure_update_set=true) ──
     var WRITE_ACTIONS = [
-      "create", "create_subflow", "update", "activate", "deactivate", "delete",
-      "publish", "add_trigger", "update_trigger", "delete_trigger", "add_action",
-      "update_action", "delete_action", "add_flow_logic", "update_flow_logic",
-      "delete_flow_logic", "add_subflow", "update_subflow", "delete_subflow",
+      "create",
+      "create_subflow",
+      "update",
+      "activate",
+      "deactivate",
+      "delete",
+      "publish",
+      "add_trigger",
+      "update_trigger",
+      "delete_trigger",
+      "add_action",
+      "update_action",
+      "delete_action",
+      "add_flow_logic",
+      "update_flow_logic",
+      "delete_flow_logic",
+      "add_subflow",
+      "update_subflow",
+      "delete_subflow",
     ]
     var updateSetCtx: { updateSetId?: string; updateSetName?: string; warning?: string } = {}
     if (WRITE_ACTIONS.indexOf(action) !== -1) {
@@ -5370,7 +5417,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 diagnostics.actual_compile_state = actualCompileState
                 if (actualCompileState !== "compiled" && actualCompileState !== "pending") {
                   factoryWarnings.push(
-                    "Version compile_state is '" + actualCompileState + "' — flow may need manual compilation in Flow Designer",
+                    "Version compile_state is '" +
+                      actualCompileState +
+                      "' — flow may need manual compilation in Flow Designer",
                   )
                 }
               } catch (_) {
@@ -5448,7 +5497,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 })
                 varsCreated++
               } catch (varError: any) {
-                console.warn("[snow_manage_flow] create: input variable (table API) failed: " + (varError.message || ""))
+                console.warn(
+                  "[snow_manage_flow] create: input variable (table API) failed: " + (varError.message || ""),
+                )
               }
             }
             for (var vo = 0; vo < outputsArg.length; vo++) {
@@ -5463,7 +5514,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 })
                 varsCreated++
               } catch (varError: any) {
-                console.warn("[snow_manage_flow] create: output variable (table API) failed: " + (varError.message || ""))
+                console.warn(
+                  "[snow_manage_flow] create: output variable (table API) failed: " + (varError.message || ""),
+                )
               }
             }
           }
@@ -5644,9 +5697,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 "' when done editing.",
               next_step:
                 "Flow is now open for editing." +
-                (triggerCreated ? " Trigger (" + triggerType + ") is already set up — do NOT call add_trigger again." : "") +
+                (triggerCreated
+                  ? " Trigger (" + triggerType + ") is already set up — do NOT call add_trigger again."
+                  : "") +
                 (actionsCreated > 0 ? " " + actionsCreated + " action(s) already added." : "") +
-                " Add more elements with add_action/add_flow_logic. When DONE, call close_flow with flow_id='" + flowSysId + "' to release the editing lock.",
+                " Add more elements with add_action/add_flow_logic. When DONE, call close_flow with flow_id='" +
+                flowSysId +
+                "' to release the editing lock.",
             },
             updateSetCtx,
           ),
@@ -5693,7 +5750,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               }
             }
           } catch (e: any) {
-            console.warn("[snow_manage_flow] list: trigger table lookup failed, using LIKE fallback: " + (e.message || ""))
+            console.warn(
+              "[snow_manage_flow] list: trigger table lookup failed, using LIKE fallback: " + (e.message || ""),
+            )
           }
 
           if (triggerFlowIds.length > 0) {
@@ -5856,7 +5915,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             if (triggerInstances.length > 0 || actionInstances.length > 0) dataSource = "processflow_api"
           }
         } catch (e: any) {
-          console.warn("[snow_manage_flow] get: processflow API failed, falling back to Table API: " + (e.message || ""))
+          console.warn(
+            "[snow_manage_flow] get: processflow API failed, falling back to Table API: " + (e.message || ""),
+          )
         }
 
         // ── Fallback: Table API for triggers/actions (may return empty arrays) ──
@@ -5941,7 +6002,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (flowLogicInstances.length > 0) {
           getSummary.blank().line("Flow Logic: " + flowLogicInstances.length)
           for (var fli = 0; fli < Math.min(flowLogicInstances.length, 10); fli++) {
-            getSummary.bullet((flowLogicInstances[fli].type || "") + " " + (flowLogicInstances[fli].name || "logic-" + fli))
+            getSummary.bullet(
+              (flowLogicInstances[fli].type || "") + " " + (flowLogicInstances[fli].name || "logic-" + fli),
+            )
           }
         }
         if (flowVars.length > 0) {
@@ -6195,7 +6258,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         var deleteSummary = summary().success("Flow deleted").field("sys_id", deleteSysId)
-        if (deleteSteps.orphans_cleaned) deleteSummary.line("Cleaned " + deleteSteps.orphans_cleaned + " orphaned lock record(s)")
+        if (deleteSteps.orphans_cleaned)
+          deleteSummary.line("Cleaned " + deleteSteps.orphans_cleaned + " orphaned lock record(s)")
 
         return createSuccessResult(
           {
@@ -6240,12 +6304,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         if (addTrigResult.success) {
-          return createSuccessResult(withUpdateSetContext({ action: "add_trigger", ...addTrigResult }, updateSetCtx), {}, addTrigSummary.build())
+          return createSuccessResult(
+            withUpdateSetContext({ action: "add_trigger", ...addTrigResult }, updateSetCtx),
+            {},
+            addTrigSummary.build(),
+          )
         }
         var addTrigLockHint = ""
         var addTrigPostLock = await verifyFlowEditingLock(client, addTrigFlowId)
         if (!addTrigPostLock.locked) {
-          addTrigLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addTrigFlowId + "' first, then retry."
+          addTrigLockHint =
+            " Note: No editing lock detected. Try calling open_flow with flow_id='" +
+            addTrigFlowId +
+            "' first, then retry."
         }
         return createErrorResult((addTrigResult.error || "Failed to add trigger") + addTrigLockHint)
       }
@@ -6335,7 +6406,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         return updTrigResult.success
-          ? createSuccessResult({ action: "update_trigger", mutation_method: "graphql", steps: updTrigSteps }, {}, updTrigSummary.build())
+          ? createSuccessResult(
+              { action: "update_trigger", mutation_method: "graphql", steps: updTrigSteps },
+              {},
+              updTrigSummary.build(),
+            )
           : createErrorResult(
               "Failed to update trigger: " +
                 (updTrigResult.error || "unknown") +
@@ -6422,7 +6497,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addActLockHint = ""
         var addActPostLock = await verifyFlowEditingLock(client, addActFlowId)
         if (!addActPostLock.locked) {
-          addActLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addActFlowId + "' first, then retry."
+          addActLockHint =
+            " Note: No editing lock detected. Try calling open_flow with flow_id='" +
+            addActFlowId +
+            "' first, then retry."
         }
         return createErrorResult((addActResult.error || "Failed to add action") + addActLockHint)
       }
@@ -6438,7 +6516,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           args.logic_inputs || args.logic_config || args.inputs || args.action_inputs || args.config || {}
         // Accept condition and condition_name at top level (most natural for the agent)
         if (args.condition && !addLogicInputs.condition) {
-          addLogicInputs = { ...addLogicInputs, condition: args.condition }
+          const raw = args.condition
+          const normalized =
+            typeof raw === "object" && raw !== null && !Array.isArray(raw)
+              ? (raw.field || "") + (raw.operator || "=") + (raw.value ?? "")
+              : String(raw)
+          addLogicInputs = { ...addLogicInputs, condition: normalized }
         }
         if (args.condition_name && !addLogicInputs.condition_name) {
           addLogicInputs = { ...addLogicInputs, condition_name: args.condition_name }
@@ -6524,7 +6607,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addLogicLockHint = ""
         var addLogicPostLock = await verifyFlowEditingLock(client, addLogicFlowId)
         if (!addLogicPostLock.locked) {
-          addLogicLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addLogicFlowId + "' first, then retry."
+          addLogicLockHint =
+            " Note: No editing lock detected. Try calling open_flow with flow_id='" +
+            addLogicFlowId +
+            "' first, then retry."
         }
         return createErrorResult((addLogicResult.error || "Failed to add flow logic") + addLogicLockHint)
       }
@@ -6590,7 +6676,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var addSubLockHint = ""
         var addSubPostLock = await verifyFlowEditingLock(client, addSubFlowId)
         if (!addSubPostLock.locked) {
-          addSubLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addSubFlowId + "' first, then retry."
+          addSubLockHint =
+            " Note: No editing lock detected. Try calling open_flow with flow_id='" +
+            addSubFlowId +
+            "' first, then retry."
         }
         return createErrorResult((addSubResult.error || "Failed to add subflow call") + addSubLockHint)
       }
@@ -6792,7 +6881,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (closeResult.compilationError) {
           closeData.compilation_warning = closeResult.compilationError
           closeData.debug = closeResult.debug
-          closeData.next_step = "The editing lock has been released. The compilation warning means the flow may have issues (e.g. incomplete conditions). Fix the flow elements and try activating again."
+          closeData.next_step =
+            "The editing lock has been released. The compilation warning means the flow may have issues (e.g. incomplete conditions). Fix the flow elements and try activating again."
         }
         return createSuccessResult(closeData, {}, closeSummary.build())
       }
@@ -6882,7 +6972,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (deletedRecords > 0) unlockSummary.line("Deleted " + deletedRecords + " safe_edit record(s)")
         if (youngLocksSkipped > 0) {
           unlockSummary.warning(
-            youngLocksSkipped + " lock(s) < 5 min old were skipped (may belong to active user). Use force_unlock_all=true to override.",
+            youngLocksSkipped +
+              " lock(s) < 5 min old were skipped (may belong to active user). Use force_unlock_all=true to override.",
           )
         }
         unlockSummary.line("You can now try open_flow again.")
@@ -6933,14 +7024,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     var isUnrecoverableError =
       error.isAxiosError ||
       (error instanceof SnowFlowError &&
-        [ErrorType.NETWORK_ERROR, ErrorType.TIMEOUT, ErrorType.TIMEOUT_ERROR, ErrorType.CONNECTION_RESET, ErrorType.UNAUTHORIZED].indexOf(
-          error.type,
-        ) !== -1)
+        [
+          ErrorType.NETWORK_ERROR,
+          ErrorType.TIMEOUT,
+          ErrorType.TIMEOUT_ERROR,
+          ErrorType.CONNECTION_RESET,
+          ErrorType.UNAUTHORIZED,
+        ].indexOf(error.type) !== -1)
     if (client && args.flow_id && isUnrecoverableError && MUTATION_ACTIONS.indexOf(action) !== -1) {
       try {
         await releaseFlowEditingLock(client, await resolveFlowId(client, args.flow_id))
       } catch (lockReleaseErr: any) {
-        console.warn("[snow_manage_flow] Failed to release lock on error recovery: " + (lockReleaseErr.message || "unknown"))
+        console.warn(
+          "[snow_manage_flow] Failed to release lock on error recovery: " + (lockReleaseErr.message || "unknown"),
+        )
       }
     }
 
