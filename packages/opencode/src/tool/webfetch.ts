@@ -12,28 +12,25 @@ function isPrivateHost(hostname: string): boolean {
   if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1") return true
   if (hostname.endsWith(".localhost")) return true
   if (hostname === "0.0.0.0" || hostname === "[::0]" || hostname === "[::]") return true
-  // Block cloud metadata endpoints
   if (hostname === "169.254.169.254") return true
   if (hostname === "metadata.google.internal") return true
-  // Check IPv4 private ranges
   const ipv4Match = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
   if (ipv4Match) {
     const a = Number(ipv4Match[1])
     const b = Number(ipv4Match[2])
-    if (a === 10) return true // 10.0.0.0/8
-    if (a === 172 && b >= 16 && b <= 31) return true // 172.16.0.0/12
-    if (a === 192 && b === 168) return true // 192.168.0.0/16
-    if (a === 169 && b === 254) return true // 169.254.0.0/16 link-local
-    if (a === 127) return true // 127.0.0.0/8 loopback
-    if (a === 0) return true // 0.0.0.0/8
+    if (a === 10) return true
+    if (a === 172 && b >= 16 && b <= 31) return true
+    if (a === 192 && b === 168) return true
+    if (a === 169 && b === 254) return true
+    if (a === 127) return true
+    if (a === 0) return true
   }
-  // Check IPv6 private ranges
   const ipv6 = hostname.startsWith("[") ? hostname.slice(1, -1) : hostname
   const ipv6Lower = ipv6.toLowerCase()
   if (ipv6Lower === "::1" || ipv6Lower === "0:0:0:0:0:0:0:1") return true
   if (ipv6Lower === "::" || ipv6Lower === "0:0:0:0:0:0:0:0") return true
-  if (ipv6Lower.startsWith("fc") || ipv6Lower.startsWith("fd")) return true // ULA
-  if (ipv6Lower.startsWith("fe80")) return true // link-local
+  if (ipv6Lower.startsWith("fc") || ipv6Lower.startsWith("fd")) return true
+  if (ipv6Lower.startsWith("fe80")) return true
   return false
 }
 
@@ -49,7 +46,7 @@ export const WebFetchTool = Tool.define("webfetch", {
     timeout: z.number().describe("Optional timeout in seconds (max 120)").optional(),
   }),
   async execute(params, ctx) {
-    // Validate URL
+    // Validate URL scheme
     if (!params.url.startsWith("http://") && !params.url.startsWith("https://")) {
       throw new Error("URL must start with http:// or https://")
     }

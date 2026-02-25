@@ -236,6 +236,86 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
   return 0
 }
 
+async function getFlowElementOrders(
+  client: any,
+  flowId: string,
+): Promise<Array<{ uuid: string; order: number; type: "action" | "flowlogic" | "subflow" }>> {
+  try {
+    const resp = await client.get("/api/now/processflow/flow/" + flowId)
+    const raw = resp.data
+    const elements: Array<{ uuid: string; order: number; type: "action" | "flowlogic" | "subflow" }> = []
+
+    if (raw && typeof raw === "object") {
+      const data = raw.result?.data || raw.result || raw.data || raw
+      const model = data.model || data
+      const extract = (arr: any[], type: "action" | "flowlogic" | "subflow") => {
+        if (!Array.isArray(arr)) return
+        for (const item of arr) {
+          const uuid = item.uiUniqueIdentifier || item.id || ""
+          const order = parseInt(String(item.order), 10)
+          if (uuid && !isNaN(order)) elements.push({ uuid, order, type })
+        }
+      }
+      extract(model.actionInstances, "action")
+      extract(model.flowLogicInstances, "flowlogic")
+      extract(model.subFlowInstances || model.subflowInstances, "subflow")
+    } else if (typeof raw === "string") {
+      const patterns: Array<{ tag: string; type: "action" | "flowlogic" | "subflow" }> = [
+        { tag: "actionInstance", type: "action" },
+        { tag: "flowLogicInstance", type: "flowlogic" },
+        { tag: "subFlowInstance", type: "subflow" },
+      ]
+      for (const p of patterns) {
+        const rx = new RegExp("<" + p.tag + "[^>]*>[\\s\\S]*?<\\/" + p.tag + ">", "g")
+        let match
+        while ((match = rx.exec(raw)) !== null) {
+          const block = match[0]
+          const uuidMatch =
+            block.match(/uiUniqueIdentifier="([^"]*)"/) ||
+            block.match(/<uiUniqueIdentifier>([^<]*)<\/uiUniqueIdentifier>/)
+          const idMatch = block.match(/\bid="([^"]*)"/) || block.match(/<id>([^<]*)<\/id>/)
+          const orderMatch = block.match(/\border="(\d+)"/) || block.match(/<order>(\d+)<\/order>/)
+          const uuid = uuidMatch?.[1] || idMatch?.[1] || ""
+          const order = orderMatch ? parseInt(orderMatch[1], 10) : NaN
+          if (uuid && !isNaN(order)) elements.push({ uuid, order, type: p.type })
+        }
+      }
+    }
+
+    elements.sort((a, b) => a.order - b.order)
+    return elements
+  } catch (_) {
+    return []
+  }
+}
+
+function computeSiblingBumps(
+  elements: Array<{ uuid: string; order: number; type: "action" | "flowlogic" | "subflow" }>,
+  insertOrder: number,
+  bumpBy: number,
+  excludeUuids?: string[],
+): {
+  actions: Array<{ uiUniqueIdentifier: string; type: "action"; order: string }>
+  flowLogics: Array<{ uiUniqueIdentifier: string; type: "flowlogic"; order: string }>
+  subflows: Array<{ uiUniqueIdentifier: string; type: "subflow"; order: string }>
+} {
+  const result = {
+    actions: [] as Array<{ uiUniqueIdentifier: string; type: "action"; order: string }>,
+    flowLogics: [] as Array<{ uiUniqueIdentifier: string; type: "flowlogic"; order: string }>,
+    subflows: [] as Array<{ uiUniqueIdentifier: string; type: "subflow"; order: string }>,
+  }
+  const excluded = new Set(excludeUuids || [])
+  for (const el of elements) {
+    if (el.order < insertOrder) continue
+    if (excluded.has(el.uuid)) continue
+    const bumped = { uiUniqueIdentifier: el.uuid, type: el.type, order: String(el.order + bumpBy) } as any
+    if (el.type === "action") result.actions.push(bumped)
+    else if (el.type === "flowlogic") result.flowLogics.push(bumped)
+    else if (el.type === "subflow") result.subflows.push(bumped)
+  }
+  return result
+}
+
 async function executeFlowPatchMutation(client: any, flowPatch: any, responseFields: string): Promise<any> {
   const start = Date.now()
   const mutation =
@@ -2693,7 +2773,19 @@ async function addActionViaGraphQL(
     " flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }" +
     " subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }"
 
-  // Build mutation payload — INSERT with inputs (data pill values cleared for record actions)
+  const elements = await getFlowElementOrders(client, flowId)
+  const bumps = computeSiblingBumps(elements, resolvedOrder, 1, [uuid])
+  const hasBumps = bumps.actions.length + bumps.flowLogics.length + bumps.subflows.length > 0
+  if (hasBumps) {
+    steps.sibling_bumps = {
+      actions: bumps.actions.length,
+      flowLogics: bumps.flowLogics.length,
+      subflows: bumps.subflows.length,
+    }
+  }
+
+  const parentSignal = parentUiId ? [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" as const }] : []
+
   const flowPatch: any = {
     flowId: flowId,
     actions: {
@@ -2712,12 +2804,12 @@ async function addActionViaGraphQL(
           comment: annotation || "",
         },
       ],
+      ...(bumps.actions.length > 0 ? { update: bumps.actions } : {}),
     },
-  }
-
-  // Add parent flow logic update signal (tells GraphQL the parent was modified)
-  if (parentUiId) {
-    flowPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] }
+    ...(bumps.flowLogics.length > 0 || parentSignal.length > 0
+      ? { flowLogics: { update: [...parentSignal, ...bumps.flowLogics] } }
+      : {}),
+    ...(bumps.subflows.length > 0 ? { subflows: { update: bumps.subflows } } : {}),
   }
 
   try {
@@ -4283,19 +4375,13 @@ async function addFlowLogicViaGraphQL(
     outputsToAssignCount: (insertObj.outputsToAssign || []).length,
   }
 
-  var flowPatch: any = {
-    flowId: flowId,
-    flowLogics: {
-      insert: [insertObj],
-    },
-  }
-
-  // TRY blocks require a companion CATCH block in the same mutation (matching UI behavior).
-  // The CATCH block references the TRY via connectedTo and includes __status__ + enabled inputs.
   var catchUuid: string | undefined
-  if (defType.toUpperCase() === "TRY") {
+  var isTry = defType.toUpperCase() === "TRY"
+  var catchDefRecord: any = null
+  var catchInputResult: any = null
+
+  if (isTry) {
     catchUuid = generateUUID()
-    var catchDefRecord: any = null
     try {
       var catchResp = await client.get("/api/now/table/sys_hub_flow_logic_definition", {
         params: { sysparm_query: "type=CATCH", sysparm_limit: 1 },
@@ -4303,38 +4389,69 @@ async function addFlowLogicViaGraphQL(
       catchDefRecord = catchResp.data.result?.[0]
     } catch (_) {}
 
-    if (catchDefRecord) {
-      var catchInputResult = await buildFlowLogicInputsForInsert(client, catchDefRecord.sys_id, catchDefRecord, {})
-      var catchInsertObj: any = {
-        order: String(resolvedOrder + 1),
-        uiUniqueIdentifier: catchUuid,
-        parent: parentUiId || "",
-        metadata: '{"predicates":[]}',
-        flowSysId: flowId,
-        generationSource: "",
-        connectedTo: uuid,
-        definitionId: catchDefRecord.sys_id,
-        type: "flowlogic",
-        parentUiId: parentUiId || "",
-        inputs: catchInputResult.inputs,
-        outputsToAssign: [],
-        flowLogicDefinition: catchInputResult.flowLogicDefinition,
-        comment: "",
+    if (!catchDefRecord) {
+      return {
+        success: false,
+        steps,
+        error:
+          "TRY block requires a companion CATCH block but the CATCH flow logic definition could not be found on this instance (sys_hub_flow_logic_definition where type=CATCH). Cannot insert TRY without CATCH.",
       }
-      flowPatch.flowLogics.insert.push(catchInsertObj)
-      steps.catch_companion = {
-        uuid: catchUuid,
-        defId: catchDefRecord.sys_id,
-        connectedTo: uuid,
-        order: resolvedOrder + 1,
-        inputsCount: catchInputResult.inputs.length,
-      }
+    }
+    catchInputResult = await buildFlowLogicInputsForInsert(client, catchDefRecord.sys_id, catchDefRecord, {})
+  }
+
+  const bumpBy = isTry ? 2 : 1
+  const excludeUuids = isTry && catchUuid ? [uuid, catchUuid] : [uuid]
+  const logicElements = await getFlowElementOrders(client, flowId)
+  const logicBumps = computeSiblingBumps(logicElements, resolvedOrder, bumpBy, excludeUuids)
+  const logicHasBumps = logicBumps.actions.length + logicBumps.flowLogics.length + logicBumps.subflows.length > 0
+  if (logicHasBumps) {
+    steps.sibling_bumps = {
+      actions: logicBumps.actions.length,
+      flowLogics: logicBumps.flowLogics.length,
+      subflows: logicBumps.subflows.length,
+      bumpBy,
     }
   }
 
-  // Add parent flow logic update signal (tells GraphQL the parent was modified)
-  if (parentUiId) {
-    flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }]
+  const logicParentSignal = parentUiId ? [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" as const }] : []
+  const logicFlowLogicUpdates = [...logicParentSignal, ...logicBumps.flowLogics]
+
+  var flowPatch: any = {
+    flowId: flowId,
+    flowLogics: {
+      insert: [insertObj],
+      ...(logicFlowLogicUpdates.length > 0 ? { update: logicFlowLogicUpdates } : {}),
+    },
+    ...(logicBumps.actions.length > 0 ? { actions: { update: logicBumps.actions } } : {}),
+    ...(logicBumps.subflows.length > 0 ? { subflows: { update: logicBumps.subflows } } : {}),
+  }
+
+  if (isTry && catchUuid && catchDefRecord && catchInputResult) {
+    var catchInsertObj: any = {
+      order: String(resolvedOrder + 1),
+      uiUniqueIdentifier: catchUuid,
+      parent: parentUiId || "",
+      metadata: '{"predicates":[]}',
+      flowSysId: flowId,
+      generationSource: "",
+      connectedTo: uuid,
+      definitionId: catchDefRecord.sys_id,
+      type: "flowlogic",
+      parentUiId: parentUiId || "",
+      inputs: catchInputResult.inputs,
+      outputsToAssign: [],
+      flowLogicDefinition: catchInputResult.flowLogicDefinition,
+      comment: "",
+    }
+    flowPatch.flowLogics.insert.push(catchInsertObj)
+    steps.catch_companion = {
+      uuid: catchUuid,
+      defId: catchDefRecord.sys_id,
+      connectedTo: uuid,
+      order: resolvedOrder + 1,
+      inputsCount: catchInputResult.inputs.length,
+    }
   }
 
   // Log the full serialized GraphQL mutation for direct comparison with UI network traces
@@ -4356,6 +4473,10 @@ async function addFlowLogicViaGraphQL(
       steps.catch_insert = {
         sysId: catchInsert?.sysId,
         uiUniqueIdentifier: catchInsert?.uiUniqueIdentifier || catchUuid,
+      }
+      if (!catchInsert?.sysId) {
+        steps.catch_warning =
+          "CATCH companion was sent in mutation but GraphQL did not return a sysId for it. The TRY block was created but the CATCH may be missing."
       }
     }
 
@@ -4648,6 +4769,19 @@ async function addSubflowCallViaGraphQL(
     })
   }
 
+  const subElements = await getFlowElementOrders(client, flowId)
+  const subBumps = computeSiblingBumps(subElements, resolvedOrder, 1, [uuid])
+  const subHasBumps = subBumps.actions.length + subBumps.flowLogics.length + subBumps.subflows.length > 0
+  if (subHasBumps) {
+    steps.sibling_bumps = {
+      actions: subBumps.actions.length,
+      flowLogics: subBumps.flowLogics.length,
+      subflows: subBumps.subflows.length,
+    }
+  }
+
+  const subParentSignal = parentUiId ? [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" as const }] : []
+
   const subPatch: any = {
     flowId: flowId,
     subflows: {
@@ -4667,12 +4801,12 @@ async function addSubflowCallViaGraphQL(
           comment: annotation || "",
         },
       ],
+      ...(subBumps.subflows.length > 0 ? { update: subBumps.subflows } : {}),
     },
-  }
-
-  // Add parent flow logic update signal
-  if (parentUiId) {
-    subPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] }
+    ...(subBumps.flowLogics.length > 0 || subParentSignal.length > 0
+      ? { flowLogics: { update: [...subParentSignal, ...subBumps.flowLogics] } }
+      : {}),
+    ...(subBumps.actions.length > 0 ? { actions: { update: subBumps.actions } } : {}),
   }
 
   try {
@@ -6901,6 +7035,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                   addLogicResult.steps.catch_companion.uuid ||
                   "unknown",
               )
+            if (addLogicResult.steps.catch_warning) {
+              addLogicSummary.field("WARNING", addLogicResult.steps.catch_warning)
+            }
           }
         } else {
           addLogicSummary.error("Failed to add flow logic: " + (addLogicResult.error || "unknown"))
@@ -6953,24 +7090,34 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             addLogicResult.steps.catch_insert?.uiUniqueIdentifier || addLogicResult.steps.catch_companion.uuid || ""
           logicHints.important =
             "TRY block created with companion CATCH block. " +
-            "Add actions INSIDE the TRY using parent_ui_id='" +
+            "FIRST add actions INSIDE the TRY using parent_ui_id='" +
             (addLogicResult.uiUniqueIdentifier || "") +
-            "'. " +
-            "Add error-handling actions INSIDE the CATCH using parent_ui_id='" +
+            "' (these are the steps that may fail). " +
+            "THEN add error-handling actions INSIDE the CATCH using parent_ui_id='" +
             catchUiId +
-            "'."
+            "' (these run when the TRY steps fail). " +
+            "Flow Designer uses GLOBAL ordering — omit the order parameter for children and the tool will auto-calculate the correct global order. " +
+            "The next_order " +
+            addLogicNextOrder +
+            " is for the NEXT SIBLING after the TRY/CATCH pair, NOT for children."
           logicHints.try_ui_id = addLogicResult.uiUniqueIdentifier || ""
           logicHints.catch_sys_id = catchId
           logicHints.catch_ui_id = catchUiId
+          logicHints.next_order_note =
+            "next_order " +
+            addLogicNextOrder +
+            " is for the next SIBLING after TRY/CATCH. For children inside TRY or CATCH, omit order to auto-calculate."
           logicHints.next_step = {
             for_try_child:
-              'To add actions INSIDE the TRY block, use parent_ui_id: "' +
+              'To add actions INSIDE the TRY block (steps that may fail), use parent_ui_id: "' +
               (addLogicResult.uiUniqueIdentifier || "") +
-              '" and order: 1',
+              '" — omit order to auto-calculate the correct global position',
             for_catch_child:
-              'To add error-handling actions INSIDE the CATCH block, use parent_ui_id: "' +
+              'To add error-handling actions INSIDE the CATCH block (steps that run on failure), use parent_ui_id: "' +
               catchUiId +
-              '" and order: 1',
+              '" — omit order to auto-calculate the correct global position',
+            for_next_sibling:
+              "To add the next element AFTER the TRY/CATCH pair (same level), use order: " + addLogicNextOrder,
           }
         }
 
