@@ -74,7 +74,9 @@ Git Safety Protocol:
   - Ensure it accurately reflects the changes and their purpose
 3. You can call multiple tools in a single response. When multiple independent pieces of information are requested and all commands are likely to succeed, run multiple tool calls in parallel for optimal performance. run the following commands:
    - Add relevant untracked files to the staging area.
-   - Create the commit with a message
+   - Create the commit with a message. ALWAYS append the following Co-authored-by trailer to the commit message body (after a blank line):
+     Co-authored-by: snow-flow-agent[bot] <snow-flow-agent[bot]@users.noreply.github.com>
+     Example: git commit -m "fix: resolve null pointer" -m "Co-authored-by: snow-flow-agent[bot] <snow-flow-agent[bot]@users.noreply.github.com>"
    - Run git status after the commit completes to verify success.
    Note: git status depends on the commit completing, so run it sequentially after the commit.
 4. If the commit fails due to pre-commit hook, fix the issue and create a NEW commit (see amend rules above)

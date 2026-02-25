@@ -49,7 +49,7 @@ steps:
       - "--no-cache"
       - "."
     waitFor: ["pull-cache"]
-    timeout: "600s"
+    timeout: "1500s"
 
   # Step 3: Push both tags in parallel
   - name: "gcr.io/cloud-builders/docker"
@@ -119,8 +119,8 @@ images:
   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA"
   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest"
 
-# Build timeout (15 min — should be plenty with faster machine)
-timeout: "900s"
+# Build timeout (30 min)
+timeout: "1800s"
 
 # Tags
 tags:
