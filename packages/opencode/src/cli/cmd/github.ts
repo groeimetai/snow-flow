@@ -355,7 +355,7 @@ export const GithubInstallCommand = cmd({
 
             async function getInstallation() {
               return await fetch(
-                `https://api.snow-flow.dev/get_github_app_installation?owner=${app.owner}&repo=${app.repo}`,
+                `https://enterprise.snow-flow.dev/api/github-app/installation?owner=${app.owner}&repo=${app.repo}`,
               )
                 .then((res) => res.json())
                 .then((data) => data.installation)
@@ -683,7 +683,7 @@ export const GithubRunCommand = cmd({
 
       function normalizeOidcBaseUrl(): string {
         const value = process.env["OIDC_BASE_URL"]
-        if (!value) return "https://api.snow-flow.dev"
+        if (!value) return "https://enterprise.snow-flow.dev/api/github-app"
         return value.replace(/\/+$/, "")
       }
 
@@ -983,14 +983,14 @@ export const GithubRunCommand = cmd({
 
       async function exchangeForAppToken(token: string) {
         const response = token.startsWith("github_pat_")
-          ? await fetch(`${oidcBaseUrl}/exchange_github_app_token_with_pat`, {
+          ? await fetch(`${oidcBaseUrl}/exchange-token-pat`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${token}`,
               },
               body: JSON.stringify({ owner, repo }),
             })
-          : await fetch(`${oidcBaseUrl}/exchange_github_app_token`, {
+          : await fetch(`${oidcBaseUrl}/exchange-token`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${token}`,
