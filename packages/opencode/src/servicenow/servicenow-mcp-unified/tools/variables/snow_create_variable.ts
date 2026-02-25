@@ -23,6 +23,7 @@ export const toolDefinition: MCPToolDefinition = {
   inputSchema: {
     type: "object",
     properties: {
+      cat_item: { type: "string", description: "Catalog item sys_id to attach this variable to" },
       name: { type: "string", description: "Variable name" },
       question_text: { type: "string", description: "Question text" },
       type: {
@@ -33,25 +34,25 @@ export const toolDefinition: MCPToolDefinition = {
       mandatory: { type: "boolean", default: false },
       order: { type: "number", description: "Display order" },
     },
-    required: ["name", "question_text"],
+    required: ["name", "question_text", "cat_item"],
   },
 }
 
-export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { name, question_text, type = "string", mandatory = false, order } = args
+export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   try {
     const client = await getAuthenticatedClient(context)
-    const variableData: any = {
-      name,
-      question_text,
-      type,
-      mandatory,
+    const data: Record<string, unknown> = {
+      name: args.name,
+      question_text: args.question_text,
+      type: args.type || "string",
+      mandatory: args.mandatory || false,
+      cat_item: args.cat_item,
     }
-    if (order !== undefined) variableData.order = order
-    const response = await client.post("/api/now/table/item_option_new", variableData)
+    if (args.order !== undefined) data.order = args.order
+    const response = await client.post("/api/now/table/item_option_new", data)
     return createSuccessResult({ created: true, variable: response.data.result })
-  } catch (error: any) {
-    return createErrorResult(error.message)
+  } catch (error: unknown) {
+    return createErrorResult(error instanceof Error ? error.message : String(error))
   }
 }
 

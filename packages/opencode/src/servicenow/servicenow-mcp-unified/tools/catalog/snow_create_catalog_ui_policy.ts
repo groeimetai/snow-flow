@@ -36,9 +36,20 @@ async function resolveVariable(
   })
 
   const results = response.data?.result
-  if (!results || results.length === 0) return identifier
+  if (results && results.length > 0) return `IO:${extractSysId(results[0].sys_id)}`
 
-  return `IO:${extractSysId(results[0].sys_id)}`
+  const fallback = await client.get("/api/now/table/item_option_new", {
+    params: {
+      sysparm_query: `name=${identifier}^cat_itemISEMPTY`,
+      sysparm_limit: 1,
+      sysparm_fields: "sys_id",
+    },
+  })
+
+  const alt = fallback.data?.result
+  if (alt && alt.length > 0) return `IO:${extractSysId(alt[0].sys_id)}`
+
+  return identifier
 }
 
 function buildConditionString(
