@@ -37,7 +37,7 @@ steps:
       - "--no-cache"
       - "."
     waitFor: ["pull-cache"]
-    timeout: "1500s"
+    timeout: "600s"
 
   - name: "gcr.io/cloud-builders/docker"
     id: "push-image"
