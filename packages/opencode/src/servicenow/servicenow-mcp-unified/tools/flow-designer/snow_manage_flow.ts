@@ -257,7 +257,7 @@ async function executeFlowPatchMutation(client: any, flowPatch: any, responseFie
 async function verifyFlowState(
   client: any,
   flowId: string,
-  expect: { type: "trigger" | "action" | "flow_logic" | "subflow"; id?: string; deleted?: boolean },
+  expect: { type: "trigger" | "action" | "flow_logic" | "subflow" | "stage"; id?: string; deleted?: boolean },
 ): Promise<{ verified: boolean; found: boolean; elementCount: number; error?: string }> {
   try {
     const resp = await client.get("/api/now/processflow/flow/" + flowId)
@@ -269,6 +269,7 @@ async function verifyFlowState(
         action: "actionInstance",
         flow_logic: "flowLogicInstance",
         subflow: "actionInstance",
+        stage: "stage",
       }
       const tag = tagMap[expect.type]
       const regex = new RegExp("<" + tag + "[^>]*>[\\s\\S]*?<\\/" + tag + ">", "g")
@@ -291,6 +292,7 @@ async function verifyFlowState(
       subflow: (data.model?.actionInstances || data.actionInstances || []).filter(function (a: any) {
         return a.type === "subflow"
       }),
+      stage: data.model?.stages || data.stages || [],
     }
     const collection = collectionMap[expect.type] || []
     const arr = Array.isArray(collection) ? collection : []
@@ -4658,6 +4660,11 @@ const elementGraphQLMap: Record<string, { key: string; type: string; responseFie
     type: "subflow",
     responseFields: "subflows { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }",
   },
+  stage: {
+    key: "stages",
+    type: "stage",
+    responseFields: "stages { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }",
+  },
 }
 
 async function updateElementViaGraphQL(
@@ -4716,6 +4723,96 @@ async function deleteElementViaGraphQL(
     return { success: true, steps: { deleted: elementIds, type: elementType } }
   } catch (e: any) {
     return { success: false, error: e.message, steps: { elementIds, type: elementType } }
+  }
+}
+
+const DEFAULT_STAGE_STATES = [
+  { label: "Pending - has not started", name: "pending" },
+  { label: "In progress", name: "in_progress" },
+  { label: "Skipped", name: "skipped" },
+  { label: "Completed", name: "complete" },
+  { label: "Error", name: "error" },
+]
+
+async function addStageViaGraphQL(
+  client: any,
+  flowId: string,
+  label: string,
+  componentIndexes: number[],
+  order: number,
+  states?: { label: string; name: string }[],
+  alwaysShow?: boolean,
+): Promise<{
+  success: boolean
+  stageId?: string
+  sysId?: string
+  uiUniqueIdentifier?: string
+  steps?: any
+  error?: string
+}> {
+  const id = generateUUID()
+  const stage = {
+    stageId: id,
+    label,
+    value: label,
+    type: "standard",
+    duration: "1970-01-01 00:00:00",
+    alwaysShow: alwaysShow !== false,
+    order,
+    componentIndexes,
+    states: states || DEFAULT_STAGE_STATES,
+  }
+
+  try {
+    const result = await executeFlowPatchMutation(
+      client,
+      { flowId, stages: { insert: [stage] } },
+      "stages { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }",
+    )
+    const insert = result?.stages?.inserts?.[0]
+    return {
+      success: true,
+      stageId: id,
+      sysId: insert?.sysId,
+      uiUniqueIdentifier: insert?.uiUniqueIdentifier,
+      steps: { stage, graphql_result: result?.stages },
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message, steps: { stage } }
+  }
+}
+
+async function updateStageViaGraphQL(
+  client: any,
+  flowId: string,
+  stageId: string,
+  fields: {
+    label?: string
+    componentIndexes?: number[]
+    order?: number
+    states?: { label: string; name: string }[]
+    alwaysShow?: boolean
+  },
+): Promise<{ success: boolean; steps?: any; error?: string }> {
+  const patch: any = { stageId }
+  if (fields.label !== undefined) {
+    patch.label = fields.label
+    patch.value = fields.label
+  }
+  if (fields.componentIndexes !== undefined) patch.componentIndexes = fields.componentIndexes
+  if (fields.order !== undefined) patch.order = fields.order
+  if (fields.states !== undefined) patch.states = fields.states
+  if (fields.alwaysShow !== undefined) patch.alwaysShow = fields.alwaysShow
+
+  try {
+    const result = await executeFlowPatchMutation(
+      client,
+      { flowId, stages: { update: [patch] } },
+      "stages { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }",
+    )
+    return { success: true, steps: { stageId, fields: Object.keys(fields), graphql_result: result?.stages } }
+  } catch (e: any) {
+    return { success: false, error: e.message, steps: { stageId } }
   }
 }
 
@@ -4902,6 +4999,9 @@ export const toolDefinition: MCPToolDefinition = {
           "add_subflow",
           "update_subflow",
           "delete_subflow",
+          "add_stage",
+          "update_stage",
+          "delete_stage",
           "open_flow",
           "close_flow",
           "force_unlock",
@@ -4914,7 +5014,8 @@ export const toolDefinition: MCPToolDefinition = {
           "EDITING EXISTING FLOWS: call open_flow first to acquire the editing lock. " +
           "ALWAYS call close_flow as the LAST step to release the lock. " +
           'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
-          "add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id. " +
+          "add_*/update_*/delete_* for triggers, actions, flow_logic, subflows, stages. update_trigger replaces the trigger type. delete_* removes elements by element_id. " +
+          "add_stage/update_stage/delete_stage for stage management (visual progress grouping of actions). Stages use componentIndexes to map which actions belong to each stage. " +
           "Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action. " +
           "'check_execution' queries sys_flow_context and sys_hub_flow_run for execution status/errors/outputs — use after activating to verify the flow runs correctly.",
       },
@@ -5172,6 +5273,48 @@ export const toolDefinition: MCPToolDefinition = {
           "Adds ~200ms latency per mutation. Recommended for debugging or critical flows.",
         default: false,
       },
+      stage_label: {
+        type: "string",
+        description:
+          "Label for the stage (for add_stage, update_stage). The display name shown in the flow's progress indicator.",
+      },
+      stage_component_indexes: {
+        type: "array",
+        items: { type: "number" },
+        description:
+          "Array of action order indexes (0-based) that belong to this stage (for add_stage, update_stage). " +
+          "These correspond to the positional indexes of actions in the flow. " +
+          "Example: [0, 1] means the first two actions belong to this stage.",
+      },
+      stage_order: {
+        type: "number",
+        description:
+          "Order of the stage in the stage list (0-based, for add_stage). " +
+          "Stages have their own ordering separate from the global action order. " +
+          "If omitted, defaults to 0.",
+      },
+      stage_states: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: { type: "string", description: "Display label (e.g. 'Pending - has not started')" },
+            name: {
+              type: "string",
+              description: "State name (e.g. 'pending', 'in_progress', 'skipped', 'complete', 'error')",
+            },
+          },
+        },
+        description:
+          "Custom stage states (for add_stage, update_stage). " +
+          "Defaults to 5 standard states: pending, in_progress, skipped, complete, error. " +
+          "Only provide this if you need non-standard states.",
+      },
+      stage_always_show: {
+        type: "boolean",
+        description: "Whether the stage is always visible in the progress indicator (default: true).",
+        default: true,
+      },
     },
     required: ["action"],
   },
@@ -5205,6 +5348,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     add_subflow: ["flow_id", "subflow_id", "annotation"],
     update_subflow: ["flow_id", "element_id"],
     delete_subflow: ["flow_id", "element_id"],
+    add_stage: ["flow_id", "stage_label", "stage_component_indexes"],
+    update_stage: ["flow_id", "element_id"],
+    delete_stage: ["flow_id", "element_id"],
     open_flow: ["flow_id"],
     close_flow: ["flow_id"],
     force_unlock: ["flow_id"],
@@ -5254,6 +5400,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       "add_subflow",
       "update_subflow",
       "delete_subflow",
+      "add_stage",
+      "update_stage",
+      "delete_stage",
     ]
     var updateSetCtx: { updateSetId?: string; updateSetName?: string; warning?: string } = {}
     if (WRITE_ACTIONS.indexOf(action) !== -1) {
@@ -6971,6 +7120,132 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
 
       // ────────────────────────────────────────────────────────────────
+      // ADD_STAGE — add a visual progress stage grouping actions
+      // ────────────────────────────────────────────────────────────────
+      case "add_stage": {
+        var addStageFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, addStageFlowId)
+        var addStageLabel = args.stage_label
+        var addStageIndexes = args.stage_component_indexes || []
+        var addStageOrder = args.stage_order ?? 0
+        var addStageStates = args.stage_states
+        var addStageAlwaysShow = args.stage_always_show
+
+        var addStageResult = await addStageViaGraphQL(
+          client,
+          addStageFlowId,
+          addStageLabel,
+          addStageIndexes,
+          addStageOrder,
+          addStageStates,
+          addStageAlwaysShow,
+        )
+
+        var addStageSummary = summary()
+        if (addStageResult.success) {
+          addStageSummary
+            .success("Stage added via GraphQL")
+            .field("Flow", addStageFlowId)
+            .field("Label", addStageLabel)
+            .field("Stage ID", addStageResult.stageId || "unknown")
+            .field("Component Indexes", addStageIndexes.join(", "))
+            .field("Order", String(addStageOrder))
+          if (args.annotation) addStageSummary.field("Annotation", args.annotation)
+
+          if (args.verify) {
+            var addStageVerification = await verifyFlowState(client, addStageFlowId, {
+              type: "stage",
+              id: addStageResult.sysId || addStageResult.stageId,
+            })
+            if (addStageResult.steps) addStageResult.steps.verification = addStageVerification
+            addStageSummary.field("Verified", addStageVerification.verified ? "yes" : "FAILED")
+          }
+          return createSuccessResult(
+            withUpdateSetContext(
+              {
+                action: "add_stage",
+                ...addStageResult,
+                reminder:
+                  "IMPORTANT: Call close_flow with flow_id='" +
+                  addStageFlowId +
+                  "' when you are done adding elements. Forgetting this will leave the flow locked.",
+              },
+              updateSetCtx,
+            ),
+            {},
+            addStageSummary.build(),
+          )
+        }
+        return createErrorResult(addStageResult.error || "Failed to add stage")
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // UPDATE_STAGE — update an existing stage's properties
+      // ────────────────────────────────────────────────────────────────
+      case "update_stage": {
+        var updStageFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, updStageFlowId)
+        var updStageFields: any = {}
+        if (args.stage_label !== undefined) updStageFields.label = args.stage_label
+        if (args.stage_component_indexes !== undefined) updStageFields.componentIndexes = args.stage_component_indexes
+        if (args.stage_order !== undefined) updStageFields.order = args.stage_order
+        if (args.stage_states !== undefined) updStageFields.states = args.stage_states
+        if (args.stage_always_show !== undefined) updStageFields.alwaysShow = args.stage_always_show
+
+        var updStageResult = await updateStageViaGraphQL(client, updStageFlowId, args.element_id, updStageFields)
+
+        var updStageSummary = summary()
+        if (updStageResult.success) {
+          updStageSummary
+            .success("Stage updated")
+            .field("Flow", updStageFlowId)
+            .field("Stage ID", args.element_id)
+            .field("Updated fields", Object.keys(updStageFields).join(", "))
+        }
+        if (!updStageResult.success) {
+          updStageSummary.error("Failed to update stage: " + (updStageResult.error || "unknown"))
+        }
+        return updStageResult.success
+          ? createSuccessResult({ action: "update_stage", ...updStageResult }, {}, updStageSummary.build())
+          : createErrorResult(updStageResult.error || "Failed to update stage")
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // DELETE_STAGE — remove stage(s) from the flow
+      // ────────────────────────────────────────────────────────────────
+      case "delete_stage": {
+        var delStageFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, delStageFlowId)
+        var delStageIds = String(args.element_id)
+          .split(",")
+          .map(function (id: string) {
+            return id.trim()
+          })
+
+        var delStageResult = await deleteElementViaGraphQL(client, delStageFlowId, "stage", delStageIds)
+
+        var delStageSummary = summary()
+        if (delStageResult.success) {
+          delStageSummary.success("Stage(s) deleted").field("Deleted", delStageIds.join(", "))
+          if (args.verify) {
+            var delStageVerification = await verifyFlowState(client, delStageFlowId, {
+              type: "stage",
+              id: delStageIds[0],
+              deleted: true,
+            })
+            if (delStageResult.steps) delStageResult.steps.verification = delStageVerification
+            delStageSummary.field("Verified deleted", delStageVerification.verified ? "yes" : "FAILED")
+          }
+        }
+        if (!delStageResult.success) {
+          delStageSummary.error("Failed to delete stage: " + (delStageResult.error || "unknown"))
+        }
+        return delStageResult.success
+          ? createSuccessResult({ action: "delete_stage", ...delStageResult }, {}, delStageSummary.build())
+          : createErrorResult(delStageResult.error || "Failed to delete stage")
+      }
+
+      // ────────────────────────────────────────────────────────────────
       // CHECK_EXECUTION — query flow execution contexts, runs & outputs
       // ────────────────────────────────────────────────────────────────
       case "check_execution": {
@@ -7313,6 +7588,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       "delete_flow_logic",
       "delete_subflow",
       "delete_trigger",
+      "add_stage",
+      "update_stage",
+      "delete_stage",
     ]
     var isUnrecoverableError =
       error.isAxiosError ||
