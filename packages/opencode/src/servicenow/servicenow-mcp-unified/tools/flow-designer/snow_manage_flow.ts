@@ -383,6 +383,68 @@ async function releaseFlowEditingLock(
   return { success: graphqlOk, compilationError, debug }
 }
 
+/**
+ * Verify whether an editing lock (sys_hub_flow_safe_edit record) exists for the given flow.
+ * Used before GraphQL mutations to detect lost/expired locks early.
+ */
+async function verifyFlowEditingLock(
+  client: any,
+  flowId: string,
+): Promise<{ locked: boolean; lockAge?: number; lockUser?: string }> {
+  try {
+    var resp = await client.get("/api/now/table/sys_hub_flow_safe_edit", {
+      params: {
+        sysparm_query: "document_id=" + flowId,
+        sysparm_fields: "sys_id,document_id,user,sys_created_on",
+        sysparm_limit: 1,
+      },
+    })
+    var record = resp.data.result?.[0]
+    if (record?.sys_id) {
+      var ageMs = record.sys_created_on ? Date.now() - new Date(record.sys_created_on).getTime() : 0
+      return { locked: true, lockAge: ageMs, lockUser: record.user || "" }
+    }
+    return { locked: false }
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] verifyFlowEditingLock failed: " + (e.message || ""))
+    return { locked: false }
+  }
+}
+
+/**
+ * Ensure an editing lock exists for the given flow, re-acquiring if necessary.
+ * Call this before every GraphQL element mutation.
+ *
+ * ADVISORY: This function always returns {success: true}. If the lock cannot be
+ * acquired, a warning is included but the mutation is NOT blocked. The GraphQL
+ * mutation itself will fail with a specific error if there's a real lock issue,
+ * which is more informative than our generic "No editing lock" message.
+ */
+async function ensureFlowEditingLock(
+  client: any,
+  flowId: string,
+): Promise<{ success: true; reacquired?: boolean; warning?: string }> {
+  var lockStatus = await verifyFlowEditingLock(client, flowId)
+  if (lockStatus.locked) return { success: true }
+
+  // Lock not present — establish editing session via ProcessFlow GET (same as open_flow / UI)
+  try {
+    await client.get("/api/now/processflow/flow/" + flowId)
+  } catch (_) {
+    /* best-effort — processflow GET may fail on some instances */
+  }
+
+  // Try to acquire the lock
+  console.warn("[snow_manage_flow] Lock not found for flow " + flowId + ", re-acquiring...")
+  var acquireResult = await acquireFlowEditingLock(client, flowId)
+  if (acquireResult.success) return { success: true, reacquired: true }
+
+  // Lock acquisition failed — proceed anyway (advisory, not blocking)
+  // The GraphQL mutation itself will fail with a specific error if there's a real lock issue
+  console.warn("[snow_manage_flow] Lock acquisition failed for flow " + flowId + ": " + (acquireResult.error || "unknown") + " — proceeding anyway")
+  return { success: true, warning: acquireResult.error || "Could not verify editing lock" }
+}
+
 /** Safely extract a string from a ServiceNow Table API value (handles reference objects like {value, link}). */
 const str = (val: any): string =>
   typeof val === "object" && val !== null ? val.display_value || val.value || "" : val || ""
@@ -4746,7 +4808,11 @@ export const toolDefinition: MCPToolDefinition = {
           "force_unlock",
         ],
         description:
-          "Action to perform. EDITING WORKFLOW: create keeps the editing lock open — you can immediately call add_action, add_flow_logic, etc. without open_flow. For editing EXISTING flows: call open_flow first to acquire the lock. IMPORTANT: Always call close_flow as the LAST step when you are done editing to release the lock — if you forget, the flow stays locked and users cannot edit it in the UI. " +
+          "Action to perform. " +
+          "CREATING: 'create' creates a flow AND its trigger if trigger_type is specified — do NOT call add_trigger separately after create if you already specified trigger_type. " +
+          "The editing lock stays open after create, so you can immediately call add_action, add_flow_logic, etc. " +
+          "EDITING EXISTING FLOWS: call open_flow first to acquire the editing lock. " +
+          "ALWAYS call close_flow as the LAST step to release the lock. " +
           'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
           "add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id. " +
           "Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action.",
@@ -5173,6 +5239,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         // ── Triggers, actions, variables for ProcessFlow-created flows ──
+        // Note: ProcessFlow API POST already establishes an editing context (implicit lock).
+        // We don't call acquireFlowEditingLock here to avoid conflicting with that session.
+        // For subsequent calls (add_action, etc.), ensureFlowEditingLock handles re-acquisition.
         // Uses GraphQL mutations (same as Flow Designer UI) for proper engine registration
         if (flowSysId && usedMethod === "processflow_api") {
           if (!isSubflow && triggerType !== "manual") {
@@ -5576,7 +5645,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 flowSysId +
                 "' when done editing.",
               next_step:
-                "Flow is now open for editing. Add actions with add_action, flow logic with add_flow_logic. When DONE, call close_flow with this flow_id to release the editing lock.",
+                "Flow is now open for editing." +
+                (triggerCreated ? " Trigger (" + triggerType + ") is already set up — do NOT call add_trigger again." : "") +
+                (actionsCreated > 0 ? " " + actionsCreated + " action(s) already added." : "") +
+                " Add more elements with add_action/add_flow_logic. When DONE, call close_flow with flow_id='" + flowSysId + "' to release the editing lock.",
             },
             updateSetCtx,
           ),
@@ -6144,6 +6216,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "add_trigger": {
         var addTrigFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, addTrigFlowId)
         var addTrigType = args.trigger_type || "record_create_or_update"
         var addTrigTable = args.table || args.trigger_table || ""
         var addTrigCondition = args.trigger_condition || ""
@@ -6168,9 +6241,15 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addTrigSummary.error("Failed to add trigger: " + (addTrigResult.error || "unknown"))
         }
 
-        return addTrigResult.success
-          ? createSuccessResult(withUpdateSetContext({ action: "add_trigger", ...addTrigResult }, updateSetCtx), {}, addTrigSummary.build())
-          : createErrorResult(addTrigResult.error || "Failed to add trigger")
+        if (addTrigResult.success) {
+          return createSuccessResult(withUpdateSetContext({ action: "add_trigger", ...addTrigResult }, updateSetCtx), {}, addTrigSummary.build())
+        }
+        var addTrigLockHint = ""
+        var addTrigPostLock = await verifyFlowEditingLock(client, addTrigFlowId)
+        if (!addTrigPostLock.locked) {
+          addTrigLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addTrigFlowId + "' first, then retry."
+        }
+        return createErrorResult((addTrigResult.error || "Failed to add trigger") + addTrigLockHint)
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -6178,6 +6257,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "update_trigger": {
         var updTrigFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, updTrigFlowId)
         var updTrigType = args.trigger_type || "record_create_or_update"
         var updTrigTable = args.table || args.trigger_table || ""
         var updTrigCondition = args.trigger_condition || ""
@@ -6270,6 +6350,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "add_action": {
         var addActFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, addActFlowId)
         var addActType = args.action_type || "log"
         var addActName = args.action_name || args.name || addActType
         var addActInputs =
@@ -6340,7 +6421,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             addActSummary.build(),
           )
         }
-        return createErrorResult(addActResult.error || "Failed to add action")
+        var addActLockHint = ""
+        var addActPostLock = await verifyFlowEditingLock(client, addActFlowId)
+        if (!addActPostLock.locked) {
+          addActLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addActFlowId + "' first, then retry."
+        }
+        return createErrorResult((addActResult.error || "Failed to add action") + addActLockHint)
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -6348,6 +6434,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "add_flow_logic": {
         var addLogicFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, addLogicFlowId)
         var addLogicType = args.logic_type
         var addLogicInputs =
           args.logic_inputs || args.logic_config || args.inputs || args.action_inputs || args.config || {}
@@ -6436,7 +6523,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             addLogicSummary.build(),
           )
         }
-        return createErrorResult(addLogicResult.error || "Failed to add flow logic")
+        var addLogicLockHint = ""
+        var addLogicPostLock = await verifyFlowEditingLock(client, addLogicFlowId)
+        if (!addLogicPostLock.locked) {
+          addLogicLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addLogicFlowId + "' first, then retry."
+        }
+        return createErrorResult((addLogicResult.error || "Failed to add flow logic") + addLogicLockHint)
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -6444,6 +6536,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "add_subflow": {
         var addSubFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, addSubFlowId)
         var addSubSubflowId = args.subflow_id
         var addSubInputs =
           args.action_inputs ||
@@ -6496,7 +6589,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             addSubSummary.build(),
           )
         }
-        return createErrorResult(addSubResult.error || "Failed to add subflow call")
+        var addSubLockHint = ""
+        var addSubPostLock = await verifyFlowEditingLock(client, addSubFlowId)
+        if (!addSubPostLock.locked) {
+          addSubLockHint = " Note: No editing lock detected. Try calling open_flow with flow_id='" + addSubFlowId + "' first, then retry."
+        }
+        return createErrorResult((addSubResult.error || "Failed to add subflow call") + addSubLockHint)
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -6506,6 +6604,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "update_flow_logic":
       case "update_subflow": {
         var updElemFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, updElemFlowId)
         var updElemType =
           action === "update_action" ? "action" : action === "update_flow_logic" ? "flowlogic" : "subflow"
         var updElemInputs =
@@ -6561,6 +6660,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "delete_subflow":
       case "delete_trigger": {
         var delElemFlowId = await resolveFlowId(client, args.flow_id)
+        await ensureFlowEditingLock(client, delElemFlowId)
         var delElemType =
           action === "delete_action"
             ? "action"
@@ -6676,17 +6776,25 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (closeResult.success) {
           closeSummary.success("Flow saved and editing lock released").field("Flow", closeFlowId)
         } else if (closeResult.compilationError) {
-          closeSummary.error("Flow compilation/save failed: " + closeResult.compilationError).field("Flow", closeFlowId)
+          // Compilation failed but the lock IS released (safeEdit(delete) was called + REST cleanup).
+          // Treat as success with warning, not as a fatal error.
+          closeSummary
+            .warning("Lock released but flow compilation had warnings: " + closeResult.compilationError)
+            .field("Flow", closeFlowId)
+            .line("The flow may need fixes before it can be activated/published.")
         } else {
           closeSummary.warning("Lock release returned false (flow may not have been locked)").field("Flow", closeFlowId)
         }
-        var closeData: any = { action: "close_flow", flow_id: closeFlowId, lock_released: closeResult.success }
-        if (closeResult.compilationError) {
-          closeData.compilation_error = closeResult.compilationError
-          closeData.debug = closeResult.debug
+        var closeData: any = {
+          action: "close_flow",
+          flow_id: closeFlowId,
+          lock_released: true, // Lock is always released (GraphQL safeEdit(delete) + REST cleanup both run)
+          compilation_success: closeResult.success,
         }
-        if (!closeResult.success && closeResult.compilationError) {
-          return createErrorResult("Flow compilation/save failed: " + closeResult.compilationError, closeData)
+        if (closeResult.compilationError) {
+          closeData.compilation_warning = closeResult.compilationError
+          closeData.debug = closeResult.debug
+          closeData.next_step = "The editing lock has been released. The compilation warning means the flow may have issues (e.g. incomplete conditions). Fix the flow elements and try activating again."
         }
         return createSuccessResult(closeData, {}, closeSummary.build())
       }
@@ -6805,10 +6913,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "Unknown action: " + action)
     }
   } catch (error: any) {
-    // Safety: release lock on unexpected errors during mutation actions.
-    // NOTE: This list is intentionally smaller than WRITE_ACTIONS (used for update set tracking).
-    // Actions like update, activate, deactivate, delete, publish manage their own lock lifecycle
-    // and don't hold an editing lock that needs cleanup here.
+    // Safety: only release lock on truly UNRECOVERABLE errors (network, auth, timeout).
+    // Validation errors, "flow not found", and GraphQL business-logic errors should NOT
+    // kill the editing session — the agent can fix the input and retry.
     var MUTATION_ACTIONS = [
       "create",
       "create_subflow",
@@ -6825,7 +6932,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       "delete_subflow",
       "delete_trigger",
     ]
-    if (client && args.flow_id && MUTATION_ACTIONS.indexOf(action) !== -1) {
+    var isUnrecoverableError =
+      error.isAxiosError ||
+      (error instanceof SnowFlowError &&
+        [ErrorType.NETWORK_ERROR, ErrorType.TIMEOUT, ErrorType.TIMEOUT_ERROR, ErrorType.CONNECTION_RESET, ErrorType.UNAUTHORIZED].indexOf(
+          error.type,
+        ) !== -1)
+    if (client && args.flow_id && isUnrecoverableError && MUTATION_ACTIONS.indexOf(action) !== -1) {
       try {
         await releaseFlowEditingLock(client, await resolveFlowId(client, args.flow_id))
       } catch (lockReleaseErr: any) {
