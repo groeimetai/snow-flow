@@ -1342,10 +1342,14 @@ gs.setProperty('${outputMarker}', JSON.stringify({
    */
   async getRecord(table: string, sys_id: string): Promise<any> {
     try {
+      const validatedTable = this.validateTableName(table)
+      if (!/^[a-fA-F0-9]{32}$/.test(sys_id)) {
+        throw new Error(`Invalid sys_id format: "${sys_id}". Must be a 32-character hex string.`)
+      }
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated()
 
-      const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${table}/${sys_id}`)
+      const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${validatedTable}/${sys_id}`)
       return response.data.result
     } catch (error) {
       console.error(`Failed to get record from ${table}:`, error)
@@ -1358,10 +1362,11 @@ gs.setProperty('${outputMarker}', JSON.stringify({
    */
   async getRecords(table: string, params?: any): Promise<ServiceNowAPIResponse<any[]>> {
     try {
+      const validatedTable = this.validateTableName(table)
       // Ensure we have credentials before making the API call
       await this.ensureAuthenticated()
 
-      const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${table}`, { params })
+      const response = await this.client.get(`${this.getBaseUrl()}/api/now/table/${validatedTable}`, { params })
 
       return {
         success: true,
@@ -1541,7 +1546,7 @@ gs.setProperty('${outputMarker}', JSON.stringify({
   async updateRecord(table: string, sysId: string, data: any): Promise<ServiceNowAPIResponse<any>> {
     try {
       const validatedTable = this.validateTableName(table)
-      if (!/^[a-f0-9]{32}$/.test(sysId)) {
+      if (!/^[a-fA-F0-9]{32}$/.test(sysId)) {
         throw new Error(`Invalid sys_id format: "${sysId}". Must be a 32-character hex string.`)
       }
       await this.ensureAuthenticated()
@@ -1567,7 +1572,7 @@ gs.setProperty('${outputMarker}', JSON.stringify({
   async deleteRecord(table: string, sysId: string): Promise<ServiceNowAPIResponse<any>> {
     try {
       const validatedTable = this.validateTableName(table)
-      if (!/^[a-f0-9]{32}$/.test(sysId)) {
+      if (!/^[a-fA-F0-9]{32}$/.test(sysId)) {
         throw new Error(`Invalid sys_id format: "${sysId}". Must be a 32-character hex string.`)
       }
       await this.ensureAuthenticated()

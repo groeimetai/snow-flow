@@ -4934,33 +4934,38 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
     // Calculate total update count
     const totalUpdates = 1 + actionInstances.length + flowLogics.length + 1 // flow + actions + logics + trigger
 
+    // Helper aliases for readability
+    const esc = (v: string) => this.escapeXMLText(v)
+    const cdata = (v: string) => this.escapeCDATA(v)
+    const jsonSafe = (v: string) => v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+
     const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<unload unload_date="${timestamp}">
+<unload unload_date="${esc(timestamp)}">
   <sys_update_set action="INSERT_OR_UPDATE">
     <application display_value="Global">global</application>
     <category>customer</category>
-    <description>Auto-generated Update Set for Flow Designer: ${args.name}</description>
+    <description>Auto-generated Update Set for Flow Designer: ${esc(args.name)}</description>
     <is_default>false</is_default>
-    <name>${updateSetName}</name>  
+    <name>${esc(updateSetName)}</name>
     <origin_sys_id/>
     <release_date/>
     <state>complete</state>
     <sys_created_by>snow-flow</sys_created_by>
-    <sys_created_on>${timestamp}</sys_created_on>
-    <sys_id>${updateSetId}</sys_id>
+    <sys_created_on>${esc(timestamp)}</sys_created_on>
+    <sys_id>${esc(updateSetId)}</sys_id>
     <sys_mod_count>0</sys_mod_count>
     <sys_updated_by>snow-flow</sys_updated_by>
-    <sys_updated_on>${timestamp}</sys_updated_on>
+    <sys_updated_on>${esc(timestamp)}</sys_updated_on>
     <update_count>${totalUpdates}</update_count>
   </sys_update_set>
-  
+
   <!-- Main Flow Record -->
   <sys_update_xml action="INSERT_OR_UPDATE">
     <action>INSERT_OR_UPDATE</action>
     <application display_value="Global">global</application>
     <category>customer</category>
     <comments/>
-    <name>sys_hub_flow_${flowId}</name>
+    <name>sys_hub_flow_${esc(flowId)}</name>
     <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <record_update table="sys_hub_flow">
   <sys_hub_flow action="INSERT_OR_UPDATE">
@@ -4969,17 +4974,17 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
     <active>${args.active !== false ? "true" : "false"}</active>
     <annotation/>
     <callable_by_client_api>false</callable_by_client_api>
-    <category>${args.category || "automation"}</category>
+    <category>${esc(args.category || "automation")}</category>
     <checked_out_by/>
     <compiler_build/>
     <copied_from/>
     <copied_from_name/>
-    <description>${args.description || ""}</description>  
-    <internal_name>global.${args.name}</internal_name>
-    <label_cache>[{"name":"${args.name}","internal_name":"${args.name}","label":"${args.name}","description":"${args.description || ""}","language":"en","source":""}]</label_cache>
+    <description>${esc(args.description || "")}</description>
+    <internal_name>global.${esc(args.name)}</internal_name>
+    <label_cache>[{"name":"${jsonSafe(args.name)}","internal_name":"${jsonSafe(args.name)}","label":"${jsonSafe(args.name)}","description":"${jsonSafe(args.description || "")}","language":"en","source":""}]</label_cache>
     <latest_snapshot/>
-    <master_snapshot><![CDATA[${JSON.stringify(completeFlowDefinition)}]]></master_snapshot>
-    <name>${args.name}</name>
+    <master_snapshot><![CDATA[${cdata(JSON.stringify(completeFlowDefinition))}]]></master_snapshot>
+    <name>${esc(args.name)}</name>
     <natlang/>
     <outputs_cache>[]</outputs_cache>
     <remote_trigger_id/>
@@ -4991,35 +4996,35 @@ Run snow_deployment_debug for basic session info or check the logs for more deta
     <status>published</status>
     <sys_class_name>sys_hub_flow</sys_class_name>
     <sys_created_by>snow-flow</sys_created_by>
-    <sys_created_on>${timestamp}</sys_created_on>
+    <sys_created_on>${esc(timestamp)}</sys_created_on>
     <sys_domain>global</sys_domain>
     <sys_domain_path>/</sys_domain_path>
-    <sys_id>${flowId}</sys_id>
+    <sys_id>${esc(flowId)}</sys_id>
     <sys_mod_count>0</sys_mod_count>
-    <sys_name>${args.name}</sys_name>
+    <sys_name>${esc(args.name)}</sys_name>
     <sys_overrides/>
     <sys_package display_value="Global" source="global">global</sys_package>
     <sys_policy/>
     <sys_scope display_value="Global">global</sys_scope>
-    <sys_update_name>sys_hub_flow_${flowId}</sys_update_name>
+    <sys_update_name>sys_hub_flow_${esc(flowId)}</sys_update_name>
     <sys_updated_by>snow-flow</sys_updated_by>
-    <sys_updated_on>${timestamp}</sys_updated_on>
-    <type>${args.flow_type || "flow"}</type>
+    <sys_updated_on>${esc(timestamp)}</sys_updated_on>
+    <type>${esc(args.flow_type || "flow")}</type>
   </sys_hub_flow>
 </record_update>]]></payload>
     <payload_hash>-1</payload_hash>
-    <record_name>${args.name}</record_name>
+    <record_name>${esc(args.name)}</record_name>
     <reverted_from/>
     <source_table>sys_hub_flow</source_table>
     <state>current</state>
     <sys_created_by>snow-flow</sys_created_by>
-    <sys_created_on>${timestamp}</sys_created_on>
-    <sys_id>${updateXmlId}</sys_id>
+    <sys_created_on>${esc(timestamp)}</sys_created_on>
+    <sys_id>${esc(updateXmlId)}</sys_id>
     <sys_mod_count>0</sys_mod_count>
     <sys_updated_by>snow-flow</sys_updated_by>
-    <sys_updated_on>${timestamp}</sys_updated_on>
+    <sys_updated_on>${esc(timestamp)}</sys_updated_on>
     <table>sys_hub_flow</table>
-    <target_name>${args.name}</target_name>
+    <target_name>${esc(args.name)}</target_name>
     <type>Flow Designer</type>
     <update_domain>global</update_domain>
     <update_set display_value="${updateSetName}">${updateSetId}</update_set>
