@@ -479,22 +479,32 @@ When debugging MCP tool behavior or verifying what actually happened on the inst
 - `snow_inspect_mutations` — **(NEW)** Mutation inspection after tool execution
 
 **Self-debugging workflow:**
+
+*For Flow Designer (GraphQL mutations — NOT captured by sys_audit):*
+1. Use `snow_manage_flow` with `verify=true` on any mutation action to get automatic post-mutation verification
+2. After publishing, use `snow_manage_flow action=check_execution flow_id=<id>` to inspect execution contexts, runs, and outputs
+3. `check_execution` returns state, status, timing, errors, and output values from `sys_flow_context` / `sys_hub_flow_run` / `sys_hub_flow_output`
+
+*For Table API / REST changes (captured by sys_audit):*
 1. Note the current timestamp (or use relative like "30s")
-2. Execute the tool being tested (e.g. `snow_manage_flow action=create`)
+2. Execute the tool being tested
 3. Call `snow_inspect_mutations` with `since=<timestamp>` or `since="30s"`
 4. Review: which records were INSERT/UPDATE/DELETE, which fields changed, old→new values
 5. Compare expected vs. actual mutations and adjust tool code accordingly
 
 **When to use which debugging tool:**
 - Script errors → `snow_get_logs` with `level="error"`
-- What changed? → `snow_inspect_mutations` with time window
+- Flow mutation worked? → `snow_manage_flow` with `verify=true`
+- Flow execution status? → `snow_manage_flow action=check_execution`
+- Table API changed what? → `snow_inspect_mutations` with time window
 - What FAILED? → `snow_inspect_mutations` with `include_syslog=true` and `include_transactions=true`
 - Flow not started? → `snow_get_flow_execution_logs`
 - REST call failed? → `snow_get_outbound_http_logs`
 - Who did what when? → `snow_audit_trail_analysis`
 
-**Important notes on `snow_inspect_mutations`:**
-- `sys_audit` only captures SUCCESSFUL record changes. Failed operations leave no audit trail.
+**Important notes:**
+- **GraphQL mutations** (Flow Designer) are NOT captured by `sys_audit` — use `verify=true` and `check_execution` instead
+- `sys_audit` only captures SUCCESSFUL Table API/REST record changes. Failed operations leave no audit trail.
 - For failed operations, check syslog (errors) and sys_transaction_log (HTTP 4xx/5xx responses).
 - `sys_audit` field values are limited to 255 characters — the tool warns when values appear truncated.
 - Use `snapshot_record` to fetch the current state of a record alongside the audit trail.

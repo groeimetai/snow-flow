@@ -237,6 +237,7 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
 }
 
 async function executeFlowPatchMutation(client: any, flowPatch: any, responseFields: string): Promise<any> {
+  const start = Date.now()
   const mutation =
     "mutation { global { snFlowDesigner { flow(flowPatch: " +
     jsToGraphQL(flowPatch) +
@@ -248,7 +249,61 @@ async function executeFlowPatchMutation(client: any, flowPatch: any, responseFie
   if (errors && errors.length > 0) {
     throw new Error("GraphQL error: " + JSON.stringify(errors[0].message || errors[0]))
   }
-  return resp.data?.data?.global?.snFlowDesigner?.flow || resp.data
+  const result = resp.data?.data?.global?.snFlowDesigner?.flow || resp.data
+  if (result && typeof result === "object") result._mutationMs = Date.now() - start
+  return result
+}
+
+async function verifyFlowState(
+  client: any,
+  flowId: string,
+  expect: { type: "trigger" | "action" | "flow_logic" | "subflow"; id?: string; deleted?: boolean },
+): Promise<{ verified: boolean; found: boolean; elementCount: number; error?: string }> {
+  try {
+    const resp = await client.get("/api/now/processflow/flow/" + flowId)
+    const raw = resp.data
+
+    if (typeof raw === "string") {
+      const tagMap: Record<string, string> = {
+        trigger: "triggerInstance",
+        action: "actionInstance",
+        flow_logic: "flowLogicInstance",
+        subflow: "actionInstance",
+      }
+      const tag = tagMap[expect.type]
+      const regex = new RegExp("<" + tag + "[^>]*>[\\s\\S]*?<\\/" + tag + ">", "g")
+      const matches = raw.match(regex) || []
+      const found = expect.id
+        ? matches.some(function (m: string) {
+            return m.includes(expect.id!)
+          })
+        : true
+      return { verified: expect.deleted ? !found : found, found, elementCount: matches.length }
+    }
+
+    const data = raw?.result?.data || raw?.data || raw
+    if (!data) return { verified: false, found: false, elementCount: 0, error: "empty processflow response" }
+
+    const collectionMap: Record<string, any[]> = {
+      trigger: data.model?.triggerInstances || data.triggerInstances || [],
+      action: data.model?.actionInstances || data.actionInstances || [],
+      flow_logic: data.model?.flowLogicInstances || data.flowLogicInstances || [],
+      subflow: (data.model?.actionInstances || data.actionInstances || []).filter(function (a: any) {
+        return a.type === "subflow"
+      }),
+    }
+    const collection = collectionMap[expect.type] || []
+    const arr = Array.isArray(collection) ? collection : []
+    const found = expect.id
+      ? arr.some(function (el: any) {
+          return el.id === expect.id || el.sysId === expect.id
+        })
+      : arr.length > 0
+
+    return { verified: expect.deleted ? !found : found, found, elementCount: arr.length }
+  } catch (e: any) {
+    return { verified: false, found: false, elementCount: 0, error: e.message }
+  }
 }
 
 /**
@@ -4850,6 +4905,7 @@ export const toolDefinition: MCPToolDefinition = {
           "open_flow",
           "close_flow",
           "force_unlock",
+          "check_execution",
         ],
         description:
           "Action to perform. " +
@@ -4859,7 +4915,8 @@ export const toolDefinition: MCPToolDefinition = {
           "ALWAYS call close_flow as the LAST step to release the lock. " +
           'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
           "add_*/update_*/delete_* for triggers, actions, flow_logic, subflows. update_trigger replaces the trigger type. delete_* removes elements by element_id. " +
-          "Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action.",
+          "Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action. " +
+          "'check_execution' queries sys_flow_context and sys_hub_flow_run for execution status/errors/outputs — use after activating to verify the flow runs correctly.",
       },
 
       flow_id: {
@@ -5107,6 +5164,14 @@ export const toolDefinition: MCPToolDefinition = {
           "Sent as the 'comment' field in the Flow Designer GraphQL mutation. " +
           "For IF/ELSEIF flow logic, also used as condition_name if no explicit condition_name is provided.",
       },
+      verify: {
+        type: "boolean",
+        description:
+          "Verify mutations via processflow API after GraphQL operations. " +
+          "Reads the real-time flow state to confirm changes took effect. " +
+          "Adds ~200ms latency per mutation. Recommended for debugging or critical flows.",
+        default: false,
+      },
     },
     required: ["action"],
   },
@@ -5143,6 +5208,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     open_flow: ["flow_id"],
     close_flow: ["flow_id"],
     force_unlock: ["flow_id"],
+    check_execution: ["flow_id"],
   }
 
   var requiredParams = REQUIRED_PARAMS[action]
@@ -6184,17 +6250,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         // Safety: release any lingering editing lock after publish
         await releaseFlowEditingLock(client, activateSysId)
 
-        return createSuccessResult(
-          {
-            action: action,
-            flow_id: activateSysId,
-            active: publishSuccess,
-            status: publishSuccess ? "published" : "failed",
-            message: publishSuccess ? "Flow activated and published" : "Publish failed",
-          },
-          {},
-          activateSummary.build(),
-        )
+        var publishData: any = {
+          action: action,
+          flow_id: activateSysId,
+          active: publishSuccess,
+          status: publishSuccess ? "published" : "failed",
+          message: publishSuccess ? "Flow activated and published" : "Publish failed",
+        }
+        if (publishSuccess) {
+          publishData.next_step =
+            "Use action='check_execution' with flow_id='" + activateSysId + "' to verify execution after trigger."
+        }
+
+        return createSuccessResult(publishData, {}, activateSummary.build())
       }
 
       // ────────────────────────────────────────────────────────────────
@@ -6327,6 +6395,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         if (addTrigResult.success) {
+          if (args.verify) {
+            var trigVerification = await verifyFlowState(client, addTrigFlowId, {
+              type: "trigger",
+              id: addTrigResult.triggerId,
+            })
+            addTrigResult.steps.verification = trigVerification
+            addTrigSummary.field("Verified", trigVerification.verified ? "yes" : "FAILED")
+          }
           return createSuccessResult(
             withUpdateSetContext({ action: "add_trigger", ...addTrigResult }, updateSetCtx),
             {},
@@ -6430,6 +6506,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           )
         }
 
+        if (updTrigResult.success && args.verify) {
+          var updTrigVerification = await verifyFlowState(client, updTrigFlowId, {
+            type: "trigger",
+            id: updTrigResult.triggerId,
+          })
+          updTrigSteps.verification = updTrigVerification
+          updTrigSummary.field("Verified", updTrigVerification.verified ? "yes" : "FAILED")
+        }
         return updTrigResult.success
           ? createSuccessResult(
               { action: "update_trigger", mutation_method: "graphql", steps: updTrigSteps },
@@ -6502,6 +6586,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         if (addActResult.success) {
+          if (args.verify) {
+            var actVerification = await verifyFlowState(client, addActFlowId, {
+              type: "action",
+              id: addActResult.actionId,
+            })
+            addActResult.steps.verification = actVerification
+            addActSummary.field("Verified", actVerification.verified ? "yes" : "FAILED")
+          }
           var addActNextOrder = (addActResult.resolvedOrder || 1) + 1
           return createSuccessResult(
             withUpdateSetContext(
@@ -6646,6 +6738,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         if (addLogicResult.success) {
+          if (args.verify) {
+            var logicVerification = await verifyFlowState(client, addLogicFlowId, {
+              type: "flow_logic",
+              id: addLogicResult.logicId,
+            })
+            addLogicResult.steps.verification = logicVerification
+            addLogicSummary.field("Verified", logicVerification.verified ? "yes" : "FAILED")
+          }
           return createSuccessResult(
             withUpdateSetContext({ action: "add_flow_logic", ...addLogicResult, ...logicHints }, updateSetCtx),
             {},
@@ -6704,6 +6804,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         if (addSubResult.success) {
+          if (args.verify) {
+            var subVerification = await verifyFlowState(client, addSubFlowId, {
+              type: "subflow",
+              id: addSubResult.callId,
+            })
+            addSubResult.steps.verification = subVerification
+            addSubSummary.field("Verified", subVerification.verified ? "yes" : "FAILED")
+          }
           var addSubNextOrder = (addSubResult.resolvedOrder || 1) + 1
           return createSuccessResult(
             withUpdateSetContext(
@@ -6798,6 +6906,15 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             .field("Type", updElemType)
             .field("Element", args.element_id)
             .field("Annotation", args.annotation)
+          if (args.verify) {
+            var updVerifyType = updElemType === "flowlogic" ? "flow_logic" : updElemType
+            var updVerification = await verifyFlowState(client, updElemFlowId, {
+              type: updVerifyType as any,
+              id: args.element_id,
+            })
+            if (updElemResult.steps) updElemResult.steps.verification = updVerification
+            updElemSummary.field("Verified", updVerification.verified ? "yes" : "FAILED")
+          }
         } else {
           updElemSummary.error("Failed to update element: " + (updElemResult.error || "unknown"))
         }
@@ -6834,12 +6951,121 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var delSummary = summary()
         if (delResult.success) {
           delSummary.success("Element(s) deleted").field("Type", delElemType).field("Deleted", delElemIds.join(", "))
+          if (args.verify) {
+            var delVerifyType =
+              delElemType === "flowlogic" ? "flow_logic" : delElemType === "trigger" ? "trigger" : delElemType
+            var delVerification = await verifyFlowState(client, delElemFlowId, {
+              type: delVerifyType as any,
+              id: delElemIds[0],
+              deleted: true,
+            })
+            if (delResult.steps) delResult.steps.verification = delVerification
+            delSummary.field("Verified deleted", delVerification.verified ? "yes" : "FAILED")
+          }
         } else {
           delSummary.error("Failed to delete element: " + (delResult.error || "unknown"))
         }
         return delResult.success
           ? createSuccessResult({ action, ...delResult }, {}, delSummary.build())
           : createErrorResult(delResult.error || "Failed to delete element")
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // CHECK_EXECUTION — query flow execution contexts, runs & outputs
+      // ────────────────────────────────────────────────────────────────
+      case "check_execution": {
+        var execFlowId = await resolveFlowId(client, args.flow_id)
+        var execLimit = args.limit || 5
+        var execSummary = summary()
+        var execSteps: any = {}
+
+        var ctxResp = await client.get(
+          "/api/now/table/sys_flow_context?sysparm_query=flow=" +
+            execFlowId +
+            "^ORDERBYDESCsys_created_on&sysparm_fields=sys_id,state,status,started,ended,duration,error,output,trigger_record_table,trigger_record_id,sys_created_on&sysparm_display_value=all&sysparm_limit=" +
+            execLimit,
+        )
+        var contexts = ctxResp.data?.result || []
+        execSteps.contexts = contexts.length
+
+        var runsResp = await client.get(
+          "/api/now/table/sys_hub_flow_run?sysparm_query=flow=" +
+            execFlowId +
+            "^ORDERBYDESCsys_created_on&sysparm_fields=sys_id,state,started,ended,duration,trigger_record_table,trigger_record_id&sysparm_display_value=all&sysparm_limit=" +
+            execLimit,
+        )
+        var runs = runsResp.data?.result || []
+        execSteps.runs = runs.length
+
+        var outputs: any[] = []
+        if (contexts.length > 0) {
+          var latestCtxId = typeof contexts[0].sys_id === "object" ? contexts[0].sys_id.value : contexts[0].sys_id
+          try {
+            var outResp = await client.get(
+              "/api/now/table/sys_hub_flow_output?sysparm_query=flow_context=" +
+                latestCtxId +
+                "&sysparm_fields=sys_id,name,value,type&sysparm_display_value=all&sysparm_limit=20",
+            )
+            outputs = outResp.data?.result || []
+          } catch (_) {}
+        }
+        execSteps.outputs = outputs.length
+
+        var latest = contexts[0] || null
+        var hasErrors = false
+        if (latest) {
+          var latestState =
+            typeof latest.state === "object" ? latest.state.display_value || latest.state.value : latest.state
+          var latestStatus =
+            typeof latest.status === "object" ? latest.status.display_value || latest.status.value : latest.status
+          var latestError =
+            typeof latest.error === "object" ? latest.error.display_value || latest.error.value : latest.error
+          hasErrors = !!(latestError && latestError !== "")
+          execSummary
+            .field("Flow", execFlowId)
+            .field("Contexts found", String(contexts.length))
+            .field("Runs found", String(runs.length))
+            .field("Latest state", latestState || "unknown")
+            .field("Latest status", latestStatus || "unknown")
+          if (latest.started) execSummary.field("Started", String(latest.started))
+          if (latest.ended) execSummary.field("Ended", String(latest.ended))
+          if (latest.duration) execSummary.field("Duration", String(latest.duration))
+          if (hasErrors) execSummary.error("Error: " + latestError)
+          if (outputs.length > 0) execSummary.field("Outputs", String(outputs.length))
+        }
+        if (!latest) {
+          execSummary.field("Flow", execFlowId).warning("No execution contexts found")
+        }
+
+        return createSuccessResult(
+          {
+            action: "check_execution",
+            flow_id: execFlowId,
+            contexts: contexts,
+            runs: runs,
+            outputs: outputs,
+            has_errors: hasErrors,
+            latest: latest
+              ? {
+                  sys_id: typeof latest.sys_id === "object" ? latest.sys_id.value : latest.sys_id,
+                  state:
+                    typeof latest.state === "object" ? latest.state.display_value || latest.state.value : latest.state,
+                  status:
+                    typeof latest.status === "object"
+                      ? latest.status.display_value || latest.status.value
+                      : latest.status,
+                  error:
+                    typeof latest.error === "object" ? latest.error.display_value || latest.error.value : latest.error,
+                  started: latest.started,
+                  ended: latest.ended,
+                  duration: latest.duration,
+                }
+              : null,
+            steps: execSteps,
+          },
+          {},
+          execSummary.build(),
+        )
       }
 
       // ────────────────────────────────────────────────────────────────
