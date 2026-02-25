@@ -1022,7 +1022,24 @@ await tool_search({ query: "jira comment" });
 // Call discovered tool: { issueKey: "PROJ-123", body: "Cannot start: missing acceptance criteria" }
 \`\`\`
 
-**1.3 Claim the Story**
+**1.3 Plan Before Implementing**
+
+Before claiming and coding, assess the story's complexity:
+- **Multiple ServiceNow artifacts** (widgets + business rules + script includes, etc.)
+- **Unclear or ambiguous acceptance criteria** that need clarification
+- **Cross-table dependencies** or integrations you need to understand first
+- **Architectural decisions** (new table vs extending existing, widget vs UI page, etc.)
+
+If ANY of these apply, **enter plan mode** using \`plan_enter\` before claiming the story:
+1. Explore the ServiceNow environment (existing tables, scripts, widgets)
+2. Map out which artifacts need to be created/modified
+3. Identify uncertainties and ask the user for clarification
+4. Present your implementation plan for approval
+5. Only then claim the story and start development
+
+For simple, well-defined stories (single artifact, clear AC, no ambiguity), proceed directly to claiming.
+
+**1.4 Claim the Story**
 \`\`\`javascript
 // Discover Jira user and transition tools
 await tool_search({ query: "jira current user" });
@@ -1121,6 +1138,7 @@ await tool_search({ query: "jira transition" });
 3. **Test as you go** - Don't wait until the end
 4. **Follow workflow** - Don't skip states
 5. **Handle blockers immediately** - Create blocker tickets autonomously
+6. **Plan complex stories** - Use \`plan_enter\` for multi-artifact or ambiguous stories before claiming
 
 ### ❌ DON'T
 1. Work in silence then update at end
@@ -1161,6 +1179,17 @@ function generateAzureDevOpsInstructions(): string {
 - **Reliable**: API is stable, web pages change
 
 **Discover Azure DevOps tools via \`tool_search("azure devops")\`. NEVER use WebFetch for Azure DevOps URLs!**
+
+---
+
+### PLAN BEFORE IMPLEMENTING
+
+After reading a work item, assess its complexity before starting:
+- Multiple artifacts or cross-table changes → use \`plan_enter\`
+- Unclear requirements or missing details → use \`plan_enter\` to investigate and ask questions
+- Architectural decisions needed → use \`plan_enter\`
+
+Only skip planning for simple, single-artifact tasks with clear requirements.
 
 ---
 
@@ -1339,6 +1368,17 @@ await tool_search({ query: "github issues" });
 await tool_search({ query: "github search code" });
 // Call discovered tool: { query: "repo:owner/repo is:open is:issue label:bug -assignee:*" }
 \`\`\`
+
+---
+
+### PLAN BEFORE IMPLEMENTING
+
+After reading an issue, assess complexity before starting work:
+- Multi-file or multi-artifact changes → use \`plan_enter\`
+- Unclear requirements, missing acceptance criteria → use \`plan_enter\` to investigate and clarify
+- Multiple valid approaches → use \`plan_enter\` to explore options with the user
+
+For simple bug fixes or single-artifact tasks with clear requirements, proceed directly.
 
 ---
 
@@ -1586,6 +1626,17 @@ await tool_search({ query: "gitlab issues" });
 await tool_search({ query: "gitlab get issue" });
 // Call discovered tool: { projectId: "123", issueIid: 42 }
 \`\`\`
+
+---
+
+### PLAN BEFORE IMPLEMENTING
+
+After reading an issue, assess complexity before starting work:
+- Multi-file or multi-artifact changes → use \`plan_enter\`
+- Unclear requirements, missing acceptance criteria → use \`plan_enter\` to investigate and clarify
+- Multiple valid approaches → use \`plan_enter\` to explore options with the user
+
+For simple bug fixes or single-artifact tasks with clear requirements, proceed directly.
 
 ---
 
