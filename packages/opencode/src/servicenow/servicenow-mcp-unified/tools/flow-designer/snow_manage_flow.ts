@@ -13,7 +13,7 @@
  * A valid ServiceNow subscription and credentials are required to use this tool.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
 import { summary } from "../../shared/output-formatter.js"
@@ -1929,6 +1929,7 @@ async function addTriggerViaGraphQL(
   triggerType: string,
   table?: string,
   condition?: string,
+  annotation?: string,
 ): Promise<{ success: boolean; triggerId?: string; steps?: any; error?: string }> {
   const steps: any = {}
 
@@ -2074,6 +2075,7 @@ async function addTriggerViaGraphQL(
               metadata: '{"predicates":[]}',
               inputs: insertInputs,
               outputs: triggerData.outputs,
+              comment: annotation || "",
             },
           ],
         },
@@ -2156,6 +2158,7 @@ async function addTriggerViaGraphQL(
                   id: triggerId,
                   inputs: trigUpdateInputs,
                   metadata: '{"predicates":' + predicatesJson + "}",
+                  comment: annotation || "",
                 },
               ],
             },
@@ -2249,6 +2252,7 @@ async function addActionViaGraphQL(
   parentUiId?: string,
   order?: number,
   spoke?: string,
+  annotation?: string,
 ): Promise<{
   success: boolean
   actionId?: string
@@ -2648,6 +2652,7 @@ async function addActionViaGraphQL(
           type: "action",
           parentUiId: parentUiId || "",
           inputs: insertInputs,
+          comment: annotation || "",
         },
       ],
     },
@@ -3747,6 +3752,7 @@ async function addFlowLogicViaGraphQL(
   order?: number,
   parentUiId?: string,
   connectedTo?: string,
+  annotation?: string,
 ): Promise<{
   success: boolean
   logicId?: string
@@ -4198,6 +4204,7 @@ async function addFlowLogicViaGraphQL(
     inputs: inputResult.inputs,
     outputsToAssign: [],
     flowLogicDefinition: inputResult.flowLogicDefinition,
+    comment: annotation || "",
   }
   if (connectedTo) {
     insertObj.connectedTo = connectedTo
@@ -4450,6 +4457,7 @@ async function addSubflowCallViaGraphQL(
   inputs?: Record<string, string>,
   order?: number,
   parentUiId?: string,
+  annotation?: string,
 ): Promise<{
   success: boolean
   callId?: string
@@ -4549,6 +4557,7 @@ async function addSubflowCallViaGraphQL(
           type: "subflow",
           parentUiId: parentUiId || "",
           inputs: subInputObjects,
+          comment: annotation || "",
         },
       ],
     },
@@ -4602,6 +4611,7 @@ async function updateElementViaGraphQL(
   elementType: string,
   elementId: string,
   inputs: Record<string, string>,
+  annotation?: string,
 ): Promise<{ success: boolean; steps?: any; error?: string }> {
   const config = elementGraphQLMap[elementType]
   if (!config) return { success: false, error: "Unknown element type: " + elementType }
@@ -4616,7 +4626,11 @@ async function updateElementViaGraphQL(
       client,
       {
         flowId,
-        [config.key]: { update: [{ uiUniqueIdentifier: elementId, type: config.type, inputs: updateInputs }] },
+        [config.key]: {
+          update: [
+            { uiUniqueIdentifier: elementId, type: config.type, inputs: updateInputs, comment: annotation || "" },
+          ],
+        },
       },
       config.responseFields,
     )
@@ -5086,6 +5100,13 @@ export const toolDefinition: MCPToolDefinition = {
           "[force_unlock] Admin override: delete ALL locks including those < 5 minutes old. Without this, young locks are skipped (they may belong to an active user). Default: false.",
         default: false,
       },
+      annotation: {
+        type: "string",
+        description:
+          "REQUIRED for all add_*/update_* element actions. A human-readable comment describing what this element does and why. " +
+          "Sent as the 'comment' field in the Flow Designer GraphQL mutation. " +
+          "For IF/ELSEIF flow logic, also used as condition_name if no explicit condition_name is provided.",
+      },
     },
     required: ["action"],
   },
@@ -5107,17 +5128,17 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     publish: ["flow_id"],
     deactivate: ["flow_id"],
     delete: ["flow_id"],
-    add_trigger: ["flow_id"],
-    update_trigger: ["flow_id"],
+    add_trigger: ["flow_id", "annotation"],
+    update_trigger: ["flow_id", "annotation"],
     delete_trigger: ["flow_id", "element_id"],
-    add_action: ["flow_id"],
-    update_action: ["flow_id", "element_id"],
+    add_action: ["flow_id", "annotation"],
+    update_action: ["flow_id", "element_id", "annotation"],
     delete_action: ["flow_id", "element_id"],
-    add_flow_logic: ["flow_id", "logic_type"],
-    update_flow_logic: ["flow_id", "element_id"],
+    add_flow_logic: ["flow_id", "logic_type", "annotation"],
+    update_flow_logic: ["flow_id", "element_id", "annotation"],
     delete_flow_logic: ["flow_id", "element_id"],
-    add_subflow: ["flow_id", "subflow_id"],
-    update_subflow: ["flow_id", "element_id"],
+    add_subflow: ["flow_id", "subflow_id", "annotation"],
+    update_subflow: ["flow_id", "element_id", "annotation"],
     delete_subflow: ["flow_id", "element_id"],
     open_flow: ["flow_id"],
     close_flow: ["flow_id"],
@@ -6289,6 +6310,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addTrigType,
           addTrigTable,
           addTrigCondition,
+          args.annotation,
         )
 
         var addTrigSummary = summary()
@@ -6297,6 +6319,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             .success("Trigger added via GraphQL")
             .field("Flow", addTrigFlowId)
             .field("Type", addTrigType)
+            .field("Annotation", args.annotation)
             .field("Trigger ID", addTrigResult.triggerId || "unknown")
           if (addTrigTable) addTrigSummary.field("Table", addTrigTable)
         } else {
@@ -6357,6 +6380,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           updTrigType,
           updTrigTable,
           updTrigCondition,
+          args.annotation,
         )
         updTrigSteps.new_trigger = updTrigResult
 
@@ -6392,6 +6416,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (updTrigResult.success) {
           updTrigSummary
             .success("Trigger updated via GraphQL (create-first)")
+            .field("Annotation", args.annotation)
             .field("Flow", updTrigFlowId)
             .field("New Type", updTrigType)
             .field("Trigger ID", updTrigResult.triggerId || "unknown")
@@ -6460,6 +6485,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           args.parent_ui_id,
           args.order,
           args.spoke,
+          args.annotation,
         )
 
         var addActSummary = summary()
@@ -6469,6 +6495,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             .field("Flow", addActFlowId)
             .field("Type", addActType)
             .field("Name", addActName)
+            .field("Annotation", args.annotation)
             .field("Action ID", addActResult.actionId || "unknown")
         } else {
           addActSummary.error("Failed to add action: " + (addActResult.error || "unknown"))
@@ -6530,6 +6557,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         if (args.logic_name && !addLogicInputs.condition_name) {
           addLogicInputs = { ...addLogicInputs, condition_name: args.logic_name }
         }
+        var ifElseTypes = ["IF", "ELSEIF"]
+        if (
+          ifElseTypes.indexOf(addLogicType.toUpperCase().replace(/[^A-Z]/g, "")) !== -1 &&
+          !addLogicInputs.condition_name &&
+          args.annotation
+        ) {
+          addLogicInputs = { ...addLogicInputs, condition_name: args.annotation }
+        }
         var addLogicOrder = args.order
         var addLogicParentUiId = args.parent_ui_id || ""
         var addLogicConnectedTo = args.connected_to || ""
@@ -6542,12 +6577,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addLogicOrder,
           addLogicParentUiId,
           addLogicConnectedTo,
+          args.annotation,
         )
 
         var addLogicSummary = summary()
         if (addLogicResult.success) {
           addLogicSummary
             .success("Flow logic added via GraphQL")
+            .field("Annotation", args.annotation)
             .field("Flow", addLogicFlowId)
             .field("Type", addLogicType)
             .field("Logic ID", addLogicResult.logicId || "unknown")
@@ -6640,6 +6677,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addSubInputs,
           addSubOrder,
           addSubParentUiId,
+          args.annotation,
         )
 
         var addSubSummary = summary()
@@ -6647,6 +6685,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           addSubSummary
             .success("Subflow call added via GraphQL")
             .field("Flow", addSubFlowId)
+            .field("Annotation", args.annotation)
             .field("Subflow", addSubSubflowId)
             .field("Call ID", addSubResult.callId || "unknown")
         } else {
@@ -6726,11 +6765,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           updElemType,
           args.element_id,
           updElemInputs,
+          args.annotation,
         )
 
         var updElemSummary = summary()
         if (updElemResult.success) {
-          updElemSummary.success("Element updated").field("Type", updElemType).field("Element", args.element_id)
+          updElemSummary
+            .success("Element updated")
+            .field("Type", updElemType)
+            .field("Element", args.element_id)
+            .field("Annotation", args.annotation)
         } else {
           updElemSummary.error("Failed to update element: " + (updElemResult.error || "unknown"))
         }
