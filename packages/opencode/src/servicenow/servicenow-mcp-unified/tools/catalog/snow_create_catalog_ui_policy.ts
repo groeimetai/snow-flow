@@ -1,27 +1,92 @@
-/**
- * snow_create_catalog_ui_policy - Create catalog UI policy
- *
- * Creates comprehensive UI policies for catalog items with conditions and actions
- * to control form behavior dynamically.
- */
-
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
+
+const OPERATOR_MAP: Record<string, string> = {
+  is: "=",
+  is_not: "!=",
+  is_empty: "ISEMPTY",
+  is_not_empty: "ISNOTEMPTY",
+  contains: "LIKE",
+  does_not_contain: "NOT LIKE",
+  greater_than: ">",
+  less_than: "<",
+}
+
+function extractSysId(value: unknown): string {
+  if (!value) return ""
+  if (typeof value === "object" && value !== null && "value" in value)
+    return String((value as Record<string, unknown>).value)
+  return String(value)
+}
+
+async function resolveVariable(
+  client: Awaited<ReturnType<typeof getAuthenticatedClient>>,
+  identifier: string,
+  catItem: string,
+): Promise<string> {
+  if (/^[a-f0-9]{32}$/.test(identifier)) return `IO:${identifier}`
+
+  const response = await client.get("/api/now/table/item_option_new", {
+    params: {
+      sysparm_query: `name=${identifier}^cat_item=${catItem}`,
+      sysparm_limit: 1,
+      sysparm_fields: "sys_id",
+    },
+  })
+
+  const results = response.data?.result
+  if (!results || results.length === 0) return identifier
+
+  return `IO:${extractSysId(results[0].sys_id)}`
+}
+
+function buildConditionString(
+  conditions: Array<{
+    catalog_variable: string
+    operation?: string
+    value?: string
+    and_or?: string
+  }>,
+  resolved: string[],
+): string {
+  const parts: string[] = []
+
+  for (let i = 0; i < conditions.length; i++) {
+    const cond = conditions[i]!
+    const variable = resolved[i]!
+    const operator = OPERATOR_MAP[(cond.operation || "is").toLowerCase().trim()] || cond.operation || "="
+
+    const part =
+      operator === "ISEMPTY" || operator === "ISNOTEMPTY"
+        ? `${variable}${operator}`
+        : `${variable}${operator}${cond.value || ""}`
+
+    parts.push(part)
+
+    if (i < conditions.length - 1) {
+      parts.push(cond.and_or?.toUpperCase() === "OR" ? "^OR" : "^")
+    }
+  }
+
+  return parts.join("")
+}
+
+function toTriState(val: unknown): string {
+  if (val === true) return "true"
+  if (val === false) return "false"
+  return "ignore"
+}
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_catalog_ui_policy",
   description:
     "Creates comprehensive UI policies for catalog items with conditions and actions to control form behavior dynamically.",
-  // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "service-catalog",
   use_cases: ["catalog", "ui-policies", "form-control"],
   complexity: "advanced",
   frequency: "medium",
-
-  // Permission enforcement
-  // Classification: WRITE - Create operation - modifies data
   permission: "write",
   allowedRoles: ["developer", "admin"],
   inputSchema: {
@@ -72,6 +137,7 @@ export const toolDefinition: MCPToolDefinition = {
             mandatory: { type: "boolean", description: "Set field as mandatory (for set_mandatory type)" },
             visible: { type: "boolean", description: "Set field visibility (for set_visible type)" },
             readonly: { type: "boolean", description: "Set field as readonly (for set_readonly type)" },
+            cleared: { type: "boolean", description: "Clear the variable value" },
             value: { type: "string", description: "Value to set (for set_value type)" },
           },
           required: ["type", "catalog_variable"],
@@ -82,55 +148,78 @@ export const toolDefinition: MCPToolDefinition = {
   },
 }
 
-export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const {
-    cat_item,
-    short_description,
-    condition,
-    applies_to = "item",
-    active = true,
-    on_load = true,
-    reverse_if_false = true,
-    conditions,
-    actions,
-  } = args
-
+export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   try {
     const client = await getAuthenticatedClient(context)
+    const catItem = args.cat_item as string
+    const conditions = args.conditions as
+      | Array<{
+          catalog_variable: string
+          operation?: string
+          value?: string
+          and_or?: string
+        }>
+      | undefined
+    const actions = args.actions as
+      | Array<{
+          type?: string
+          catalog_variable: string
+          mandatory?: boolean
+          visible?: boolean
+          readonly?: boolean
+          cleared?: boolean
+          value?: string
+        }>
+      | undefined
 
-    // Create main UI policy
-    const policyData: any = {
-      catalog_item: cat_item,
-      short_description,
-      applies_catalog: true,
-      active,
-      applies_on: on_load ? "true" : "false",
-      reverse_if_false,
+    let catalogConditions = (args.condition as string) || ""
+
+    if (conditions && Array.isArray(conditions) && conditions.length > 0) {
+      const resolved = await Promise.all(
+        conditions.map(function (c) {
+          return resolveVariable(client, c.catalog_variable, catItem)
+        }),
+      )
+      catalogConditions = buildConditionString(conditions, resolved)
     }
 
-    if (condition) policyData.catalog_conditions = condition
+    const policyData: Record<string, unknown> = {
+      catalog_item: catItem,
+      short_description: args.short_description,
+      applies_catalog: true,
+      active: args.active !== false,
+      applies_on: args.on_load !== false ? "true" : "false",
+      reverse_if_false: args.reverse_if_false !== false,
+    }
+
+    if (catalogConditions) policyData.catalog_conditions = catalogConditions
 
     const policyResponse = await client.post("/api/now/table/catalog_ui_policy", policyData)
-    const policyId = policyResponse.data.result.sys_id
+    const policyId = extractSysId(policyResponse.data.result.sys_id)
 
-    // Create actions if provided
-    const createdActions = []
+    const created: Array<Record<string, unknown>> = []
+
     if (actions && Array.isArray(actions)) {
-      for (const action of actions) {
-        const actionData: any = {
+      for (let i = 0; i < actions.length; i++) {
+        const act = actions[i]!
+        const variable = await resolveVariable(client, act.catalog_variable, catItem)
+
+        const actionData: Record<string, unknown> = {
           ui_policy: policyId,
-          catalog_item: cat_item,
-          catalog_variable: action.catalog_variable,
+          catalog_item: catItem,
+          catalog_variable: variable,
           active: true,
+          order: (i + 1) * 100,
+          visible: toTriState(act.visible),
+          mandatory: toTriState(act.mandatory),
+          disabled: toTriState(act.readonly),
         }
 
-        if (action.mandatory !== undefined) actionData.mandatory = action.mandatory
-        if (action.visible !== undefined) actionData.visible = action.visible
-        if (action.readonly !== undefined) actionData.disabled = action.readonly
-        if (action.value !== undefined) actionData.value = action.value
+        if (act.cleared !== undefined) actionData.cleared = toTriState(act.cleared)
+        if (act.value !== undefined) actionData.value = String(act.value)
 
-        const actionResponse = await client.post("/api/now/table/catalog_ui_policy_action", actionData)
-        createdActions.push(actionResponse.data.result)
+        const response = await client.post("/api/now/table/catalog_ui_policy_action", actionData)
+        created.push(response.data.result)
       }
     }
 
@@ -139,19 +228,19 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         created: true,
         policy: policyResponse.data.result,
         policy_sys_id: policyId,
-        actions: createdActions,
-        actions_count: createdActions.length,
+        actions: created,
+        actions_count: created.length,
       },
       {
         operation: "create_catalog_ui_policy",
-        name: short_description,
-        actions_created: createdActions.length,
+        name: args.short_description,
+        actions_created: created.length,
       },
     )
-  } catch (error: any) {
-    return createErrorResult(error.message)
+  } catch (error: unknown) {
+    return createErrorResult(error instanceof Error ? error.message : String(error))
   }
 }
 
-export const version = "1.0.0"
-export const author = "Snow-Flow SDK Migration"
+export const version = "2.0.0"
+export const author = "Snow-Flow"
