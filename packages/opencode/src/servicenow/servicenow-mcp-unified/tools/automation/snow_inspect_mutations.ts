@@ -1,7 +1,7 @@
 /**
  * snow_inspect_mutations - Self-learning Debugging Tool
  *
- * Read-only tool that queries sys_audit + syslog + sys_transaction_log
+ * Read-only tool that queries sys_audit + syslog + syslog_transaction
  * in a time window to show what mutations actually happened on the
  * ServiceNow instance after a tool execution.
  *
@@ -18,7 +18,7 @@ export const toolDefinition: MCPToolDefinition = {
   name: "snow_inspect_mutations",
   description:
     "Inspect what mutations (INSERT/UPDATE/DELETE) occurred on the ServiceNow instance in a time window. " +
-    "Queries sys_audit for successful changes, syslog for errors, and optionally sys_transaction_log for HTTP " +
+    "Queries sys_audit for successful changes, syslog for errors, and optionally syslog_transaction for HTTP " +
     "requests including failures. Essential for debugging tool behavior after execution.",
   category: "automation",
   subcategory: "debugging",
@@ -74,8 +74,8 @@ export const toolDefinition: MCPToolDefinition = {
       include_transactions: {
         type: "boolean",
         description:
-          "Query sys_transaction_log for HTTP requests including failures. " +
-          "Requires transaction logging enabled on the instance (glide.sys.log_transaction=true).",
+          "Query syslog_transaction for inbound HTTP requests including failures. " +
+          "Available on most instances by default.",
         default: false,
       },
       limit: {
@@ -162,8 +162,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       params: {
         sysparm_query: auditQuery,
         sysparm_limit: Math.min(limit, 5000),
-        sysparm_fields:
-          "tablename,documentkey,fieldname,oldvalue,newvalue,type,sys_created_on,user,record_checkpoint",
+        sysparm_fields: "tablename,documentkey,fieldname,oldvalue,newvalue,type,sys_created_on,user,record_checkpoint",
       },
     })
 
@@ -196,17 +195,17 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
     }
 
-    // Step 5: Query sys_transaction_log (HTTP requests)
+    // Step 5: Query syslog_transaction (HTTP requests)
     const transactions: any[] = []
     let transactionWarning = ""
     if (include_transactions) {
       try {
         const txQuery = `sys_created_on>=${sinceTime}^sys_created_on<=${untilTime}^ORDERBYDESCsys_created_on`
-        const txResponse = await client.get("/api/now/table/sys_transaction_log", {
+        const txResponse = await client.get("/api/now/table/syslog_transaction", {
           params: {
             sysparm_query: txQuery,
             sysparm_limit: 200,
-            sysparm_fields: "url,http_method,status,response_code,duration,sys_created_on",
+            sysparm_fields: "sys_id,url,http_method,status_code,response_time,client_ip,user,sys_created_on",
           },
         })
         const results = txResponse.data.result || []
@@ -214,21 +213,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           transactions.push({
             url: tx.url,
             method: tx.http_method,
-            status: tx.status,
-            response_code: tx.response_code,
-            duration: tx.duration,
+            status_code: tx.status_code,
+            response_time_ms: tx.response_time,
+            client_ip: tx.client_ip,
+            user: tx.user,
             timestamp: tx.sys_created_on,
           })
         }
         if (results.length === 0) {
           transactionWarning =
-            "sys_transaction_log returned 0 records. Transaction logging may not be enabled. " +
-            "Activate via sys_properties: glide.sys.log_transaction=true"
+            "syslog_transaction returned 0 records. This is normal if no HTTP requests were made in the time window."
         }
       } catch (_e: any) {
         transactionWarning =
-          "Could not query sys_transaction_log — table may not be accessible or transaction logging is disabled. " +
-          "Activate via sys_properties: glide.sys.log_transaction=true"
+          "Could not query syslog_transaction — table may not be accessible or you lack read permissions."
       }
     }
 
@@ -237,12 +235,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     if (snapshot_record) {
       try {
         const fieldsParam = snapshot_record.fields ? snapshot_record.fields.join(",") : ""
-        const snapshotResponse = await client.get(
-          `/api/now/table/${snapshot_record.table}/${snapshot_record.sys_id}`,
-          {
-            params: fieldsParam ? { sysparm_fields: fieldsParam } : {},
-          },
-        )
+        const snapshotResponse = await client.get(`/api/now/table/${snapshot_record.table}/${snapshot_record.sys_id}`, {
+          params: fieldsParam ? { sysparm_fields: fieldsParam } : {},
+        })
         snapshot = {
           table: snapshot_record.table,
           sys_id: snapshot_record.sys_id,
@@ -305,7 +300,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       summaryLines.push("  - Did the operation actually succeed?")
       summaryLines.push("  - Try include_syslog=true and include_transactions=true for failure details")
     } else {
-      summaryLines.push(`Found ${auditRecords.length} audit entries across ${tablesAffected.size} table(s), ${recordsAffected.size} record(s)`)
+      summaryLines.push(
+        `Found ${auditRecords.length} audit entries across ${tablesAffected.size} table(s), ${recordsAffected.size} record(s)`,
+      )
 
       // Action breakdown
       const actionParts: string[] = []
@@ -315,7 +312,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       summaryLines.push(`Actions: ${actionParts.join(", ")}`)
 
       if (auditRecords.length >= limit) {
-        summaryLines.push(`⚠️ Result limit (${limit}) reached — there may be more mutations. Increase limit or narrow filters.`)
+        summaryLines.push(
+          `⚠️ Result limit (${limit}) reached — there may be more mutations. Increase limit or narrow filters.`,
+        )
       }
 
       // Preview first changes per table
@@ -368,14 +367,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     if (include_transactions) {
       summaryLines.push("")
       if (transactions.length > 0) {
-        const failures = transactions.filter(
-          (t: any) => t.response_code && parseInt(t.response_code) >= 400,
-        )
+        const failures = transactions.filter((t: any) => t.status_code && parseInt(t.status_code) >= 400)
         summaryLines.push(`Transactions: ${transactions.length} HTTP requests (${failures.length} failures)`)
         if (failures.length > 0) {
           summaryLines.push("  Failed requests:")
           for (const f of failures.slice(0, 5)) {
-            summaryLines.push(`    ${f.method || "?"} ${truncateValue(f.url || "", 60)} → ${f.response_code}`)
+            summaryLines.push(`    ${f.method || "?"} ${truncateValue(f.url || "", 60)} → ${f.status_code}`)
           }
         }
       } else if (transactionWarning) {
