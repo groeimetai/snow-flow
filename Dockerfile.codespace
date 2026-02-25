@@ -43,7 +43,7 @@ COPY packages/opencode/scripts/ packages/opencode/scripts/
 RUN bun install --frozen-lockfile
 
 COPY packages/opencode/src/ packages/opencode/src/
-COPY packages/opencode/tsconfig.json packages/opencode/
+COPY packages/opencode/tsconfig.json packages/opencode/parsers-config.ts packages/opencode/
 COPY packages/util/src/ packages/util/src/
 COPY packages/util/tsconfig.json packages/util/
 COPY packages/plugin/src/ packages/plugin/src/
