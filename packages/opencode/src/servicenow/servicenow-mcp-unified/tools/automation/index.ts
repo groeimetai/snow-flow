@@ -82,3 +82,7 @@ export {
   toolDefinition as snow_trace_execution_def,
   execute as snow_trace_execution_exec,
 } from "./snow_trace_execution.js"
+export {
+  toolDefinition as snow_inspect_mutations_def,
+  execute as snow_inspect_mutations_exec,
+} from "./snow_inspect_mutations.js"
