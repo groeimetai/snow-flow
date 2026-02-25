@@ -5103,7 +5103,7 @@ export const toolDefinition: MCPToolDefinition = {
       annotation: {
         type: "string",
         description:
-          "REQUIRED for all add_*/update_* element actions. A human-readable comment describing what this element does and why. " +
+          "REQUIRED for add_* element actions, optional for update_*. A human-readable comment describing what this element does and why. " +
           "Sent as the 'comment' field in the Flow Designer GraphQL mutation. " +
           "For IF/ELSEIF flow logic, also used as condition_name if no explicit condition_name is provided.",
       },
@@ -5129,16 +5129,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     deactivate: ["flow_id"],
     delete: ["flow_id"],
     add_trigger: ["flow_id", "annotation"],
-    update_trigger: ["flow_id", "annotation"],
+    update_trigger: ["flow_id"],
     delete_trigger: ["flow_id", "element_id"],
     add_action: ["flow_id", "annotation"],
-    update_action: ["flow_id", "element_id", "annotation"],
+    update_action: ["flow_id", "element_id"],
     delete_action: ["flow_id", "element_id"],
     add_flow_logic: ["flow_id", "logic_type", "annotation"],
-    update_flow_logic: ["flow_id", "element_id", "annotation"],
+    update_flow_logic: ["flow_id", "element_id"],
     delete_flow_logic: ["flow_id", "element_id"],
     add_subflow: ["flow_id", "subflow_id", "annotation"],
-    update_subflow: ["flow_id", "element_id", "annotation"],
+    update_subflow: ["flow_id", "element_id"],
     delete_subflow: ["flow_id", "element_id"],
     open_flow: ["flow_id"],
     close_flow: ["flow_id"],
