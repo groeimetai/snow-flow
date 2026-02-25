@@ -51,7 +51,7 @@ COPY packages/plugin/tsconfig.json packages/plugin/
 COPY packages/sdk/js/src/ packages/sdk/js/src/
 COPY packages/sdk/js/tsconfig.json packages/sdk/js/
 
-RUN printf '#!/bin/sh\nexec bun run --conditions=browser /opt/snow-flow/packages/opencode/src/index.ts "$@"\n' \
+RUN printf '#!/bin/sh\nexec bun run --conditions=browser /opt/snow-flow/packages/opencode/src/index.ts --print-logs "$@"\n' \
     > /usr/local/bin/snow-flow && chmod +x /usr/local/bin/snow-flow && \
     ln -s /usr/local/bin/snow-flow /usr/local/bin/snow-code
 
@@ -65,11 +65,17 @@ RUN cd /tmp/snow-code-ext && \
     code-server --extensions-dir /home/coder/.local/share/code-server/extensions --install-extension /tmp/snow-code.vsix && \
     rm -rf /tmp/snow-code-ext /tmp/snow-code.vsix
 
+RUN mkdir -p /home/coder/.config/snow-code && \
+    cd /home/coder/.config/snow-code && \
+    printf '{}' > package.json && \
+    bun add @opencode-ai/plugin@latest --exact && \
+    bun install
+
 RUN mkdir -p /home/coder/workspace && \
     git init /home/coder/workspace && \
     printf '# My Project\n\nUse `snow-flow` in the terminal or press `Cmd+Esc` / `Ctrl+Esc` to get started.\n\n> **Note:** This workspace is ephemeral. Files are lost when your session ends.\n' > /home/coder/workspace/README.md && \
     cd /home/coder/workspace && git add -A && git -c user.name="Snow-Flow" -c user.email="noreply@snow-flow.dev" commit -m "initial workspace" && \
-    chown -R coder:coder /home/coder/workspace /home/coder/.local /opt/snow-flow
+    chown -R coder:coder /home/coder/workspace /home/coder/.config /home/coder/.local /opt/snow-flow
 
 USER coder
 
