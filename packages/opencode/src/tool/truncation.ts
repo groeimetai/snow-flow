@@ -93,7 +93,8 @@ export namespace Truncate {
     const filepath = path.join(DIR, id)
     // Restrict tool output files to owner-only read/write (0o600)
     // to prevent other users from reading potentially sensitive output.
-    await Bun.write(Bun.file(filepath), text, { mode: 0o600 })
+    await Bun.write(Bun.file(filepath), text)
+    await fs.chmod(filepath, 0o600)
 
     const hint = hasTaskTool(agent)
       ? `The tool call succeeded but the output was truncated. Full output saved to: ${filepath}\nUse the Task tool to have explore agent process this file with Grep and Read (with offset/limit). Do NOT read the full file yourself - delegate to save context.`

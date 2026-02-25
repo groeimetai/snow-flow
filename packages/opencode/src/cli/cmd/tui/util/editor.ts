@@ -1,5 +1,5 @@
 import { defer } from "@/util/defer"
-import { mkdtemp, rm } from "node:fs/promises"
+import { chmod, mkdtemp, rm } from "node:fs/promises"
 import { randomBytes } from "node:crypto"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -16,7 +16,8 @@ export namespace Editor {
     const filepath = join(tempDir, `${randomBytes(16).toString("hex")}.md`)
     await using _ = defer(async () => rm(tempDir, { recursive: true, force: true }))
 
-    await Bun.write(filepath, opts.value, { mode: 0o600 })
+    await Bun.write(filepath, opts.value)
+    await chmod(filepath, 0o600)
     opts.renderer.suspend()
     opts.renderer.currentRenderBuffer.clear()
     const parts = editor.split(" ")

@@ -201,7 +201,8 @@ export namespace Storage {
       fn(content)
       // Restrict storage files to owner-only read/write (0o600)
       // to prevent other users from reading sensitive session data.
-      await Bun.write(target, JSON.stringify(content, null, 2), { mode: 0o600 })
+      await Bun.write(target, JSON.stringify(content, null, 2))
+      await fs.chmod(target, 0o600)
       return content as T
     })
   }
@@ -214,7 +215,8 @@ export namespace Storage {
       using _ = await Lock.write(target)
       // Restrict storage files to owner-only read/write (0o600)
       // to prevent other users from reading sensitive session data.
-      await Bun.write(target, JSON.stringify(content, null, 2), { mode: 0o600 })
+      await Bun.write(target, JSON.stringify(content, null, 2))
+      await fs.chmod(target, 0o600)
     })
   }
 
