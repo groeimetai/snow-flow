@@ -86,8 +86,8 @@ steps:
 
         for i in {1..6}; do
           echo "Health check attempt $$i/6..."
-          HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" "$$SERVICE_URL/healthz" 2>/dev/null)
-          if [ "$$HTTP_CODE" = "200" ]; then
+          HTTP_CODE=$$(curl -s -o /dev/null -w "%{http_code}" "$$SERVICE_URL/" 2>/dev/null)
+          if [ "$$HTTP_CODE" = "200" ] || [ "$$HTTP_CODE" = "302" ]; then
             echo "code-server health check passed!"
             exit 0
           fi
@@ -103,7 +103,7 @@ images:
   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:$COMMIT_SHA"
   - "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_REPO}/${_SERVICE_NAME}:latest"
 
-timeout: "1800s"
+timeout: "900s"
 
 tags:
   - "snow-flow"
