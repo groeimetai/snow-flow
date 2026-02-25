@@ -867,6 +867,7 @@ export function Prompt(props: PromptProps) {
                     e.preventDefault()
                     input.setText(props.suggestion)
                     setStore("prompt", "input", props.suggestion)
+                    input.gotoBufferEnd()
                     return
                   }
                   if (
