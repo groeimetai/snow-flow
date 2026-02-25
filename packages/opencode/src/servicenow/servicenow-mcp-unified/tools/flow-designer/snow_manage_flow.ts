@@ -208,7 +208,9 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
       const max = findMaxOrder(data)
       if (max > 0) return max
     }
-  } catch (_) {}
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] getMaxOrderFromVersion processflow API failed for flow=" + flowId + ": " + (e.message || ""))
+  }
 
   // Strategy 2: sys_hub_flow_version.payload (may be stale after rapid mutations)
   try {
@@ -225,7 +227,9 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
       const max = findMaxOrder(parsed)
       if (max > 0) return max
     }
-  } catch (_) {}
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] getMaxOrderFromVersion version payload failed for flow=" + flowId + ": " + (e.message || ""))
+  }
 
   return 0
 }
@@ -372,8 +376,8 @@ async function releaseFlowEditingLock(
       await client.delete("/api/now/table/sys_hub_flow_safe_edit/" + records[r].sys_id)
     }
     debug.safe_edit_records_cleaned = records.length
-  } catch (_) {
-    /* best-effort */
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] releaseFlowEditingLock: REST cleanup failed: " + (e.message || ""))
   }
 
   return { success: graphqlOk, compilationError, debug }
@@ -456,8 +460,8 @@ async function ensureUpdateSetForFlow(
       await setUpdateSetForServiceAccount(client, existingSet.sys_id)
       return { updateSetId: existingSet.sys_id, updateSetName: existingSet.name }
     }
-  } catch (_) {
-    // Fall through to create
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] ensureUpdateSetForFlow: lookup failed, falling through to create: " + (e.message || ""))
   }
 
   // Create a new update set
@@ -578,7 +582,8 @@ async function getExistingLabelCachePills(client: any, flowId: string): Promise<
       }
     }
     return result
-  } catch (_) {
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] getExistingLabelCachePills failed for flow=" + flowId + ": " + (e.message || ""))
     return {}
   }
 }
@@ -667,7 +672,9 @@ async function buildActionInputsForInsert(
       },
     })
     actionParams = resp.data.result || []
-  } catch (_) {}
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] sys_hub_action_input query failed for model=" + actionDefId + ": " + (e.message || ""))
+  }
 
   // Fuzzy-match user-provided values to actual field names.
   // ServiceNow action parameters often have prefixed element names:
@@ -834,7 +841,8 @@ async function validateTableExists(client: any, tableName: string): Promise<{ ex
     })
     var rec = resp.data.result?.[0]
     return rec ? { exists: true, label: str(rec.label) || tableName } : { exists: false, label: "" }
-  } catch (_) {
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] validateTableExists failed for table=" + tableName + ": " + (e.message || ""))
     return { exists: false, label: "" }
   }
 }
@@ -873,7 +881,8 @@ async function validateTableExtends(
       return str(c.name) === tableName
     })
     return { valid: !!match, validOptions: validOptions, tableLabel: match ? str(match.label) : "" }
-  } catch (_) {
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] validateTableExtends failed for " + tableName + " extends " + parentTable + ": " + (e.message || ""))
     return { valid: false, validOptions: [], tableLabel: "" }
   }
 }
@@ -3058,6 +3067,9 @@ function isStandardEncodedQuery(condition: string): boolean {
   if (condition.startsWith("fd_data.")) return false
   // Already contains data pill references (already transformed)
   if (condition.includes("{{")) return false
+  // Final check: try to parse as encoded query — if it produces valid clauses, it's a standard query
+  var clauses = parseEncodedQuery(condition)
+  if (clauses.length === 0 && condition.length > 0) return false
   return true
 }
 
@@ -3874,11 +3886,11 @@ async function addFlowLogicViaGraphQL(
     !rawCondition.includes(".") &&
     !rawCondition.startsWith("fd_data")
   ) {
-    var BARE_FIELD_RE = /(\w+)\s*(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*/g
+    var BARE_FIELD_RE = /(^|\^(?:OR)?|\^NQ)(\w+)\s*(===?|!==?|>=|<=|>|<|=|LIKE|STARTSWITH|ENDSWITH|NOT LIKE|ISEMPTY|ISNOTEMPTY)\s*/g
     if (BARE_FIELD_RE.test(rawCondition)) {
       BARE_FIELD_RE.lastIndex = 0
-      rawCondition = rawCondition.replace(BARE_FIELD_RE, function (_m: string, field: string, op: string) {
-        return "trigger.current." + field + op
+      rawCondition = rawCondition.replace(BARE_FIELD_RE, function (_m: string, prefix: string, field: string, op: string) {
+        return prefix + "trigger.current." + field + op
       })
       steps.bare_field_rewrite = { original: conditionInput?.value?.value, rewritten: rawCondition }
     }
@@ -4633,18 +4645,59 @@ async function createFlowViaProcessFlowAPI(
 async function resolveFlowId(client: any, flowId: string): Promise<string> {
   if (isSysId(flowId)) return flowId
 
+  // Strategy 1: Exact match on name
   var lookup = await client.get("/api/now/table/sys_hub_flow", {
     params: {
       sysparm_query: "name=" + flowId,
-      sysparm_fields: "sys_id",
-      sysparm_limit: 1,
+      sysparm_fields: "sys_id,name,active",
+      sysparm_limit: 5,
     },
   })
-
-  if (!lookup.data.result || lookup.data.result.length === 0) {
-    throw new SnowFlowError(ErrorType.NOT_FOUND, "Flow not found: " + flowId)
+  if (lookup.data.result && lookup.data.result.length > 0) {
+    // Prefer active flows when multiple matches
+    var activeMatch = lookup.data.result.find(function (f: any) {
+      return f.active === "true"
+    })
+    return (activeMatch || lookup.data.result[0]).sys_id
   }
-  return lookup.data.result[0].sys_id
+
+  // Strategy 2: Exact match on internal_name
+  var internalName = sanitizeInternalName(flowId)
+  var internalLookup = await client.get("/api/now/table/sys_hub_flow", {
+    params: {
+      sysparm_query: "internal_name=" + internalName,
+      sysparm_fields: "sys_id,name,active",
+      sysparm_limit: 5,
+    },
+  })
+  if (internalLookup.data.result && internalLookup.data.result.length > 0) {
+    var activeInternalMatch = internalLookup.data.result.find(function (f: any) {
+      return f.active === "true"
+    })
+    return (activeInternalMatch || internalLookup.data.result[0]).sys_id
+  }
+
+  // Strategy 3: LIKE fallback on name and internal_name
+  var likeLookup = await client.get("/api/now/table/sys_hub_flow", {
+    params: {
+      sysparm_query: "nameLIKE" + flowId + "^ORinternal_nameLIKE" + internalName,
+      sysparm_fields: "sys_id,name,active",
+      sysparm_limit: 10,
+    },
+  })
+  if (likeLookup.data.result && likeLookup.data.result.length > 0) {
+    var activeLikeMatch = likeLookup.data.result.find(function (f: any) {
+      return f.active === "true"
+    })
+    return (activeLikeMatch || likeLookup.data.result[0]).sys_id
+  }
+
+  throw new SnowFlowError(
+    ErrorType.NOT_FOUND,
+    "Flow not found: '" +
+      flowId +
+      "'. Use the 'list' action to find available flows, or provide a sys_id.",
+  )
 }
 
 // ── tool definition ────────────────────────────────────────────────────
@@ -4652,7 +4705,8 @@ async function resolveFlowId(client: any, flowId: string): Promise<string> {
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_manage_flow",
   description:
-    "Complete Flow Designer lifecycle: create flows/subflows, add/update triggers and actions, list, get details, update, activate, deactivate, delete and publish. Use update_trigger to change an existing trigger (e.g. switch from record_created to record_create_or_update) without deleting the flow.",
+    "Complete Flow Designer lifecycle: create flows/subflows, add/update triggers and actions, list, get details, update, activate, deactivate, delete and publish. Use update_trigger to change an existing trigger (e.g. switch from record_created to record_create_or_update) without deleting the flow. " +
+    "IMPORTANT: Flow elements (triggers, actions, flow logic, subflows) can ONLY be created/updated/deleted via this tool's GraphQL mutations. Direct Table API operations on sys_hub_action_instance, sys_hub_flow_logic, sys_hub_sub_flow_instance, sys_hub_trigger_instance will NOT work — these tables do not contain individual element records.",
   category: "automation",
   subcategory: "flow-designer",
   use_cases: ["flow-designer", "automation", "flow-management", "subflow"],
@@ -4946,6 +5000,53 @@ export const toolDefinition: MCPToolDefinition = {
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   var action = args.action
 
+  // ── Centralized input validation ──
+  var REQUIRED_PARAMS: Record<string, string[]> = {
+    create: ["name"],
+    create_subflow: ["name"],
+    list: [],
+    get: ["flow_id"],
+    update: ["flow_id", "update_fields"],
+    activate: ["flow_id"],
+    publish: ["flow_id"],
+    deactivate: ["flow_id"],
+    delete: ["flow_id"],
+    add_trigger: ["flow_id"],
+    update_trigger: ["flow_id"],
+    delete_trigger: ["flow_id", "element_id"],
+    add_action: ["flow_id"],
+    update_action: ["flow_id", "element_id"],
+    delete_action: ["flow_id", "element_id"],
+    add_flow_logic: ["flow_id", "logic_type"],
+    update_flow_logic: ["flow_id", "element_id"],
+    delete_flow_logic: ["flow_id", "element_id"],
+    add_subflow: ["flow_id", "subflow_id"],
+    update_subflow: ["flow_id", "element_id"],
+    delete_subflow: ["flow_id", "element_id"],
+    open_flow: ["flow_id"],
+    close_flow: ["flow_id"],
+    force_unlock: ["flow_id"],
+  }
+
+  var requiredParams = REQUIRED_PARAMS[action]
+  if (requiredParams && requiredParams.length > 0) {
+    var missingParams = requiredParams.filter(function (p: string) {
+      return args[p] === undefined || args[p] === null || args[p] === ""
+    })
+    if (missingParams.length > 0) {
+      return createErrorResult(
+        new SnowFlowError(
+          ErrorType.VALIDATION_ERROR,
+          "Missing required parameter(s) for '" +
+            action +
+            "': " +
+            missingParams.join(", ") +
+            ". Provide these parameters and try again.",
+        ),
+      )
+    }
+  }
+
   try {
     var client = await getAuthenticatedClient(context)
 
@@ -4968,10 +5069,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "create":
       case "create_subflow": {
         var flowName = args.name
-        if (!flowName) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "name is required for " + action)
-        }
-
         var isSubflow = action === "create_subflow"
         var flowDescription = args.description || flowName
         var triggerType = isSubflow ? "manual" : args.trigger_type || "manual"
@@ -5119,7 +5216,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                   variable_type: "input",
                 })
                 varsCreated++
-              } catch (_) {}
+              } catch (e: any) {
+                console.warn("[snow_manage_flow] create: input variable creation failed: " + (e.message || ""))
+              }
             }
             for (var pfvo = 0; pfvo < outputsArg.length; pfvo++) {
               try {
@@ -5132,7 +5231,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                   variable_type: "output",
                 })
                 varsCreated++
-              } catch (_) {}
+              } catch (e: any) {
+                console.warn("[snow_manage_flow] create: output variable creation failed: " + (e.message || ""))
+              }
             }
           }
         }
@@ -5279,8 +5380,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                   variable_type: "input",
                 })
                 varsCreated++
-              } catch (varError) {
-                /* best-effort */
+              } catch (varError: any) {
+                console.warn("[snow_manage_flow] create: input variable (table API) failed: " + (varError.message || ""))
               }
             }
             for (var vo = 0; vo < outputsArg.length; vo++) {
@@ -5294,8 +5395,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                   variable_type: "output",
                 })
                 varsCreated++
-              } catch (varError) {
-                /* best-effort */
+              } catch (varError: any) {
+                console.warn("[snow_manage_flow] create: output variable (table API) failed: " + (varError.message || ""))
               }
             }
           }
@@ -5470,6 +5571,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               warnings: factoryWarnings.length > 0 ? factoryWarnings : undefined,
               diagnostics: diagnostics,
               lock_acquired_at: new Date().toISOString(),
+              lock_warning:
+                "IMPORTANT: Editing lock is held. You MUST call close_flow with flow_id='" +
+                flowSysId +
+                "' when done editing.",
               next_step:
                 "Flow is now open for editing. Add actions with add_action, flow logic with add_flow_logic. When DONE, call close_flow with this flow_id to release the editing lock.",
             },
@@ -5497,7 +5602,36 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           listQuery += (listQuery ? "^" : "") + "active=true"
         }
         if (filterTable) {
-          listQuery += (listQuery ? "^" : "") + "flow_definitionLIKE" + filterTable
+          // Primary: find flows with triggers on the requested table via sys_hub_trigger_instance
+          // This is more reliable than LIKE on flow_definition JSON blob
+          var triggerFlowIds: string[] = []
+          try {
+            var trigLookup = await client.get("/api/now/table/sys_hub_trigger_instance", {
+              params: {
+                sysparm_query: "table=" + filterTable,
+                sysparm_fields: "flow",
+                sysparm_limit: 200,
+              },
+            })
+            var trigResults = trigLookup.data.result || []
+            var seenFlowIds: Record<string, boolean> = {}
+            for (var tfi = 0; tfi < trigResults.length; tfi++) {
+              var fid = typeof trigResults[tfi].flow === "object" ? trigResults[tfi].flow.value : trigResults[tfi].flow
+              if (fid && !seenFlowIds[fid]) {
+                triggerFlowIds.push(fid)
+                seenFlowIds[fid] = true
+              }
+            }
+          } catch (e: any) {
+            console.warn("[snow_manage_flow] list: trigger table lookup failed, using LIKE fallback: " + (e.message || ""))
+          }
+
+          if (triggerFlowIds.length > 0) {
+            listQuery += (listQuery ? "^" : "") + "sys_idIN" + triggerFlowIds.join(",")
+          } else {
+            // Fallback to LIKE on flow_definition (unreliable but better than nothing)
+            listQuery += (listQuery ? "^" : "") + "flow_definitionLIKE" + filterTable
+          }
         }
 
         var listResp = await client.get("/api/now/table/sys_hub_flow", {
@@ -5548,47 +5682,143 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // GET
       // ────────────────────────────────────────────────────────────────
       case "get": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for get action")
-        }
-
         var getSysId = await resolveFlowId(client, args.flow_id)
 
         // Fetch flow record
         var getResp = await client.get("/api/now/table/sys_hub_flow/" + getSysId)
         var flowRecord = getResp.data.result
 
-        // Fetch trigger instances
+        // ── Primary: processflow API for triggers, actions, flow logic ──
+        // Flow elements do NOT exist as individual records in Table API.
+        // The processflow API returns the real-time state including all elements.
         var triggerInstances: any[] = []
-        try {
-          var trigResp = await client.get("/api/now/table/sys_hub_trigger_instance", {
-            params: {
-              sysparm_query: "flow=" + getSysId,
-              sysparm_fields: "sys_id,name,action_type,table,condition,active,order",
-              sysparm_limit: 10,
-            },
-          })
-          triggerInstances = trigResp.data.result || []
-        } catch (e) {
-          /* best-effort */
-        }
-
-        // Fetch action instances
         var actionInstances: any[] = []
+        var flowLogicInstances: any[] = []
+        var dataSource = "table_api"
+
         try {
-          var actResp = await client.get("/api/now/table/sys_hub_action_instance", {
-            params: {
-              sysparm_query: "flow=" + getSysId + "^ORDERBYorder",
-              sysparm_fields: "sys_id,name,action_type,order,active",
-              sysparm_limit: 50,
-            },
-          })
-          actionInstances = actResp.data.result || []
-        } catch (e) {
-          /* best-effort */
+          var pfResp = await client.get("/api/now/processflow/flow/" + getSysId)
+          var pfRaw = pfResp.data
+          var pfData: any = null
+
+          if (typeof pfRaw === "string") {
+            // XML response — parse trigger, action and flow logic elements
+            var triggerMatches = pfRaw.match(/<triggerInstance[^>]*>[\s\S]*?<\/triggerInstance>/g) || []
+            for (var pti = 0; pti < triggerMatches.length; pti++) {
+              var tm = triggerMatches[pti]
+              var tidMatch = tm.match(/id="([^"]*)"/) || tm.match(/<id>([^<]*)<\/id>/)
+              var tnameMatch = tm.match(/name="([^"]*)"/) || tm.match(/<name>([^<]*)<\/name>/)
+              var ttypeMatch = tm.match(/typeLabel="([^"]*)"/) || tm.match(/<typeLabel>([^<]*)<\/typeLabel>/)
+              var ttableMatch = tm.match(/table="([^"]*)"/) || tm.match(/<table>([^<]*)<\/table>/)
+              triggerInstances.push({
+                sys_id: tidMatch ? tidMatch[1] : "",
+                name: tnameMatch ? tnameMatch[1] : "",
+                action_type: ttypeMatch ? ttypeMatch[1] : "",
+                table: ttableMatch ? ttableMatch[1] : "",
+              })
+            }
+            // Parse action instances from XML
+            var actionMatches = pfRaw.match(/<actionInstance[^>]*>[\s\S]*?<\/actionInstance>/g) || []
+            for (var pai = 0; pai < actionMatches.length; pai++) {
+              var am = actionMatches[pai]
+              var aidMatch = am.match(/id="([^"]*)"/) || am.match(/<id>([^<]*)<\/id>/)
+              var anameMatch = am.match(/name="([^"]*)"/) || am.match(/<name>([^<]*)<\/name>/)
+              var atypeMatch = am.match(/typeLabel="([^"]*)"/) || am.match(/<typeLabel>([^<]*)<\/typeLabel>/)
+              var aorderMatch = am.match(/order="([^"]*)"/) || am.match(/<order>([^<]*)<\/order>/)
+              actionInstances.push({
+                sys_id: aidMatch ? aidMatch[1] : "",
+                name: anameMatch ? anameMatch[1] : "",
+                action_type: atypeMatch ? atypeMatch[1] : "",
+                order: aorderMatch ? aorderMatch[1] : "",
+              })
+            }
+            // Parse flow logic instances from XML
+            var logicMatches = pfRaw.match(/<flowLogicInstance[^>]*>[\s\S]*?<\/flowLogicInstance>/g) || []
+            for (var pli = 0; pli < logicMatches.length; pli++) {
+              var lm = logicMatches[pli]
+              var lidMatch = lm.match(/id="([^"]*)"/) || lm.match(/<id>([^<]*)<\/id>/)
+              var lnameMatch = lm.match(/name="([^"]*)"/) || lm.match(/<name>([^<]*)<\/name>/)
+              var ltypeMatch = lm.match(/typeLabel="([^"]*)"/) || lm.match(/<typeLabel>([^<]*)<\/typeLabel>/)
+              var lorderMatch = lm.match(/order="([^"]*)"/) || lm.match(/<order>([^<]*)<\/order>/)
+              flowLogicInstances.push({
+                sys_id: lidMatch ? lidMatch[1] : "",
+                name: lnameMatch ? lnameMatch[1] : "",
+                type: ltypeMatch ? ltypeMatch[1] : "",
+                order: lorderMatch ? lorderMatch[1] : "",
+              })
+            }
+            if (triggerInstances.length > 0 || actionInstances.length > 0) dataSource = "processflow_api"
+          } else if (pfRaw && typeof pfRaw === "object") {
+            pfData = pfRaw.result?.data || pfRaw.result || pfRaw.data || pfRaw
+            // JSON response — extract elements from model
+            var model = pfData.model || pfData
+            if (model.triggerInstances && Array.isArray(model.triggerInstances)) {
+              triggerInstances = model.triggerInstances.map(function (t: any) {
+                return {
+                  sys_id: t.id || t.sys_id || "",
+                  name: t.name || t.typeLabel || "",
+                  action_type: t.typeLabel || t.type || "",
+                  table: t.table || "",
+                  condition: t.condition || "",
+                }
+              })
+            }
+            if (model.actionInstances && Array.isArray(model.actionInstances)) {
+              actionInstances = model.actionInstances.map(function (a: any) {
+                return {
+                  sys_id: a.id || a.sys_id || "",
+                  name: a.name || a.typeLabel || "",
+                  action_type: a.typeLabel || a.type || "",
+                  order: a.order || "",
+                }
+              })
+            }
+            if (model.flowLogicInstances && Array.isArray(model.flowLogicInstances)) {
+              flowLogicInstances = model.flowLogicInstances.map(function (l: any) {
+                return {
+                  sys_id: l.id || l.sys_id || "",
+                  name: l.name || l.typeLabel || "",
+                  type: l.typeLabel || l.type || "",
+                  order: l.order || "",
+                }
+              })
+            }
+            if (triggerInstances.length > 0 || actionInstances.length > 0) dataSource = "processflow_api"
+          }
+        } catch (e: any) {
+          console.warn("[snow_manage_flow] get: processflow API failed, falling back to Table API: " + (e.message || ""))
         }
 
-        // Fetch flow variables
+        // ── Fallback: Table API for triggers/actions (may return empty arrays) ──
+        if (dataSource === "table_api") {
+          try {
+            var trigResp = await client.get("/api/now/table/sys_hub_trigger_instance", {
+              params: {
+                sysparm_query: "flow=" + getSysId,
+                sysparm_fields: "sys_id,name,action_type,table,condition,active,order",
+                sysparm_limit: 10,
+              },
+            })
+            triggerInstances = trigResp.data.result || []
+          } catch (e: any) {
+            console.warn("[snow_manage_flow] get: trigger instances query failed: " + (e.message || ""))
+          }
+
+          try {
+            var actResp = await client.get("/api/now/table/sys_hub_action_instance", {
+              params: {
+                sysparm_query: "flow=" + getSysId + "^ORDERBYorder",
+                sysparm_fields: "sys_id,name,action_type,order,active",
+                sysparm_limit: 50,
+              },
+            })
+            actionInstances = actResp.data.result || []
+          } catch (e: any) {
+            console.warn("[snow_manage_flow] get: action instances query failed: " + (e.message || ""))
+          }
+        }
+
+        // Flow variables and executions are always fetched via Table API (they exist as real records)
         var flowVars: any[] = []
         try {
           var varResp = await client.get("/api/now/table/sys_hub_flow_variable", {
@@ -5599,11 +5829,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             },
           })
           flowVars = varResp.data.result || []
-        } catch (e) {
-          /* best-effort */
+        } catch (e: any) {
+          console.warn("[snow_manage_flow] get: flow variables query failed: " + (e.message || ""))
         }
 
-        // Fetch recent executions
         var executions: any[] = []
         try {
           var execResp = await client.get("/api/now/table/sys_hub_flow_run", {
@@ -5614,8 +5843,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             },
           })
           executions = execResp.data.result || []
-        } catch (e) {
-          /* best-effort */
+        } catch (e: any) {
+          console.warn("[snow_manage_flow] get: executions query failed: " + (e.message || ""))
         }
 
         var getSummary = summary()
@@ -5639,6 +5868,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             getSummary.bullet(actionInstances[aci].name || "action-" + aci)
           }
         }
+        if (flowLogicInstances.length > 0) {
+          getSummary.blank().line("Flow Logic: " + flowLogicInstances.length)
+          for (var fli = 0; fli < Math.min(flowLogicInstances.length, 10); fli++) {
+            getSummary.bullet((flowLogicInstances[fli].type || "") + " " + (flowLogicInstances[fli].name || "logic-" + fli))
+          }
+        }
         if (flowVars.length > 0) {
           getSummary.blank().line("Variables: " + flowVars.length)
         }
@@ -5653,6 +5888,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return createSuccessResult(
           {
             action: "get",
+            data_source: dataSource,
             flow: {
               sys_id: flowRecord.sys_id,
               name: flowRecord.name,
@@ -5682,6 +5918,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 action_type: typeof a.action_type === "object" ? a.action_type.display_value : a.action_type,
                 order: a.order,
                 active: a.active === "true",
+              }
+            }),
+            flow_logic: flowLogicInstances.map(function (l: any) {
+              return {
+                sys_id: l.sys_id,
+                name: l.name,
+                type: l.type,
+                order: l.order,
               }
             }),
             variables: flowVars.map(function (v: any) {
@@ -5716,9 +5960,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // UPDATE
       // ────────────────────────────────────────────────────────────────
       case "update": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for update action")
-        }
         var updateFields = args.update_fields
         if (!updateFields || Object.keys(updateFields).length === 0) {
           throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "update_fields is required for update action")
@@ -5753,10 +5994,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "activate":
       case "publish": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for " + action + " action")
-        }
-
         var activateSysId = await resolveFlowId(client, args.flow_id)
         var activateSummary = summary()
         var publishSuccess = false
@@ -5810,10 +6047,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // DEACTIVATE
       // ────────────────────────────────────────────────────────────────
       case "deactivate": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for deactivate action")
-        }
-
         var deactivateSysId = await resolveFlowId(client, args.flow_id)
 
         // Primary: use processflow versioning API with Deactivate type
@@ -5853,20 +6086,53 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // DELETE
       // ────────────────────────────────────────────────────────────────
       case "delete": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for delete action")
+        var deleteSysId = await resolveFlowId(client, args.flow_id)
+        var deleteSteps: any = {}
+
+        // Pre-delete: release any editing lock (flow may be locked)
+        try {
+          await releaseFlowEditingLock(client, deleteSysId)
+          deleteSteps.lock_released = true
+        } catch (e: any) {
+          deleteSteps.lock_release_error = e.message
+          console.warn("[snow_manage_flow] delete: lock release failed: " + (e.message || ""))
         }
 
-        var deleteSysId = await resolveFlowId(client, args.flow_id)
+        // Pre-delete: deactivate the flow (avoids "active flow" errors)
+        try {
+          await client.patch("/api/now/table/sys_hub_flow/" + deleteSysId, { active: false })
+          deleteSteps.deactivated = true
+        } catch (e: any) {
+          deleteSteps.deactivate_error = e.message
+          console.warn("[snow_manage_flow] delete: deactivation failed: " + (e.message || ""))
+        }
+
+        // Delete the flow
         await client.delete("/api/now/table/sys_hub_flow/" + deleteSysId)
 
+        // Post-delete: clean up orphaned safe_edit records
+        try {
+          var orphanResp = await client.get("/api/now/table/sys_hub_flow_safe_edit", {
+            params: { sysparm_query: "document_id=" + deleteSysId, sysparm_fields: "sys_id", sysparm_limit: 10 },
+          })
+          var orphans = orphanResp.data?.result || []
+          for (var oi = 0; oi < orphans.length; oi++) {
+            await client.delete("/api/now/table/sys_hub_flow_safe_edit/" + orphans[oi].sys_id)
+          }
+          if (orphans.length > 0) deleteSteps.orphans_cleaned = orphans.length
+        } catch (e: any) {
+          console.warn("[snow_manage_flow] delete: orphan cleanup failed: " + (e.message || ""))
+        }
+
         var deleteSummary = summary().success("Flow deleted").field("sys_id", deleteSysId)
+        if (deleteSteps.orphans_cleaned) deleteSummary.line("Cleaned " + deleteSteps.orphans_cleaned + " orphaned lock record(s)")
 
         return createSuccessResult(
           {
             action: "delete",
             flow_id: deleteSysId,
             message: "Flow deleted",
+            steps: deleteSteps,
           },
           {},
           deleteSummary.build(),
@@ -5877,9 +6143,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ADD_TRIGGER
       // ────────────────────────────────────────────────────────────────
       case "add_trigger": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for add_trigger")
-        }
         var addTrigFlowId = await resolveFlowId(client, args.flow_id)
         var addTrigType = args.trigger_type || "record_create_or_update"
         var addTrigTable = args.table || args.trigger_table || ""
@@ -5914,9 +6177,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // UPDATE_TRIGGER — replace existing trigger(s) with a new one
       // ────────────────────────────────────────────────────────────────
       case "update_trigger": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for update_trigger")
-        }
         var updTrigFlowId = await resolveFlowId(client, args.flow_id)
         var updTrigType = args.trigger_type || "record_create_or_update"
         var updTrigTable = args.table || args.trigger_table || ""
@@ -5924,6 +6184,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         var updTrigSteps: any = {}
 
         // Step 1: Find existing trigger instances on this flow
+        var trigInstances: any[] = []
         try {
           var existingTriggers = await client.get("/api/now/table/sys_hub_trigger_instance", {
             params: {
@@ -5932,16 +6193,35 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               sysparm_limit: 10,
             },
           })
-          var trigInstances = existingTriggers.data.result || []
-          updTrigSteps.existing_triggers = trigInstances.map((t: any) => ({
-            sys_id: t.sys_id,
-            name: t.name,
-            type: t.type,
-          }))
+          trigInstances = existingTriggers.data.result || []
+          updTrigSteps.existing_triggers = trigInstances.map(function (t: any) {
+            return { sys_id: t.sys_id, name: t.name, type: t.type }
+          })
+        } catch (e: any) {
+          updTrigSteps.lookup_error = "Could not query existing triggers: " + (e.message || "")
+        }
 
-          // Step 2: Delete existing triggers via GraphQL
-          if (trigInstances.length > 0) {
-            var deleteIds = trigInstances.map((t: any) => t.sys_id)
+        // Step 2: Create the NEW trigger FIRST (safe: old triggers still exist if this fails)
+        var updTrigResult = await addTriggerViaGraphQL(
+          client,
+          updTrigFlowId,
+          updTrigType,
+          updTrigTable,
+          updTrigCondition,
+        )
+        updTrigSteps.new_trigger = updTrigResult
+
+        // Step 3: Only delete old triggers if the new one was created successfully
+        if (updTrigResult.success && trigInstances.length > 0) {
+          var newTriggerId = updTrigResult.triggerId || ""
+          var deleteIds = trigInstances
+            .map(function (t: any) {
+              return t.sys_id
+            })
+            .filter(function (id: string) {
+              return id !== newTriggerId
+            })
+          if (deleteIds.length > 0) {
             try {
               await executeFlowPatchMutation(
                 client,
@@ -5954,46 +6234,41 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               updTrigSteps.deleted = deleteIds
             } catch (e: any) {
               updTrigSteps.delete_error = e.message
+              console.warn("[snow_manage_flow] update_trigger: old trigger deletion failed: " + (e.message || ""))
             }
           }
-        } catch (_) {
-          updTrigSteps.lookup_error = "Could not query existing triggers"
         }
-
-        // Step 3: Add the new trigger
-        var updTrigResult = await addTriggerViaGraphQL(
-          client,
-          updTrigFlowId,
-          updTrigType,
-          updTrigTable,
-          updTrigCondition,
-        )
-        updTrigSteps.new_trigger = updTrigResult
 
         var updTrigSummary = summary()
         if (updTrigResult.success) {
           updTrigSummary
-            .success("Trigger updated via GraphQL")
+            .success("Trigger updated via GraphQL (create-first)")
             .field("Flow", updTrigFlowId)
             .field("New Type", updTrigType)
             .field("Trigger ID", updTrigResult.triggerId || "unknown")
           if (updTrigTable) updTrigSummary.field("Table", updTrigTable)
+          if (updTrigSteps.deleted) updTrigSummary.line("Old trigger(s) removed: " + updTrigSteps.deleted.join(", "))
         } else {
-          updTrigSummary.error("Failed to update trigger: " + (updTrigResult.error || "unknown"))
+          updTrigSummary.error(
+            "Failed to create new trigger: " +
+              (updTrigResult.error || "unknown") +
+              ". Old trigger(s) preserved — flow is not broken.",
+          )
         }
 
         return updTrigResult.success
-          ? createSuccessResult({ action: "update_trigger", steps: updTrigSteps }, {}, updTrigSummary.build())
-          : createErrorResult(updTrigResult.error || "Failed to update trigger")
+          ? createSuccessResult({ action: "update_trigger", mutation_method: "graphql", steps: updTrigSteps }, {}, updTrigSummary.build())
+          : createErrorResult(
+              "Failed to update trigger: " +
+                (updTrigResult.error || "unknown") +
+                ". Old trigger(s) preserved — the flow still has its original trigger.",
+            )
       }
 
       // ────────────────────────────────────────────────────────────────
       // ADD_ACTION
       // ────────────────────────────────────────────────────────────────
       case "add_action": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for add_action")
-        }
         var addActFlowId = await resolveFlowId(client, args.flow_id)
         var addActType = args.action_type || "log"
         var addActName = args.action_name || args.name || addActType
@@ -6052,8 +6327,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               {
                 action: "add_action",
                 ...addActResult,
+                mutation_method: "graphql",
                 next_order: addActNextOrder,
-                reminder: "Call close_flow when all steps are added.",
+                reminder:
+                  "IMPORTANT: Call close_flow with flow_id='" +
+                  addActFlowId +
+                  "' when you are done adding elements. Forgetting this will leave the flow locked.",
               },
               updateSetCtx,
             ),
@@ -6068,15 +6347,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ADD_FLOW_LOGIC — add If/Else, For Each, Do Until, Switch blocks
       // ────────────────────────────────────────────────────────────────
       case "add_flow_logic": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for add_flow_logic")
-        }
-        if (!args.logic_type) {
-          throw new SnowFlowError(
-            ErrorType.VALIDATION_ERROR,
-            "logic_type is required for add_flow_logic (e.g. IF, ELSEIF, ELSE, FOR_EACH, DO_UNTIL, PARALLEL, DECISION, TRY, END, TIMER, SET_FLOW_VARIABLES)",
-          )
-        }
         var addLogicFlowId = await resolveFlowId(client, args.flow_id)
         var addLogicType = args.logic_type
         var addLogicInputs =
@@ -6124,7 +6394,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         // - ELSE/ELSEIF use parent_ui_id = IF's PARENT (same level as IF) + connected_to = IF's logicId
         var logicUpperType = addLogicType.toUpperCase().replace(/[^A-Z]/g, "")
         var addLogicNextOrder = (addLogicResult.resolvedOrder || 1) + 1
-        var logicHints: any = { reminder: "Call close_flow when all steps are added.", next_order: addLogicNextOrder }
+        var logicHints: any = {
+          mutation_method: "graphql",
+          reminder:
+            "IMPORTANT: Call close_flow with flow_id='" +
+            addLogicFlowId +
+            "' when you are done adding elements. Forgetting this will leave the flow locked.",
+          next_order: addLogicNextOrder,
+        }
         if (logicUpperType === "IF" || logicUpperType === "ELSEIF") {
           logicHints.important =
             "ELSE/ELSEIF must be at the SAME level as this IF (same parent_ui_id), NOT nested inside it. " +
@@ -6166,15 +6443,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ADD_SUBFLOW — call an existing subflow as a step in the flow
       // ────────────────────────────────────────────────────────────────
       case "add_subflow": {
-        if (!args.flow_id) {
-          throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for add_subflow")
-        }
-        if (!args.subflow_id) {
-          throw new SnowFlowError(
-            ErrorType.VALIDATION_ERROR,
-            "subflow_id is required for add_subflow (sys_id or name of the subflow to call)",
-          )
-        }
         var addSubFlowId = await resolveFlowId(client, args.flow_id)
         var addSubSubflowId = args.subflow_id
         var addSubInputs =
@@ -6215,8 +6483,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               {
                 action: "add_subflow",
                 ...addSubResult,
+                mutation_method: "graphql",
                 next_order: addSubNextOrder,
-                reminder: "Call close_flow when all steps are added.",
+                reminder:
+                  "IMPORTANT: Call close_flow with flow_id='" +
+                  addSubFlowId +
+                  "' when you are done adding elements. Forgetting this will leave the flow locked.",
               },
               updateSetCtx,
             ),
@@ -6233,12 +6505,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "update_action":
       case "update_flow_logic":
       case "update_subflow": {
-        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required")
-        if (!args.element_id)
-          throw new SnowFlowError(
-            ErrorType.VALIDATION_ERROR,
-            "element_id is required (sys_id or uiUniqueIdentifier of the element)",
-          )
         var updElemFlowId = await resolveFlowId(client, args.flow_id)
         var updElemType =
           action === "update_action" ? "action" : action === "update_flow_logic" ? "flowlogic" : "subflow"
@@ -6294,12 +6560,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "delete_flow_logic":
       case "delete_subflow":
       case "delete_trigger": {
-        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required")
-        if (!args.element_id)
-          throw new SnowFlowError(
-            ErrorType.VALIDATION_ERROR,
-            "element_id is required (sys_id(s) to delete, comma-separated for multiple)",
-          )
         var delElemFlowId = await resolveFlowId(client, args.flow_id)
         var delElemType =
           action === "delete_action"
@@ -6332,7 +6592,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // OPEN_FLOW — acquire Flow Designer editing lock (safeEdit create)
       // ────────────────────────────────────────────────────────────────
       case "open_flow": {
-        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for open_flow")
         var openFlowId = await resolveFlowId(client, args.flow_id)
         var openSummary = summary()
 
@@ -6355,7 +6614,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               action: "open_flow",
               flow_id: openFlowId,
               editing_session: true,
+              lock_acquired_at: new Date().toISOString(),
               lock_debug: lockResult.debug,
+              lock_warning:
+                "IMPORTANT: Editing lock is held. You MUST call close_flow with flow_id='" +
+                openFlowId +
+                "' when done editing.",
               next_step: "Flow is open. Add actions/logic, then call close_flow to release the lock.",
             },
             {},
@@ -6378,7 +6642,12 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               flow_id: openFlowId,
               editing_session: true,
               ghost_lock_cleared: true,
+              lock_acquired_at: new Date().toISOString(),
               lock_debug: retryResult.debug,
+              lock_warning:
+                "IMPORTANT: Editing lock is held. You MUST call close_flow with flow_id='" +
+                openFlowId +
+                "' when done editing.",
               next_step: "Flow is open. Add actions/logic, then call close_flow to release the lock.",
             },
             {},
@@ -6401,7 +6670,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // CLOSE_FLOW — release Flow Designer editing lock (safeEdit)
       // ────────────────────────────────────────────────────────────────
       case "close_flow": {
-        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for close_flow")
         var closeFlowId = await resolveFlowId(client, args.flow_id)
         var closeResult = await releaseFlowEditingLock(client, closeFlowId)
         var closeSummary = summary()
@@ -6427,7 +6695,6 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // FORCE_UNLOCK — aggressively clear all locks on a flow (ghost lock recovery)
       // ────────────────────────────────────────────────────────────────
       case "force_unlock": {
-        if (!args.flow_id) throw new SnowFlowError(ErrorType.VALIDATION_ERROR, "flow_id is required for force_unlock")
         var unlockFlowId = await resolveFlowId(client, args.flow_id)
         var unlockSummary = summary()
         var unlockSteps: Record<string, any> = {}
@@ -6545,6 +6812,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     var MUTATION_ACTIONS = [
       "create",
       "create_subflow",
+      "add_trigger",
+      "update_trigger",
       "add_action",
       "add_flow_logic",
       "add_subflow",
@@ -6556,7 +6825,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       "delete_subflow",
       "delete_trigger",
     ]
-    if (client && args.flow_id && MUTATION_ACTIONS.indexOf(action) !== -1 && !(error instanceof SnowFlowError)) {
+    if (client && args.flow_id && MUTATION_ACTIONS.indexOf(action) !== -1) {
       try {
         await releaseFlowEditingLock(client, await resolveFlowId(client, args.flow_id))
       } catch (lockReleaseErr: any) {
