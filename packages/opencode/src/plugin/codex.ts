@@ -296,7 +296,7 @@ async function startOAuthServer(): Promise<{ port: number; redirectUri: string }
           })
         }
 
-        const current = pendingOAuth
+        const current = pendingOAuth!
         pendingOAuth = undefined
 
         exchangeCodeForTokens(code, `http://localhost:${OAUTH_PORT}/auth/callback`, current.pkce)
