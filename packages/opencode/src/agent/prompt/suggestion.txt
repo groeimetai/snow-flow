@@ -1,0 +1,1 @@
+Given the conversation so far, suggest a single short follow-up message the user is most likely to send next. Output ONLY the suggestion text, nothing else. Keep it under 100 characters. Use the same language as the user. Focus on actionable next steps (testing, deploying, fixing, extending). If there's no clear next step, suggest asking about verification or testing.

@@ -12,6 +12,7 @@ import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_REVIEW from "./prompt/review.txt"
+import PROMPT_SUGGESTION from "./prompt/suggestion.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import { PermissionNext } from "@/permission/next"
@@ -218,6 +219,22 @@ export namespace Agent {
           user,
         ),
         prompt: PROMPT_TITLE,
+      },
+      suggestion: {
+        name: "suggestion",
+        mode: "primary",
+        options: {},
+        native: true,
+        hidden: true,
+        temperature: 0.7,
+        permission: PermissionNext.merge(
+          defaults,
+          PermissionNext.fromConfig({
+            "*": "deny",
+          }),
+          user,
+        ),
+        prompt: PROMPT_SUGGESTION,
       },
       summary: {
         name: "summary",

@@ -41,6 +41,7 @@ export type PromptProps = {
   ref?: (ref: PromptRef) => void
   hint?: JSX.Element
   showPlaceholder?: boolean
+  suggestion?: string
 }
 
 export type PromptRef = {
@@ -789,7 +790,13 @@ export function Prompt(props: PromptProps) {
             flexGrow={1}
           >
             <textarea
-              placeholder={props.sessionID ? undefined : `Ask anything... "${PLACEHOLDERS[store.placeholder]}"`}
+              placeholder={
+                props.sessionID
+                  ? status().type === "idle" && !store.prompt.input && props.suggestion
+                    ? `${props.suggestion}  [tab]`
+                    : undefined
+                  : `Ask anything... "${PLACEHOLDERS[store.placeholder]}"`
+              }
               textColor={keybind.leader ? theme.textMuted : theme.text}
               focusedTextColor={keybind.leader ? theme.textMuted : theme.text}
               minHeight={1}
@@ -855,6 +862,13 @@ export function Prompt(props: PromptProps) {
                 }
                 if (store.mode === "normal") autocomplete.onKeyDown(e)
                 if (!autocomplete.visible) {
+                  // Tab to accept suggestion
+                  if (e.name === "tab" && !store.prompt.input && props.suggestion) {
+                    e.preventDefault()
+                    input.setText(props.suggestion)
+                    setStore("prompt", "input", props.suggestion)
+                    return
+                  }
                   if (
                     (keybind.match("history_previous", e) && input.cursorOffset === 0) ||
                     (keybind.match("history_next", e) && input.cursorOffset === input.plainText.length)

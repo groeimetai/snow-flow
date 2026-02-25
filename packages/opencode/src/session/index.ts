@@ -126,6 +126,13 @@ export namespace Session {
         error: MessageV2.Assistant.shape.error,
       }),
     ),
+    Suggestion: BusEvent.define(
+      "session.suggestion",
+      z.object({
+        sessionID: z.string(),
+        suggestion: z.string(),
+      }),
+    ),
   }
 
   export const create = fn(

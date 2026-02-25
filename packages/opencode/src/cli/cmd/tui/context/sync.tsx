@@ -70,6 +70,9 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       mcp_resource: {
         [key: string]: McpResource
       }
+      suggestion: {
+        [sessionID: string]: string
+      }
       formatter: FormatterStatus[]
       vcs: VcsInfo | undefined
       path: Path
@@ -94,6 +97,7 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
       todo: {},
       message: {},
       part: {},
+      suggestion: {},
       lsp: [],
       mcp: {},
       mcp_resource: {},
@@ -106,6 +110,12 @@ export const { use: useSync, provider: SyncProvider } = createSimpleContext({
 
     sdk.event.listen((e) => {
       const event = e.details
+      // Handle suggestion event (not yet in SDK generated types)
+      if ((event as any).type === "session.suggestion") {
+        const props = (event as any).properties as { sessionID: string; suggestion: string }
+        setStore("suggestion", props.sessionID, props.suggestion)
+        return
+      }
       switch (event.type) {
         case "server.instance.disposed":
           bootstrap()

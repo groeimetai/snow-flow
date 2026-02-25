@@ -34,6 +34,7 @@ import { spawn } from "child_process"
 import { Command } from "../command"
 import { $, fileURLToPath } from "bun"
 import { ConfigMarkdown } from "../config/markdown"
+import { SessionSuggestion } from "./suggestion"
 import { SessionSummary } from "./summary"
 import { NamedError } from "@opencode-ai/util/error"
 import { fn } from "@/util/fn"
@@ -258,6 +259,8 @@ export namespace SessionPrompt {
       item.reject()
     }
     delete s[sessionID]
+    // Fire-and-forget suggestion generation
+    SessionSuggestion.generate({ sessionID }).catch(() => {})
     SessionStatus.set(sessionID, { type: "idle" })
     return
   }

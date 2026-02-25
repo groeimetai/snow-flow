@@ -1089,6 +1089,7 @@ export function Session() {
                   toBottom()
                 }}
                 sessionID={route.sessionID}
+                suggestion={sync.data.suggestion[route.sessionID]}
               />
             </box>
           </Show>
