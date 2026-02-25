@@ -794,7 +794,7 @@ export function Prompt(props: PromptProps) {
                 props.sessionID
                   ? status().type === "idle" && !store.prompt.input && props.suggestion
                     ? `${props.suggestion}  [tab]`
-                    : undefined
+                    : ""
                   : `Ask anything... "${PLACEHOLDERS[store.placeholder]}"`
               }
               textColor={keybind.leader ? theme.textMuted : theme.text}
