@@ -9,10 +9,8 @@ import { Context } from "../context"
 import { memo } from "../util/memo"
 
 export namespace Database {
-  export type Transaction = MySqlTransaction<
-    PlanetscaleQueryResultHKT,
-    PlanetScalePreparedQueryHKT
-  >
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export type Transaction = MySqlTransaction<PlanetscaleQueryResultHKT, PlanetScalePreparedQueryHKT, any, any>
 
   const client = memo(() => {
     const result = new Client({
