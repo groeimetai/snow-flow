@@ -4290,6 +4290,48 @@ async function addFlowLogicViaGraphQL(
     },
   }
 
+  // TRY blocks require a companion CATCH block in the same mutation (matching UI behavior).
+  // The CATCH block references the TRY via connectedTo and includes __status__ + enabled inputs.
+  var catchUuid: string | undefined
+  if (defType.toUpperCase() === "TRY") {
+    catchUuid = generateUUID()
+    var catchDefRecord: any = null
+    try {
+      var catchResp = await client.get("/api/now/table/sys_hub_flow_logic_definition", {
+        params: { sysparm_query: "type=CATCH", sysparm_limit: 1 },
+      })
+      catchDefRecord = catchResp.data.result?.[0]
+    } catch (_) {}
+
+    if (catchDefRecord) {
+      var catchInputResult = await buildFlowLogicInputsForInsert(client, catchDefRecord.sys_id, catchDefRecord, {})
+      var catchInsertObj: any = {
+        order: String(resolvedOrder + 1),
+        uiUniqueIdentifier: catchUuid,
+        parent: parentUiId || "",
+        metadata: '{"predicates":[]}',
+        flowSysId: flowId,
+        generationSource: "",
+        connectedTo: uuid,
+        definitionId: catchDefRecord.sys_id,
+        type: "flowlogic",
+        parentUiId: parentUiId || "",
+        inputs: catchInputResult.inputs,
+        outputsToAssign: [],
+        flowLogicDefinition: catchInputResult.flowLogicDefinition,
+        comment: "",
+      }
+      flowPatch.flowLogics.insert.push(catchInsertObj)
+      steps.catch_companion = {
+        uuid: catchUuid,
+        defId: catchDefRecord.sys_id,
+        connectedTo: uuid,
+        order: resolvedOrder + 1,
+        inputsCount: catchInputResult.inputs.length,
+      }
+    }
+  }
+
   // Add parent flow logic update signal (tells GraphQL the parent was modified)
   if (parentUiId) {
     flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }]
@@ -4308,6 +4350,14 @@ async function addFlowLogicViaGraphQL(
     const returnedUuid = result?.flowLogics?.inserts?.[0]?.uiUniqueIdentifier || uuid
     steps.insert = { success: !!logicId, logicId, uuid: returnedUuid }
     if (!logicId) return { success: false, steps, error: "GraphQL flow logic INSERT returned no ID" }
+
+    if (catchUuid) {
+      var catchInsert = result?.flowLogics?.inserts?.[1]
+      steps.catch_insert = {
+        sysId: catchInsert?.sysId,
+        uiUniqueIdentifier: catchInsert?.uiUniqueIdentifier || catchUuid,
+      }
+    }
 
     // Step 2: UPDATE condition with data pill + labelCache (separate mutation, matching UI behavior)
     // The Flow Designer UI always sets conditions in a separate UPDATE after creating the element.
@@ -6841,6 +6891,17 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             .field("Type", addLogicType)
             .field("Logic ID", addLogicResult.logicId || "unknown")
             .field("uiUniqueIdentifier", addLogicResult.uiUniqueIdentifier || "unknown")
+          if (addLogicResult.steps?.catch_companion) {
+            addLogicSummary
+              .field("Catch Block", "auto-created (companion)")
+              .field("Catch ID", addLogicResult.steps.catch_insert?.sysId || "unknown")
+              .field(
+                "Catch UUID",
+                addLogicResult.steps.catch_insert?.uiUniqueIdentifier ||
+                  addLogicResult.steps.catch_companion.uuid ||
+                  "unknown",
+              )
+          }
         } else {
           addLogicSummary.error("Failed to add flow logic: " + (addLogicResult.error || "unknown"))
         }
@@ -6850,7 +6911,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         // - Actions INSIDE IF use parent_ui_id = IF's uiUniqueIdentifier
         // - ELSE/ELSEIF use parent_ui_id = IF's PARENT (same level as IF) + connected_to = IF's logicId
         var logicUpperType = addLogicType.toUpperCase().replace(/[^A-Z]/g, "")
-        var addLogicNextOrder = (addLogicResult.resolvedOrder || 1) + 1
+        var addLogicNextOrder =
+          logicUpperType === "TRY" ? (addLogicResult.resolvedOrder || 1) + 2 : (addLogicResult.resolvedOrder || 1) + 1
         var logicHints: any = {
           mutation_method: "graphql",
           reminder:
@@ -6883,6 +6945,32 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               '" AND parent_ui_id: "' +
               (addLogicParentUiId || "") +
               "\" (NOT the IF's uiUniqueIdentifier!)",
+          }
+        }
+        if (logicUpperType === "TRY" && addLogicResult.steps?.catch_companion) {
+          var catchId = addLogicResult.steps.catch_insert?.sysId || ""
+          var catchUiId =
+            addLogicResult.steps.catch_insert?.uiUniqueIdentifier || addLogicResult.steps.catch_companion.uuid || ""
+          logicHints.important =
+            "TRY block created with companion CATCH block. " +
+            "Add actions INSIDE the TRY using parent_ui_id='" +
+            (addLogicResult.uiUniqueIdentifier || "") +
+            "'. " +
+            "Add error-handling actions INSIDE the CATCH using parent_ui_id='" +
+            catchUiId +
+            "'."
+          logicHints.try_ui_id = addLogicResult.uiUniqueIdentifier || ""
+          logicHints.catch_sys_id = catchId
+          logicHints.catch_ui_id = catchUiId
+          logicHints.next_step = {
+            for_try_child:
+              'To add actions INSIDE the TRY block, use parent_ui_id: "' +
+              (addLogicResult.uiUniqueIdentifier || "") +
+              '" and order: 1',
+            for_catch_child:
+              'To add error-handling actions INSIDE the CATCH block, use parent_ui_id: "' +
+              catchUiId +
+              '" and order: 1',
           }
         }
 
