@@ -4998,7 +4998,7 @@ export const toolDefinition: MCPToolDefinition = {
       condition_name: {
         type: "string",
         description:
-          'Display label for the IF/ELSEIF condition shown in Flow Designer UI (e.g. "Check if P1 or P2 Incident")',
+          'REQUIRED for IF/ELSEIF: display label for the condition shown in Flow Designer UI (e.g. "Check if P1 or P2 Incident"). Falls back to annotation if not provided. Accepts alias logic_name.',
       },
       parent_ui_id: {
         type: "string",
@@ -6565,6 +6565,17 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         ) {
           addLogicInputs = { ...addLogicInputs, condition_name: args.annotation }
         }
+        if (
+          ifElseTypes.indexOf(addLogicType.toUpperCase().replace(/[^A-Z]/g, "")) !== -1 &&
+          !addLogicInputs.condition_name
+        ) {
+          return createErrorResult(
+            new SnowFlowError(
+              ErrorType.VALIDATION_ERROR,
+              "IF/ELSEIF flow logic requires a condition label. Provide 'condition_name' (or 'annotation' as fallback).",
+            ),
+          )
+        }
         var addLogicOrder = args.order
         var addLogicParentUiId = args.parent_ui_id || ""
         var addLogicConnectedTo = args.connected_to || ""
@@ -6756,6 +6767,18 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
                 "Table '" + args.action_table + "' does not exist in ServiceNow.",
               ),
             )
+          }
+        }
+
+        if (action === "update_flow_logic") {
+          if (args.condition_name && !updElemInputs.condition_name) {
+            updElemInputs = { ...updElemInputs, condition_name: args.condition_name }
+          }
+          if (args.logic_name && !updElemInputs.condition_name) {
+            updElemInputs = { ...updElemInputs, condition_name: args.logic_name }
+          }
+          if (!updElemInputs.condition_name && args.annotation) {
+            updElemInputs = { ...updElemInputs, condition_name: args.annotation }
           }
         }
 
