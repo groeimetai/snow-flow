@@ -246,64 +246,94 @@ interface FlowElement {
   patchType: "action" | "flowlogic" | "subflow"
 }
 
-async function getFlowElementsFromProcessflow(client: any, flowId: string): Promise<FlowElement[]> {
+function parseElementsFromXml(raw: string): FlowElement[] {
   const elements: FlowElement[] = []
+  const tags = [
+    { tag: "actionInstance", patchType: "action" as const },
+    { tag: "flowLogicInstance", patchType: "flowlogic" as const },
+    { tag: "subflowInstance", patchType: "subflow" as const },
+  ]
+  for (const { tag, patchType } of tags) {
+    const rx = new RegExp("<" + tag + "[\\s\\S]*?<\\/" + tag + ">", "g")
+    const matches = raw.match(rx) || []
+    for (const m of matches) {
+      const attr = (name: string) => {
+        const a = m.match(new RegExp(name + '="([^"]*)"'))
+        const e = m.match(new RegExp("<" + name + ">([^<]*)</" + name + ">"))
+        return a ? a[1] : e ? e[1] : ""
+      }
+      elements.push({
+        id: attr("id") || attr("sysId"),
+        uuid: attr("uiUniqueIdentifier") || attr("id") || attr("sysId"),
+        order: parseInt(attr("order") || "0", 10),
+        parent: attr("parentUiId") || attr("parent") || "",
+        connectedTo: attr("connectedTo") || "",
+        elementType: (attr("typeLabel") || attr("type") || patchType).toUpperCase(),
+        patchType,
+      })
+    }
+  }
+  return elements
+}
+
+function parseElementsFromJson(raw: Record<string, unknown>): FlowElement[] {
+  const elements: FlowElement[] = []
+  const data = (raw as any).result?.data || (raw as any).result || (raw as any).data || raw
+  const model = data?.model || data
+  const sources: Array<{ key: string; patchType: "action" | "flowlogic" | "subflow" }> = [
+    { key: "actionInstances", patchType: "action" },
+    { key: "flowLogicInstances", patchType: "flowlogic" },
+    { key: "subflowInstances", patchType: "subflow" },
+  ]
+  for (const { key, patchType } of sources) {
+    const items = model?.[key] || []
+    for (const item of items) {
+      elements.push({
+        id: item.id || item.sysId || "",
+        uuid: item.uiUniqueIdentifier || item.id || item.sysId || "",
+        order: parseInt(String(item.order || 0), 10),
+        parent: item.parentUiId || item.parent || "",
+        connectedTo: item.connectedTo || "",
+        elementType: (item.typeLabel || item.type || patchType).toUpperCase(),
+        patchType,
+      })
+    }
+  }
+  return elements
+}
+
+async function getFlowElementsFromProcessflow(client: any, flowId: string): Promise<FlowElement[]> {
   try {
     const resp = await client.get("/api/now/processflow/flow/" + flowId)
     const raw = resp.data
     if (typeof raw === "string") {
-      const tags = [
-        { tag: "actionInstance", patchType: "action" as const },
-        { tag: "flowLogicInstance", patchType: "flowlogic" as const },
-        { tag: "subflowInstance", patchType: "subflow" as const },
-      ]
-      for (const { tag, patchType } of tags) {
-        const rx = new RegExp("<" + tag + "[\\s\\S]*?<\\/" + tag + ">", "g")
-        const matches = raw.match(rx) || []
-        for (const m of matches) {
-          const attr = (name: string) => {
-            const a = m.match(new RegExp(name + '="([^"]*)"'))
-            const e = m.match(new RegExp("<" + name + ">([^<]*)</" + name + ">"))
-            return a ? a[1] : e ? e[1] : ""
-          }
-          elements.push({
-            id: attr("id") || attr("sysId"),
-            uuid: attr("uiUniqueIdentifier") || attr("id") || attr("sysId"),
-            order: parseInt(attr("order") || "0", 10),
-            parent: attr("parentUiId") || attr("parent") || "",
-            connectedTo: attr("connectedTo") || "",
-            elementType: (attr("typeLabel") || attr("type") || patchType).toUpperCase(),
-            patchType,
-          })
-        }
-      }
-    } else if (raw && typeof raw === "object") {
-      const data = raw.result?.data || raw.result || raw.data || raw
-      const model = data?.model || data
-      const sources: Array<{ key: string; patchType: "action" | "flowlogic" | "subflow" }> = [
-        { key: "actionInstances", patchType: "action" },
-        { key: "flowLogicInstances", patchType: "flowlogic" },
-        { key: "subflowInstances", patchType: "subflow" },
-      ]
-      for (const { key, patchType } of sources) {
-        const items = model?.[key] || []
-        for (const item of items) {
-          elements.push({
-            id: item.id || item.sysId || "",
-            uuid: item.uiUniqueIdentifier || item.id || item.sysId || "",
-            order: parseInt(String(item.order || 0), 10),
-            parent: item.parentUiId || item.parent || "",
-            connectedTo: item.connectedTo || "",
-            elementType: (item.typeLabel || item.type || patchType).toUpperCase(),
-            patchType,
-          })
-        }
-      }
+      const elements = parseElementsFromXml(raw)
+      if (elements.length > 0) return elements
+    }
+    if (raw && typeof raw === "object") {
+      const elements = parseElementsFromJson(raw)
+      if (elements.length > 0) return elements
     }
   } catch (e: any) {
-    console.warn("[snow_manage_flow] getFlowElementsFromProcessflow failed: " + (e.message || ""))
+    console.warn("[snow_manage_flow] processflow API failed: " + (e.message || ""))
   }
-  return elements
+  try {
+    const resp = await client.get("/api/now/table/sys_hub_flow_version", {
+      params: {
+        sysparm_query: "flow=" + flowId + "^ORDERBYDESCsys_created_on",
+        sysparm_fields: "sys_id,payload",
+        sysparm_limit: 1,
+      },
+    })
+    const payload = resp.data.result?.[0]?.payload
+    if (payload) {
+      const parsed = typeof payload === "string" ? JSON.parse(payload) : payload
+      return parseElementsFromJson(parsed)
+    }
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] version payload fallback failed: " + (e.message || ""))
+  }
+  return []
 }
 
 function findCatchForTry(elements: FlowElement[], tryUuid: string): FlowElement | undefined {
@@ -340,7 +370,7 @@ function isTryElement(el: FlowElement): boolean {
 }
 
 function isCatchElement(el: FlowElement): boolean {
-  return el.elementType.includes("CATCH")
+  return el.elementType.includes("CATCH") || el.elementType.includes("ERROR HANDLER")
 }
 
 async function computeNestedOrder(
@@ -352,23 +382,48 @@ async function computeNestedOrder(
 ): Promise<{ order: number; reorder: { actions: any[]; flowLogics: any[]; subflows: any[] } } | null> {
   const empty = { actions: [], flowLogics: [], subflows: [] }
   const elements = await getFlowElementsFromProcessflow(client, flowId)
-  if (elements.length === 0) return null
+  steps.nested_order_elements = elements.map((el) => ({
+    uuid: el.uuid.substring(0, 8),
+    order: el.order,
+    parent: el.parent.substring(0, 8) || "(root)",
+    connectedTo: el.connectedTo.substring(0, 8) || "",
+    type: el.elementType,
+    patchType: el.patchType,
+  }))
+  if (elements.length === 0) {
+    steps.nested_order_bail = "no_elements"
+    return null
+  }
 
   const parent = elements.find((el) => el.uuid === parentUiId || el.id === parentUiId)
-  if (!parent) return null
+  if (!parent) {
+    steps.nested_order_bail = "parent_not_found:" + parentUiId.substring(0, 8)
+    return null
+  }
 
-  steps.nested_order_context = { parent_uuid: parentUiId, parent_type: parent.elementType }
+  steps.nested_order_context = {
+    parent_uuid: parentUiId.substring(0, 8),
+    parent_type: parent.elementType,
+    parent_order: parent.order,
+    is_try: isTryElement(parent),
+    is_catch: isCatchElement(parent),
+  }
+
+  const children = elements.filter((el) => el.parent === parentUiId && !isCatchElement(el))
+  const insertAt =
+    explicitOrder || (children.length > 0 ? Math.max(...children.map((c) => c.order)) + 1 : parent.order + 1)
 
   if (isTryElement(parent)) {
     const companion = findCatchForTry(elements, parentUiId)
-    if (!companion) return null
-    const siblings = elements.filter((el) => el.parent === parentUiId)
-    const insertAt =
-      explicitOrder || (siblings.length > 0 ? Math.max(...siblings.map((s) => s.order)) + 1 : companion.order)
+    if (!companion) {
+      steps.try_child_reorder = { catch_companion: "not_found", insert_at: insertAt }
+      return { order: insertAt, reorder: buildReorderUpdates(elements, insertAt, new Set([parentUiId])) }
+    }
     const reorder = insertAt <= companion.order ? buildReorderUpdates(elements, insertAt, new Set([parentUiId])) : empty
     steps.try_child_reorder = {
-      catch_uuid: companion.uuid,
+      catch_uuid: companion.uuid.substring(0, 8),
       catch_old_order: companion.order,
+      sibling_count: children.length,
       insert_at: insertAt,
       shifted: reorder.actions.length + reorder.flowLogics.length + reorder.subflows.length,
     }
@@ -376,9 +431,6 @@ async function computeNestedOrder(
   }
 
   if (isCatchElement(parent)) {
-    const children = elements.filter((el) => el.parent === parentUiId)
-    const insertAt =
-      explicitOrder || (children.length > 0 ? Math.max(...children.map((c) => c.order)) + 1 : parent.order + 1)
     const reorder = buildReorderUpdates(
       elements.filter((el) => el.parent !== parentUiId && el.uuid !== parentUiId),
       insertAt,
@@ -390,7 +442,13 @@ async function computeNestedOrder(
     return { order: insertAt, reorder }
   }
 
-  return null
+  const reorder = buildReorderUpdates(elements, insertAt, new Set([parentUiId]))
+  steps.generic_child_reorder = {
+    parent_type: parent.elementType,
+    insert_at: insertAt,
+    shifted: reorder.actions.length + reorder.flowLogics.length + reorder.subflows.length,
+  }
+  return { order: insertAt, reorder }
 }
 
 async function executeFlowPatchMutation(client: any, flowPatch: any, responseFields: string): Promise<any> {
