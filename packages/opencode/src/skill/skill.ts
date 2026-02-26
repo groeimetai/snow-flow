@@ -11,6 +11,10 @@ import { Flag } from "@/flag/flag"
 import { Bus } from "@/bus"
 import { Session } from "@/session"
 
+const snapshot = await import("./bundled-snapshot")
+  .then((m) => m.bundled)
+  .catch(() => [] as { name: string; description: string; location: string; content: string }[])
+
 export namespace Skill {
   const log = Log.create({ service: "skill" })
   export const Info = z.object({
@@ -78,9 +82,9 @@ export namespace Skill {
       }
     }
 
-    // Scan bundled skills (lowest priority - user skills override these)
     const bundledDir = path.resolve(import.meta.dir, "../bundled-skills")
-    if (await Filesystem.isDir(bundledDir)) {
+    const ondisk = await Filesystem.isDir(bundledDir)
+    if (ondisk) {
       for await (const match of BUNDLED_SKILL_GLOB.scan({
         cwd: bundledDir,
         absolute: true,
@@ -88,6 +92,16 @@ export namespace Skill {
         followSymlinks: true,
       })) {
         await addSkill(match)
+      }
+    }
+    if (!ondisk) {
+      for (const skill of snapshot) {
+        skills[skill.name] = {
+          name: skill.name,
+          description: skill.description,
+          location: skill.location,
+          content: skill.content,
+        }
       }
     }
 
