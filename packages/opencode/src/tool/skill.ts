@@ -34,6 +34,11 @@ export const SkillTool = Tool.define("skill", async (ctx) => {
             `  </skill>`,
           ]),
           "</available_skills>",
+          "",
+          "IMPORTANT: You MUST proactively load a skill BEFORE starting any implementation task when a matching skill exists.",
+          "Skills contain critical patterns, validation checklists, and best practices that prevent common mistakes.",
+          "Loading a skill first leads to significantly better output quality.",
+          "When in doubt whether a skill applies, load it - the cost of loading an unnecessary skill is far lower than missing critical guidance.",
         ].join("\n")
 
   const examples = accessibleSkills
