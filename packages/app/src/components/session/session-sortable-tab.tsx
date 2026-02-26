@@ -31,8 +31,8 @@ export function SortableTab(props: { tab: string; onTabClose: (tab: string) => v
   const path = createMemo(() => file.pathFromTab(props.tab))
   return (
     // @ts-ignore
-    <div use:sortable classList={{ "h-full": true, "opacity-0": sortable.isActiveDraggable }}>
-      <div class="relative h-full">
+    <div use:sortable class="h-full flex items-center" classList={{ "opacity-0": sortable.isActiveDraggable }}>
+      <div class="relative">
         <Tabs.Trigger
           value={props.tab}
           closeButton={
