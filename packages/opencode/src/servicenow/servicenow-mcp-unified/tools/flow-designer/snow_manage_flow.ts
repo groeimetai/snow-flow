@@ -236,6 +236,163 @@ async function getMaxOrderFromVersion(client: any, flowId: string): Promise<numb
   return 0
 }
 
+interface FlowElement {
+  id: string
+  uuid: string
+  order: number
+  parent: string
+  connectedTo: string
+  elementType: string
+  patchType: "action" | "flowlogic" | "subflow"
+}
+
+async function getFlowElementsFromProcessflow(client: any, flowId: string): Promise<FlowElement[]> {
+  const elements: FlowElement[] = []
+  try {
+    const resp = await client.get("/api/now/processflow/flow/" + flowId)
+    const raw = resp.data
+    if (typeof raw === "string") {
+      const tags = [
+        { tag: "actionInstance", patchType: "action" as const },
+        { tag: "flowLogicInstance", patchType: "flowlogic" as const },
+        { tag: "subflowInstance", patchType: "subflow" as const },
+      ]
+      for (const { tag, patchType } of tags) {
+        const rx = new RegExp("<" + tag + "[\\s\\S]*?<\\/" + tag + ">", "g")
+        const matches = raw.match(rx) || []
+        for (const m of matches) {
+          const attr = (name: string) => {
+            const a = m.match(new RegExp(name + '="([^"]*)"'))
+            const e = m.match(new RegExp("<" + name + ">([^<]*)</" + name + ">"))
+            return a ? a[1] : e ? e[1] : ""
+          }
+          elements.push({
+            id: attr("id") || attr("sysId"),
+            uuid: attr("uiUniqueIdentifier") || attr("id") || attr("sysId"),
+            order: parseInt(attr("order") || "0", 10),
+            parent: attr("parentUiId") || attr("parent") || "",
+            connectedTo: attr("connectedTo") || "",
+            elementType: (attr("typeLabel") || attr("type") || patchType).toUpperCase(),
+            patchType,
+          })
+        }
+      }
+    } else if (raw && typeof raw === "object") {
+      const data = raw.result?.data || raw.result || raw.data || raw
+      const model = data?.model || data
+      const sources: Array<{ key: string; patchType: "action" | "flowlogic" | "subflow" }> = [
+        { key: "actionInstances", patchType: "action" },
+        { key: "flowLogicInstances", patchType: "flowlogic" },
+        { key: "subflowInstances", patchType: "subflow" },
+      ]
+      for (const { key, patchType } of sources) {
+        const items = model?.[key] || []
+        for (const item of items) {
+          elements.push({
+            id: item.id || item.sysId || "",
+            uuid: item.uiUniqueIdentifier || item.id || item.sysId || "",
+            order: parseInt(String(item.order || 0), 10),
+            parent: item.parentUiId || item.parent || "",
+            connectedTo: item.connectedTo || "",
+            elementType: (item.typeLabel || item.type || patchType).toUpperCase(),
+            patchType,
+          })
+        }
+      }
+    }
+  } catch (e: any) {
+    console.warn("[snow_manage_flow] getFlowElementsFromProcessflow failed: " + (e.message || ""))
+  }
+  return elements
+}
+
+function findCatchForTry(elements: FlowElement[], tryUuid: string): FlowElement | undefined {
+  return (
+    elements.find((el) => el.connectedTo === tryUuid && el.elementType.includes("CATCH")) ||
+    elements.find((el) => el.connectedTo === tryUuid && el.patchType === "flowlogic")
+  )
+}
+
+function buildReorderUpdates(
+  elements: FlowElement[],
+  shiftAtOrAbove: number,
+  excludeUuids?: Set<string>,
+): { actions: any[]; flowLogics: any[]; subflows: any[] } {
+  const result = { actions: [] as any[], flowLogics: [] as any[], subflows: [] as any[] }
+  const affected = elements
+    .filter((el) => el.order >= shiftAtOrAbove && (!excludeUuids || !excludeUuids.has(el.uuid)))
+    .sort((a, b) => b.order - a.order)
+  for (const el of affected) {
+    const entry = {
+      uiUniqueIdentifier: el.uuid,
+      type: el.patchType === "flowlogic" ? "flowlogic" : el.patchType,
+      order: String(el.order + 1),
+    }
+    if (el.patchType === "action") result.actions.push(entry)
+    else if (el.patchType === "flowlogic") result.flowLogics.push(entry)
+    else result.subflows.push(entry)
+  }
+  return result
+}
+
+function isTryElement(el: FlowElement): boolean {
+  return el.elementType.includes("TRY") && !el.elementType.includes("CATCH")
+}
+
+function isCatchElement(el: FlowElement): boolean {
+  return el.elementType.includes("CATCH")
+}
+
+async function computeNestedOrder(
+  client: any,
+  flowId: string,
+  parentUiId: string,
+  explicitOrder: number | undefined,
+  steps: any,
+): Promise<{ order: number; reorder: { actions: any[]; flowLogics: any[]; subflows: any[] } } | null> {
+  const empty = { actions: [], flowLogics: [], subflows: [] }
+  const elements = await getFlowElementsFromProcessflow(client, flowId)
+  if (elements.length === 0) return null
+
+  const parent = elements.find((el) => el.uuid === parentUiId || el.id === parentUiId)
+  if (!parent) return null
+
+  steps.nested_order_context = { parent_uuid: parentUiId, parent_type: parent.elementType }
+
+  if (isTryElement(parent)) {
+    const companion = findCatchForTry(elements, parentUiId)
+    if (!companion) return null
+    const siblings = elements.filter((el) => el.parent === parentUiId)
+    const insertAt =
+      explicitOrder || (siblings.length > 0 ? Math.max(...siblings.map((s) => s.order)) + 1 : companion.order)
+    const reorder = insertAt <= companion.order ? buildReorderUpdates(elements, insertAt, new Set([parentUiId])) : empty
+    steps.try_child_reorder = {
+      catch_uuid: companion.uuid,
+      catch_old_order: companion.order,
+      insert_at: insertAt,
+      shifted: reorder.actions.length + reorder.flowLogics.length + reorder.subflows.length,
+    }
+    return { order: insertAt, reorder }
+  }
+
+  if (isCatchElement(parent)) {
+    const children = elements.filter((el) => el.parent === parentUiId)
+    const insertAt =
+      explicitOrder || (children.length > 0 ? Math.max(...children.map((c) => c.order)) + 1 : parent.order + 1)
+    const reorder = buildReorderUpdates(
+      elements.filter((el) => el.parent !== parentUiId && el.uuid !== parentUiId),
+      insertAt,
+    )
+    steps.catch_child_reorder = {
+      insert_at: insertAt,
+      shifted: reorder.actions.length + reorder.flowLogics.length + reorder.subflows.length,
+    }
+    return { order: insertAt, reorder }
+  }
+
+  return null
+}
+
 async function executeFlowPatchMutation(client: any, flowPatch: any, responseFields: string): Promise<any> {
   const start = Date.now()
   const mutation =
@@ -2579,8 +2736,16 @@ async function addActionViaGraphQL(
     }
   }
 
-  // Calculate insertion order
-  const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
+  // Calculate insertion order (with TRY/CATCH-aware nesting)
+  var resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
+  var nestedReorder: { actions: any[]; flowLogics: any[]; subflows: any[] } | null = null
+  if (parentUiId) {
+    const nested = await computeNestedOrder(client, flowId, parentUiId, order, steps)
+    if (nested) {
+      resolvedOrder = nested.order
+      nestedReorder = nested.reorder
+    }
+  }
   steps.insert_order = resolvedOrder
 
   const uuid = generateUUID()
@@ -2714,7 +2879,13 @@ async function addActionViaGraphQL(
     },
   }
 
-  if (parentUiId) {
+  if (nestedReorder) {
+    if (nestedReorder.actions.length > 0) flowPatch.actions.update = nestedReorder.actions
+    const logicUpdates = parentUiId ? [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] : []
+    for (const u of nestedReorder.flowLogics) logicUpdates.push(u)
+    if (logicUpdates.length > 0) flowPatch.flowLogics = { update: logicUpdates }
+    if (nestedReorder.subflows.length > 0) flowPatch.subflows = { update: nestedReorder.subflows }
+  } else if (parentUiId) {
     flowPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] }
   }
 
@@ -4236,8 +4407,16 @@ async function addFlowLogicViaGraphQL(
     }
   }
 
-  // Calculate insertion order
-  const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
+  // Calculate insertion order (with TRY/CATCH-aware nesting)
+  var resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
+  var nestedReorder: { actions: any[]; flowLogics: any[]; subflows: any[] } | null = null
+  if (parentUiId) {
+    const nested = await computeNestedOrder(client, flowId, parentUiId, order, steps)
+    if (nested) {
+      resolvedOrder = nested.order
+      nestedReorder = nested.reorder
+    }
+  }
   steps.insert_order = resolvedOrder
 
   const logicResponseFields =
@@ -4328,7 +4507,15 @@ async function addFlowLogicViaGraphQL(
     }
   }
 
-  if (parentUiId) {
+  if (nestedReorder) {
+    const logicUpdates = parentUiId ? [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] : []
+    for (const u of nestedReorder.flowLogics) logicUpdates.push(u)
+    if (logicUpdates.length > 0) {
+      flowPatch.flowLogics.update = logicUpdates
+    }
+    if (nestedReorder.actions.length > 0) flowPatch.actions = { update: nestedReorder.actions }
+    if (nestedReorder.subflows.length > 0) flowPatch.subflows = { update: nestedReorder.subflows }
+  } else if (parentUiId) {
     flowPatch.flowLogics.update = [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }]
   }
 
@@ -4629,8 +4816,16 @@ async function addSubflowCallViaGraphQL(
 
   if (!subflowName) subflowName = subflowId
 
-  // Calculate insertion order
-  const resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
+  // Calculate insertion order (with TRY/CATCH-aware nesting)
+  var resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
+  var nestedReorder: { actions: any[]; flowLogics: any[]; subflows: any[] } | null = null
+  if (parentUiId) {
+    const nested = await computeNestedOrder(client, flowId, parentUiId, order, steps)
+    if (nested) {
+      resolvedOrder = nested.order
+      nestedReorder = nested.reorder
+    }
+  }
   steps.insert_order = resolvedOrder
 
   const uuid = generateUUID()
@@ -4669,7 +4864,13 @@ async function addSubflowCallViaGraphQL(
     },
   }
 
-  if (parentUiId) {
+  if (nestedReorder) {
+    if (nestedReorder.subflows.length > 0) subPatch.subflows.update = nestedReorder.subflows
+    const logicUpdates = parentUiId ? [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] : []
+    for (const u of nestedReorder.flowLogics) logicUpdates.push(u)
+    if (logicUpdates.length > 0) subPatch.flowLogics = { update: logicUpdates }
+    if (nestedReorder.actions.length > 0) subPatch.actions = { update: nestedReorder.actions }
+  } else if (parentUiId) {
     subPatch.flowLogics = { update: [{ uiUniqueIdentifier: parentUiId, type: "flowlogic" }] }
   }
 
@@ -5229,7 +5430,7 @@ export const toolDefinition: MCPToolDefinition = {
       order: {
         type: "number",
         description:
-          "GLOBAL position/order of the element in the flow (for add_* actions). If omitted, auto-calculated from current flow state. Previous response includes `next_order` — use that value. Do NOT guess order numbers. Flow Designer uses global sequential ordering across ALL elements (1, 2, 3...). For nested elements (e.g. action inside If block), the order must be global — not relative to the parent.",
+          "GLOBAL position/order of the element in the flow (for add_* actions). If omitted, auto-calculated from current flow state. Previous response includes `next_order` — use that value for top-level elements. Do NOT guess order numbers. Flow Designer uses global sequential ordering across ALL elements (1, 2, 3...). For nested elements inside TRY/CATCH/IF blocks, order is computed automatically when parent_ui_id is set — the CATCH block and subsequent elements are shifted forward to make room.",
       },
       type: {
         type: "string",
@@ -6938,8 +7139,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             for_child:
               'To add actions INSIDE this IF branch, use parent_ui_id: "' +
               (addLogicResult.uiUniqueIdentifier || "") +
-              '" and order: ' +
-              addLogicNextOrder,
+              '". Order is computed automatically when parent_ui_id is set.',
             for_else:
               'To add ELSE/ELSEIF at the SAME level as this IF, use connected_to: "' +
               (addLogicResult.logicId || "") +
@@ -6967,11 +7167,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
             for_try_child:
               'To add actions INSIDE the TRY block, use parent_ui_id: "' +
               (addLogicResult.uiUniqueIdentifier || "") +
-              '" and order: 1',
+              '". Order is computed automatically (CATCH block and subsequent elements are shifted forward).',
             for_catch_child:
               'To add error-handling actions INSIDE the CATCH block, use parent_ui_id: "' +
               catchUiId +
-              '" and order: 1',
+              '". Order is computed automatically.',
           }
         }
 
