@@ -47,7 +47,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Get variables if requested
     let variables = []
     if (include_variables) {
-      const varResponse = await client.get("/api/now/table/sc_cat_item_option", {
+      const varResponse = await client.get("/api/now/table/item_option_new", {
         params: {
           sysparm_query: `cat_item=${sys_id}`,
           sysparm_limit: 50,

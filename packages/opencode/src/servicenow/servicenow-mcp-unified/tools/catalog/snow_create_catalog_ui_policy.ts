@@ -27,29 +27,21 @@ async function resolveVariable(
 ): Promise<string> {
   if (/^[a-f0-9]{32}$/.test(identifier)) return `IO:${identifier}`
 
-  const response = await client.get("/api/now/table/item_option_new", {
-    params: {
-      sysparm_query: `name=${identifier}^cat_item=${catItem}`,
-      sysparm_limit: 1,
-      sysparm_fields: "sys_id",
-    },
-  })
+  const queries = [`name=${identifier}^cat_item=${catItem}`, `name=${identifier}^cat_itemISEMPTY`, `name=${identifier}`]
 
-  const results = response.data?.result
-  if (results && results.length > 0) return `IO:${extractSysId(results[0].sys_id)}`
+  for (const query of queries) {
+    const response = await client.get("/api/now/table/item_option_new", {
+      params: {
+        sysparm_query: query,
+        sysparm_limit: 1,
+        sysparm_fields: "sys_id",
+      },
+    })
+    const results = response.data?.result
+    if (results && results.length > 0) return `IO:${extractSysId(results[0].sys_id)}`
+  }
 
-  const fallback = await client.get("/api/now/table/item_option_new", {
-    params: {
-      sysparm_query: `name=${identifier}^cat_itemISEMPTY`,
-      sysparm_limit: 1,
-      sysparm_fields: "sys_id",
-    },
-  })
-
-  const alt = fallback.data?.result
-  if (alt && alt.length > 0) return `IO:${extractSysId(alt[0].sys_id)}`
-
-  return identifier
+  throw new Error(`Variable '${identifier}' not found for catalog item '${catItem}'`)
 }
 
 function buildConditionString(
