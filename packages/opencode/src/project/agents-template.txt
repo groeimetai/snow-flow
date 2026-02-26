@@ -93,9 +93,8 @@ ELSE and ELSEIF blocks must be at the **same level** as their IF block, NOT nest
 
 **⚠️ TRY/CATCH placement:**
 When you add a TRY block, the CATCH companion is auto-created. TRY and CATCH are **containers** — actions go INSIDE them:
-- **Actions inside TRY** (steps that may fail): `parent_ui_id` = TRY's `uiUniqueIdentifier` — omit order to auto-calculate
-- **Actions inside CATCH** (error handling): `parent_ui_id` = CATCH's `uiUniqueIdentifier` (returned as `catch_ui_id`) — omit order to auto-calculate
-- Flow Designer uses **global ordering** — all elements share one continuous numbering. Sibling orders are auto-bumped on insert.
+- **Actions inside TRY** (steps that may fail): `parent_ui_id` = TRY's `uiUniqueIdentifier`, order: 1
+- **Actions inside CATCH** (error handling): `parent_ui_id` = CATCH's `uiUniqueIdentifier` (returned as `catch_ui_id`), order: 1
 - The `next_order` returned is for the next **sibling** after the TRY/CATCH pair, NOT for children inside them
 
 ---
