@@ -379,7 +379,11 @@ async function computeNestedOrder(
   parentUiId: string,
   explicitOrder: number | undefined,
   steps: any,
-): Promise<{ order: number; reorder: { actions: any[]; flowLogics: any[]; subflows: any[] } } | null> {
+): Promise<{
+  order: number
+  reorder: { actions: any[]; flowLogics: any[]; subflows: any[] }
+  catchUuid?: string
+} | null> {
   const empty = { actions: [], flowLogics: [], subflows: [] }
   const elements = await getFlowElementsFromProcessflow(client, flowId)
   steps.nested_order_elements = elements.map((el) => ({
@@ -427,7 +431,7 @@ async function computeNestedOrder(
       insert_at: insertAt,
       shifted: reorder.actions.length + reorder.flowLogics.length + reorder.subflows.length,
     }
-    return { order: insertAt, reorder }
+    return { order: insertAt, reorder, catchUuid: companion.uuid }
   }
 
   if (isCatchElement(parent)) {
@@ -2797,11 +2801,13 @@ async function addActionViaGraphQL(
   // Calculate insertion order (with TRY/CATCH-aware nesting)
   var resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
   var nestedReorder: { actions: any[]; flowLogics: any[]; subflows: any[] } | null = null
+  var nestedCatchUuid: string | undefined
   if (parentUiId) {
     const nested = await computeNestedOrder(client, flowId, parentUiId, order, steps)
     if (nested) {
       resolvedOrder = nested.order
       nestedReorder = nested.reorder
+      nestedCatchUuid = nested.catchUuid
     }
   }
   steps.insert_order = resolvedOrder
@@ -2932,6 +2938,7 @@ async function addActionViaGraphQL(
           parentUiId: parentUiId || "",
           inputs: insertInputs,
           comment: annotation || "",
+          ...(nestedCatchUuid ? { connectedTo: nestedCatchUuid } : {}),
         },
       ],
     },
@@ -4468,11 +4475,13 @@ async function addFlowLogicViaGraphQL(
   // Calculate insertion order (with TRY/CATCH-aware nesting)
   var resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
   var nestedReorder: { actions: any[]; flowLogics: any[]; subflows: any[] } | null = null
+  var nestedCatchUuid: string | undefined
   if (parentUiId) {
     const nested = await computeNestedOrder(client, flowId, parentUiId, order, steps)
     if (nested) {
       resolvedOrder = nested.order
       nestedReorder = nested.reorder
+      nestedCatchUuid = nested.catchUuid
     }
   }
   steps.insert_order = resolvedOrder
@@ -4500,6 +4509,8 @@ async function addFlowLogicViaGraphQL(
   }
   if (connectedTo) {
     insertObj.connectedTo = connectedTo
+  } else if (nestedCatchUuid) {
+    insertObj.connectedTo = nestedCatchUuid
   }
 
   // Log the insertObj key values for diagnostics (compare with UI network trace)
@@ -4877,11 +4888,13 @@ async function addSubflowCallViaGraphQL(
   // Calculate insertion order (with TRY/CATCH-aware nesting)
   var resolvedOrder = await calculateInsertOrder(client, flowId, parentUiId, order)
   var nestedReorder: { actions: any[]; flowLogics: any[]; subflows: any[] } | null = null
+  var nestedCatchUuid: string | undefined
   if (parentUiId) {
     const nested = await computeNestedOrder(client, flowId, parentUiId, order, steps)
     if (nested) {
       resolvedOrder = nested.order
       nestedReorder = nested.reorder
+      nestedCatchUuid = nested.catchUuid
     }
   }
   steps.insert_order = resolvedOrder
@@ -4917,6 +4930,7 @@ async function addSubflowCallViaGraphQL(
           parentUiId: parentUiId || "",
           inputs: subInputObjects,
           comment: annotation || "",
+          ...(nestedCatchUuid ? { connectedTo: nestedCatchUuid } : {}),
         },
       ],
     },
