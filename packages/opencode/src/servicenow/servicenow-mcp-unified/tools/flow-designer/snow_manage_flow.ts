@@ -373,6 +373,26 @@ function isCatchElement(el: FlowElement): boolean {
   return el.elementType.includes("CATCH") || el.elementType.includes("ERROR HANDLER")
 }
 
+function getMaxDescendantOrder(elements: FlowElement[], rootUuid: string): number {
+  var max = 0
+  var root = elements.find(function (el) {
+    return el.uuid === rootUuid
+  })
+  if (root) max = root.order
+  var queue = [rootUuid]
+  while (queue.length > 0) {
+    var current = queue.shift()!
+    for (var i = 0; i < elements.length; i++) {
+      var candidate = elements[i]!
+      if (candidate.parent === current || candidate.connectedTo === current) {
+        if (candidate.order > max) max = candidate.order
+        queue.push(candidate.uuid)
+      }
+    }
+  }
+  return max
+}
+
 async function computeNestedOrder(
   client: any,
   flowId: string,
@@ -415,7 +435,10 @@ async function computeNestedOrder(
 
   const children = elements.filter((el) => el.parent === parentUiId && !isCatchElement(el))
   const insertAt =
-    explicitOrder || (children.length > 0 ? Math.max(...children.map((c) => c.order)) + 1 : parent.order + 1)
+    explicitOrder ||
+    (children.length > 0
+      ? Math.max(...children.map((c) => getMaxDescendantOrder(elements, c.uuid))) + 1
+      : parent.order + 1)
 
   if (isTryElement(parent)) {
     const companion = findCatchForTry(elements, parentUiId)
