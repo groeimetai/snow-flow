@@ -556,23 +556,23 @@ You have **direct access** to MCP tools in your environment. They are **already 
 - Call the MCP tool directly once discovered
 - Tools work like built-in functions - just call them
 
-### Anti-Pattern 2: Using Scheduled Scripts for Development
+### Anti-Pattern 2: Using Scheduled Scripts / Background Scripts
 
-**⚠️ IMPORTANT: `snow_schedule_script_job` is NOT a "background script"!**
+**🚨 CRITICAL: `snow_schedule_script_job` and `snow_trigger_scheduled_job` are UNRELIABLE!**
 
-It creates a **Scheduled Script Job** (sysauto_script) for VERIFICATION and TESTING only, not for creating artifacts!
+These tools **CANNOT execute scripts directly**. They create scheduled jobs that depend on the ServiceNow scheduler — which frequently times out, returns `executed=false`, or simply never runs the script. **Do NOT use these tools to verify, test, or validate anything.**
 
-**When to use `snow_schedule_script_job`:**
-- ✅ Testing if a table/field exists
-- ✅ Verifying a property value
-- ✅ Checking data before operations
-- ✅ Debugging and diagnostics
-- ✅ Quick GlideRecord queries
-
-**When NOT to use `snow_schedule_script_job`:**
+**NEVER use `snow_schedule_script_job` or `snow_trigger_scheduled_job` for:**
+- ❌ Verifying if something was created correctly (use `snow_query_table` instead)
+- ❌ Testing GlideRecord queries (use `snow_query_table` instead)
+- ❌ Checking table/field existence (use `snow_query_table` with limit=1 instead)
 - ❌ Creating/updating artifacts (use dedicated tools!)
-- ❌ Modifying widget code
-- ❌ Creating business rules
+- ❌ Any operation where you need reliable results
+
+**What to use instead:**
+- `snow_query_table` — for querying records, checking existence, verifying data
+- `snow_manage_flow` — for flow operations
+- Dedicated tools — always prefer a specific tool over a generic script execution
 
 ### Anti-Pattern 3: No Mock Data, No Placeholders
 

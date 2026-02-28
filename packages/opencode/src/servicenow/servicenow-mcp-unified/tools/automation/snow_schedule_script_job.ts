@@ -27,7 +27,7 @@ import crypto from "crypto"
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_schedule_script_job",
   description:
-    "⚠️ SCHEDULES (not executes directly) server-side JavaScript via Scheduled Script Job. Creates sysauto_script + sys_trigger. Returns executed=false if scheduler doesn't pick it up within 30s - check System Scheduler > Scheduled Jobs to run manually. ES5 only!",
+    "⚠️ UNRELIABLE: Creates a Scheduled Script Job (sysauto_script) but CANNOT guarantee execution. The ServiceNow scheduler decides when/if it runs — this frequently times out or returns executed=false. Do NOT use this to verify, test, or validate anything — results are unreliable. Only use as a last resort when no dedicated tool exists. Prefer dedicated tools (snow_query_table, snow_manage_flow, etc.) for all operations. ES5 only!",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "scheduled-jobs",

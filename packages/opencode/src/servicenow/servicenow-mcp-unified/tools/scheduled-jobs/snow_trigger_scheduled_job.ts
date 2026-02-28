@@ -19,7 +19,7 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_trigger_scheduled_job",
   description:
-    "⚠️ TRIGGERS (not executes directly) an existing scheduled job via sys_trigger. Job runs asynchronously when scheduler picks it up.",
+    "⚠️ UNRELIABLE: Attempts to trigger a scheduled job via sys_trigger, but CANNOT guarantee execution. The job runs asynchronously when the ServiceNow scheduler picks it up — this frequently times out. Do NOT rely on this for verification or testing. Only use when you need to trigger a specific existing scheduled job and can accept that it may not run.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "scheduling",
