@@ -18,6 +18,7 @@ import { DialogThemeList } from "@tui/component/dialog-theme-list"
 import { DialogHelp } from "./ui/dialog-help"
 import { CommandProvider, useCommandDialog } from "@tui/component/dialog-command"
 import { DialogAgent } from "@tui/component/dialog-agent"
+import { DialogSkill } from "@tui/component/dialog-skill"
 import { DialogSessionList } from "@tui/component/dialog-session-list"
 import { KeybindProvider } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
@@ -407,6 +408,17 @@ function App() {
       },
       onSelect: () => {
         dialog.replace(() => <DialogWebTools />)
+      },
+    },
+    {
+      title: "Browse skills",
+      value: "skill.list",
+      category: "Agent",
+      slash: {
+        name: "skills",
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogSkill />)
       },
     },
     {
