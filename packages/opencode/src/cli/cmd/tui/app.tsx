@@ -418,7 +418,13 @@ function App() {
         name: "skills",
       },
       onSelect: () => {
-        dialog.replace(() => <DialogSkill />)
+        dialog.replace(() => (
+          <DialogSkill
+            onSelect={(name) => {
+              promptRef.current?.set({ input: "/" + name + " ", parts: [] })
+            }}
+          />
+        ))
       },
     },
     {

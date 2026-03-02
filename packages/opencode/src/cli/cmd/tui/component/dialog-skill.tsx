@@ -2,12 +2,10 @@ import { createMemo } from "solid-js"
 import { useSync } from "@tui/context/sync"
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useDialog } from "@tui/ui/dialog"
-import { usePromptRef } from "@tui/context/prompt"
 
-export function DialogSkill() {
+export function DialogSkill(props: { onSelect: (name: string) => void }) {
   const sync = useSync()
   const dialog = useDialog()
-  const promptRef = usePromptRef()
 
   const options = createMemo(() =>
     sync.data.command
@@ -24,7 +22,7 @@ export function DialogSkill() {
       title="Select skill"
       options={options()}
       onSelect={(option) => {
-        promptRef.current?.set({ input: "/" + option.value + " ", parts: [] })
+        props.onSelect(option.value)
         dialog.clear()
       }}
     />
