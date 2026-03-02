@@ -16,6 +16,27 @@ substitutions:
   _TIMEOUT: "3600s"
 
 steps:
+  - name: "gcr.io/cloud-builders/git"
+    id: "check-changes"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        RELEVANT_PATHS="Dockerfile.codespace cloudbuild-codespace.yaml packages/opencode/ packages/util/ packages/plugin/ packages/sdk/js/ sdks/vscode/ package.json bun.lock turbo.json patches/"
+        CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "FORCE_BUILD")
+        if [ "$$CHANGED_FILES" = "FORCE_BUILD" ]; then
+          echo "Could not determine changes, proceeding with build"
+          exit 0
+        fi
+        for path in $$RELEVANT_PATHS; do
+          if echo "$$CHANGED_FILES" | grep -q "^$$path"; then
+            echo "Relevant change detected in $$path, proceeding with build"
+            exit 0
+          fi
+        done
+        echo "No relevant changes for codespace build, skipping"
+        exit 1
+
   - name: "gcr.io/cloud-builders/docker"
     id: "pull-cache"
     entrypoint: "bash"
