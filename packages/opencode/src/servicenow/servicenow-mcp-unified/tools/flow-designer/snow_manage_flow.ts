@@ -681,6 +681,25 @@ async function releaseFlowEditingLock(
     console.warn("[snow_manage_flow] releaseFlowEditingLock: REST cleanup failed: " + (e.message || ""))
   }
 
+  // Step 3: Also clean up sys_hub_flow_lock records (some instances persist locks here)
+  // Without this, open_flow ghost-lock retry fails because GraphQL safeEdit(create) still sees a lock.
+  try {
+    var lockResp = await client.get("/api/now/table/sys_hub_flow_lock", {
+      params: { sysparm_query: "flow=" + flowId, sysparm_fields: "sys_id", sysparm_limit: 10 },
+    })
+    var lockRecords = lockResp.data?.result || []
+    for (var lr = 0; lr < lockRecords.length; lr++) {
+      try {
+        await client.delete("/api/now/table/sys_hub_flow_lock/" + lockRecords[lr].sys_id)
+      } catch (_) {
+        /* best-effort */
+      }
+    }
+    debug.flow_lock_records_cleaned = lockRecords.length
+  } catch (_) {
+    debug.flow_lock_table = "not_available"
+  }
+
   return { success: graphqlOk, compilationError, debug }
 }
 
@@ -4831,6 +4850,195 @@ async function addFlowLogicViaGraphQL(
   }
 }
 
+// ── SUBFLOW INPUT/OUTPUT BUILDER (matching UI mutation format) ─────────
+
+async function buildSubflowInputsForInsert(
+  client: any,
+  subflowSysId: string,
+  userValues?: Record<string, string>,
+): Promise<{
+  inputs: any[]
+  outputs: any[]
+  waitForCompletion: any
+  showStages: any
+  resolvedInputs: Record<string, string>
+  missingMandatory: string[]
+}> {
+  var inputParams: any[] = []
+  var outputParams: any[] = []
+  try {
+    var inpResp = await client.get("/api/now/table/sys_hub_flow_variable", {
+      params: {
+        sysparm_query: "flow=" + subflowSysId + "^variable_type=input",
+        sysparm_fields:
+          "sys_id,name,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,extended,data_structure,reference,reference_display,ref_qual,choice_option,table_name,column_name,use_dependent,dependent_on,show_ref_finder,local,attributes,sys_class_name",
+        sysparm_display_value: "false",
+        sysparm_limit: 50,
+      },
+    })
+    inputParams = inpResp.data.result || []
+  } catch (e: any) {
+    console.warn(
+      "[snow_manage_flow] sys_hub_flow_variable input query failed for flow=" + subflowSysId + ": " + (e.message || ""),
+    )
+  }
+  try {
+    var outResp = await client.get("/api/now/table/sys_hub_flow_variable", {
+      params: {
+        sysparm_query: "flow=" + subflowSysId + "^variable_type=output",
+        sysparm_fields: "sys_id,name,label,internal_type,mandatory,order,reference,attributes",
+        sysparm_display_value: "false",
+        sysparm_limit: 50,
+      },
+    })
+    outputParams = outResp.data.result || []
+  } catch (e: any) {
+    console.warn(
+      "[snow_manage_flow] sys_hub_flow_variable output query failed for flow=" +
+        subflowSysId +
+        ": " +
+        (e.message || ""),
+    )
+  }
+
+  var resolvedInputs: Record<string, string> = {}
+  if (userValues) {
+    var paramNames = inputParams.map(function (p: any) {
+      return str(p.name)
+    })
+    for (var [key, value] of Object.entries(userValues)) {
+      if (paramNames.includes(key)) {
+        resolvedInputs[key] = value
+        continue
+      }
+      var keyLC = key.toLowerCase().replace(/[\s-]/g, "_")
+      var match = inputParams.find(function (p: any) {
+        var nm = str(p.name)
+        var nmLC = nm.toLowerCase()
+        if (nmLC.endsWith("_" + keyLC)) return true
+        if (nmLC.startsWith(keyLC + "_")) return true
+        if (nmLC === keyLC) return true
+        if (str(p.label).toLowerCase() === keyLC) return true
+        var stripped = nmLC.replace(/^(ah_|sn_|sc_|rp_|fb_|kb_)/, "")
+        if (stripped === keyLC) return true
+        if (nmLC.replace(/_/g, "") === keyLC.replace(/_/g, "")) return true
+        return false
+      })
+      if (match) resolvedInputs[str(match.name)] = value
+      else resolvedInputs[key] = value
+    }
+  }
+
+  for (var rk of Object.keys(resolvedInputs)) {
+    var rv = resolvedInputs[rk]
+    if (rv && typeof rv === "object" && !Array.isArray(rv)) {
+      var pairs: string[] = []
+      for (var [fk, fv] of Object.entries(rv)) {
+        pairs.push(fk + "=" + String(fv))
+      }
+      resolvedInputs[rk] = pairs.join("^")
+    }
+  }
+
+  var inputs = inputParams.map(function (rec: any) {
+    var paramType = str(rec.internal_type) || "string"
+    var name = str(rec.name)
+    var userVal = resolvedInputs[name] || ""
+    return {
+      id: str(rec.sys_id),
+      name: name,
+      children: [],
+      displayValue: { value: "" },
+      value: { value: userVal },
+      parameter: {
+        id: str(rec.sys_id),
+        label: str(rec.label) || name,
+        name: name,
+        type: paramType,
+        type_label: TYPE_LABELS[paramType] || paramType.charAt(0).toUpperCase() + paramType.slice(1),
+        hint: str(rec.hint),
+        order: parseInt(str(rec.order) || "0", 10),
+        extended: str(rec.extended) === "true",
+        mandatory: str(rec.mandatory) === "true",
+        readonly: str(rec.read_only) === "true",
+        maxsize: parseInt(str(rec.max_length) || "8000", 10),
+        data_structure: str(rec.data_structure),
+        reference: str(rec.reference),
+        reference_display: str(rec.reference_display),
+        ref_qual: str(rec.ref_qual),
+        choiceOption: str(rec.choice_option),
+        table: str(rec.table_name),
+        columnName: str(rec.column_name),
+        defaultValue: str(rec.default_value),
+        use_dependent: str(rec.use_dependent) === "true",
+        dependent_on: str(rec.dependent_on),
+        show_ref_finder: str(rec.show_ref_finder) === "true",
+        local: str(rec.local) === "true",
+        attributes: str(rec.attributes),
+        sys_class_name: str(rec.sys_class_name),
+        children: [],
+      },
+    }
+  })
+
+  var outputs = outputParams.map(function (rec: any) {
+    var paramType = str(rec.internal_type) || "string"
+    var attrs = str(rec.attributes)
+    var uiType = paramType
+    var uiMatch = attrs.match(/uiType=([^,]+)/)
+    if (uiMatch) uiType = uiMatch[1]
+    return {
+      label: str(rec.label) || str(rec.name),
+      name: str(rec.name),
+      type: paramType,
+      type_label: TYPE_LABELS[paramType] || paramType.charAt(0).toUpperCase() + paramType.slice(1),
+      order: parseInt(str(rec.order) || "0", 10),
+      mandatory: str(rec.mandatory) === "true",
+      reference: str(rec.reference),
+      attributes: attrs,
+      uiDisplayType: uiType,
+      uiDisplayTypeLabel: TYPE_LABELS[uiType] || uiType.charAt(0).toUpperCase() + uiType.slice(1),
+      internal_link: "",
+    }
+  })
+
+  var waitForCompletion = {
+    label: "Wait For Completion",
+    name: "wait_for_completion",
+    type: "boolean",
+    type_label: "True/False",
+    mandatory: false,
+    readonly: false,
+    attributes: "fd_hide_inline_script_widget=true,",
+    uiDisplayType: "boolean",
+    uiDisplayTypeLabel: "True/False",
+    value: "true",
+  }
+
+  var showStages = {
+    label: "Show Subflow Stages",
+    name: "show_stages",
+    type: "boolean",
+    type_label: "True/False",
+    mandatory: false,
+    readonly: true,
+    attributes: "fd_hide_inline_script_widget=true,",
+    uiDisplayType: "boolean",
+    uiDisplayTypeLabel: "True/False",
+    value: "false",
+  }
+
+  var missingMandatory = inputs
+    .filter(function (inp: any) {
+      return inp.parameter?.mandatory && !inp.value?.value
+    })
+    .map(function (inp: any) {
+      return inp.name + " (" + (inp.parameter?.label || inp.name) + ")"
+    })
+
+  return { inputs, outputs, waitForCompletion, showStages, resolvedInputs, missingMandatory }
+}
+
 // ── SUBFLOW CALL (invoke a subflow as a step) ────────────────────────
 
 async function addSubflowCallViaGraphQL(
@@ -4926,12 +5134,12 @@ async function addSubflowCallViaGraphQL(
     " flowLogics { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }" +
     " actions { inserts { sysId uiUniqueIdentifier __typename } updates deletes __typename }"
 
-  // Build subflow input objects for INSERT
-  var subInputObjects: any[] = []
-  if (inputs && Object.keys(inputs).length > 0) {
-    subInputObjects = Object.entries(inputs).map(function ([name, value]) {
-      return { name: name, value: { schemaless: false, schemalessValue: "", value: String(value) } }
-    })
+  var built = await buildSubflowInputsForInsert(client, subflowSysId, inputs)
+  steps.subflow_inputs = {
+    count: built.inputs.length,
+    outputs: built.outputs.length,
+    resolved: built.resolvedInputs,
+    missing: built.missingMandatory,
   }
 
   const subPatch: any = {
@@ -4949,7 +5157,10 @@ async function addSubflowCallViaGraphQL(
           uiUniqueIdentifier: uuid,
           type: "subflow",
           parentUiId: parentUiId || "",
-          inputs: subInputObjects,
+          inputs: built.inputs,
+          outputs: built.outputs,
+          waitForCompletion: built.waitForCompletion,
+          showStages: built.showStages,
           comment: annotation || "",
           ...(nestedCatchUuid ? { connectedTo: nestedCatchUuid } : {}),
         },
@@ -7872,8 +8083,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         // Step 3: Lock failed — auto-release ghost lock and retry once
+        // releaseFlowEditingLock now also cleans sys_hub_flow_lock table
         openSummary.line("Lock acquisition failed, attempting ghost lock cleanup...")
         await releaseFlowEditingLock(client, openFlowId)
+        // Brief delay to let ServiceNow propagate the lock deletion before re-acquiring
+        await new Promise(function (resolve) {
+          setTimeout(resolve, 1000)
+        })
         var retryResult = await acquireFlowEditingLock(client, openFlowId)
         if (retryResult.success) {
           openSummary
