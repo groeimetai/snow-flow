@@ -2511,6 +2511,17 @@ const ACTION_TYPE_ALIASES: Record<string, string[]> = {
   approval: ["ask_for_approval", "create_approval", "Ask for Approval"],
   ask_for_approval: ["create_approval", "Ask for Approval"],
   lookup: ["look_up_record", "lookup_record", "Look Up Record"],
+  "update record": ["update_record", "Update Record"],
+  "create record": ["create_record", "Create Record"],
+  "delete record": ["delete_record", "Delete Record"],
+  "look up record": ["look_up_record", "Look Up Record"],
+  "look up records": ["look_up_records", "Look Up Records"],
+  "ask for approval": ["ask_for_approval", "Ask For Approval"],
+  "send notification": ["send_notification", "Send Notification"],
+  "send email": ["send_notification", "send_email", "Send Notification", "Send Email"],
+  "log message": ["log", "log_message", "Log"],
+  "set field values": ["set_field_values", "field_update", "Set Field Values"],
+  "wait for condition": ["wait_for_condition", "Wait for Condition"],
 }
 
 // Flow logic types that should NOT be used as action types — redirect to add_flow_logic
@@ -5546,12 +5557,13 @@ export const toolDefinition: MCPToolDefinition = {
       action_type: {
         type: "string",
         description:
-          'Action type to add (for add_action). Looked up dynamically by internal_name or name in sys_hub_action_type_snapshot and sys_hub_action_type_definition. Common short names: log, create_record, update_record, lookup_record, delete_record, notification, field_update, wait, approval. You can also use the exact ServiceNow internal name (e.g. "global.update_record") or display name (e.g. "Update Record"). NOTE: there is NO generic "script" or "run_script" action — use a subflow for custom logic. Flow variable operations (set_flow_variable, append_flow_variable, get_flow_output) are flow LOGIC — use add_flow_logic instead.',
+          'Action type to add (for add_action). Looked up dynamically by internal_name or name in sys_hub_action_type_snapshot and sys_hub_action_type_definition. Common short names: log, create_record, update_record, lookup_record, delete_record, notification, field_update, wait, approval. You can also use the exact ServiceNow internal name (e.g. "global.update_record") or display name (e.g. "Update Record"). If omitted, action_name is used as the lookup key. Use "Subflow" with subflow_id to add a subflow call. NOTE: there is NO generic "script" or "run_script" action — use a subflow for custom logic. Flow variable operations (set_flow_variable, append_flow_variable, get_flow_output) are flow LOGIC — use add_flow_logic instead.',
         default: "log",
       },
       action_name: {
         type: "string",
-        description: "Display name for the action (for add_action)",
+        description:
+          'Display name / type for the action (for add_action). If action_type is not specified, action_name is used to look up the action definition. Accepts display names like "Update Record", "Ask for Approval", "Log", "Create Record", "Subflow", etc.',
       },
       spoke: {
         type: "string",
@@ -7026,7 +7038,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "add_action": {
         var addActFlowId = await resolveFlowId(client, args.flow_id)
         await ensureFlowEditingLock(client, addActFlowId)
-        var addActType = args.action_type || "log"
+        var addActType = args.action_type || args.action_name || args.name || "log"
         var addActName = args.action_name || args.name || addActType
         var addActInputs =
           args.action_inputs ||
@@ -7036,6 +7048,64 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           args.inputs ||
           args.config ||
           {}
+
+        var addActTypeLC = addActType.toLowerCase().replace(/[\s_-]+/g, "")
+        if (addActTypeLC === "subflow" || addActTypeLC === "callsubflow" || addActTypeLC === "runsubflow") {
+          var sfId = args.subflow_id || addActInputs.subflow_id || addActInputs.subflow
+          if (!sfId) {
+            return createErrorResult(
+              new SnowFlowError(
+                ErrorType.VALIDATION_ERROR,
+                "Subflow calls require subflow_id parameter. Use action='add_subflow' with subflow_id, or provide subflow_id when using action_name='Subflow'.",
+              ),
+            )
+          }
+          var sfInputs = { ...addActInputs }
+          delete sfInputs.subflow_id
+          delete sfInputs.subflow
+          var sfResult = await addSubflowCallViaGraphQL(
+            client,
+            addActFlowId,
+            sfId,
+            sfInputs,
+            args.order,
+            args.parent_ui_id,
+            args.annotation,
+          )
+          var sfSummary = summary()
+          if (sfResult.success) {
+            sfSummary
+              .success("Subflow call added via GraphQL (redirected from add_action)")
+              .field("Flow", addActFlowId)
+              .field("Subflow", sfId)
+              .field("Call ID", sfResult.callId || "unknown")
+          } else {
+            sfSummary.error("Failed to add subflow call: " + (sfResult.error || "unknown"))
+          }
+          if (sfResult.success) {
+            var sfNextOrder = (sfResult.resolvedOrder || 1) + 1
+            return createSuccessResult(
+              withUpdateSetContext(
+                {
+                  action: "add_subflow",
+                  redirected_from: "add_action (action_name was 'Subflow')",
+                  ...sfResult,
+                  mutation_method: "graphql",
+                  next_order: sfNextOrder,
+                  reminder:
+                    "IMPORTANT: Call close_flow with flow_id='" +
+                    addActFlowId +
+                    "' when you are done adding elements. Forgetting this will leave the flow locked.",
+                },
+                updateSetCtx,
+              ),
+              {},
+              sfSummary.build(),
+            )
+          }
+          return createErrorResult(sfResult.error || "Failed to add subflow call")
+        }
+
         // Accept action_table as a shorthand — inject into inputs as table/table_name
         if (args.action_table && !addActInputs.table && !addActInputs.table_name) {
           addActInputs = { ...addActInputs, table: args.action_table }
