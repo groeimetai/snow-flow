@@ -568,13 +568,23 @@ async function acquireFlowEditingLock(
       flowId +
       '"}) { createResult { canEdit id editingUserDisplayName __typename } __typename } __typename } __typename } }'
     var resp = await client.post("/api/now/graphql", { variables: {}, query: mutation })
-    var result = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.createResult
-    debug.graphql_response = result
-    if (result?.canEdit !== true && result?.canEdit !== "true") {
-      var editingUser = result?.editingUserDisplayName || "another user"
-      return { success: false, error: "Flow is locked by " + editingUser, debug }
+    var gqlErrors = resp.data?.errors
+    if (gqlErrors && gqlErrors.length > 0) {
+      debug.graphql_errors = gqlErrors.map(function (e: any) {
+        return e.message || JSON.stringify(e)
+      })
     }
-    debug.graphql_canEdit = true
+    var result = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.createResult
+    debug.graphql_response = result || null
+    debug.graphql_raw_keys = resp.data?.data ? Object.keys(resp.data.data) : null
+    if (result?.canEdit === true || result?.canEdit === "true") {
+      debug.graphql_canEdit = true
+    } else if (result) {
+      var editingUser = result.editingUserDisplayName || "another user"
+      return { success: false, error: "Flow is locked by " + editingUser, debug }
+    } else {
+      debug.graphql_result_null = true
+    }
   } catch (e: any) {
     debug.graphql_error = e.message
   }
@@ -4869,14 +4879,24 @@ async function buildSubflowInputsForInsert(
   try {
     var inpResp = await client.get("/api/now/table/sys_hub_flow_variable", {
       params: {
-        sysparm_query: "flow=" + subflowSysId + "^variable_type=input",
+        sysparm_query: "flow=" + subflowSysId + "^variable_type=input^ORDERBYorder",
         sysparm_fields:
           "sys_id,name,label,internal_type,mandatory,default_value,order,max_length,hint,read_only,extended,data_structure,reference,reference_display,ref_qual,choice_option,table_name,column_name,use_dependent,dependent_on,show_ref_finder,local,attributes,sys_class_name",
         sysparm_display_value: "false",
         sysparm_limit: 50,
       },
     })
-    inputParams = inpResp.data.result || []
+    var rawInputs = inpResp.data.result || []
+    var seenIds: Record<string, boolean> = {}
+    var seenNames: Record<string, boolean> = {}
+    for (var ri = 0; ri < rawInputs.length; ri++) {
+      var rid = str(rawInputs[ri].sys_id)
+      var rname = str(rawInputs[ri].name)
+      if (seenIds[rid] || seenNames[rname]) continue
+      seenIds[rid] = true
+      seenNames[rname] = true
+      inputParams.push(rawInputs[ri])
+    }
   } catch (e: any) {
     console.warn(
       "[snow_manage_flow] sys_hub_flow_variable input query failed for flow=" + subflowSysId + ": " + (e.message || ""),
@@ -4885,13 +4905,23 @@ async function buildSubflowInputsForInsert(
   try {
     var outResp = await client.get("/api/now/table/sys_hub_flow_variable", {
       params: {
-        sysparm_query: "flow=" + subflowSysId + "^variable_type=output",
+        sysparm_query: "flow=" + subflowSysId + "^variable_type=output^ORDERBYorder",
         sysparm_fields: "sys_id,name,label,internal_type,mandatory,order,reference,attributes",
         sysparm_display_value: "false",
         sysparm_limit: 50,
       },
     })
-    outputParams = outResp.data.result || []
+    var rawOutputs = outResp.data.result || []
+    var seenOutIds: Record<string, boolean> = {}
+    var seenOutNames: Record<string, boolean> = {}
+    for (var ro = 0; ro < rawOutputs.length; ro++) {
+      var roid = str(rawOutputs[ro].sys_id)
+      var roname = str(rawOutputs[ro].name)
+      if (seenOutIds[roid] || seenOutNames[roname]) continue
+      seenOutIds[roid] = true
+      seenOutNames[roname] = true
+      outputParams.push(rawOutputs[ro])
+    }
   } catch (e: any) {
     console.warn(
       "[snow_manage_flow] sys_hub_flow_variable output query failed for flow=" +
@@ -4943,15 +4973,16 @@ async function buildSubflowInputsForInsert(
   var inputs = inputParams.map(function (rec: any) {
     var paramType = str(rec.internal_type) || "string"
     var name = str(rec.name)
+    var varId = str(rec.sys_id)
     var userVal = resolvedInputs[name] || ""
     return {
-      id: str(rec.sys_id),
+      id: varId,
       name: name,
       children: [],
       displayValue: { value: "" },
-      value: { value: userVal },
+      value: { schemaless: false, schemalessValue: "", value: userVal },
       parameter: {
-        id: str(rec.sys_id),
+        id: varId,
         label: str(rec.label) || name,
         name: name,
         type: paramType,
@@ -5140,6 +5171,12 @@ async function addSubflowCallViaGraphQL(
     outputs: built.outputs.length,
     resolved: built.resolvedInputs,
     missing: built.missingMandatory,
+    input_ids: built.inputs.map(function (inp: any) {
+      return inp.id + ":" + inp.name
+    }),
+    output_names: built.outputs.map(function (out: any) {
+      return out.name
+    }),
   }
 
   const subPatch: any = {
@@ -8049,6 +8086,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       case "open_flow": {
         var openFlowId = await resolveFlowId(client, args.flow_id)
         var openSummary = summary()
+        var openDebug: any = {}
 
         // Step 1: Load flow data via processflow GET (same as UI)
         try {
@@ -8057,8 +8095,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           /* best-effort — flow data load is not critical for lock acquisition */
         }
 
-        // Step 2: Acquire editing lock via safeEdit create mutation + REST fallback
+        // Step 2: Pre-release any existing locks (the OAuth service account may hold a stale lock
+        // from a previous session, and safeEdit(create) returns canEdit=false for the SAME user's lock)
+        var preRelease = await releaseFlowEditingLock(client, openFlowId)
+        openDebug.pre_release = {
+          success: preRelease.success,
+          safe_edit_cleaned: preRelease.debug?.safe_edit_records_cleaned,
+          flow_lock_cleaned: preRelease.debug?.flow_lock_records_cleaned,
+        }
+        // Brief delay to let ServiceNow propagate the lock deletion
+        await new Promise(function (resolve) {
+          setTimeout(resolve, 1500)
+        })
+
+        // Step 3: Acquire editing lock via safeEdit create mutation + REST fallback
         var lockResult = await acquireFlowEditingLock(client, openFlowId)
+        openDebug.acquire = lockResult.debug
         if (lockResult.success) {
           openSummary
             .success("Flow opened for editing (lock acquired)")
@@ -8070,7 +8122,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               flow_id: openFlowId,
               editing_session: true,
               lock_acquired_at: new Date().toISOString(),
-              lock_debug: lockResult.debug,
+              lock_debug: openDebug,
               lock_warning:
                 "IMPORTANT: Editing lock is held. You MUST call close_flow with flow_id='" +
                 openFlowId +
@@ -8082,18 +8134,43 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           )
         }
 
-        // Step 3: Lock failed — auto-release ghost lock and retry once
-        // releaseFlowEditingLock now also cleans sys_hub_flow_lock table
-        openSummary.line("Lock acquisition failed, attempting ghost lock cleanup...")
-        await releaseFlowEditingLock(client, openFlowId)
-        // Brief delay to let ServiceNow propagate the lock deletion before re-acquiring
+        // Step 4: Lock still failed — try force cleanup of ALL lock tables + longer delay + retry
+        openSummary.line("Lock acquisition failed after pre-release, attempting aggressive cleanup...")
+        openDebug.first_attempt_error = lockResult.error
+        // Aggressively clean all lock tables (same as force_unlock)
+        try {
+          var seResp = await client.get("/api/now/table/sys_hub_flow_safe_edit", {
+            params: { sysparm_query: "document_id=" + openFlowId, sysparm_fields: "sys_id", sysparm_limit: 50 },
+          })
+          var seRecs = seResp.data?.result || []
+          for (var sei = 0; sei < seRecs.length; sei++) {
+            try {
+              await client.delete("/api/now/table/sys_hub_flow_safe_edit/" + seRecs[sei].sys_id)
+            } catch (_) {}
+          }
+          openDebug.force_safe_edit_deleted = seRecs.length
+        } catch (_) {}
+        try {
+          var flResp = await client.get("/api/now/table/sys_hub_flow_lock", {
+            params: { sysparm_query: "flow=" + openFlowId, sysparm_fields: "sys_id", sysparm_limit: 50 },
+          })
+          var flRecs = flResp.data?.result || []
+          for (var fli = 0; fli < flRecs.length; fli++) {
+            try {
+              await client.delete("/api/now/table/sys_hub_flow_lock/" + flRecs[fli].sys_id)
+            } catch (_) {}
+          }
+          openDebug.force_flow_lock_deleted = flRecs.length
+        } catch (_) {}
+        // Longer delay after aggressive cleanup
         await new Promise(function (resolve) {
-          setTimeout(resolve, 1000)
+          setTimeout(resolve, 2000)
         })
         var retryResult = await acquireFlowEditingLock(client, openFlowId)
+        openDebug.retry = retryResult.debug
         if (retryResult.success) {
           openSummary
-            .success("Flow opened for editing (ghost lock cleared)")
+            .success("Flow opened for editing (stale lock cleared)")
             .field("Flow", openFlowId)
             .line("You can now use add_action, add_flow_logic, etc. Call close_flow when done.")
           return createSuccessResult(
@@ -8101,9 +8178,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
               action: "open_flow",
               flow_id: openFlowId,
               editing_session: true,
-              ghost_lock_cleared: true,
+              stale_lock_cleared: true,
               lock_acquired_at: new Date().toISOString(),
-              lock_debug: retryResult.debug,
+              lock_debug: openDebug,
               lock_warning:
                 "IMPORTANT: Editing lock is held. You MUST call close_flow with flow_id='" +
                 openFlowId +
@@ -8122,7 +8199,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         return createErrorResult(
           "Cannot open flow for editing: " +
             (retryResult.error || "lock acquisition failed") +
-            (retryResult.debug ? " | debug: " + JSON.stringify(retryResult.debug) : ""),
+            " | debug: " +
+            JSON.stringify(openDebug),
         )
       }
 
