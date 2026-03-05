@@ -551,8 +551,26 @@ async function verifyFlowState(
 }
 
 /**
+ * Resolve the current authenticated user's sys_id.
+ * Caches the result on the client object to avoid repeated lookups.
+ */
+async function getCurrentUserSysId(client: any): Promise<string> {
+  if (client._cachedUserSysId) return client._cachedUserSysId
+  try {
+    var resp = await client.get("/api/now/table/sys_user", {
+      params: { sysparm_limit: 1, sysparm_fields: "sys_id" },
+    })
+    var id = resp.data?.result?.[0]?.sys_id || ""
+    if (id) client._cachedUserSysId = id
+    return id
+  } catch (_) {
+    return ""
+  }
+}
+
+/**
  * Acquire the Flow Designer editing lock on a flow.
- * The UI calls safeEdit(create: flowId) when opening the editor.
+ * Uses GraphQL safeEdit(upsert) as primary, then REST fallback with user+flow fields.
  * This must be called before GraphQL mutations on existing flows.
  */
 async function acquireFlowEditingLock(
@@ -560,42 +578,62 @@ async function acquireFlowEditingLock(
   flowId: string,
 ): Promise<{ success: boolean; error?: string; debug?: any }> {
   var debug: any = {}
+  var userSysId = await getCurrentUserSysId(client)
+  debug.user_sys_id = userSysId || "unknown"
 
-  // Step 1: Call safeEdit(create) GraphQL mutation (same as UI)
+  // Step 1: Call safeEdit(upsert) GraphQL mutation
   try {
     var mutation =
-      'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {create: "' +
+      'mutation { global { snFlowDesigner { safeEdit(safeEditInput: {upsert: {flowId: "' +
       flowId +
-      '"}) { createResult { canEdit id editingUserDisplayName __typename } __typename } __typename } __typename } }'
+      '"}}) { __typename } __typename } __typename } }'
     var resp = await client.post("/api/now/graphql", { variables: {}, query: mutation })
     var gqlErrors = resp.data?.errors
     if (gqlErrors && gqlErrors.length > 0) {
+      var runtimeErrors = gqlErrors.filter(function (e: any) {
+        return e.errorType !== "ValidationError"
+      })
+      if (runtimeErrors.length > 0) {
+        var lockedMsg = runtimeErrors[0].message || ""
+        if (lockedMsg.indexOf("locked") >= 0 || lockedMsg.indexOf("edit") >= 0) {
+          return { success: false, error: lockedMsg, debug }
+        }
+      }
       debug.graphql_errors = gqlErrors.map(function (e: any) {
         return e.message || JSON.stringify(e)
       })
     }
-    var result = resp.data?.data?.global?.snFlowDesigner?.safeEdit?.createResult
-    debug.graphql_response = result || null
-    debug.graphql_raw_keys = resp.data?.data ? Object.keys(resp.data.data) : null
-    if (result?.canEdit === true || result?.canEdit === "true") {
-      debug.graphql_canEdit = true
-    } else if (result) {
-      var editingUser = result.editingUserDisplayName || "another user"
-      return { success: false, error: "Flow is locked by " + editingUser, debug }
-    } else {
-      debug.graphql_result_null = true
+    var safeEdit = resp.data?.data?.global?.snFlowDesigner?.safeEdit
+    if (safeEdit) {
+      debug.graphql_upsert = true
     }
   } catch (e: any) {
     debug.graphql_error = e.message
   }
 
-  // Step 2: Verify a sys_hub_flow_safe_edit record was actually created
+  // Step 2: Verify a sys_hub_flow_safe_edit record exists with correct user
   try {
     var checkResp = await client.get("/api/now/table/sys_hub_flow_safe_edit", {
-      params: { sysparm_query: "document_id=" + flowId, sysparm_fields: "sys_id,document_id,user", sysparm_limit: 1 },
+      params: {
+        sysparm_query: "document_id=" + flowId,
+        sysparm_fields: "sys_id,document_id,user,flow",
+        sysparm_limit: 1,
+      },
     })
     var existing = checkResp.data.result?.[0]
     if (existing?.sys_id) {
+      var needsUpdate = false
+      var userVal = typeof existing.user === "object" ? existing.user.value : existing.user
+      var flowVal = typeof existing.flow === "object" ? existing.flow.value : existing.flow
+      if (userSysId && userVal !== userSysId) needsUpdate = true
+      if (!flowVal || flowVal !== flowId) needsUpdate = true
+      if (needsUpdate) {
+        var patch: any = {}
+        if (userSysId && userVal !== userSysId) patch.user = userSysId
+        if (!flowVal || flowVal !== flowId) patch.flow = flowId
+        await client.patch("/api/now/table/sys_hub_flow_safe_edit/" + existing.sys_id, patch)
+        debug.safe_edit_patched = patch
+      }
       debug.safe_edit_record = existing.sys_id
       return { success: true, debug }
     }
@@ -604,12 +642,12 @@ async function acquireFlowEditingLock(
     debug.safe_edit_check_error = e.message
   }
 
-  // Step 3: Fallback — create the safe_edit record directly via REST API
-  // The GraphQL mutation may return canEdit=true without persisting a record.
+  // Step 3: Fallback — create the safe_edit record via REST with user and flow fields
   try {
-    var createResp = await client.post("/api/now/table/sys_hub_flow_safe_edit", {
-      document_id: flowId,
-    })
+    var body: any = { document_id: flowId }
+    if (userSysId) body.user = userSysId
+    body.flow = flowId
+    var createResp = await client.post("/api/now/table/sys_hub_flow_safe_edit", body)
     var created = createResp.data.result
     if (created?.sys_id) {
       debug.rest_created = created.sys_id
@@ -620,9 +658,8 @@ async function acquireFlowEditingLock(
     debug.rest_create_error = e.message
   }
 
-  // If GraphQL said canEdit=true, trust it even if we couldn't verify/create the record
-  if (debug.graphql_canEdit) {
-    debug.fallback = "trusting_graphql_canEdit"
+  if (debug.graphql_upsert) {
+    debug.fallback = "trusting_graphql_upsert"
     return { success: true, debug }
   }
 
@@ -692,7 +729,7 @@ async function releaseFlowEditingLock(
   }
 
   // Step 3: Also clean up sys_hub_flow_lock records (some instances persist locks here)
-  // Without this, open_flow ghost-lock retry fails because GraphQL safeEdit(create) still sees a lock.
+  // Without this, open_flow ghost-lock retry fails because GraphQL safeEdit(upsert) still sees a lock.
   try {
     var lockResp = await client.get("/api/now/table/sys_hub_flow_lock", {
       params: { sysparm_query: "flow=" + flowId, sysparm_fields: "sys_id", sysparm_limit: 10 },
@@ -762,10 +799,26 @@ async function ensureFlowEditingLock(
   var acquireResult = await acquireFlowEditingLock(client, flowId)
   if (acquireResult.success) return { success: true, reacquired: true }
 
+  console.warn("[snow_manage_flow] Lock acquisition failed for flow " + flowId + ", attempting pre-release + retry...")
+  var preRelease = await releaseFlowEditingLock(client, flowId)
+  if (preRelease.debug?.safe_edit_records_cleaned || preRelease.debug?.flow_lock_records_cleaned) {
+    await new Promise(function (resolve) {
+      setTimeout(resolve, 1500)
+    })
+  }
+  var retryResult = await acquireFlowEditingLock(client, flowId)
+  if (retryResult.success) return { success: true, reacquired: true }
+
   console.warn(
-    "[snow_manage_flow] Lock acquisition failed for flow " + flowId + ": " + (acquireResult.error || "unknown"),
+    "[snow_manage_flow] Lock acquisition failed for flow " +
+      flowId +
+      " after pre-release + retry: " +
+      (retryResult.error || "unknown"),
   )
-  return { success: false, warning: acquireResult.error || "Could not acquire editing lock" }
+  return {
+    success: false,
+    warning: retryResult.error || "Could not acquire editing lock. Try calling checkout or open_flow explicitly.",
+  }
 }
 
 /** Safely extract a string from a ServiceNow Table API value (handles reference objects like {value, link}). */
@@ -5593,6 +5646,7 @@ export const toolDefinition: MCPToolDefinition = {
           "update_stage",
           "delete_stage",
           "open_flow",
+          "checkout",
           "close_flow",
           "force_unlock",
           "check_execution",
@@ -5601,7 +5655,7 @@ export const toolDefinition: MCPToolDefinition = {
           "Action to perform. " +
           "CREATING: 'create' creates a flow AND its trigger if trigger_type is specified — do NOT call add_trigger separately after create if you already specified trigger_type. " +
           "The editing lock stays open after create, so you can immediately call add_action, add_flow_logic, etc. " +
-          "EDITING EXISTING FLOWS: call open_flow first to acquire the editing lock. " +
+          "EDITING EXISTING FLOWS: call checkout (or open_flow) first to acquire the editing lock. Mutation actions (add_action, add_subflow, etc.) also auto-acquire the lock if not already held. " +
           "ALWAYS call close_flow as the LAST step to release the lock. " +
           'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
           "add_*/update_*/delete_* for triggers, actions, flow_logic, subflows, stages. update_trigger replaces the trigger type. delete_* removes elements by element_id. " +
@@ -8081,8 +8135,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
 
       // ────────────────────────────────────────────────────────────────
-      // OPEN_FLOW — acquire Flow Designer editing lock (safeEdit create)
+      // CHECKOUT / OPEN_FLOW — acquire Flow Designer editing lock (safeEdit create)
       // ────────────────────────────────────────────────────────────────
+      case "checkout":
       case "open_flow": {
         var openFlowId = await resolveFlowId(client, args.flow_id)
         var openSummary = summary()
@@ -8096,7 +8151,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         }
 
         // Step 2: Pre-release any existing locks (the OAuth service account may hold a stale lock
-        // from a previous session, and safeEdit(create) returns canEdit=false for the SAME user's lock)
+        // from a previous session, and safeEdit(upsert) may fail for the SAME user's stale lock)
         var preRelease = await releaseFlowEditingLock(client, openFlowId)
         openDebug.pre_release = {
           success: preRelease.success,
