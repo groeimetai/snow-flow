@@ -1,28 +1,17 @@
-/**
- * snow_create_ux_experience - Create UX experience
- *
- * STEP 1: Create UX Experience Record (sys_ux_experience) -
- * The top-level container for the workspace.
- * ⚠️ REQUIRES: Now Experience Framework (UXF) enabled.
- */
-
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
+import { btk, getAppShellUI } from "../../shared/builder-toolkit.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_ux_experience",
   description:
-    "STEP 1: Create UX Experience Record (sys_ux_experience) - The top-level container for the workspace. ⚠️ REQUIRES: Now Experience Framework (UXF) enabled. ALTERNATIVE: Use traditional form/list configurations if UXF unavailable.",
-  // Metadata for tool discovery (not sent to LLM)
+    "Create UX Experience via Builder Toolkit API - The top-level container for a workspace. Returns experienceID used by all subsequent workspace steps.",
   category: "ui-frameworks",
   subcategory: "workspace",
   use_cases: ["workspace", "ux-experience", "foundation"],
   complexity: "beginner",
   frequency: "high",
-
-  // Permission enforcement
-  // Classification: WRITE - Create operation - modifies data
   permission: "write",
   allowedRoles: ["developer", "admin"],
   inputSchema: {
@@ -32,66 +21,87 @@ export const toolDefinition: MCPToolDefinition = {
         type: "string",
         description: 'Experience name (e.g., "My Workspace")',
       },
-      root_macroponent: {
+      path: {
         type: "string",
-        description: "Root macroponent sys_id (usually x_snc_app_shell_uib_app_shell, auto-detected if not provided)",
+        description: 'URL path slug (e.g., "my-workspace"). Auto-generated from name if not provided.',
       },
-      description: {
+      homepage: {
         type: "string",
-        description: "Experience description",
+        description: 'Homepage route name (default: "home")',
+      },
+      roles: {
+        type: "array",
+        items: { type: "string" },
+        description: "Role sys_ids required to access this experience",
+      },
+      app_shell_ui: {
+        type: "string",
+        description: "App shell macroponent sys_id (auto-detected if not provided)",
       },
     },
     required: ["name"],
   },
 }
 
-export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { name, root_macroponent, description } = args
-
+export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   try {
     const client = await getAuthenticatedClient(context)
 
-    // Create experience
-    const experienceData: any = {
+    const name = args.name as string
+    const path = (args.path as string) || name.toLowerCase().replace(/\s+/g, "-")
+    const homepage = (args.homepage as string) || "home"
+    const roles = (args.roles as string[]) || []
+    const appShellUI = (args.app_shell_ui as string) || (await getAppShellUI(client))
+
+    const response = await client.post(btk("/experience"), {
       name,
-      description: description || `UX Experience: ${name}`,
-      active: true,
-    }
-
-    if (root_macroponent) {
-      experienceData.root_macroponent = root_macroponent
-    }
-
-    const response = await client.post("/api/now/table/sys_ux_experience", experienceData)
-    const experience = response.data.result
-
-    return createSuccessResult({
-      created: true,
-      experience_sys_id: experience.sys_id,
-      name: experience.name,
-      root_macroponent: experience.root_macroponent || null,
-      message: `UX Experience '${name}' created successfully`,
-      next_step: "Create App Configuration (Step 2) using snow_create_ux_app_config",
-      note: "This experience requires Now Experience Framework (UXF) to be enabled",
+      appShellUI,
+      path,
+      homepage,
+      roles,
     })
-  } catch (error: any) {
-    // Check if error is due to missing UXF plugin
-    if (error.message && error.message.includes("sys_ux_experience")) {
+
+    const result = response.data?.result || response.data
+    const experienceId = result.experienceID || result.experience_id || result.sys_id
+
+    if (!experienceId) {
       return createErrorResult(
-        new SnowFlowError(ErrorType.PLUGIN_MISSING, "Now Experience Framework (UXF) plugin not installed or enabled", {
-          details: {
-            plugin: "com.snc.now_experience",
-            suggestion:
-              "Install Now Experience Framework from ServiceNow Store or use traditional form/list configurations",
-            alternative: "Use Service Portal pages or traditional UI pages instead",
-          },
+        new SnowFlowError(ErrorType.SERVICENOW_API_ERROR, "Experience created but no experienceID returned", {
+          details: { response: result },
         }),
       )
     }
 
-    return createErrorResult(error instanceof SnowFlowError ? error : error.message)
+    return createSuccessResult({
+      created: true,
+      experience_sys_id: experienceId,
+      name,
+      path,
+      homepage,
+      app_shell_ui: appShellUI,
+      message: `UX Experience '${name}' created successfully via Builder Toolkit API`,
+      next_step: "Create App Configuration (Step 2) using snow_create_ux_app_config",
+    })
+  } catch (error: unknown) {
+    if (error instanceof SnowFlowError) return createErrorResult(error)
+    const msg = error instanceof Error ? error.message : String(error)
+    if (msg.includes("sn_uibtk_api") || msg.includes("404")) {
+      return createErrorResult(
+        new SnowFlowError(
+          ErrorType.PLUGIN_MISSING,
+          "Builder Toolkit API not available - UI Builder plugin may not be installed",
+          {
+            details: {
+              plugin: "com.snc.ui_builder_toolkit",
+              suggestion: "Install UI Builder from ServiceNow Store or verify the sn_uibtk_api scope is active",
+            },
+          },
+        ),
+      )
+    }
+    return createErrorResult(msg)
   }
 }
 
-export const version = "1.0.0"
-export const author = "Snow-Flow SDK Migration"
+export const version = "2.0.0"
+export const author = "Snow-Flow Builder Toolkit Migration"

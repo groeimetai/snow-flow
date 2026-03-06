@@ -1,27 +1,17 @@
-/**
- * snow_discover_all_workspaces - Discover all workspaces
- *
- * Discover all workspaces (UX Experiences, Agent Workspaces, UI Builder pages)
- * with comprehensive details and usage analytics.
- */
-
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
-import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
+import { createSuccessResult, createErrorResult, SnowFlowError } from "../../shared/error-handler.js"
+import { btk } from "../../shared/builder-toolkit.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_discover_all_workspaces",
   description:
-    "Discover all workspaces (UX Experiences, Agent Workspaces, UI Builder pages) with comprehensive details and usage analytics.",
-  // Metadata for tool discovery (not sent to LLM)
+    "Discover all workspaces (UX Experiences via Builder Toolkit, Agent Workspaces, UI Builder pages) with comprehensive details.",
   category: "ui-frameworks",
   subcategory: "workspace",
   use_cases: ["workspace", "discovery", "analytics"],
   complexity: "beginner",
   frequency: "high",
-
-  // Permission enforcement
-  // Classification: READ - Discovery operation - reads metadata
   permission: "read",
   allowedRoles: ["developer", "stakeholder", "admin"],
   inputSchema: {
@@ -51,110 +41,101 @@ export const toolDefinition: MCPToolDefinition = {
   },
 }
 
-export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const {
-    include_ux_experiences = true,
-    include_agent_workspaces = true,
-    include_ui_builder = true,
-    active_only = true,
-  } = args
+export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+  const includeExperiences = args.include_ux_experiences !== false
+  const includeAgentWorkspaces = args.include_agent_workspaces !== false
+  const includeUIBuilder = args.include_ui_builder !== false
+  const activeOnly = args.active_only !== false
 
   try {
     const client = await getAuthenticatedClient(context)
 
-    const discovery = {
-      ux_experiences: [] as any[],
-      agent_workspaces: [] as any[],
-      ui_builder_pages: [] as any[],
-      total_count: 0,
-    }
+    const experiences: unknown[] = []
+    const workspaces: unknown[] = []
+    const pages: unknown[] = []
 
-    // Discover UX Experiences
-    if (include_ux_experiences) {
-      const experiencesQuery = active_only ? "active=true" : ""
-      const experiencesResponse = await client.get("/api/now/table/sys_ux_experience", {
-        params: {
-          sysparm_query: experiencesQuery,
-          sysparm_limit: 50,
-          sysparm_fields: "sys_id,name,description,active",
-        },
-      })
-
-      if (experiencesResponse.data.result) {
-        discovery.ux_experiences = experiencesResponse.data.result.map((exp: any) => ({
-          type: "UX Experience",
-          name: exp.name,
-          sys_id: exp.sys_id,
-          description: exp.description || "No description",
-          active: exp.active,
-          url: `/now/experience/${exp.name?.toLowerCase().replace(/\s+/g, "-")}`,
-        }))
+    if (includeExperiences) {
+      try {
+        const response = await client.get(btk("/pc_experiences"))
+        const data = response.data?.result || response.data
+        const items = Array.isArray(data) ? data : data?.experiences || []
+        for (const exp of items) {
+          experiences.push({
+            type: "UX Experience",
+            name: exp.name || exp.title,
+            sys_id: exp.experienceID || exp.sys_id || exp.id,
+            description: exp.description || "No description",
+            path: exp.path || exp.url_path,
+            active: exp.active !== false,
+          })
+        }
+      } catch {
+        experiences.push({ type: "UX Experience", error: "Builder Toolkit API not available" })
       }
     }
 
-    // Discover Agent Workspaces
-    if (include_agent_workspaces) {
-      const routesQuery = active_only ? "active=true^route_type=workspace" : "route_type=workspace"
-      const routesResponse = await client.get("/api/now/table/sys_ux_app_route", {
+    if (includeAgentWorkspaces) {
+      const query = activeOnly ? "active=true^route_type=workspace" : "route_type=workspace"
+      const response = await client.get("/api/now/table/sys_ux_app_route", {
         params: {
-          sysparm_query: routesQuery,
+          sysparm_query: query,
           sysparm_limit: 50,
           sysparm_fields: "sys_id,name,description,route,active",
         },
       })
-
-      if (routesResponse.data.result) {
-        discovery.agent_workspaces = routesResponse.data.result.map((route: any) => ({
+      for (const route of response.data.result || []) {
+        workspaces.push({
           type: "Agent Workspace",
           name: route.name,
           sys_id: route.sys_id,
           description: route.description || "No description",
           route: route.route,
           active: route.active,
-          url: `/now/workspace${route.route}`,
-        }))
+        })
       }
     }
 
-    // Discover UI Builder Pages
-    if (include_ui_builder) {
-      const pagesQuery = active_only ? "active=true" : ""
-      const pagesResponse = await client.get("/api/now/table/sys_ux_page", {
+    if (includeUIBuilder) {
+      const query = activeOnly ? "active=true" : ""
+      const response = await client.get("/api/now/table/sys_ux_page", {
         params: {
-          sysparm_query: pagesQuery,
+          sysparm_query: query,
           sysparm_limit: 50,
           sysparm_fields: "sys_id,name,description,active",
         },
       })
-
-      if (pagesResponse.data.result) {
-        discovery.ui_builder_pages = pagesResponse.data.result.map((page: any) => ({
+      for (const page of response.data.result || []) {
+        pages.push({
           type: "UI Builder Page",
           name: page.name,
           sys_id: page.sys_id,
           description: page.description || "No description",
           active: page.active,
-        }))
+        })
       }
     }
 
-    discovery.total_count =
-      discovery.ux_experiences.length + discovery.agent_workspaces.length + discovery.ui_builder_pages.length
+    const total = experiences.length + workspaces.length + pages.length
 
     return createSuccessResult({
-      discovery,
-      summary: {
-        ux_experiences: discovery.ux_experiences.length,
-        agent_workspaces: discovery.agent_workspaces.length,
-        ui_builder_pages: discovery.ui_builder_pages.length,
-        total_workspaces: discovery.total_count,
+      discovery: {
+        ux_experiences: experiences,
+        agent_workspaces: workspaces,
+        ui_builder_pages: pages,
       },
-      message: `Found ${discovery.total_count} workspaces across all types`,
+      summary: {
+        ux_experiences: experiences.length,
+        agent_workspaces: workspaces.length,
+        ui_builder_pages: pages.length,
+        total_workspaces: total,
+      },
+      message: `Found ${total} workspaces across all types`,
     })
-  } catch (error: any) {
-    return createErrorResult(error instanceof SnowFlowError ? error : error.message)
+  } catch (error: unknown) {
+    if (error instanceof SnowFlowError) return createErrorResult(error)
+    return createErrorResult(error instanceof Error ? error.message : String(error))
   }
 }
 
-export const version = "1.0.0"
-export const author = "Snow-Flow SDK Migration"
+export const version = "2.0.0"
+export const author = "Snow-Flow Builder Toolkit Migration"
