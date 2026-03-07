@@ -1,5 +1,5 @@
 /**
- * snow_impact_lens_artifact_dependencies - Analyze what an artifact depends on
+ * snow_dependency_map_artifact_dependencies - Analyze what an artifact depends on
  *
  * Forward dependency analysis: for a given artifact (business rule, client script, etc.),
  * analyze its script body to determine what fields it reads/writes, what tables it queries,
@@ -13,7 +13,7 @@ import { ARTIFACT_TABLE_MAP } from "./shared/metadata-tables.js"
 import { analyzeScript } from "./shared/script-analyzer.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_impact_lens_artifact_dependencies",
+  name: "snow_dependency_map_artifact_dependencies",
   description: `Analyze what a specific artifact reads, writes, and depends on.
 
 📋 USE THIS TO:
@@ -30,7 +30,7 @@ export const toolDefinition: MCPToolDefinition = {
 - Script includes called
 - Glide APIs used
 - Risk assessment (low/medium/high complexity)`,
-  category: "impact-lens",
+  category: "dependency-map",
   subcategory: "artifact-analysis",
   use_cases: ["impact-analysis", "code-review", "dependency-analysis"],
   complexity: "advanced",
@@ -184,4 +184,4 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 }
 
 export const version = "1.0.0"
-export const author = "Snow-Flow Impact Lens"
+export const author = "Snow-Flow Dependency Map"

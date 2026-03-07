@@ -1,5 +1,5 @@
 ---
-name: impact-lens
+name: dependency-map
 description: This skill should be used when the user asks about "impact analysis", "configuration dependencies", "what touches this field", "field references", "which business rules affect", "what calls this script include", "reverse dependencies", "table configurations", "change impact", or any ServiceNow configuration dependency analysis.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
@@ -8,41 +8,41 @@ metadata:
   version: "1.0.0"
   category: servicenow
 tools:
-  - snow_impact_lens_apps
-  - snow_impact_lens_table_configs
-  - snow_impact_lens_artifact_dependencies
-  - snow_impact_lens_field_references
-  - snow_impact_lens_reverse_dependencies
+  - snow_dependency_map_apps
+  - snow_dependency_map_table_configs
+  - snow_dependency_map_artifact_dependencies
+  - snow_dependency_map_field_references
+  - snow_dependency_map_reverse_dependencies
 ---
 
-# Impact Lens for ServiceNow
+# Dependency Map for ServiceNow
 
-Impact Lens provides configuration dependency analysis across a ServiceNow instance. Before making changes to fields, tables, or artifacts, use these tools to understand the full blast radius.
+Dependency Map provides configuration dependency analysis across a ServiceNow instance. Before making changes to fields, tables, or artifacts, use these tools to understand the full blast radius.
 
 ## Tool Overview
 
 | Tool | Purpose | When to Use |
 |------|---------|-------------|
-| `snow_impact_lens_apps` | List apps with config counts | Starting point — understand the instance landscape |
-| `snow_impact_lens_table_configs` | All configs on a table | "What runs on the incident table?" |
-| `snow_impact_lens_field_references` | Reverse field lookup | "What touches incident.assignment_group?" |
-| `snow_impact_lens_artifact_dependencies` | Forward dependency analysis | "What does this business rule read/write?" |
-| `snow_impact_lens_reverse_dependencies` | Reverse artifact lookup | "What calls the IncidentUtils script include?" |
+| `snow_dependency_map_apps` | List apps with config counts | Starting point — understand the instance landscape |
+| `snow_dependency_map_table_configs` | All configs on a table | "What runs on the incident table?" |
+| `snow_dependency_map_field_references` | Reverse field lookup | "What touches incident.assignment_group?" |
+| `snow_dependency_map_artifact_dependencies` | Forward dependency analysis | "What does this business rule read/write?" |
+| `snow_dependency_map_reverse_dependencies` | Reverse artifact lookup | "What calls the IncidentUtils script include?" |
 
 ## Recommended Workflow
 
 ### 1. Instance Overview
-Start with `snow_impact_lens_apps` to see which applications have the most configurations:
+Start with `snow_dependency_map_apps` to see which applications have the most configurations:
 
 ```
-→ snow_impact_lens_apps(include_config_counts: true)
+→ snow_dependency_map_apps(include_config_counts: true)
 ```
 
 ### 2. Table Deep-Dive
 Pick a table and see everything running on it:
 
 ```
-→ snow_impact_lens_table_configs(table_name: "incident")
+→ snow_dependency_map_table_configs(table_name: "incident")
 ```
 
 This returns all business rules, client scripts, UI actions, UI policies, ACLs, script includes, and data policies on that table.
@@ -51,7 +51,7 @@ This returns all business rules, client scripts, UI actions, UI policies, ACLs, 
 Before changing a field, find every artifact that touches it:
 
 ```
-→ snow_impact_lens_field_references(table_name: "incident", field_name: "assignment_group")
+→ snow_dependency_map_field_references(table_name: "incident", field_name: "assignment_group")
 ```
 
 This is the most powerful tool — it searches across all artifact types and classifies each reference as read, write, or condition.
@@ -60,7 +60,7 @@ This is the most powerful tool — it searches across all artifact types and cla
 Analyze what a specific artifact depends on:
 
 ```
-→ snow_impact_lens_artifact_dependencies(artifact_type: "business_rule", artifact_sys_id: "abc123")
+→ snow_dependency_map_artifact_dependencies(artifact_type: "business_rule", artifact_sys_id: "abc123")
 ```
 
 Returns fields read/written, tables queried, script includes called, and a complexity rating.
@@ -69,21 +69,21 @@ Returns fields read/written, tables queried, script includes called, and a compl
 Find what depends on a specific artifact (e.g., a script include):
 
 ```
-→ snow_impact_lens_reverse_dependencies(artifact_type: "script_include", artifact_identifier: "IncidentUtils")
+→ snow_dependency_map_reverse_dependencies(artifact_type: "script_include", artifact_identifier: "IncidentUtils")
 ```
 
 ## Common Questions and Which Tool to Use
 
 | Question | Tool |
 |----------|------|
-| "What apps are in this instance?" | `snow_impact_lens_apps` |
-| "What business rules run on incident?" | `snow_impact_lens_table_configs` |
-| "What touches the state field on change_request?" | `snow_impact_lens_field_references` |
-| "What does this business rule do?" | `snow_impact_lens_artifact_dependencies` |
-| "What uses the TaskUtils script include?" | `snow_impact_lens_reverse_dependencies` |
-| "Is it safe to remove this field?" | `snow_impact_lens_field_references` |
-| "How complex is this business rule?" | `snow_impact_lens_artifact_dependencies` |
-| "What's the blast radius of changing this script include?" | `snow_impact_lens_reverse_dependencies` |
+| "What apps are in this instance?" | `snow_dependency_map_apps` |
+| "What business rules run on incident?" | `snow_dependency_map_table_configs` |
+| "What touches the state field on change_request?" | `snow_dependency_map_field_references` |
+| "What does this business rule do?" | `snow_dependency_map_artifact_dependencies` |
+| "What uses the TaskUtils script include?" | `snow_dependency_map_reverse_dependencies` |
+| "Is it safe to remove this field?" | `snow_dependency_map_field_references` |
+| "How complex is this business rule?" | `snow_dependency_map_artifact_dependencies` |
+| "What's the blast radius of changing this script include?" | `snow_dependency_map_reverse_dependencies` |
 
 ## Configuration Types Tracked
 

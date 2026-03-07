@@ -1,5 +1,5 @@
 /**
- * snow_impact_lens_table_configs - Find all configurations on a table
+ * snow_dependency_map_table_configs - Find all configurations on a table
  *
  * For a given table, finds ALL configurations running on it:
  * business rules, client scripts, UI actions, UI policies, ACLs,
@@ -12,7 +12,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 import { CONFIG_TYPE_QUERIES, TABLE_CONFIG_TYPES, ConfigType } from "./shared/metadata-tables.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_impact_lens_table_configs",
+  name: "snow_dependency_map_table_configs",
   description: `Find ALL configurations running on a specific table.
 
 📋 USE THIS TO:
@@ -27,7 +27,7 @@ export const toolDefinition: MCPToolDefinition = {
 - Grouped list of configurations by type
 - Summary with total counts per type
 - Active vs inactive breakdown`,
-  category: "impact-lens",
+  category: "dependency-map",
   subcategory: "table-analysis",
   use_cases: ["impact-analysis", "table-audit", "governance"],
   complexity: "intermediate",
@@ -217,4 +217,4 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 }
 
 export const version = "1.0.0"
-export const author = "Snow-Flow Impact Lens"
+export const author = "Snow-Flow Dependency Map"

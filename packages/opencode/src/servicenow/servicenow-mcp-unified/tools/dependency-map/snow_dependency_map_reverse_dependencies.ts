@@ -1,5 +1,5 @@
 /**
- * snow_impact_lens_reverse_dependencies - Find what depends on an artifact
+ * snow_dependency_map_reverse_dependencies - Find what depends on an artifact
  *
  * Reverse dependency analysis: for a given artifact (e.g., a script include),
  * find all other artifacts that call or reference it.
@@ -11,7 +11,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 import { ARTIFACT_TABLE_MAP } from "./shared/metadata-tables.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_impact_lens_reverse_dependencies",
+  name: "snow_dependency_map_reverse_dependencies",
   description: `Find what depends on a given artifact (reverse dependency analysis).
 
 📋 USE THIS TO:
@@ -26,7 +26,7 @@ export const toolDefinition: MCPToolDefinition = {
 - List of dependent artifacts with type, table, and scope
 - Cross-scope dependency detection
 - Impact warning for widely-used artifacts`,
-  category: "impact-lens",
+  category: "dependency-map",
   subcategory: "dependency-analysis",
   use_cases: ["impact-analysis", "dependency-audit", "refactoring"],
   complexity: "advanced",
@@ -295,4 +295,4 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 }
 
 export const version = "1.0.0"
-export const author = "Snow-Flow Impact Lens"
+export const author = "Snow-Flow Dependency Map"

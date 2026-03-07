@@ -1,7 +1,7 @@
 /**
- * snow_impact_lens_apps - List all applications/scopes with configuration counts
+ * snow_dependency_map_apps - List all applications/scopes with configuration counts
  *
- * Entry point for Impact Lens - provides a metadata catalog of all apps
+ * Entry point for Dependency Map - provides a metadata catalog of all apps
  * in the instance with counts of business rules, client scripts, etc.
  */
 
@@ -11,20 +11,20 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 import { SCOPE_COUNT_TABLES } from "./shared/metadata-tables.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_impact_lens_apps",
+  name: "snow_dependency_map_apps",
   description: `List all applications/scopes in the instance with configuration summary counts.
 
 📋 USE THIS TO:
 - Get an overview of all apps and their configuration footprint
 - Find which apps have the most business rules, client scripts, etc.
 - Identify apps by name or scope prefix
-- Start an Impact Lens analysis session
+- Start an Dependency Map analysis session
 
 📊 RETURNS:
 - List of applications with name, scope, vendor
 - Per-app counts of business rules, client scripts, UI actions, UI policies, script includes, ACLs
 - Instance-level summary totals`,
-  category: "impact-lens",
+  category: "dependency-map",
   subcategory: "catalog",
   use_cases: ["impact-analysis", "discovery", "governance"],
   complexity: "beginner",
@@ -191,4 +191,4 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 }
 
 export const version = "1.0.0"
-export const author = "Snow-Flow Impact Lens"
+export const author = "Snow-Flow Dependency Map"
