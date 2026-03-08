@@ -60,7 +60,7 @@ Snow-Flow is an AI-powered, multi-agent development framework built specifically
 <td width="33%" valign="top">
 
 **ServiceNow-Native**<br>
-<sub>200+ MCP tools and 54 domain skills purpose-built for ServiceNow development, deployment, and automation.</sub>
+<sub>200+ MCP tools and 54 domain skills (including Blast Radius impact analysis) purpose-built for ServiceNow development, deployment, and automation.</sub>
 
 </td>
 <td width="33%" valign="top">
@@ -335,6 +335,7 @@ Deep domain knowledge for ServiceNow development, organized by category:
 | **ITSM**        | Incident, Problem, Change, Request, SLA Management                                |
 | **Platform**    | CMDB, Discovery, Performance Analytics, Virtual Agent, Agent Workspace            |
 | **Quality**     | ATF Testing, Code Review, Widget Coherence, ES5 Compliance                        |
+| **Analysis**    | Blast Radius (configuration dependency & impact analysis)                         |
 
 <br>
 
@@ -456,7 +457,7 @@ Snow-Flow is an autonomous ServiceNow development agent. It connects AI models t
 Snow-Flow is purpose-built for ServiceNow:
 
 - **Open source** — Elastic License 2.0, fully transparent
-- **ServiceNow-native** — 200+ MCP tools and 54 domain skills designed for ServiceNow
+- **ServiceNow-native** — 200+ MCP tools and 54 domain skills (including Blast Radius impact analysis) designed for ServiceNow
 - **Provider-agnostic** — Works with 20+ AI providers, not locked to one vendor
 - **Built-in LSP** — Language server support for intelligent code assistance
 - **Terminal-first** — A TUI built by terminal enthusiasts with SolidJS + opentui

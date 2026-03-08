@@ -247,5 +247,5 @@ export * from "./platform/index.js"
 // Monitoring (1 tool)
 export * from "./monitoring/index.js"
 
-// Impact Lens (5 tools)
-export * from "./impact-lens/index.js"
+// Blast Radius (5 tools)
+export * from "./blast-radius/index.js"

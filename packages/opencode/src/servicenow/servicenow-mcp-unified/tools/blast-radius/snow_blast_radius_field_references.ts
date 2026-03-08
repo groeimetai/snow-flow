@@ -1,7 +1,7 @@
 /**
- * snow_impact_lens_field_references - Reverse field reference lookup
+ * snow_blast_radius_field_references - Reverse field reference lookup
  *
- * The most powerful Impact Lens tool: for a given table.field,
+ * The most powerful Blast Radius tool: for a given table.field,
  * find EVERY artifact that touches it across the entire instance.
  */
 
@@ -11,7 +11,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 import { analyzeScript, scriptReferencesField } from "./shared/script-analyzer.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_impact_lens_field_references",
+  name: "snow_blast_radius_field_references",
   description: `Find every artifact that references a specific table field.
 
 📋 USE THIS TO:
@@ -26,7 +26,7 @@ export const toolDefinition: MCPToolDefinition = {
 - All business rules, client scripts, UI actions, UI policies, ACLs that reference the field
 - Classification as read, write, or condition reference
 - Impact warning for heavily-referenced fields`,
-  category: "impact-lens",
+  category: "blast-radius",
   subcategory: "field-analysis",
   use_cases: ["impact-analysis", "field-audit", "change-risk"],
   complexity: "advanced",
@@ -301,4 +301,4 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 }
 
 export const version = "1.0.0"
-export const author = "Snow-Flow Impact Lens"
+export const author = "Snow-Flow Blast Radius"

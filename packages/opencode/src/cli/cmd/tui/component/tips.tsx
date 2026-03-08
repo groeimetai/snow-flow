@@ -105,6 +105,7 @@ const TIPS = [
   "Add {highlight}.ts{/highlight} files to {highlight}.snow-flow/plugin/{/highlight} for event hooks",
   "Snow-Flow supports ServiceNow OAuth, Basic Auth, and Enterprise portal authentication",
   "Use Snow-Flow to manage Update Sets, track changes, and export XML",
+  "Use {highlight}Blast Radius{/highlight} to see the full impact of changing a field, table, or artifact before you deploy",
   "Use {highlight}snow-flow run{/highlight} for non-interactive scripting",
   "Use {highlight}snow-flow --continue{/highlight} to resume the last session",
   "Use {highlight}snow-flow run -f file.ts{/highlight} to attach files via CLI",

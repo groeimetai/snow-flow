@@ -1,5 +1,5 @@
 /**
- * Impact Lens - Metadata Table Constants
+ * Blast Radius - Metadata Table Constants
  *
  * Maps artifact types to their ServiceNow metadata tables,
  * script fields, and table reference fields.

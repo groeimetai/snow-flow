@@ -1,5 +1,5 @@
 /**
- * Impact Lens - Script Analyzer Engine
+ * Blast Radius - Script Analyzer Engine
  *
  * Regex-based analysis of ServiceNow script bodies to detect:
  * - Field reads and writes
