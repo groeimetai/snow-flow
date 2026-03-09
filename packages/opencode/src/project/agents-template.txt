@@ -56,28 +56,22 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow Development**: Update sets, deployment, artifact management
 - **ServiceNow UI**: Widget development, workspaces, UI builder
 - **ServiceNow ITSM**: Incident, change, problem management
-- **ServiceNow Agile 2.0**: Sprint management, stories, backlog, epics, velocity, capacity planning (native SN agile module — `snow_agile_*` tools)
+- **ServiceNow Agile 2.0**: Sprint management, stories, backlog, epics, velocity, capacity planning (native SN agile module — discovered via `tool_search` with query `"agile"`)
 - **ServiceNow Flow Designer**: Flow creation, triggers, actions, flow logic (discovered via `tool_search` with query `"flow designer"`)
 - **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (discovered via `tool_search` on the enterprise server, same lazy pattern as ServiceNow tools)
 
 ### Agile Tool Selection: Native ServiceNow vs Enterprise Integrations
 
-**CRITICAL**: When users ask about sprints, stories, backlogs, epics, or agile workflows, determine which tools to use:
+**CRITICAL**: When users ask about sprints, stories, backlogs, epics, or agile workflows, determine which platform's tools to use:
 
-| User Intent | Tools to Use | How to Discover |
-|-------------|-------------|-----------------|
-| Manage sprints/stories/epics **in ServiceNow** | `snow_agile_*` tools (native) | `tool_search` on ServiceNow server with query `"agile"` |
-| Manage issues **in Jira** | Jira enterprise tools | `tool_search` on enterprise server with query `"jira"` |
-| Manage work items **in Azure DevOps** | ADO enterprise tools | `tool_search` on enterprise server with query `"azure devops"` |
-| User says "agile" without specifying platform | **Default to native ServiceNow** `snow_agile_*` tools | Check INSTANCE.md for platform preference |
+| User Intent | How to Discover |
+|-------------|-----------------|
+| Manage sprints/stories/epics **in ServiceNow** | `tool_search` on ServiceNow server with query `"agile"`, `"sprint"`, `"backlog"`, etc. |
+| Manage issues **in Jira** | `tool_search` on enterprise server with query `"jira"` |
+| Manage work items **in Azure DevOps** | `tool_search` on enterprise server with query `"azure devops"` |
+| User says "agile" without specifying platform | **Default to native ServiceNow** — discover via `tool_search` with `"agile"`. Check INSTANCE.md for platform preference |
 
-**Native ServiceNow Agile tools (14 tools):**
-- `snow_agile_sprint_manage` / `snow_agile_sprint_query` / `snow_agile_sprint_board` / `snow_agile_sprint_burndown`
-- `snow_agile_story_manage` / `snow_agile_backlog_query` / `snow_agile_backlog_groom` / `snow_agile_epic_manage`
-- `snow_agile_team_manage` / `snow_agile_velocity_report` / `snow_agile_capacity_plan`
-- `snow_agile_release_manage` / `snow_agile_standup_report` / `snow_agile_retrospective`
-
-These work with ServiceNow Agile 2.0 tables (`rm_sprint`, `rm_story`, `rm_epic`, `rm_scrum_task`, `rm_team`, `rm_release`). Requires plugin `com.snc.sdlc.agile.2.0`.
+The native ServiceNow Agile tools cover: sprint lifecycle, story/epic management, backlog grooming, team management, velocity reports, capacity planning, release management, standup reports, and retrospectives. They work with ServiceNow Agile 2.0 tables and require plugin `com.snc.sdlc.agile.2.0`.
 
 ---
 
