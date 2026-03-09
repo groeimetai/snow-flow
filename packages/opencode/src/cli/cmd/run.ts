@@ -91,8 +91,21 @@ export const RunCommand = cmd({
         type: "string",
         describe: "model variant (provider-specific reasoning effort, e.g., high, max, minimal)",
       })
+      .option("dangerously-skip-permissions", {
+        type: "boolean",
+        describe: "auto-approve all permission and question prompts (dangerous)",
+      })
   },
   handler: async (args) => {
+    if (args.dangerouslySkipPermissions) {
+      process.env.SNOW_CODE_DANGEROUSLY_SKIP_PERMISSIONS = "true"
+      UI.println(
+        UI.Style.TEXT_DANGER_BOLD + "!",
+        UI.Style.TEXT_NORMAL,
+        "Running with --dangerously-skip-permissions: ALL permissions and questions will be auto-approved",
+      )
+    }
+
     let message = [...args.message, ...(args["--"] || [])]
       .map((arg) => (arg.includes(" ") ? `"${arg.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"` : arg))
       .join(" ")
@@ -209,6 +222,14 @@ export const RunCommand = cmd({
           if (event.type === "permission.asked") {
             const permission = event.properties
             if (permission.sessionID !== sessionID) continue
+            if (args.dangerouslySkipPermissions) {
+              await sdk.permission.respond({
+                sessionID,
+                permissionID: permission.id,
+                response: "once",
+              })
+              continue
+            }
             const result = await select({
               message: `Permission required: ${permission.permission} (${permission.patterns.join(", ")})`,
               options: [

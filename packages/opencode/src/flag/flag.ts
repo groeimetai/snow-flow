@@ -36,6 +36,7 @@ export namespace Flag {
   export const OPENCODE_DISABLE_CLAUDE_CODE_SKILLS =
     OPENCODE_DISABLE_CLAUDE_CODE || truthyBoth("DISABLE_CLAUDE_CODE_SKILLS")
   export declare const OPENCODE_DISABLE_PROJECT_CONFIG: boolean
+  export declare const OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS: boolean
   export const OPENCODE_FAKE_VCS = envBoth("FAKE_VCS")
   export const OPENCODE_CLIENT = envBoth("CLIENT") ?? "cli"
   export const OPENCODE_SERVER_PASSWORD = envBoth("SERVER_PASSWORD")
@@ -66,6 +67,16 @@ export namespace Flag {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
   }
 }
+
+// Dynamic getter for OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS
+// Must be evaluated at access time because the TUI handler sets the env var after module load
+Object.defineProperty(Flag, "OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS", {
+  get() {
+    return truthy("SNOW_CODE_DANGEROUSLY_SKIP_PERMISSIONS") || truthy("OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS")
+  },
+  enumerable: true,
+  configurable: false,
+})
 
 // Dynamic getter for OPENCODE_DISABLE_PROJECT_CONFIG
 // This must be evaluated at access time, not module load time,

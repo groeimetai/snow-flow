@@ -1,5 +1,6 @@
 import { Bus } from "@/bus"
 import { BusEvent } from "@/bus/bus-event"
+import { Flag } from "@/flag/flag"
 import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
 import { Log } from "@/util/log"
@@ -99,6 +100,11 @@ export namespace Question {
     questions: Info[]
     tool?: { messageID: string; callID: string }
   }): Promise<Answer[]> {
+    if (Flag.OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS) {
+      log.warn("auto-approving question", { questions: input.questions.length })
+      return input.questions.map((q) => [q.options[0]?.label ?? "Yes"])
+    }
+
     const s = await state()
     const id = Identifier.ascending("question")
 
@@ -162,6 +168,12 @@ export namespace Question {
   export class RejectedError extends Error {
     constructor() {
       super("The user dismissed this question")
+    }
+  }
+
+  export class FeedbackError extends Error {
+    constructor(feedback: string) {
+      super(`The user wants changes to the plan: ${feedback}`)
     }
   }
 

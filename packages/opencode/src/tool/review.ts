@@ -29,7 +29,7 @@ export const ReviewExitTool = Tool.define("review_exit", {
         {
           question: `Review at ${reviewFile} is complete. Would you like to switch to the build agent and start acting on the feedback?`,
           header: "Build Agent",
-          custom: false,
+          custom: true,
           options: [
             { label: "Yes", description: "Switch to build agent and act on review feedback" },
             { label: "No", description: "Stay with review agent to continue analysis" },
@@ -41,6 +41,7 @@ export const ReviewExitTool = Tool.define("review_exit", {
 
     const answer = answers[0]?.[0]
     if (answer === "No") throw new Question.RejectedError()
+    if (answer !== "Yes") throw new Question.FeedbackError(answer ?? "")
 
     const model = await getLastModel(ctx.sessionID)
 

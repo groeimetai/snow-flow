@@ -75,6 +75,10 @@ export const TuiThreadCommand = cmd({
       .option("connect", {
         type: "string",
         describe: "connect to an existing server URL instead of starting a worker",
+      })
+      .option("dangerously-skip-permissions", {
+        type: "boolean",
+        describe: "auto-approve all permission and question prompts (dangerous)",
       }),
   handler: async (args) => {
     // Resolve relative paths against PWD to preserve behavior when using --cwd flag
@@ -93,6 +97,15 @@ export const TuiThreadCommand = cmd({
       if (!args.prompt) return piped
       return piped ? piped + "\n" + args.prompt : args.prompt
     })
+
+    if (args.dangerouslySkipPermissions) {
+      process.env.SNOW_CODE_DANGEROUSLY_SKIP_PERMISSIONS = "true"
+      UI.println(
+        UI.Style.TEXT_DANGER_BOLD + "!",
+        UI.Style.TEXT_NORMAL,
+        "Running with --dangerously-skip-permissions: ALL permissions and questions will be auto-approved",
+      )
+    }
 
     let url: string
     let customFetch: typeof fetch | undefined

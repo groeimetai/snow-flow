@@ -29,7 +29,7 @@ export const PlanExitTool = Tool.define("plan_exit", {
         {
           question: `Plan at ${plan} is complete. Would you like to switch to the build agent and start implementing?`,
           header: "Build Agent",
-          custom: false,
+          custom: true,
           options: [
             { label: "Yes", description: "Switch to build agent and start implementing the plan" },
             { label: "No", description: "Stay with plan agent to continue refining the plan" },
@@ -41,6 +41,7 @@ export const PlanExitTool = Tool.define("plan_exit", {
 
     const answer = answers[0]?.[0]
     if (answer === "No") throw new Question.RejectedError()
+    if (answer !== "Yes") throw new Question.FeedbackError(answer ?? "")
 
     const model = await getLastModel(ctx.sessionID)
 

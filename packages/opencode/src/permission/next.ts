@@ -1,6 +1,7 @@
 import { Bus } from "@/bus"
 import { BusEvent } from "@/bus/bus-event"
 import { Config } from "@/config/config"
+import { Flag } from "@/flag/flag"
 import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
 import { Storage } from "@/storage/storage"
@@ -137,6 +138,10 @@ export namespace PermissionNext {
         if (rule.action === "deny")
           throw new DeniedError(ruleset.filter((r) => Wildcard.match(request.permission, r.permission)))
         if (rule.action === "ask") {
+          if (Flag.OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS) {
+            log.warn("auto-approving permission", { permission: request.permission, pattern })
+            continue
+          }
           const id = input.id ?? Identifier.ascending("permission")
           return new Promise<void>((resolve, reject) => {
             const info: Request = {
