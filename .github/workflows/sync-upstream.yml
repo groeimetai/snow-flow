@@ -27,7 +27,7 @@ jobs:
       - name: Add upstream remote and fetch
         run: |
           git remote add upstream https://github.com/anomalyco/opencode.git || true
-          git fetch upstream dev --tags
+          git fetch upstream dev --no-tags
 
       - name: Detect new upstream commits
         id: detect
