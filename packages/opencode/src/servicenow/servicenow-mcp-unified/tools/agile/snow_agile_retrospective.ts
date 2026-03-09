@@ -132,12 +132,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     if (teamId) {
       const prevSprintsResp = await client.get("/api/now/table/rm_sprint", {
         params: {
-          sysparm_query:
-            "group=" +
-            teamId +
-            "^state=3^sys_id!=" +
-            sprintId +
-            "^ORDERBYDESCend_date",
+          sysparm_query: "group=" + teamId + "^state=3^sys_id!=" + sprintId + "^ORDERBYDESCend_date",
           sysparm_limit: compare_sprints,
           sysparm_fields: "sys_id,short_description,number,story_points,start_date,end_date",
           sysparm_display_value: "true",
@@ -150,6 +145,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           params: {
             sysparm_query: "sprint=" + prevSprints[j].sys_id,
             sysparm_fields: "story_points,state",
+            sysparm_display_value: "true",
           },
         })
         const prevStories = prevStoriesResp.data.result || []
@@ -159,7 +155,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         for (var k = 0; k < prevStories.length; k++) {
           var prevPts = parseInt(prevStories[k].story_points, 10) || 0
           prevPlanned += prevPts
-          if (prevStories[k].state === "3") prevCompleted += prevPts // state value for Closed Complete
+          if (prevStories[k].state === "Closed Complete") prevCompleted += prevPts
         }
 
         comparison.push({
@@ -237,7 +233,9 @@ function generateInsights(
     var recent = comparison[0]
     var previous = comparison[1]
     if (rate > recent.completion_rate)
-      insights.push("Velocity improving compared to previous sprint (" + recent.completion_rate + "% -> " + rate + "%).")
+      insights.push(
+        "Velocity improving compared to previous sprint (" + recent.completion_rate + "% -> " + rate + "%).",
+      )
     else if (rate < recent.completion_rate)
       insights.push(
         "Velocity declining compared to previous sprint (" + recent.completion_rate + "% -> " + rate + "%).",

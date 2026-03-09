@@ -38,20 +38,33 @@ export const toolDefinition: MCPToolDefinition = {
 }
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { team, sprint, velocity_sprints = 3 } = args
+  const PLUGIN_HINT =
+    "The rm_team table does not exist. Activate the 'Agile Development 2.0 - Team component' plugin (com.snc.sdlc.agile.2.0.team) to enable team management."
+
   try {
     const client = await getAuthenticatedClient(context)
+
+    // Verify rm_team table exists
+    try {
+      await client.get("/api/now/table/rm_team", { params: { sysparm_limit: 0 } })
+    } catch (e: any) {
+      const msg = (e.message || "") + (e.response?.data?.error?.message || "")
+      if (msg.indexOf("Invalid table") !== -1 || msg.indexOf("ACL") !== -1) {
+        return createErrorResult(PLUGIN_HINT)
+      }
+      throw e
+    }
 
     // Resolve team
     const teamResp = await client.get("/api/now/table/rm_team", {
       params: {
-        sysparm_query: "name=" + team + "^ORsys_id=" + team,
+        sysparm_query: "name=" + args.team + "^ORsys_id=" + args.team,
         sysparm_limit: 1,
         sysparm_display_value: "true",
       },
     })
     const teams = teamResp.data.result || []
-    if (teams.length === 0) return createErrorResult("Team not found: " + team)
+    if (teams.length === 0) return createErrorResult("Team not found: " + args.team)
     const teamRecord = teams[0]
 
     // Get team members
@@ -66,9 +79,9 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     // Resolve target sprint
     var targetSprint: any = null
-    if (sprint) {
-      var sprintQuery = "sys_id=" + sprint
-      if (sprint.indexOf("SPRNT") === 0) sprintQuery = "number=" + sprint
+    if (args.sprint) {
+      var sprintQuery = "sys_id=" + args.sprint
+      if (args.sprint.indexOf("SPRNT") === 0) sprintQuery = "number=" + args.sprint
       const sprintResp = await client.get("/api/now/table/rm_sprint", {
         params: { sysparm_query: sprintQuery, sysparm_limit: 1, sysparm_display_value: "true" },
       })
@@ -91,7 +104,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const closedSprintsResp = await client.get("/api/now/table/rm_sprint", {
       params: {
         sysparm_query: "group=" + teamRecord.sys_id + "^state=3^ORDERBYDESCend_date",
-        sysparm_limit: velocity_sprints,
+        sysparm_limit: args.velocity_sprints || 3,
         sysparm_fields: "sys_id,number,story_points",
       },
     })

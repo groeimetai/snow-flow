@@ -55,43 +55,66 @@ export const toolDefinition: MCPToolDefinition = {
   },
 }
 
+async function resolveUser(client: any, username: string): Promise<string | null> {
+  const resp = await client.get("/api/now/table/sys_user", {
+    params: {
+      sysparm_query: "user_name=" + username + "^ORsys_id=" + username,
+      sysparm_limit: 1,
+      sysparm_fields: "sys_id",
+    },
+  })
+  const users = resp.data.result || []
+  return users.length > 0 ? users[0].sys_id : null
+}
+
+const PLUGIN_HINT =
+  "The rm_team table is not available. Activate the Agile Development 2.0 plugin (com.snc.sdlc.agile.2.0) to enable team management."
+
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { action, sys_id, name, description, velocity, member, role } = args
   try {
     const client = await getAuthenticatedClient(context)
 
-    if (action === "create") {
-      if (!name) return createErrorResult("name is required for create action")
-      const body: Record<string, any> = { name }
-      if (description) body.description = description
-      if (velocity) body.velocity = velocity
+    try {
+      await client.get("/api/now/table/rm_team", { params: { sysparm_limit: 1, sysparm_fields: "sys_id" } })
+    } catch (_e: any) {
+      const msg = _e.message || ""
+      if (msg.indexOf("Invalid table") !== -1 || (_e.response && _e.response.status === 404)) {
+        return createErrorResult(PLUGIN_HINT)
+      }
+      throw _e
+    }
+
+    if (args.action === "create") {
+      if (!args.name) return createErrorResult("name is required for create action")
+      const body: Record<string, any> = { name: args.name }
+      if (args.description) body.description = args.description
+      if (args.velocity) body.velocity = args.velocity
       const response = await client.post("/api/now/table/rm_team", body)
       return createSuccessResult({ action: "created", team: response.data.result })
     }
 
-    if (!sys_id) return createErrorResult("sys_id is required for " + action + " action")
+    if (!args.sys_id) return createErrorResult("sys_id is required for " + args.action + " action")
 
-    if (action === "update") {
+    if (args.action === "update") {
       const body: Record<string, any> = {}
-      if (name) body.name = name
-      if (description) body.description = description
-      if (velocity) body.velocity = velocity
-      const response = await client.patch("/api/now/table/rm_team/" + sys_id, body)
+      if (args.name) body.name = args.name
+      if (args.description) body.description = args.description
+      if (args.velocity) body.velocity = args.velocity
+      const response = await client.patch("/api/now/table/rm_team/" + args.sys_id, body)
       return createSuccessResult({ action: "updated", team: response.data.result })
     }
 
-    if (action === "list_members") {
+    if (args.action === "list_members") {
       const membersResp = await client.get("/api/now/table/rm_team_member", {
         params: {
-          sysparm_query: "team=" + sys_id,
+          sysparm_query: "team=" + args.sys_id,
           sysparm_fields: "sys_id,user,role,allocation",
           sysparm_display_value: "true",
         },
       })
       const members = membersResp.data.result || []
 
-      // Also get the team details
-      const teamResp = await client.get("/api/now/table/rm_team/" + sys_id, {
+      const teamResp = await client.get("/api/now/table/rm_team/" + args.sys_id, {
         params: { sysparm_display_value: "true" },
       })
 
@@ -102,37 +125,24 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       })
     }
 
-    if (action === "add_member") {
-      if (!member) return createErrorResult("member is required for add_member action")
+    if (args.action === "add_member") {
+      if (!args.member) return createErrorResult("member is required for add_member action")
 
-      // Resolve user
-      var userId = member
-      if (member.indexOf("SYS") !== 0 && member.length !== 32) {
-        const userLookup = await client.get("/api/now/table/sys_user", {
-          params: {
-            sysparm_query: "user_name=" + member + "^ORsys_id=" + member,
-            sysparm_limit: 1,
-            sysparm_fields: "sys_id,user_name,name",
-          },
-        })
-        const users = userLookup.data.result || []
-        if (users.length === 0) return createErrorResult("User not found: " + member)
-        userId = users[0].sys_id
-      }
+      const userId = args.member.length === 32 ? args.member : await resolveUser(client, args.member)
+      if (!userId) return createErrorResult("User not found: " + args.member)
 
-      const body: Record<string, any> = { team: sys_id, user: userId }
-      if (role) body.role = role
+      const body: Record<string, any> = { team: args.sys_id, user: userId }
+      if (args.role) body.role = args.role
       const response = await client.post("/api/now/table/rm_team_member", body)
       return createSuccessResult({ action: "member_added", member: response.data.result })
     }
 
-    if (action === "remove_member") {
-      if (!member) return createErrorResult("member is required for remove_member action")
+    if (args.action === "remove_member") {
+      if (!args.member) return createErrorResult("member is required for remove_member action")
 
-      // Find the team_member record
       const memberLookup = await client.get("/api/now/table/rm_team_member", {
         params: {
-          sysparm_query: "team=" + sys_id + "^user=" + member + "^ORuser.user_name=" + member,
+          sysparm_query: "team=" + args.sys_id + "^user=" + args.member + "^ORuser.user_name=" + args.member,
           sysparm_limit: 1,
           sysparm_fields: "sys_id",
         },
@@ -144,9 +154,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       return createSuccessResult({ action: "member_removed", member_sys_id: found[0].sys_id })
     }
 
-    return createErrorResult("Unknown action: " + action)
+    return createErrorResult("Unknown action: " + args.action)
   } catch (error: any) {
-    return createErrorResult(error.message)
+    const msg = error.message || "Operation failed"
+    if (msg.indexOf("Invalid table") !== -1) return createErrorResult(PLUGIN_HINT)
+    return createErrorResult("Team " + args.action + " failed: " + msg)
   }
 }
 

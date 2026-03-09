@@ -56,7 +56,14 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     })
 
     const sprints = sprintsResp.data.result || []
-    if (sprints.length === 0) return createSuccessResult({ message: "No sprints found for team: " + team, velocity: [] })
+    if (sprints.length === 0)
+      return createSuccessResult({
+        message:
+          "No sprints found for team: " +
+          args.team +
+          ". If using Agile 2.0 teams, ensure the 'Agile Development 2.0 - Team component' plugin (com.snc.sdlc.agile.2.0.team) is activated and sprints are linked to the team's group.",
+        velocity: [],
+      })
 
     var velocityData: any[] = []
     var totalCompleted = 0

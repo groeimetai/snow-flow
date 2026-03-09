@@ -59,24 +59,36 @@ export const toolDefinition: MCPToolDefinition = {
 }
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { action, sys_id, name, start_date, end_date, team, story_points, goal } = args
   try {
     const client = await getAuthenticatedClient(context)
 
-    if (action === "create") {
-      if (!name) return createErrorResult("name is required for create action")
-      const body: Record<string, any> = { short_description: name }
-      if (start_date) body.start_date = start_date
-      if (end_date) body.end_date = end_date
-      if (story_points) body.story_points = story_points
-      if (goal) body.goal = goal
+    if (args.action === "create") {
+      if (!args.name) return createErrorResult("name is required for create action")
+      const body: Record<string, any> = { short_description: args.name }
+      if (args.start_date) body.start_date = args.start_date
+      if (args.end_date) body.end_date = args.end_date
+      if (args.story_points) body.story_points = args.story_points
+      if (args.goal) body.goal = args.goal
 
-      if (team) {
-        const teamResp = await client.get("/api/now/table/rm_team", {
-          params: { sysparm_query: "name=" + team + "^ORsys_id=" + team, sysparm_limit: 1, sysparm_fields: "sys_id" },
-        })
-        const teams = teamResp.data.result || []
-        if (teams.length > 0) body.group = teams[0].sys_id
+      if (args.team) {
+        try {
+          const teamResp = await client.get("/api/now/table/rm_team", {
+            params: {
+              sysparm_query: "name=" + args.team + "^ORsys_id=" + args.team,
+              sysparm_limit: 1,
+              sysparm_fields: "sys_id",
+            },
+          })
+          const teams = teamResp.data.result || []
+          if (teams.length > 0) body.assignment_group = teams[0].sys_id
+        } catch (_e: any) {
+          const msg = _e.message || ""
+          if (msg.indexOf("Invalid table") !== -1) {
+            return createErrorResult(
+              "The rm_team table is not available. Activate the Agile Development 2.0 plugin (com.snc.sdlc.agile.2.0) to enable team management. You can still create sprints without a team by omitting the 'team' parameter.",
+            )
+          }
+        }
       }
 
       const response = await client.post("/api/now/table/rm_sprint", body)
@@ -86,32 +98,38 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       })
     }
 
-    if (!sys_id) return createErrorResult("sys_id is required for " + action + " action")
+    if (!args.sys_id) return createErrorResult("sys_id is required for " + args.action + " action")
 
-    if (action === "start") {
-      const response = await client.patch("/api/now/table/rm_sprint/" + sys_id, { state: "2" })
+    if (args.action === "start") {
+      const response = await client.patch("/api/now/table/rm_sprint/" + args.sys_id, { state: "2" })
       return createSuccessResult({ action: "started", sprint: response.data.result })
     }
 
-    if (action === "close") {
-      const response = await client.patch("/api/now/table/rm_sprint/" + sys_id, { state: "3" })
+    if (args.action === "close") {
+      const response = await client.patch("/api/now/table/rm_sprint/" + args.sys_id, { state: "3" })
       return createSuccessResult({ action: "closed", sprint: response.data.result })
     }
 
-    if (action === "update") {
+    if (args.action === "update") {
       const updates: Record<string, any> = {}
-      if (name) updates.short_description = name
-      if (start_date) updates.start_date = start_date
-      if (end_date) updates.end_date = end_date
-      if (story_points) updates.story_points = story_points
-      if (goal) updates.goal = goal
-      const response = await client.patch("/api/now/table/rm_sprint/" + sys_id, updates)
+      if (args.name) updates.short_description = args.name
+      if (args.start_date) updates.start_date = args.start_date
+      if (args.end_date) updates.end_date = args.end_date
+      if (args.story_points) updates.story_points = args.story_points
+      if (args.goal) updates.goal = args.goal
+      const response = await client.patch("/api/now/table/rm_sprint/" + args.sys_id, updates)
       return createSuccessResult({ action: "updated", sprint: response.data.result })
     }
 
-    return createErrorResult("Unknown action: " + action)
+    return createErrorResult("Unknown action: " + args.action)
   } catch (error: any) {
-    return createErrorResult(error.message)
+    const msg = error.message || "Operation failed"
+    if (msg.indexOf("Invalid table") !== -1) {
+      return createErrorResult(
+        "The rm_sprint table is not available. Activate the Agile Development 2.0 plugin (com.snc.sdlc.agile.2.0) on your instance.",
+      )
+    }
+    return createErrorResult("Sprint " + args.action + " failed: " + msg)
   }
 }
 
