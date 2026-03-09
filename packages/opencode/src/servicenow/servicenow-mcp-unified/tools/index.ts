@@ -249,3 +249,6 @@ export * from "./monitoring/index.js"
 
 // Blast Radius (5 tools)
 export * from "./blast-radius/index.js"
+
+// Agile Development 2.0 (14 tools)
+export * from "./agile/index.js"

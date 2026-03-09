@@ -15,6 +15,7 @@ import { Snapshot } from "../snapshot"
 import { Truncate } from "../tool/truncation"
 import path from "path"
 import AGENTS_TEMPLATE from "./agents-template.txt"
+import INSTANCE_TEMPLATE from "./instance-template.txt"
 
 /**
  * Ensures AGENTS.md exists in the project directory.
@@ -36,6 +37,27 @@ async function ensureAgentsMd() {
   }
 }
 
+/**
+ * Ensures INSTANCE.md exists in the project directory.
+ * Creates it from template if it doesn't exist.
+ * INSTANCE.md stores instance-specific knowledge that persists across sessions.
+ */
+async function ensureInstanceMd() {
+  const instanceMdPath = path.join(Instance.directory, "INSTANCE.md")
+
+  try {
+    const exists = await Bun.file(instanceMdPath).exists()
+    if (!exists) {
+      await Bun.write(instanceMdPath, INSTANCE_TEMPLATE)
+      Log.Default.info("created INSTANCE.md", { path: instanceMdPath })
+    }
+  } catch (error) {
+    Log.Default.warn("failed to create INSTANCE.md", {
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
   await Plugin.init()
@@ -49,8 +71,9 @@ export async function InstanceBootstrap() {
   Snapshot.init()
   Truncate.init()
 
-  // Create AGENTS.md if it doesn't exist
+  // Create AGENTS.md and INSTANCE.md if they don't exist
   await ensureAgentsMd()
+  await ensureInstanceMd()
 
   Bus.subscribe(Command.Event.Executed, async (payload) => {
     if (payload.properties.name === Command.Default.INIT) {

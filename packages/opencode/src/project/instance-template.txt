@@ -1,0 +1,33 @@
+# INSTANCE.md — ServiceNow Instance Knowledge Base
+
+This file is automatically maintained by Snow-Flow to store instance-specific knowledge.
+The AI agent reads and updates this file to remember facts about your ServiceNow instance
+across sessions. You can also manually edit this file.
+
+## Instance Info
+
+<!-- Agent: update this section after connecting to the instance -->
+- **URL**: (not yet discovered)
+- **Version**: (not yet discovered)
+
+## Active Plugins
+
+<!-- Agent: update this section when you discover which plugins are active -->
+<!-- Example: com.snc.sdlc.agile.2.0, com.snc.change_management, etc. -->
+
+## Custom Tables
+
+<!-- Agent: record any custom tables you discover during development -->
+
+## Teams & Users
+
+<!-- Agent: record team names, scrum masters, key users you interact with -->
+
+## Development Notes
+
+<!-- Agent: record instance-specific patterns, quirks, or conventions -->
+<!-- Examples: naming conventions, custom fields, integration endpoints -->
+
+## Update Set History
+
+<!-- Agent: record significant update sets created in this instance -->

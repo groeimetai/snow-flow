@@ -14,6 +14,7 @@ const FILES = [
   "AGENTS.md",
   "CLAUDE.md",
   "CONTEXT.md", // deprecated
+  "INSTANCE.md",
 ]
 
 function globalFiles() {

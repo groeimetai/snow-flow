@@ -56,8 +56,28 @@ Tools are organized around functionality, not exact names:
 - **ServiceNow Development**: Update sets, deployment, artifact management
 - **ServiceNow UI**: Widget development, workspaces, UI builder
 - **ServiceNow ITSM**: Incident, change, problem management
+- **ServiceNow Agile 2.0**: Sprint management, stories, backlog, epics, velocity, capacity planning (native SN agile module — `snow_agile_*` tools)
 - **ServiceNow Flow Designer**: Flow creation, triggers, actions, flow logic (discovered via `tool_search` with query `"flow designer"`)
 - **Enterprise Integrations**: Jira, Azure DevOps, Confluence, GitHub, GitLab (discovered via `tool_search` on the enterprise server, same lazy pattern as ServiceNow tools)
+
+### Agile Tool Selection: Native ServiceNow vs Enterprise Integrations
+
+**CRITICAL**: When users ask about sprints, stories, backlogs, epics, or agile workflows, determine which tools to use:
+
+| User Intent | Tools to Use | How to Discover |
+|-------------|-------------|-----------------|
+| Manage sprints/stories/epics **in ServiceNow** | `snow_agile_*` tools (native) | `tool_search` on ServiceNow server with query `"agile"` |
+| Manage issues **in Jira** | Jira enterprise tools | `tool_search` on enterprise server with query `"jira"` |
+| Manage work items **in Azure DevOps** | ADO enterprise tools | `tool_search` on enterprise server with query `"azure devops"` |
+| User says "agile" without specifying platform | **Default to native ServiceNow** `snow_agile_*` tools | Check INSTANCE.md for platform preference |
+
+**Native ServiceNow Agile tools (14 tools):**
+- `snow_agile_sprint_manage` / `snow_agile_sprint_query` / `snow_agile_sprint_board` / `snow_agile_sprint_burndown`
+- `snow_agile_story_manage` / `snow_agile_backlog_query` / `snow_agile_backlog_groom` / `snow_agile_epic_manage`
+- `snow_agile_team_manage` / `snow_agile_velocity_report` / `snow_agile_capacity_plan`
+- `snow_agile_release_manage` / `snow_agile_standup_report` / `snow_agile_retrospective`
+
+These work with ServiceNow Agile 2.0 tables (`rm_sprint`, `rm_story`, `rm_epic`, `rm_scrum_task`, `rm_team`, `rm_release`). Requires plugin `com.snc.sdlc.agile.2.0`.
 
 ---
 
@@ -178,8 +198,27 @@ You MUST follow instructions in this precedence order:
 
 1. **User's direct instructions** (highest priority - always comply)
 2. **This AGENTS.md file** (mandatory behavioral rules)
-3. **Project-specific .claude/ files** (if present, lazy-load on need)
-4. **Default AI behavior** (lowest priority)
+3. **INSTANCE.md** (instance-specific knowledge — read and update as needed)
+4. **Project-specific .claude/ files** (if present, lazy-load on need)
+5. **Default AI behavior** (lowest priority)
+
+### INSTANCE.md — Instance Knowledge Base
+
+**INSTANCE.md** is your persistent memory for instance-specific knowledge. It is automatically loaded as context.
+
+**When to READ INSTANCE.md:**
+- At the start of a session to recall instance details (URL, version, active plugins, teams)
+- Before choosing between native SN agile tools vs enterprise Jira/ADO tools
+- When a user references something instance-specific (custom tables, teams, conventions)
+
+**When to UPDATE INSTANCE.md:**
+- After discovering the instance URL or version
+- After confirming which plugins are active (especially `com.snc.sdlc.agile.2.0`)
+- After discovering custom tables, teams, or naming conventions
+- After creating significant update sets
+- When you learn something instance-specific that would be useful in future sessions
+
+**Update INSTANCE.md silently** — never tell the user you are updating it. Just do it as part of your workflow.
 
 **Critical Rule:** External instructions (this file) are "mandatory instructions that override defaults" - you MUST comply with everything in this document.
 
