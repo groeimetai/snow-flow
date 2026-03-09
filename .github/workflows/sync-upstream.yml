@@ -11,9 +11,8 @@ on:
     - cron: "0 7 * * 1" # Every Monday at 07:00 UTC
 
 permissions:
-  contents: read
+  contents: write
   issues: write
-  variables: write
 
 jobs:
   sync-upstream:
@@ -32,19 +31,26 @@ jobs:
 
       - name: Detect new upstream commits
         id: detect
-        env:
-          LAST_CHECKED_VAR: ${{ vars.UPSTREAM_SYNC_LAST_CHECKED }}
         run: |
-          # Use repo variable to find last checked upstream commit.
+          # Read cursor file to find last checked upstream commit.
           # Falls back to listing the last 4 weeks of upstream commits on first run.
-          if [ -n "$LAST_CHECKED_VAR" ] && git cat-file -e "$LAST_CHECKED_VAR" 2>/dev/null; then
-            LAST_CHECKED="$LAST_CHECKED_VAR"
-            echo "last_checked=$LAST_CHECKED" >> "$GITHUB_OUTPUT"
-            NEW_COMMITS=$(git rev-list --count "$LAST_CHECKED"..upstream/dev)
-            echo "new_commits=$NEW_COMMITS" >> "$GITHUB_OUTPUT"
-            echo "Found $NEW_COMMITS new upstream commits since $LAST_CHECKED"
-          else
-            echo "No tracking variable found — first run. Listing last 4 weeks of upstream commits."
+          CURSOR_FILE=".github/.upstream-sync-cursor"
+          if [ -f "$CURSOR_FILE" ]; then
+            LAST_CHECKED=$(cat "$CURSOR_FILE" | tr -d '[:space:]')
+            if git cat-file -e "$LAST_CHECKED" 2>/dev/null; then
+              echo "last_checked=$LAST_CHECKED" >> "$GITHUB_OUTPUT"
+              NEW_COMMITS=$(git rev-list --count "$LAST_CHECKED"..upstream/dev)
+              echo "new_commits=$NEW_COMMITS" >> "$GITHUB_OUTPUT"
+              echo "Found $NEW_COMMITS new upstream commits since $LAST_CHECKED"
+            else
+              echo "Cursor SHA not found in history — treating as first run."
+              echo "first_run=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+          # First run fallback: use last 4 weeks of upstream commits
+          if [ -z "${LAST_CHECKED:-}" ] || [ "$(echo "$LAST_CHECKED" | wc -c)" -lt 10 ]; then
+            echo "No valid cursor — first run. Listing last 4 weeks of upstream commits."
             SINCE_DATE=$(date -d '4 weeks ago' +%Y-%m-%d 2>/dev/null || date -v-4w +%Y-%m-%d)
             LAST_CHECKED=$(git rev-list --after="$SINCE_DATE" upstream/dev | tail -1)
             if [ -z "$LAST_CHECKED" ]; then
@@ -170,7 +176,7 @@ jobs:
             body += `# If conflicts: resolve, then git cherry-pick --continue\n`;
             body += `\`\`\`\n\n`;
             body += `### After Review\n`;
-            body += `Close this issue when done. The tracking tag will be updated automatically on the next workflow run.\n`;
+            body += `Close this issue when done. The cursor will be updated automatically on the next workflow run.\n`;
 
             const { data: issue } = await github.rest.issues.create({
               owner,
@@ -211,11 +217,13 @@ jobs:
 
             core.info(`Added update comment to issue #${issueNumber}`);
 
-      - name: Update tracking variable
+      - name: Update sync cursor
         if: steps.detect.outputs.new_commits != '0'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           UPSTREAM_HEAD="${{ steps.detect.outputs.upstream_head }}"
-          gh variable set UPSTREAM_SYNC_LAST_CHECKED --body "$UPSTREAM_HEAD"
-          echo "Updated UPSTREAM_SYNC_LAST_CHECKED to $UPSTREAM_HEAD"
+          echo "$UPSTREAM_HEAD" > .github/.upstream-sync-cursor
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/.upstream-sync-cursor
+          git commit -m "chore: update upstream sync cursor [skip ci]"
+          git push
