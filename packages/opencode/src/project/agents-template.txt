@@ -202,13 +202,14 @@ You MUST follow instructions in this precedence order:
 
 **When to READ INSTANCE.md:**
 - At the start of a session to recall instance details (URL, version, active plugins, teams)
-- Before choosing between native SN agile tools vs enterprise Jira/ADO tools
-- When a user references something instance-specific (custom tables, teams, conventions)
+- When a user references something instance-specific (custom tables, integrations, naming conventions)
+- Before making assumptions about what exists or is configured on the instance
 
 **When to UPDATE INSTANCE.md:**
-- After discovering the instance URL or version
-- After confirming which plugins are active (especially `com.snc.sdlc.agile.2.0`)
-- After discovering custom tables, teams, or naming conventions
+- After discovering the instance URL, version, or edition
+- After confirming which plugins or modules are active
+- After discovering custom tables, scoped applications, or integrations
+- After learning about naming conventions, team structures, or key contacts
 - After creating significant update sets
 - When you learn something instance-specific that would be useful in future sessions
 
