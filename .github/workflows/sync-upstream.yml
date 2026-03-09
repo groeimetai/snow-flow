@@ -11,8 +11,9 @@ on:
     - cron: "0 7 * * 1" # Every Monday at 07:00 UTC
 
 permissions:
-  contents: write
+  contents: read
   issues: write
+  variables: write
 
 jobs:
   sync-upstream:
@@ -31,17 +32,19 @@ jobs:
 
       - name: Detect new upstream commits
         id: detect
+        env:
+          LAST_CHECKED_VAR: ${{ vars.UPSTREAM_SYNC_LAST_CHECKED }}
         run: |
-          # Use tracking tag to find last checked upstream commit.
+          # Use repo variable to find last checked upstream commit.
           # Falls back to listing the last 4 weeks of upstream commits on first run.
-          if git rev-parse "upstream-sync/last-checked" >/dev/null 2>&1; then
-            LAST_CHECKED=$(git rev-parse "upstream-sync/last-checked")
+          if [ -n "$LAST_CHECKED_VAR" ] && git cat-file -e "$LAST_CHECKED_VAR" 2>/dev/null; then
+            LAST_CHECKED="$LAST_CHECKED_VAR"
             echo "last_checked=$LAST_CHECKED" >> "$GITHUB_OUTPUT"
             NEW_COMMITS=$(git rev-list --count "$LAST_CHECKED"..upstream/dev)
             echo "new_commits=$NEW_COMMITS" >> "$GITHUB_OUTPUT"
-            echo "Found $NEW_COMMITS new upstream commits since tag upstream-sync/last-checked ($LAST_CHECKED)"
+            echo "Found $NEW_COMMITS new upstream commits since $LAST_CHECKED"
           else
-            echo "No tracking tag found — first run. Listing last 4 weeks of upstream commits."
+            echo "No tracking variable found — first run. Listing last 4 weeks of upstream commits."
             SINCE_DATE=$(date -d '4 weeks ago' +%Y-%m-%d 2>/dev/null || date -v-4w +%Y-%m-%d)
             LAST_CHECKED=$(git rev-list --after="$SINCE_DATE" upstream/dev | tail -1)
             if [ -z "$LAST_CHECKED" ]; then
@@ -54,7 +57,7 @@ jobs:
             echo "Found $NEW_COMMITS upstream commits since $SINCE_DATE"
           fi
 
-          # Store upstream HEAD for tagging later
+          # Store upstream HEAD for saving later
           UPSTREAM_HEAD=$(git rev-parse upstream/dev)
           echo "upstream_head=$UPSTREAM_HEAD" >> "$GITHUB_OUTPUT"
 
@@ -208,10 +211,11 @@ jobs:
 
             core.info(`Added update comment to issue #${issueNumber}`);
 
-      - name: Update tracking tag
+      - name: Update tracking variable
         if: steps.detect.outputs.new_commits != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           UPSTREAM_HEAD="${{ steps.detect.outputs.upstream_head }}"
-          # Update (or create) the tracking tag pointing to latest checked upstream commit
-          git tag -f "upstream-sync/last-checked" "$UPSTREAM_HEAD"
-          git push origin "upstream-sync/last-checked" --force
+          gh variable set UPSTREAM_SYNC_LAST_CHECKED --body "$UPSTREAM_HEAD"
+          echo "Updated UPSTREAM_SYNC_LAST_CHECKED to $UPSTREAM_HEAD"
