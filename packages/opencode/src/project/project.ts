@@ -79,7 +79,7 @@ export namespace Project {
 
         // generate id from root commit
         if (!id) {
-          const roots = await $`git rev-list --max-parents=0 --all`
+          const roots = await $`git rev-list --max-parents=0 HEAD`
             .quiet()
             .nothrow()
             .cwd(sandbox)
@@ -104,6 +104,7 @@ export namespace Project {
 
           id = roots[0]
           if (id) {
+            // Write to .git dir so the cache is shared across worktrees.
             void Bun.file(path.join(git, "opencode"))
               .write(id)
               .catch(() => undefined)
