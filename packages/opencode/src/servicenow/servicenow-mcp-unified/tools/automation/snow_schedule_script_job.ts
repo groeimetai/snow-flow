@@ -1,22 +1,11 @@
 /**
- * snow_schedule_script_job - Schedule server-side script execution
+ * snow_schedule_script_job - Execute server-side JavaScript on ServiceNow
  *
- * ⚠️ IMPORTANT: This tool does NOT execute scripts directly!
- * It creates a Scheduled Script Job (sysauto_script) and attempts to trigger it.
+ * Primary: synchronous execution via Scripted REST API (~1-3s)
+ * Fallback: scheduled job if endpoint unavailable
+ * Auto-deploys the executor endpoint on first use.
  *
- * How it works:
- * 1. Creates a scheduled job in sysauto_script table
- * 2. Attempts to create a sys_trigger to run it immediately
- * 3. Polls for results via sys_properties (max 30 seconds)
- * 4. If trigger fails or scheduler is slow, returns executed=false
- *
- * When executed=false is returned:
- * - The script job WAS created successfully
- * - You need to manually run it: System Scheduler > Scheduled Jobs
- * - Or wait for the scheduler to pick it up
- *
- * ⚠️ CRITICAL: ALL SCRIPTS MUST BE ES5 ONLY!
- * ServiceNow runs on Rhino engine - no const/let/arrow functions/template literals.
+ * ES5 only! ServiceNow runs on Rhino engine.
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
@@ -24,18 +13,88 @@ import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
 import crypto from "crypto"
 
+const ENDPOINT_SERVICE_ID = "snow_flow_exec"
+const ENDPOINT_PATH = "/execute"
+
+const deployed = new Map<string, boolean>()
+
+const OPERATION_SCRIPT = `(function process(request, response) {
+  var body = request.body.data;
+  var script = body.script;
+  var id = body.execution_id || gs.generateGUID();
+
+  if (!script) {
+    response.setStatus(400);
+    response.setBody({ success: false, error: 'No script provided' });
+    return;
+  }
+
+  var output = [];
+  var result = null;
+  var error = null;
+  var startTime = new GlideDateTime();
+
+  var origPrint = gs.print;
+  var origInfo = gs.info;
+  var origWarn = gs.warn;
+  var origError = gs.error;
+
+  gs.print = function(msg) {
+    var m = String(msg);
+    output.push({ level: 'print', message: m });
+    origPrint.call(gs, m);
+  };
+  gs.info = function(msg) {
+    var m = String(msg);
+    output.push({ level: 'info', message: m });
+    origInfo.call(gs, m);
+  };
+  gs.warn = function(msg) {
+    var m = String(msg);
+    output.push({ level: 'warn', message: m });
+    origWarn.call(gs, m);
+  };
+  gs.error = function(msg) {
+    var m = String(msg);
+    output.push({ level: 'error', message: m });
+    origError.call(gs, m);
+  };
+
+  try {
+    result = GlideEvaluator.evaluateString(script);
+  } catch (e) {
+    error = e.toString();
+    if (e.stack) error = error + '\\nStack: ' + e.stack;
+  }
+
+  gs.print = origPrint;
+  gs.info = origInfo;
+  gs.warn = origWarn;
+  gs.error = origError;
+
+  var endTime = new GlideDateTime();
+  var execMs = Math.abs(GlideDateTime.subtract(startTime, endTime).getNumericValue());
+
+  response.setStatus(error ? 500 : 200);
+  response.setBody({
+    execution_id: id,
+    success: error === null,
+    result: result,
+    error: error,
+    output: output,
+    execution_time_ms: execMs
+  });
+})(request, response);`
+
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_schedule_script_job",
   description:
-    "⚠️ UNRELIABLE: Creates a Scheduled Script Job (sysauto_script) but CANNOT guarantee execution. The ServiceNow scheduler decides when/if it runs — this frequently times out or returns executed=false. Do NOT use this to verify, test, or validate anything — results are unreliable. Only use as a last resort when no dedicated tool exists. Prefer dedicated tools (snow_query_table, snow_manage_flow, etc.) for all operations. ES5 only!",
-  // Metadata for tool discovery (not sent to LLM)
+    "Execute server-side JavaScript on ServiceNow. Primary: synchronous execution via Scripted REST API (~1-3s). Fallback: scheduled job if endpoint unavailable. Auto-deploys the executor endpoint on first use. ES5 only (Rhino engine)!",
   category: "automation",
   subcategory: "scheduled-jobs",
   use_cases: ["automation", "scripts", "scheduled-jobs", "debugging", "verification"],
   complexity: "advanced",
   frequency: "high",
-
-  // Permission enforcement
   permission: "write",
   allowedRoles: ["developer", "admin"],
   inputSchema: {
@@ -43,7 +102,7 @@ export const toolDefinition: MCPToolDefinition = {
     properties: {
       script: {
         type: "string",
-        description: "🚨 ES5 ONLY! JavaScript code to execute (no const/let/arrows/templates - Rhino engine)",
+        description: "ES5 ONLY! JavaScript code to execute (no const/let/arrows/templates - Rhino engine)",
       },
       description: {
         type: "string",
@@ -57,7 +116,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       timeout: {
         type: "number",
-        description: "Timeout in milliseconds for polling execution results",
+        description: "Timeout in milliseconds for polling execution results (fallback mode only)",
         default: 30000,
       },
       validate_es5: {
@@ -72,7 +131,7 @@ export const toolDefinition: MCPToolDefinition = {
       },
       autoConfirm: {
         type: "boolean",
-        description: "⚠️ DANGEROUS: Skip user confirmation even if requireConfirmation would normally be required",
+        description: "Skip user confirmation even if requireConfirmation would normally be required",
         default: false,
       },
       allowDataModification: {
@@ -89,55 +148,48 @@ export const toolDefinition: MCPToolDefinition = {
   },
 }
 
-export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const {
-    script,
-    description = "Script scheduled via snow_schedule_script_job",
-    scope = "global",
-    timeout = 30000,
-    validate_es5 = true,
-    requireConfirmation = false,
-    autoConfirm = false,
-    allowDataModification = false,
-    runAsUser,
-  } = args
+export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+  const script = args.script as string
+  const description = (args.description as string) || "Script scheduled via snow_schedule_script_job"
+  const timeout = (args.timeout as number) || 30000
+  const validate = args.validate_es5 !== false
+  const confirmation = args.requireConfirmation === true
+  const auto = args.autoConfirm === true
+  const modification = args.allowDataModification === true
+  const user = args.runAsUser as string | undefined
 
-  // ES5 validation (warning only, does not block execution)
-  const es5Warnings: string[] = []
+  const warnings: string[] = []
 
   try {
-    if (validate_es5) {
-      const es5Validation = validateES5(script)
-      if (!es5Validation.valid) {
-        es5Warnings.push(
-          `Script contains ES6+ syntax (${es5Validation.violations.map((v: any) => v.type).join(", ")}). This may cause runtime errors in ServiceNow's Rhino engine. Consider using ES5 syntax.`,
+    if (validate) {
+      const validation = validateES5(script)
+      if (!validation.valid) {
+        warnings.push(
+          `Script contains ES6+ syntax (${validation.violations.map((v) => v.type).join(", ")}). This may cause runtime errors in ServiceNow's Rhino engine. Consider using ES5 syntax.`,
         )
       }
     }
 
-    // Security analysis
-    const securityAnalysis = analyzeScriptSecurity(script)
+    const security = analyzeScriptSecurity(script)
 
-    // Check if confirmation is needed
-    if (requireConfirmation && !autoConfirm) {
-      // Return confirmation request
-      const confirmationPrompt = generateConfirmationPrompt({
+    if (confirmation && !auto) {
+      const prompt = generateConfirmationPrompt({
         script,
         description,
-        runAsUser,
-        allowDataModification,
-        securityAnalysis,
+        runAsUser: user,
+        allowDataModification: modification,
+        securityAnalysis: security,
       })
 
       return createSuccessResult(
         {
           requires_confirmation: true,
-          confirmation_prompt: confirmationPrompt,
+          confirmation_prompt: prompt,
           script_to_execute: script,
           execution_context: {
-            runAsUser: runAsUser || "current",
-            allowDataModification,
-            securityLevel: securityAnalysis.riskLevel,
+            runAsUser: user || "current",
+            allowDataModification: modification,
+            securityLevel: security.riskLevel,
           },
           next_step: "Call snow_confirm_script_execution with userConfirmed=true to execute",
         },
@@ -147,105 +199,198 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       )
     }
 
-    // Execute the script
     return await executeScript(
-      {
-        script,
-        description,
-        timeout,
-        securityAnalysis,
-        autoConfirm,
-        es5Warnings,
-      },
+      { script, description, timeout, securityAnalysis: security, autoConfirm: auto, es5Warnings: warnings },
       context,
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error
     return createErrorResult(
-      error instanceof SnowFlowError
-        ? error
-        : new SnowFlowError(ErrorType.UNKNOWN_ERROR, error.message, { originalError: error }),
+      err instanceof SnowFlowError
+        ? err
+        : new SnowFlowError(ErrorType.UNKNOWN_ERROR, err.message, { originalError: err }),
     )
   }
 }
 
-async function executeScript(
+async function ensureEndpoint(context: ServiceNowContext): Promise<boolean> {
+  if (deployed.get(context.instanceUrl)) return true
+
+  const client = await getAuthenticatedClient(context)
+
+  const check = await client.get("/api/now/table/sys_ws_definition", {
+    params: {
+      sysparm_query: `service_id=${ENDPOINT_SERVICE_ID}`,
+      sysparm_fields: "sys_id",
+      sysparm_limit: 1,
+    },
+  })
+
+  const existing = check.data?.result?.[0]
+  if (!existing) {
+    const svc = await client.post("/api/now/table/sys_ws_definition", {
+      name: "Snow-Flow Script Executor",
+      service_id: ENDPOINT_SERVICE_ID,
+      short_description: "Synchronous script execution endpoint for Snow-Flow",
+      active: true,
+    })
+
+    const svcId = svc.data?.result?.sys_id
+    if (!svcId) return false
+
+    const res = await client.post("/api/now/table/sys_ws_operation", {
+      name: "Execute Script",
+      web_service_definition: svcId,
+      http_method: "POST",
+      relative_path: ENDPOINT_PATH,
+      operation_script: OPERATION_SCRIPT,
+      active: true,
+    })
+
+    if (!res.data?.result?.sys_id) return false
+  }
+
+  const ping = await client
+    .post(`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, {
+      script: "'pong'",
+      execution_id: "deploy_verify",
+    })
+    .catch(() => null)
+
+  const ok = ping?.data?.result?.success === true
+  if (ok) deployed.set(context.instanceUrl, true)
+  return ok
+}
+
+async function executeViaSyncApi(
+  params: {
+    script: string
+    executionId: string
+    description: string
+    securityAnalysis: Record<string, unknown>
+    autoConfirm: boolean
+    es5Warnings: string[]
+  },
+  context: ServiceNowContext,
+): Promise<ToolResult | null> {
+  const client = await getAuthenticatedClient(context)
+
+  const response = await client
+    .post(`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, {
+      script: params.script,
+      execution_id: params.executionId,
+    })
+    .catch((err: { response?: { status?: number } }) => {
+      if (err.response?.status === 404 || err.response?.status === 403) return null
+      throw err
+    })
+
+  if (!response) return null
+
+  const data = response.data?.result
+  if (!data) return null
+
+  const organized = {
+    print: (data.output || [])
+      .filter((o: { level: string }) => o.level === "print")
+      .map((o: { message: string }) => o.message),
+    info: (data.output || [])
+      .filter((o: { level: string }) => o.level === "info")
+      .map((o: { message: string }) => o.message),
+    warn: (data.output || [])
+      .filter((o: { level: string }) => o.level === "warn")
+      .map((o: { message: string }) => o.message),
+    error: (data.output || [])
+      .filter((o: { level: string }) => o.level === "error")
+      .map((o: { message: string }) => o.message),
+    success: data.success,
+  }
+
+  const result: Record<string, unknown> = {
+    executed: true,
+    success: data.success,
+    result: data.result,
+    error: data.error,
+    output: organized,
+    raw_output: data.output,
+    execution_time_ms: data.execution_time_ms,
+    execution_id: params.executionId,
+    auto_confirmed: params.autoConfirm,
+    security_analysis: params.securityAnalysis,
+  }
+
+  if (params.es5Warnings.length > 0) {
+    result.warnings = params.es5Warnings
+  }
+
+  return createSuccessResult(result, {
+    script_length: params.script.length,
+    method: "sync_rest_api",
+    description: params.description,
+  })
+}
+
+async function executeViaScheduler(
   params: {
     script: string
     description: string
     timeout: number
-    securityAnalysis: any
+    securityAnalysis: Record<string, unknown>
     autoConfirm: boolean
     es5Warnings: string[]
   },
   context: ServiceNowContext,
 ): Promise<ToolResult> {
-  const { script, description, timeout, securityAnalysis, autoConfirm, es5Warnings } = params
-
   const client = await getAuthenticatedClient(context)
 
-  // SECURITY: Proper string escaping - escape backslashes first, then quotes
-  const escapeForJS = (str: string) =>
+  const escape = (str: string) =>
     str.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "\\r")
 
-  // Create unique execution ID for tracking
   const executionId = `exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
-  const outputMarker = `SNOW_FLOW_EXEC_${executionId}`
+  const marker = `SNOW_FLOW_EXEC_${executionId}`
 
-  // Wrap script with comprehensive output capture
-  const wrappedScript = `
-// Snow-Flow Script Execution - ID: ${executionId}
-// Description: ${escapeForJS(description)}
+  const wrapped = `
 var __sfOutput = [];
 var __sfStartTime = new GlideDateTime();
 var __sfResult = null;
 var __sfError = null;
 
-// Store original gs methods
 var __sfOrigPrint = gs.print;
 var __sfOrigInfo = gs.info;
 var __sfOrigWarn = gs.warn;
 var __sfOrigError = gs.error;
 
-// Override gs methods to capture output
 gs.print = function(msg) {
   var m = String(msg);
   __sfOutput.push({level: 'print', message: m, timestamp: new GlideDateTime().getDisplayValue()});
   __sfOrigPrint(m);
 };
-
 gs.info = function(msg) {
   var m = String(msg);
   __sfOutput.push({level: 'info', message: m, timestamp: new GlideDateTime().getDisplayValue()});
   __sfOrigInfo(m);
 };
-
 gs.warn = function(msg) {
   var m = String(msg);
   __sfOutput.push({level: 'warn', message: m, timestamp: new GlideDateTime().getDisplayValue()});
   __sfOrigWarn(m);
 };
-
 gs.error = function(msg) {
   var m = String(msg);
   __sfOutput.push({level: 'error', message: m, timestamp: new GlideDateTime().getDisplayValue()});
   __sfOrigError(m);
 };
 
-// Execute the user script
 try {
   gs.info('=== Snow-Flow Script Execution Started ===');
-  gs.info('Description: ${escapeForJS(description)}');
-
+  gs.info('Description: ${escape(params.description)}');
   __sfResult = (function() {
-    ${script}
+    ${params.script}
   })();
-
   gs.info('=== Snow-Flow Script Execution Completed ===');
-
   if (__sfResult !== undefined && __sfResult !== null) {
     gs.info('Script returned: ' + (typeof __sfResult === 'object' ? JSON.stringify(__sfResult) : String(__sfResult)));
   }
-
 } catch(e) {
   __sfError = e.toString();
   gs.error('=== Snow-Flow Script Execution Failed ===');
@@ -255,17 +400,14 @@ try {
   }
 }
 
-// Restore original gs methods
 gs.print = __sfOrigPrint;
 gs.info = __sfOrigInfo;
 gs.warn = __sfOrigWarn;
 gs.error = __sfOrigError;
 
-// Calculate execution time
 var __sfEndTime = new GlideDateTime();
 var __sfExecTimeMs = Math.abs(GlideDateTime.subtract(__sfStartTime, __sfEndTime).getNumericValue());
 
-// Build result object
 var __sfResultObj = {
   executionId: '${executionId}',
   success: __sfError === null,
@@ -276,109 +418,89 @@ var __sfResultObj = {
   completedAt: __sfEndTime.getDisplayValue()
 };
 
-// Store result in system property for retrieval
-gs.setProperty('${outputMarker}', JSON.stringify(__sfResultObj));
-gs.info('${outputMarker}:DONE');
+gs.setProperty('${marker}', JSON.stringify(__sfResultObj));
+gs.info('${marker}:DONE');
 `
 
-  // Step 1: Create Scheduled Script Job (sysauto_script)
-  const jobName = `Snow-Flow Exec - ${executionId}`
+  const name = `Snow-Flow Exec - ${executionId}`
 
-  const createResponse = await client.post("/api/now/table/sysauto_script", {
-    name: jobName,
-    script: wrappedScript,
+  const job = await client.post("/api/now/table/sysauto_script", {
+    name,
+    script: wrapped,
     active: true,
     run_type: "on_demand",
     conditional: false,
   })
 
-  if (!createResponse.data?.result?.sys_id) {
+  if (!job.data?.result?.sys_id) {
     throw new SnowFlowError(ErrorType.SERVICENOW_API_ERROR, "Failed to create scheduled script job", {
-      details: createResponse.data,
+      details: job.data,
     })
   }
 
-  const jobSysId = createResponse.data.result.sys_id
+  const jobId = job.data.result.sys_id
 
-  // Step 2: Create sys_trigger to execute immediately
   const now = new Date()
-  const triggerTime = new Date(now.getTime() + 2000) // 2 seconds from now
-  const triggerTimeStr = triggerTime.toISOString().replace("T", " ").substring(0, 19)
+  const trigger = new Date(now.getTime() + 2000)
+  const triggerStr = trigger.toISOString().replace("T", " ").substring(0, 19)
 
-  try {
-    await client.post("/api/now/table/sys_trigger", {
-      name: jobName,
-      next_action: triggerTimeStr,
-      trigger_type: 0, // Run Once
-      state: 0, // Ready
+  await client
+    .post("/api/now/table/sys_trigger", {
+      name,
+      next_action: triggerStr,
+      trigger_type: 0,
+      state: 0,
       document: "sysauto_script",
-      document_key: jobSysId,
+      document_key: jobId,
       claimed_by: "",
       system_id: "snow-flow",
     })
-  } catch (triggerError) {
-    // If trigger creation fails, job won't auto-execute
-    // Continue anyway - we'll check results
-  }
+    .catch(() => {})
 
-  // Step 3: Poll for execution results
-  const startTime = Date.now()
-  let result: any = null
-  let attempts = 0
-  const maxAttempts = Math.ceil(timeout / 2000)
+  const start = Date.now()
+  const max = Math.ceil(params.timeout / 2000)
+  let result: Record<string, unknown> | null = null
 
-  while (Date.now() - startTime < timeout && attempts < maxAttempts) {
-    attempts++
+  for (let i = 0; i < max && Date.now() - start < params.timeout; i++) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    try {
-      // Check sys_properties for output marker
-      const propResponse = await client.get("/api/now/table/sys_properties", {
+    const prop = await client
+      .get("/api/now/table/sys_properties", {
         params: {
-          sysparm_query: `name=${outputMarker}`,
+          sysparm_query: `name=${marker}`,
           sysparm_fields: "value,sys_id",
           sysparm_limit: 1,
         },
       })
+      .catch(() => null)
 
-      if (propResponse.data?.result?.[0]?.value) {
-        try {
-          result = JSON.parse(propResponse.data.result[0].value)
+    const entry = prop?.data?.result?.[0]
+    if (!entry?.value) continue
 
-          // Delete the property after reading
-          const propSysId = propResponse.data.result[0].sys_id
-          if (propSysId) {
-            await client.delete(`/api/now/table/sys_properties/${propSysId}`).catch(() => {})
-          }
-          break
-        } catch (parseErr) {
-          // Continue polling
-        }
+    try {
+      result = JSON.parse(entry.value) as Record<string, unknown>
+      if (entry.sys_id) {
+        await client.delete(`/api/now/table/sys_properties/${entry.sys_id}`).catch(() => {})
       }
-    } catch (pollError) {
-      // Continue polling
+      break
+    } catch {
+      continue
     }
   }
 
-  // Step 4: Format and return results
   if (result) {
-    // Execution was confirmed - cleanup the job
-    try {
-      await client.delete(`/api/now/table/sysauto_script/${jobSysId}`)
-    } catch (cleanupError) {
-      // Ignore cleanup errors
-    }
+    await client.delete(`/api/now/table/sysauto_script/${jobId}`).catch(() => {})
 
-    // Organize output by level
+    const output = (result.output || []) as Array<{ level: string; message: string }>
     const organized = {
-      print: result.output.filter((o: any) => o.level === "print").map((o: any) => o.message),
-      info: result.output.filter((o: any) => o.level === "info").map((o: any) => o.message),
-      warn: result.output.filter((o: any) => o.level === "warn").map((o: any) => o.message),
-      error: result.output.filter((o: any) => o.level === "error").map((o: any) => o.message),
+      print: output.filter((o) => o.level === "print").map((o) => o.message),
+      info: output.filter((o) => o.level === "info").map((o) => o.message),
+      warn: output.filter((o) => o.level === "warn").map((o) => o.message),
+      error: output.filter((o) => o.level === "error").map((o) => o.message),
       success: result.success,
     }
 
-    const successData: any = {
+    const data: Record<string, unknown> = {
       executed: true,
       success: result.success,
       result: result.result,
@@ -387,51 +509,77 @@ gs.info('${outputMarker}:DONE');
       raw_output: result.output,
       execution_time_ms: result.executionTimeMs,
       execution_id: executionId,
-      auto_confirmed: autoConfirm,
-      security_analysis: securityAnalysis,
+      auto_confirmed: params.autoConfirm,
+      security_analysis: params.securityAnalysis,
+      fallback_warning: "Executed via scheduler fallback. The sync REST API endpoint could not be reached.",
     }
 
-    // Add ES5 warnings if any (non-blocking, informational only)
-    if (es5Warnings.length > 0) {
-      successData.warnings = es5Warnings
+    if (params.es5Warnings.length > 0) {
+      data.warnings = params.es5Warnings
     }
 
-    return createSuccessResult(successData, {
+    return createSuccessResult(data, {
       script_length: params.script.length,
       method: "sysauto_script_with_trigger",
-      description,
-    })
-  } else {
-    // Script was saved but execution couldn't be confirmed
-    // DO NOT delete the job - user may want to trigger it manually
-    const pendingData: any = {
-      executed: false,
-      execution_id: executionId,
-      scheduled_job_sys_id: jobSysId,
-      job_name: jobName,
-      auto_confirmed: autoConfirm,
-      security_analysis: securityAnalysis,
-      message:
-        "Script was saved as scheduled job but automatic execution could not be confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.",
-      action_required: `Navigate to System Scheduler > Scheduled Jobs and run: ${jobName}`,
-      manual_url: `${context.instanceUrl}/sysauto_script.do?sys_id=${jobSysId}`,
-    }
-
-    // Add ES5 warnings if any (non-blocking, informational only)
-    if (es5Warnings.length > 0) {
-      pendingData.warnings = es5Warnings
-    }
-
-    return createSuccessResult(pendingData, {
-      script_length: params.script.length,
-      method: "scheduled_job_pending",
-      description,
+      description: params.description,
     })
   }
+
+  const pending: Record<string, unknown> = {
+    executed: false,
+    execution_id: executionId,
+    scheduled_job_sys_id: jobId,
+    job_name: name,
+    auto_confirmed: params.autoConfirm,
+    security_analysis: params.securityAnalysis,
+    message:
+      "Script was saved as scheduled job but automatic execution could not be confirmed. The sys_trigger may not have been created (permissions) or the scheduler has not yet picked it up.",
+    action_required: `Navigate to System Scheduler > Scheduled Jobs and run: ${name}`,
+    manual_url: `${context.instanceUrl}/sysauto_script.do?sys_id=${jobId}`,
+    fallback_warning: "Both sync REST API and scheduler fallback failed to confirm execution.",
+  }
+
+  if (params.es5Warnings.length > 0) {
+    pending.warnings = params.es5Warnings
+  }
+
+  return createSuccessResult(pending, {
+    script_length: params.script.length,
+    method: "scheduled_job_pending",
+    description: params.description,
+  })
 }
 
-function validateES5(code: string): { valid: boolean; violations: any[] } {
-  const violations: any[] = []
+async function executeScript(
+  params: {
+    script: string
+    description: string
+    timeout: number
+    securityAnalysis: Record<string, unknown>
+    autoConfirm: boolean
+    es5Warnings: string[]
+  },
+  context: ServiceNowContext,
+): Promise<ToolResult> {
+  const executionId = `exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
+
+  const syncResult = await executeViaSyncApi({ ...params, executionId }, context)
+  if (syncResult) return syncResult
+
+  const ok = await ensureEndpoint(context).catch(() => false)
+  if (ok) {
+    const retry = await executeViaSyncApi({ ...params, executionId }, context)
+    if (retry) return retry
+  }
+
+  return executeViaScheduler(params, context)
+}
+
+function validateES5(code: string): {
+  valid: boolean
+  violations: Array<{ type: string; line: number; code: string; fix: string }>
+} {
+  const violations: Array<{ type: string; line: number; code: string; fix: string }> = []
 
   const patterns = [
     { regex: /\b(const|let)\s+/g, type: "const/let", fix: "Use 'var'" },
@@ -442,57 +590,55 @@ function validateES5(code: string): { valid: boolean; violations: any[] } {
     { regex: /class\s+\w+/g, type: "class", fix: "Use function constructor" },
   ]
 
-  patterns.forEach(({ regex, type, fix }) => {
+  for (const pattern of patterns) {
     let match
-    while ((match = regex.exec(code)) !== null) {
+    while ((match = pattern.regex.exec(code)) !== null) {
       violations.push({
-        type,
+        type: pattern.type,
         line: code.substring(0, match.index).split("\n").length,
         code: match[0],
-        fix,
+        fix: pattern.fix,
       })
     }
-  })
+  }
 
   return { valid: violations.length === 0, violations }
 }
 
-function analyzeScriptSecurity(script: string): any {
+function analyzeScriptSecurity(script: string): Record<string, unknown> {
   const analysis = {
-    riskLevel: "LOW",
+    riskLevel: "LOW" as string,
     warnings: [] as string[],
     dataOperations: [] as string[],
     systemAccess: [] as string[],
   }
 
-  const dataModificationPatterns = [/\.insert\(\)/gi, /\.update\(\)/gi, /\.deleteRecord\(\)/gi, /\.setValue\(/gi]
+  const modification = [/\.insert\(\)/gi, /\.update\(\)/gi, /\.deleteRecord\(\)/gi, /\.setValue\(/gi]
+  const system = [/gs\.getUser\(\)/gi, /gs\.getUserID\(\)/gi, /gs\.hasRole\(/gi, /gs\.executeNow\(/gi]
+  const dangerous = [/eval\(/gi, /new Function\(/gi, /\.setWorkflow\(/gi]
 
-  const systemAccessPatterns = [/gs\.getUser\(\)/gi, /gs\.getUserID\(\)/gi, /gs\.hasRole\(/gi, /gs\.executeNow\(/gi]
-
-  const dangerousPatterns = [/eval\(/gi, /new Function\(/gi, /\.setWorkflow\(/gi]
-
-  dataModificationPatterns.forEach((pattern) => {
+  for (const pattern of modification) {
     const matches = script.match(pattern)
     if (matches) {
       analysis.dataOperations.push(...matches)
       if (analysis.riskLevel === "LOW") analysis.riskLevel = "MEDIUM"
     }
-  })
+  }
 
-  systemAccessPatterns.forEach((pattern) => {
+  for (const pattern of system) {
     const matches = script.match(pattern)
     if (matches) {
       analysis.systemAccess.push(...matches)
     }
-  })
+  }
 
-  dangerousPatterns.forEach((pattern) => {
+  for (const pattern of dangerous) {
     const matches = script.match(pattern)
     if (matches) {
       analysis.warnings.push(`Potentially dangerous operation detected: ${matches[0]}`)
       analysis.riskLevel = "HIGH"
     }
-  })
+  }
 
   if (script.includes("while") && (script.includes(".next()") || script.includes(".hasNext()"))) {
     analysis.warnings.push("Script contains loops that may process many records")
@@ -502,52 +648,51 @@ function analyzeScriptSecurity(script: string): any {
   return analysis
 }
 
-function generateConfirmationPrompt(context: any): string {
-  const { script, description, runAsUser, allowDataModification, securityAnalysis } = context
-
-  const riskEmoji =
-    {
-      LOW: "🟢",
-      MEDIUM: "🟡",
-      HIGH: "🔴",
-    }[securityAnalysis.riskLevel] || "⚪"
+function generateConfirmationPrompt(ctx: {
+  script: string
+  description: string
+  runAsUser: string | undefined
+  allowDataModification: boolean
+  securityAnalysis: Record<string, unknown>
+}): string {
+  const risk = ctx.securityAnalysis.riskLevel as string
+  const emoji = risk === "HIGH" ? "RED" : risk === "MEDIUM" ? "YELLOW" : "GREEN"
+  const ops = ctx.securityAnalysis.dataOperations as string[]
+  const access = ctx.securityAnalysis.systemAccess as string[]
+  const warns = ctx.securityAnalysis.warnings as string[]
 
   return `
-🚨 SCRIPT EXECUTION REQUEST
+SCRIPT EXECUTION REQUEST
 
-📋 **Description:** ${description}
+Description: ${ctx.description}
 
-${riskEmoji} **Security Risk Level:** ${securityAnalysis.riskLevel}
+Security Risk Level: ${emoji} ${risk}
 
-👤 **Run as User:** ${runAsUser || "Current User"}
-📝 **Data Modification:** ${allowDataModification ? "✅ ALLOWED" : "❌ READ-ONLY"}
+Run as User: ${ctx.runAsUser || "Current User"}
+Data Modification: ${ctx.allowDataModification ? "ALLOWED" : "READ-ONLY"}
 
-🔍 **Script Analysis:**
-${
-  securityAnalysis.dataOperations.length > 0
-    ? `📊 Data Operations Detected: ${securityAnalysis.dataOperations.join(", ")}`
-    : ""
-}
-${securityAnalysis.systemAccess.length > 0 ? `🔧 System Access: ${securityAnalysis.systemAccess.join(", ")}` : ""}
-${securityAnalysis.warnings.length > 0 ? `⚠️ Warnings: ${securityAnalysis.warnings.join(", ")}` : ""}
+Script Analysis:
+${ops.length > 0 ? `Data Operations Detected: ${ops.join(", ")}` : ""}
+${access.length > 0 ? `System Access: ${access.join(", ")}` : ""}
+${warns.length > 0 ? `Warnings: ${warns.join(", ")}` : ""}
 
-📜 **Script to Execute:**
+Script to Execute:
 \`\`\`javascript
-${script}
+${ctx.script}
 \`\`\`
 
-⚡ **Impact:** This script will run in ServiceNow's server-side JavaScript context with full API access.
+Impact: This script will run in ServiceNow's server-side JavaScript context with full API access.
 
-❓ **Do you want to proceed with executing this script?**
+Do you want to proceed with executing this script?
 
 Reply with:
-- ✅ **YES** - Execute the script
-- ❌ **NO** - Cancel execution
-- 📝 **MODIFY** - Make changes before execution
+- YES - Execute the script
+- NO - Cancel execution
+- MODIFY - Make changes before execution
 
-⚠️ Only proceed if you understand what this script does and trust its source!
+Only proceed if you understand what this script does and trust its source!
 `.trim()
 }
 
-export const version = "2.0.0"
+export const version = "3.0.0"
 export const author = "Snow-Flow SDK"
