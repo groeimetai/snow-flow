@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { Project } from "../../src/project/project"
+import { Filesystem } from "../../src/util/filesystem"
 import { Log } from "../../src/util/log"
 import { Storage } from "../../src/storage/storage"
 import { $ } from "bun"
@@ -69,7 +70,7 @@ describe("Project.fromDirectory with worktrees", () => {
   })
 
   test("worktree should share project ID with main repo", async () => {
-    const p = await loadProject()
+    const p = Project
     await using tmp = await tmpdir({ git: true })
 
     const { project: main } = await p.fromDirectory(tmp.path)
@@ -95,7 +96,7 @@ describe("Project.fromDirectory with worktrees", () => {
   })
 
   test("separate clones of the same repo should share project ID", async () => {
-    const p = await loadProject()
+    const p = Project
     await using tmp = await tmpdir({ git: true })
 
     // Create a bare remote, push, then clone into a second directory

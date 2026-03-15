@@ -233,7 +233,6 @@ export namespace SessionCompaction {
           time: { created: Date.now() },
           agent: original.agent,
           model: original.model,
-          format: original.format,
           tools: original.tools,
           system: original.system,
           variant: original.variant,
