@@ -31,7 +31,7 @@ export namespace ShareNext {
       await sync(evt.properties.info.sessionID, [
         {
           type: "message",
-          data: evt.properties.info,
+          data: evt.properties.info as any,
         },
       ])
       if (evt.properties.info.role === "user") {
@@ -184,7 +184,7 @@ export namespace ShareNext {
       },
       ...messages.map((x) => ({
         type: "message" as const,
-        data: x.info,
+        data: x.info as any,
       })),
       ...messages.flatMap((x) => x.parts.map((y) => ({ type: "part" as const, data: y }))),
       {

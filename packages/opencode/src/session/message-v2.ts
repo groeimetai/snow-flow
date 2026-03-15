@@ -371,6 +371,7 @@ export namespace MessageV2 {
         OutputLengthError.Schema,
         AbortedError.Schema,
         APIError.Schema,
+        ContextOverflowError.Schema,
       ])
       .optional(),
     parentID: z.string(),

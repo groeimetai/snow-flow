@@ -1,19 +1,46 @@
-import { realpathSync } from "fs"
-import { realpath } from "fs/promises"
-import { dirname, join, relative, resolve } from "path"
+import { realpathSync, statSync } from "fs"
+import { readFile, writeFile, stat as fsStat, realpath } from "fs/promises"
+import { dirname, join, relative, resolve as pathResolve } from "path"
 
 export namespace Filesystem {
   export const exists = (p: string) =>
-    Bun.file(p)
-      .stat()
+    fsStat(p)
       .then(() => true)
       .catch(() => false)
 
   export const isDir = (p: string) =>
-    Bun.file(p)
-      .stat()
+    fsStat(p)
       .then((s) => s.isDirectory())
       .catch(() => false)
+
+  export async function readText(p: string): Promise<string> {
+    return readFile(p, "utf-8")
+  }
+
+  export async function readJson<T = unknown>(p: string): Promise<T> {
+    const text = await readFile(p, "utf-8")
+    return JSON.parse(text) as T
+  }
+
+  export async function write(p: string, content: string | Buffer | Uint8Array): Promise<void> {
+    await writeFile(p, content)
+  }
+
+  export async function writeJson(p: string, data: unknown): Promise<void> {
+    await writeFile(p, JSON.stringify(data, null, 2))
+  }
+
+  export async function readBytes(p: string): Promise<Buffer> {
+    return readFile(p)
+  }
+
+  export function stat(p: string) {
+    return fsStat(p)
+  }
+
+  export function resolve(...segments: string[]): string {
+    return pathResolve(...segments)
+  }
   /**
    * On Windows, normalize a path to its canonical casing using the filesystem.
    * This is needed because Windows paths are case-insensitive but LSP servers
