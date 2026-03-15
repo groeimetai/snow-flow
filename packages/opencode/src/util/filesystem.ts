@@ -1,5 +1,5 @@
-import { realpathSync, statSync } from "fs"
-import { readFile, writeFile, stat as fsStat, realpath } from "fs/promises"
+import { realpathSync, statSync, mkdirSync } from "fs"
+import { readFile, writeFile, stat as fsStat, realpath, mkdir } from "fs/promises"
 import { dirname, join, relative, resolve as pathResolve } from "path"
 
 export namespace Filesystem {
@@ -23,10 +23,12 @@ export namespace Filesystem {
   }
 
   export async function write(p: string, content: string | Buffer | Uint8Array): Promise<void> {
+    await mkdir(dirname(p), { recursive: true }).catch(() => {})
     await writeFile(p, content)
   }
 
   export async function writeJson(p: string, data: unknown): Promise<void> {
+    await mkdir(dirname(p), { recursive: true }).catch(() => {})
     await writeFile(p, JSON.stringify(data, null, 2))
   }
 
