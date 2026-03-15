@@ -1319,6 +1319,26 @@ export namespace Config {
           prune: z.boolean().optional().describe("Enable pruning of old tool outputs (default: true)"),
         })
         .optional(),
+      contextdb: z
+        .object({
+          enabled: z
+            .boolean()
+            .optional()
+            .describe("Enable the ContextDB layer for cross-session memory and retrieval (default: true)"),
+          persist_summaries: z
+            .boolean()
+            .optional()
+            .describe("Persist compaction summaries to SQLite for future retrieval (default: true)"),
+          cross_session_retrieval: z
+            .boolean()
+            .optional()
+            .describe("Retrieve relevant context from prior sessions when assembling prompts (default: true)"),
+          max_db_size_mb: z
+            .number()
+            .optional()
+            .describe("Maximum ContextDB size in megabytes before automatic cleanup (default: 500)"),
+        })
+        .optional(),
       experimental: z
         .object({
           hook: z

@@ -48,6 +48,7 @@ import { iife } from "@/util/iife"
 import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
 import { UsageReporter, ActivityReporter, AnonymousTelemetry } from "@/usage"
+import { ContextDB } from "@/context/context-db"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -277,6 +278,7 @@ export namespace SessionPrompt {
     using _ = defer(() => cancel(sessionID))
 
     let step = 0
+    let l2RetrievedForUser: string | undefined
     const session = await Session.get(sessionID)
     while (true) {
       SessionStatus.set(sessionID, { type: "busy" })
@@ -610,12 +612,32 @@ export namespace SessionPrompt {
 
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: sessionMessages })
 
+      // L2: cross-session context retrieval via ContextDB.
+      // Retrieve once per user turn (tracked by lastUser.id) to avoid
+      // redundant FTS queries during multi-step tool-call loops.
+      const needsL2 = lastUser.id !== l2RetrievedForUser
+      let l2Context: string[] = []
+      if (needsL2) {
+        const userQuery =
+          sessionMessages
+            .findLast((m) => m.info.role === "user")
+            ?.parts.filter((p) => p.type === "text" && !("synthetic" in p && (p as any).synthetic))
+            .map((p) => (p as MessageV2.TextPart).text)
+            .join(" ") ?? ""
+        l2Context = await ContextDB.retrieveContext({
+          sessionID,
+          projectID: Instance.project.id,
+          userQuery,
+        })
+        l2RetrievedForUser = lastUser.id
+      }
+
       const result = await processor.process({
         user: lastUser,
         agent,
         abort,
         sessionID,
-        system: [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system())],
+        system: [...(await SystemPrompt.environment(model)), ...(await InstructionPrompt.system()), ...l2Context],
         messages: [
           ...MessageV2.toModelMessages(sessionMessages, model),
           ...(isLastStep
