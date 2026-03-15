@@ -14,6 +14,7 @@ import { fn } from "@/util/fn"
 import { Agent } from "@/agent/agent"
 import { Plugin } from "@/plugin"
 import { Config } from "@/config/config"
+import { ContextDB } from "@/context/context-db"
 
 export namespace SessionCompaction {
   const log = Log.create({ service: "session.compaction" })
@@ -215,6 +216,15 @@ export namespace SessionCompaction {
     }
     if (processor.message.error) return "stop"
     Bus.publish(Event.Compacted, { sessionID: input.sessionID })
+
+    // Capture Instance context before fire-and-forget (AsyncLocalStorage won't
+    // be available once the promise escapes the current execution context).
+    const projectID = Instance.project.id
+    const directory = Instance.directory
+    persistSummary(input.sessionID, msg.id, projectID, directory).catch((e) => {
+      log.warn("failed to persist compaction summary", { error: e })
+    })
+
     return "continue"
   }
 
@@ -248,4 +258,31 @@ export namespace SessionCompaction {
       })
     },
   )
+
+  async function persistSummary(sessionID: string, messageID: string, projectID: string, directory: string) {
+    const config = await Config.get()
+    if (config.contextdb?.persist_summaries === false) return
+
+    const db = await ContextDB.get()
+    if (!db) return
+
+    const msgs = await Session.messages({ sessionID })
+    const compactionMsg = msgs.find((m) => m.info.id === messageID)
+    if (!compactionMsg) return
+
+    const summaryText = compactionMsg.parts
+      .filter((p) => p.type === "text")
+      .map((p) => (p as MessageV2.TextPart).text)
+      .join("\n")
+
+    if (!summaryText.trim()) return
+
+    ContextDB.storeSummary({
+      sessionID,
+      projectID,
+      directory,
+      summaryText,
+      filesMentioned: ContextDB.extractFileReferences(summaryText),
+    })
+  }
 }

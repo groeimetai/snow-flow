@@ -5,6 +5,7 @@ import { Identifier } from "../id/id"
 import { PermissionNext } from "../permission/next"
 import type { Agent } from "../agent/agent"
 import { Scheduler } from "../scheduler"
+import { ContextDB } from "@/context/context-db"
 
 export namespace Truncate {
   export const MAX_LINES = 2000
@@ -105,5 +106,21 @@ export namespace Truncate {
         : `...${removed} ${unit} truncated...\n\n${hint}\n\n${preview}`
 
     return { content: message, truncated: true, outputPath: filepath }
+  }
+
+  export function indexOutput(input: { sessionID: string; toolName: string; toolInput: string; summary: string; outputPath?: string }) {
+    const hash = new Bun.CryptoHasher("sha256").update(input.toolName + ":" + input.toolInput).digest("hex")
+    ContextDB.get()
+      .then((db) => {
+        if (!db) return
+        ContextDB.storeToolOutput({
+          sessionID: input.sessionID,
+          toolName: input.toolName,
+          inputHash: hash,
+          outputSummary: input.summary.slice(0, 2000),
+          outputPath: input.outputPath,
+        })
+      })
+      .catch(() => {})
   }
 }
