@@ -7,6 +7,7 @@ import {
   For,
   Match,
   on,
+  onMount,
   Show,
   Switch,
   useContext,
@@ -16,6 +17,7 @@ import path from "path"
 import { useRoute, useRouteData } from "@tui/context/route"
 import { useSync } from "@tui/context/sync"
 import { SplitBorder } from "@tui/component/border"
+import { Spinner } from "@tui/component/spinner"
 import { useTheme } from "@tui/context/theme"
 import {
   BoxRenderable,
@@ -95,6 +97,7 @@ const context = createContext<{
   showThinking: () => boolean
   showTimestamps: () => boolean
   showDetails: () => boolean
+  showGenericToolOutput: () => boolean
   diffWrapMode: () => "word" | "none"
   sync: ReturnType<typeof useSync>
 }>()
@@ -148,6 +151,7 @@ export function Session() {
   const [showScrollbar, setShowScrollbar] = kv.signal("scrollbar_visible", false)
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
   const [animationsEnabled, setAnimationsEnabled] = kv.signal("animations_enabled", true)
+  const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
 
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
@@ -550,6 +554,15 @@ export function Session() {
       },
     },
     {
+      title: showGenericToolOutput() ? "Hide generic tool output" : "Show generic tool output",
+      value: "session.toggle.generic_tool_output",
+      category: "Session",
+      onSelect: (dialog) => {
+        setShowGenericToolOutput((prev) => !prev)
+        dialog.clear()
+      },
+    },
+    {
       title: "Toggle session scrollbar",
       value: "session.toggle.scrollbar",
       keybind: "scrollbar_toggle",
@@ -943,6 +956,7 @@ export function Session() {
         showThinking,
         showTimestamps,
         showDetails,
+        showGenericToolOutput,
         diffWrapMode,
         sync,
       }}
@@ -1230,6 +1244,7 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
   const local = useLocal()
   const { theme } = useTheme()
   const sync = useSync()
+  const keybind = useKeybind()
   const messages = createMemo(() => sync.data.message[props.message.sessionID] ?? [])
 
   const final = createMemo(() => {
@@ -1261,6 +1276,14 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
           )
         }}
       </For>
+      <Show when={props.parts.some((x) => x.type === "tool" && x.tool === "task")}>
+        <box paddingTop={1} paddingLeft={3}>
+          <text fg={theme.text}>
+            {keybind.print("session_child_cycle")}
+            <span style={{ fg: theme.textMuted }}> view subagents</span>
+          </text>
+        </box>
+      </Show>
       <Show when={props.message.error && props.message.error.name !== "MessageAbortedError"}>
         <box
           border={["left"]}
@@ -1462,10 +1485,40 @@ type ToolProps<T extends Tool.Info> = {
   part: ToolPart
 }
 function GenericTool(props: ToolProps<any>) {
+  const { theme } = useTheme()
+  const ctx = use()
+  const output = createMemo(() => props.output?.trim() ?? "")
+  const [expanded, setExpanded] = createSignal(false)
+  const lines = createMemo(() => output().split("\n"))
+  const maxLines = 3
+  const overflow = createMemo(() => lines().length > maxLines)
+  const limited = createMemo(() => {
+    if (expanded() || !overflow()) return output()
+    return [...lines().slice(0, maxLines), "…"].join("\n")
+  })
+
   return (
-    <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
-      {props.tool} {input(props.input)}
-    </InlineTool>
+    <Show
+      when={props.output && ctx.showGenericToolOutput()}
+      fallback={
+        <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
+          {props.tool} {input(props.input)}
+        </InlineTool>
+      }
+    >
+      <BlockTool
+        title={`# ${props.tool} ${input(props.input)}`}
+        part={props.part}
+        onClick={overflow() ? () => setExpanded((prev) => !prev) : undefined}
+      >
+        <box gap={1}>
+          <text fg={theme.text}>{limited()}</text>
+          <Show when={overflow()}>
+            <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+          </Show>
+        </box>
+      </BlockTool>
+    </Show>
   )
 }
 
@@ -1485,6 +1538,7 @@ function InlineTool(props: {
   iconColor?: RGBA
   complete: any
   pending: string
+  spinner?: boolean
   children: JSX.Element
   part: ToolPart
 }) {
@@ -1541,11 +1595,18 @@ function InlineTool(props: {
         }
       }}
     >
-      <text paddingLeft={3} fg={fg()} attributes={denied() ? TextAttributes.STRIKETHROUGH : undefined}>
-        <Show fallback={<>~ {props.pending}</>} when={props.complete}>
-          <span style={{ fg: props.iconColor }}>{props.icon}</span> {props.children}
-        </Show>
-      </text>
+      <Switch>
+        <Match when={props.spinner}>
+          <Spinner color={fg()} children={props.children} />
+        </Match>
+        <Match when={true}>
+          <text paddingLeft={3} fg={fg()} attributes={denied() ? TextAttributes.STRIKETHROUGH : undefined}>
+            <Show fallback={<>~ {props.pending}</>} when={props.complete}>
+              <span style={{ fg: props.iconColor }}>{props.icon}</span> {props.children}
+            </Show>
+          </text>
+        </Match>
+      </Switch>
       <Show when={error() && !denied()}>
         <text fg={theme.error}>{error()}</text>
       </Show>
@@ -1784,55 +1845,63 @@ function WebSearch(props: ToolProps<any>) {
 
 function Task(props: ToolProps<typeof TaskTool>) {
   const { theme } = useTheme()
-  const keybind = useKeybind()
   const { navigate } = useRoute()
-  const local = useLocal()
+  const sync = useSync()
 
-  const current = createMemo(() => props.metadata.summary?.findLast((x) => x.state.status !== "pending"))
-  const color = createMemo(() => local.agent.color(props.input.subagent_type ?? "unknown"))
+  onMount(() => {
+    if (props.metadata.sessionId && !sync.data.message[props.metadata.sessionId]?.length)
+      sync.session.sync(props.metadata.sessionId)
+  })
+
+  const messages = createMemo(() => sync.data.message[props.metadata.sessionId ?? ""] ?? [])
+
+  const tools = createMemo(() => {
+    return messages().flatMap((msg) =>
+      (sync.data.part[msg.id] ?? [])
+        .filter((part): part is ToolPart => part.type === "tool")
+        .map((part) => ({ tool: part.tool, state: part.state })),
+    )
+  })
+
+  const current = createMemo(() => tools().findLast((x) => (x.state as any).title))
+
+  const isRunning = createMemo(() => props.part.state.status === "running")
+
+  const duration = createMemo(() => {
+    const first = messages().find((x) => x.role === "user")?.time.created
+    const assistant = messages().findLast((x) => x.role === "assistant")?.time.completed
+    if (!first || !assistant) return 0
+    return assistant - first
+  })
 
   return (
-    <Switch>
-      <Match when={props.metadata.summary?.length}>
-        <BlockTool
-          title={"# " + Locale.titlecase(props.input.subagent_type ?? "unknown") + " Task"}
-          onClick={
-            props.metadata.sessionId
-              ? () => navigate({ type: "session", sessionID: props.metadata.sessionId! })
-              : undefined
-          }
-          part={props.part}
-        >
-          <box>
-            <text style={{ fg: theme.textMuted }}>
-              {props.input.description} ({props.metadata.summary?.length} toolcalls)
-            </text>
-            <Show when={current()}>
-              <text style={{ fg: current()!.state.status === "error" ? theme.error : theme.textMuted }}>
-                └ {Locale.titlecase(current()!.tool)}{" "}
-                {current()!.state.status === "completed" ? current()!.state.title : ""}
-              </text>
-            </Show>
-          </box>
-          <text fg={theme.text}>
-            {keybind.print("session_child_cycle")}
-            <span style={{ fg: theme.textMuted }}> view subagents</span>
-          </text>
-        </BlockTool>
-      </Match>
-      <Match when={true}>
-        <InlineTool
-          icon="◉"
-          iconColor={color()}
-          pending="Delegating..."
-          complete={props.input.subagent_type ?? props.input.description}
-          part={props.part}
-        >
-          <span style={{ fg: theme.text }}>{Locale.titlecase(props.input.subagent_type ?? "unknown")}</span> Task "
-          {props.input.description}"
-        </InlineTool>
-      </Match>
-    </Switch>
+    <InlineTool
+      icon="≡"
+      spinner={isRunning()}
+      complete={props.input.description}
+      pending="Delegating..."
+      part={props.part}
+    >
+      {props.input.description}
+      <Show when={isRunning() && tools().length > 0}>
+        {" "}
+        · {tools().length} toolcalls
+        <Show fallback={"\n⤷ Running..."} when={current()}>
+          {(item) => {
+            const title = createMemo(() => (item().state as any).title)
+            return (
+              <>
+                {"\n"}⤷ {Locale.titlecase(item().tool)} {title()}
+              </>
+            )
+          }}
+        </Show>
+      </Show>
+      <Show when={duration() && props.part.state.status === "completed"}>
+        {"\n  "}
+        {tools().length} toolcalls · {Locale.duration(duration())}
+      </Show>
+    </InlineTool>
   )
 }
 

@@ -79,7 +79,7 @@ export namespace Project {
 
         // generate id from root commit
         if (!id) {
-          const roots = await $`git rev-list --max-parents=0 --all`
+          const roots = await $`git rev-list --max-parents=0 HEAD`
             .quiet()
             .nothrow()
             .cwd(sandbox)
@@ -104,6 +104,7 @@ export namespace Project {
 
           id = roots[0]
           if (id) {
+            // Write to .git dir so the cache is shared across worktrees.
             void Bun.file(path.join(git, "opencode"))
               .write(id)
               .catch(() => undefined)
@@ -187,9 +188,6 @@ export namespace Project {
           updated: Date.now(),
         },
       }
-      if (id !== "global") {
-        await migrateFromGlobal(id, worktree)
-      }
     }
 
     // migrate old projects before sandboxes
@@ -209,6 +207,12 @@ export namespace Project {
     if (sandbox !== result.worktree && !result.sandboxes.includes(sandbox)) result.sandboxes.push(sandbox)
     result.sandboxes = result.sandboxes.filter((x) => existsSync(x))
     await Storage.write<Info>(["project", id], result)
+    // Runs after write so the target project record exists.
+    // Runs on every startup because sessions created before git init
+    // accumulate under "global" and need migrating whenever they appear.
+    if (id !== "global") {
+      await migrateFromGlobal(id, worktree)
+    }
     GlobalBus.emit("event", {
       payload: {
         type: Event.Updated.type,

@@ -16,6 +16,10 @@ import type { Provider } from "@/provider/provider"
 import { Instance } from "@/project/instance"
 
 export namespace MessageV2 {
+  export function isMedia(mime: string) {
+    return mime.startsWith("image/") || mime === "application/pdf"
+  }
+
   export const OutputLengthError = NamedError.create("MessageOutputLengthError", z.object({}))
   export const AbortedError = NamedError.create("MessageAbortedError", z.object({ message: z.string() }))
   export const AuthError = NamedError.create(
@@ -37,6 +41,10 @@ export namespace MessageV2 {
     }),
   )
   export type APIError = z.infer<typeof APIError.Schema>
+  export const ContextOverflowError = NamedError.create(
+    "ContextOverflowError",
+    z.object({ message: z.string(), responseBody: z.string().optional() }),
+  )
 
   const PartBase = z.object({
     id: z.string(),
@@ -161,6 +169,7 @@ export namespace MessageV2 {
   export const CompactionPart = PartBase.extend({
     type: z.literal("compaction"),
     auto: z.boolean(),
+    overflow: z.boolean().optional(),
   }).meta({
     ref: "CompactionPart",
   })
@@ -362,6 +371,7 @@ export namespace MessageV2 {
         OutputLengthError.Schema,
         AbortedError.Schema,
         APIError.Schema,
+        ContextOverflowError.Schema,
       ])
       .optional(),
     parentID: z.string(),
@@ -529,7 +539,11 @@ export namespace MessageV2 {
     return result
   }
 
-  export function toModelMessages(input: WithParts[], model: Provider.Model): ModelMessage[] {
+  export function toModelMessages(
+    input: WithParts[],
+    model: Provider.Model,
+    options?: { stripMedia?: boolean },
+  ): ModelMessage[] {
     const result: UIMessage[] = []
     const toolNames = new Set<string>()
 
@@ -583,13 +597,21 @@ export namespace MessageV2 {
               text: part.text,
             })
           // text/plain and directory files are converted into text parts, ignore them
-          if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory")
-            userMessage.parts.push({
-              type: "file",
-              url: part.url,
-              mediaType: part.mime,
-              filename: part.filename,
-            })
+          if (part.type === "file" && part.mime !== "text/plain" && part.mime !== "application/x-directory") {
+            if (options?.stripMedia && isMedia(part.mime)) {
+              userMessage.parts.push({
+                type: "text",
+                text: `[Attached ${part.mime}: ${part.filename ?? "file"}]`,
+              })
+            } else {
+              userMessage.parts.push({
+                type: "file",
+                url: part.url,
+                mediaType: part.mime,
+                filename: part.filename,
+              })
+            }
+          }
 
           if (part.type === "compaction") {
             userMessage.parts.push({
@@ -638,7 +660,7 @@ export namespace MessageV2 {
             toolNames.add(part.tool)
             if (part.state.status === "completed") {
               const outputText = part.state.time.compacted ? "[Old tool result content cleared]" : part.state.output
-              const attachments = part.state.time.compacted ? [] : (part.state.attachments ?? [])
+              const attachments = part.state.time.compacted || options?.stripMedia ? [] : (part.state.attachments ?? [])
               const output =
                 attachments.length > 0
                   ? {
@@ -746,7 +768,8 @@ export namespace MessageV2 {
         msg.parts.some((part) => part.type === "compaction")
       )
         break
-      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish) completed.add(msg.info.parentID)
+      if (msg.info.role === "assistant" && msg.info.summary && msg.info.finish && !msg.info.error)
+        completed.add(msg.info.parentID)
     }
     result.reverse()
     return result

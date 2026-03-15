@@ -236,7 +236,8 @@ export function Autocomplete(props: {
         const width = props.anchor().width - 4
         options.push(
           ...sortedFiles.map((item): AutocompleteOption => {
-            let url = `file://${process.cwd()}/${item}`
+            const baseDir = (sync.data.path?.directory || process.cwd()).replace(/\/+$/, "")
+            let url = `file://${baseDir}/${item}`
             let filename = item
             if (lineRange && !item.endsWith("/")) {
               filename = `${item}#${lineRange.startLine}${lineRange.endLine ? `-${lineRange.endLine}` : ""}`

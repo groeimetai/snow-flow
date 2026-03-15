@@ -46,7 +46,7 @@ export namespace ProviderTransform {
   ): ModelMessage[] {
     // Anthropic rejects messages with empty content - filter out empty string messages
     // and remove empty text/reasoning parts from array content
-    if (model.api.npm === "@ai-sdk/anthropic") {
+    if (model.api.npm === "@ai-sdk/anthropic" || model.api.npm === "@ai-sdk/amazon-bedrock") {
       msgs = msgs
         .map((msg) => {
           if (typeof msg.content === "string") {
@@ -492,8 +492,13 @@ export namespace ProviderTransform {
             },
           }
         }
+        let levels = ["low", "high"]
+        if (id.includes("3.1")) {
+          levels = ["low", "medium", "high"]
+        }
+
         return Object.fromEntries(
-          ["low", "high"].map((effort) => [
+          levels.map((effort) => [
             effort,
             {
               includeThoughts: true,
