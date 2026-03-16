@@ -371,7 +371,7 @@ class ServiceNowAutomationMCP {
         {
           name: "snow_schedule_script_with_output",
           description:
-            "⚠️ DEPRECATED - Use snow_schedule_script_job instead. SCHEDULES (not executes directly) a script via scheduled job. May return executed=false. ES5 only!",
+            "⚠️ DEPRECATED - Use snow_execute_script instead. SCHEDULES (not executes directly) a script via scheduled job. May return executed=false. ES5 only!",
           inputSchema: {
             type: "object",
             properties: {
@@ -400,7 +400,7 @@ class ServiceNowAutomationMCP {
         {
           name: "snow_schedule_script_sync",
           description:
-            '⚠️ DEPRECATED - Use snow_schedule_script_job instead. SCHEDULES (not sync executes) a script via scheduled job. The "sync" name is misleading - this still uses async scheduling. ES5 only!',
+            '⚠️ DEPRECATED - Use snow_execute_script instead. SCHEDULES (not sync executes) a script via scheduled job. The "sync" name is misleading - this still uses async scheduling. ES5 only!',
           inputSchema: {
             type: "object",
             properties: {

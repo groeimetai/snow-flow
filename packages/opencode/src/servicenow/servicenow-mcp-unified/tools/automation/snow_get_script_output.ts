@@ -46,7 +46,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const client = await getAuthenticatedClient(context)
 
     // Try to find the output in sys_properties
-    // snow_schedule_script_job stores output as: SNOW_FLOW_EXEC_${executionId}
+    // snow_execute_script stores output as: SNOW_FLOW_EXEC_${executionId}
     const outputMarker = `SNOW_FLOW_EXEC_${execution_id}`
 
     const outputResponse = await client.get(
@@ -62,7 +62,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         await client.delete(`/api/now/table/sys_properties/${property.sys_id}`)
       }
 
-      // Organize output by level (matches snow_schedule_script_job format)
+      // Organize output by level (matches snow_execute_script format)
       const organizedOutput = {
         print: (scriptOutput.output || []).filter((o: any) => o.level === "print").map((o: any) => o.message),
         info: (scriptOutput.output || []).filter((o: any) => o.level === "info").map((o: any) => o.message),

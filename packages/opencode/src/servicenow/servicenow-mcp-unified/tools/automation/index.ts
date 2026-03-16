@@ -34,11 +34,11 @@ export {
   toolDefinition as snow_discover_schedules_def,
   execute as snow_discover_schedules_exec,
 } from "./snow_discover_schedules.js"
-// Scheduled script job tool - schedules scripts via sysauto_script + sys_trigger (does NOT execute directly!)
+// Script execution tool - synchronous REST API execution with scheduler fallback
 export {
-  toolDefinition as snow_schedule_script_job_def,
-  execute as snow_schedule_script_job_exec,
-} from "./snow_schedule_script_job.js"
+  toolDefinition as snow_execute_script_def,
+  execute as snow_execute_script_exec,
+} from "./snow_execute_script.js"
 export { toolDefinition as snow_get_logs_def, execute as snow_get_logs_exec } from "./snow_get_logs.js"
 export {
   toolDefinition as snow_get_email_logs_def,
