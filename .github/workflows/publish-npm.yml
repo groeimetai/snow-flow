@@ -6,6 +6,7 @@ on:
       - "v*"
     branches:
       - main
+      - dev
   workflow_dispatch:
     inputs:
       version:
