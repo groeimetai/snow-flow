@@ -100,9 +100,11 @@ export namespace Format {
     return result
   }
 
+  let formatUnsub: (() => void) | undefined
   export function init() {
     log.info("init")
-    Bus.subscribe(File.Event.Edited, async (payload) => {
+    formatUnsub?.()
+    formatUnsub = Bus.subscribe(File.Event.Edited, async (payload) => {
       const file = payload.properties.file
       log.info("formatting", { file })
       const ext = path.extname(file)
