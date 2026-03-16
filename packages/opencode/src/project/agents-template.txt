@@ -590,23 +590,23 @@ You have **direct access** to MCP tools in your environment. They are **already 
 - Call the MCP tool directly once discovered
 - Tools work like built-in functions - just call them
 
-### Anti-Pattern 2: Using Scheduled Scripts / Background Scripts
+### Anti-Pattern 2: Using Script Execution for CRUD Operations
 
-**🚨 CRITICAL: `snow_schedule_script_job` and `snow_trigger_scheduled_job` are UNRELIABLE!**
+**`snow_execute_script` executes scripts reliably (~1-3s via sync REST API), but prefer dedicated tools for CRUD operations.**
 
-These tools **CANNOT execute scripts directly**. They create scheduled jobs that depend on the ServiceNow scheduler — which frequently times out, returns `executed=false`, or simply never runs the script. **Do NOT use these tools to verify, test, or validate anything.**
+`snow_execute_script` now uses synchronous REST API execution (with scheduler fallback), so it IS reliable for script execution. However, you should still prefer dedicated tools over raw GlideRecord scripts.
 
-**NEVER use `snow_schedule_script_job` or `snow_trigger_scheduled_job` for:**
-- ❌ Verifying if something was created correctly (use `snow_query_table` instead)
-- ❌ Testing GlideRecord queries (use `snow_query_table` instead)
-- ❌ Checking table/field existence (use `snow_query_table` with limit=1 instead)
-- ❌ Creating/updating artifacts (use dedicated tools!)
-- ❌ Any operation where you need reliable results
+**Prefer dedicated tools over `snow_execute_script` for:**
+- Querying records → use `snow_query_table`
+- Creating/updating artifacts → use dedicated tools (snow_deploy, snow_update, etc.)
+- Flow operations → use `snow_manage_flow`
+- Checking table/field existence → use `snow_query_table` with limit=1
 
-**What to use instead:**
-- `snow_query_table` — for querying records, checking existence, verifying data
-- `snow_manage_flow` — for flow operations
-- Dedicated tools — always prefer a specific tool over a generic script execution
+**`snow_execute_script` IS appropriate for:**
+- ✅ Custom verification scripts that need server-side logic
+- ✅ Complex operations not covered by dedicated tools
+- ✅ Debugging and testing with gs.info output
+- ✅ One-off data operations
 
 ### Anti-Pattern 3: No Mock Data, No Placeholders
 

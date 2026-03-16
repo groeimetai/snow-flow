@@ -220,9 +220,9 @@ class ServiceNowMCPServer {
             },
           },
           {
-            name: "snow_schedule_script_job",
+            name: "snow_execute_script",
             description:
-              "⚠️ SCHEDULES (not executes directly) server-side JavaScript via Scheduled Script Job. Creates sysauto_script + sys_trigger. May return executed=false if scheduler doesn't pick it up - check System Scheduler > Scheduled Jobs.",
+              "Execute server-side JavaScript on ServiceNow. Primary: synchronous execution via Scripted REST API (~1-3s). Fallback: scheduled job if endpoint unavailable. ES5 only (Rhino engine)!",
             inputSchema: {
               type: "object",
               properties: {
@@ -287,7 +287,7 @@ class ServiceNowMCPServer {
           case "snow_create_workflow":
             return await this.handleCreateWorkflow(args)
 
-          case "snow_schedule_script_job":
+          case "snow_execute_script":
             return await this.handleExecuteScript(args)
 
           case "snow_test_connection":
