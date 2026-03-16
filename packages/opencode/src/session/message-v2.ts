@@ -447,6 +447,8 @@ export namespace MessageV2 {
 
   // In-memory message cache: avoids re-reading all messages from disk on every loop iteration.
   // Uses Instance.state for per-instance isolation and Bus events for cache invalidation.
+  // LRU eviction: only the most recently accessed sessions are kept in memory.
+  const MAX_CACHED_SESSIONS = 3
   const messageCache = Instance.state(
     () => {
       const sessions = new Map<string, MessageV2.WithParts[]>()
@@ -508,7 +510,12 @@ export namespace MessageV2 {
   export async function streamCached(sessionID: string): Promise<WithParts[]> {
     const { sessions } = messageCache()
     const existing = sessions.get(sessionID)
-    if (existing) return existing
+    if (existing) {
+      // LRU: move to end (most recently used)
+      sessions.delete(sessionID)
+      sessions.set(sessionID, existing)
+      return existing
+    }
 
     // Cold start: load from disk and populate cache
     const result: WithParts[] = []
@@ -517,6 +524,13 @@ export namespace MessageV2 {
     }
     result.reverse() // stream yields newest first, we want chronological order
     sessions.set(sessionID, result)
+
+    // LRU eviction: remove oldest sessions if over limit
+    while (sessions.size > MAX_CACHED_SESSIONS) {
+      const oldest = sessions.keys().next().value
+      if (oldest) sessions.delete(oldest)
+    }
+
     return result
   }
 
