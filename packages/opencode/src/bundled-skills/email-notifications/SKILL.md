@@ -11,7 +11,7 @@ tools:
   - snow_configure_email
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # Email Notifications for ServiceNow

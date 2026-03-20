@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_analyze_artifact
 ---
 

@@ -11,7 +11,7 @@ tools:
   - snow_create_transform_map
   - snow_create_import_set
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # Transform Maps for ServiceNow

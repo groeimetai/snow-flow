@@ -384,7 +384,7 @@ function getAssetInventorySummary() {
 | --------------------------------- | ------------------------- |
 | `snow_query_table`                | Query assets and licenses |
 | `snow_cmdb_search`                | Search CMDB for CIs       |
-| `snow_execute_script_with_output` | Test asset scripts        |
+| `snow_execute_script` | Test asset scripts        |
 | `snow_find_artifact`              | Find asset configurations |
 
 ### Example Workflow
@@ -398,7 +398,7 @@ await snow_query_table({
 })
 
 // 2. Check license compliance
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var license = new GlideRecord('alm_license');
         license.addQuery('remainingRELATIVELT@integer@0');

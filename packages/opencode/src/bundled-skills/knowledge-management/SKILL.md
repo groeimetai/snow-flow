@@ -374,7 +374,7 @@ function updateArticleRating(articleSysId) {
 | `snow_knowledge_search`           | Search knowledge base |
 | `snow_query_table`                | Query kb_knowledge    |
 | `snow_find_artifact`              | Find articles         |
-| `snow_execute_script_with_output` | Test KB scripts       |
+| `snow_execute_script` | Test KB scripts       |
 
 ### Example Workflow
 
@@ -386,7 +386,7 @@ await snow_knowledge_search({
 })
 
 // 2. Create new article
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var article = new GlideRecord('kb_knowledge');
         article.initialize();

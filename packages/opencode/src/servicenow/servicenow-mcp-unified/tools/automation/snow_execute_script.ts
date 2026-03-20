@@ -1,5 +1,5 @@
 /**
- * snow_schedule_script_job - Execute server-side JavaScript on ServiceNow
+ * snow_execute_script - Execute server-side JavaScript on ServiceNow
  *
  * Primary: synchronous execution via Scripted REST API (~1-3s)
  * Fallback: scheduled job if endpoint unavailable
@@ -87,7 +87,7 @@ const OPERATION_SCRIPT = `(function process(request, response) {
 })(request, response);`
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_schedule_script_job",
+  name: "snow_execute_script",
   description:
     "Execute server-side JavaScript on ServiceNow. Primary: synchronous execution via Scripted REST API (~1-3s). Fallback: scheduled job if endpoint unavailable. Auto-deploys the executor endpoint on first use. ES5 only (Rhino engine)!",
   category: "automation",
@@ -150,7 +150,7 @@ export const toolDefinition: MCPToolDefinition = {
 
 export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   const script = args.script as string
-  const description = (args.description as string) || "Script scheduled via snow_schedule_script_job"
+  const description = (args.description as string) || "Script executed via snow_execute_script"
   const timeout = (args.timeout as number) || 30000
   const validate = args.validate_es5 !== false
   const confirmation = args.requireConfirmation === true

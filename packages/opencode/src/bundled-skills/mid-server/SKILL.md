@@ -10,7 +10,7 @@ metadata:
 tools:
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # MID Server for ServiceNow
@@ -405,7 +405,7 @@ function getMIDServerStatus() {
 | --------------------------------- | ------------------------ |
 | `snow_query_table`                | Query MID and ECC tables |
 | `snow_find_artifact`              | Find probes/sensors      |
-| `snow_execute_script_with_output` | Test MID scripts         |
+| `snow_execute_script` | Test MID scripts         |
 
 ### Example Workflow
 

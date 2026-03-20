@@ -353,15 +353,8 @@ describe("Stakeholder Write Protection - End-to-End", () => {
           inputSchema: { type: "object", properties: {} },
         },
         {
-          name: "snow_execute_script_with_output",
-          description: "Execute script with output",
-          permission: "write",
-          allowedRoles: ["developer", "admin"],
-          inputSchema: { type: "object", properties: {} },
-        },
-        {
-          name: "snow_execute_script_sync",
-          description: "Execute script synchronously",
+          name: "snow_execute_script",
+          description: "Execute server-side JavaScript on ServiceNow",
           permission: "write",
           allowedRoles: ["developer", "admin"],
           inputSchema: { type: "object", properties: {} },

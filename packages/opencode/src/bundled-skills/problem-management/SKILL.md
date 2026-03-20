@@ -10,7 +10,7 @@ metadata:
 tools:
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_knowledge_article_create
 ---
 
@@ -498,7 +498,7 @@ function notifyLinkedIncidents(problemSysId, message) {
 | --------------------------------- | ------------------------------- |
 | `snow_query_table`                | Query problems and known errors |
 | `snow_find_artifact`              | Find problem records            |
-| `snow_execute_script_with_output` | Test problem scripts            |
+| `snow_execute_script` | Test problem scripts            |
 | `snow_create_business_rule`       | Create problem automation       |
 
 ### Example Workflow
@@ -519,7 +519,7 @@ await snow_query_table({
 })
 
 // 3. Find recurring incidents for proactive problems
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var patterns = identifyProactiveProblems();
         gs.info('Patterns found: ' + patterns.length);

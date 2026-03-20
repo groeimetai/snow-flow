@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_find_artifact
 ---
 
@@ -374,7 +374,7 @@ function recordTimeEntry(workOrderSysId, timeData) {
 | Tool                              | Purpose             |
 | --------------------------------- | ------------------- |
 | `snow_query_table`                | Query FSM tables    |
-| `snow_execute_script_with_output` | Test FSM scripts    |
+| `snow_execute_script` | Test FSM scripts    |
 | `snow_find_artifact`              | Find configurations |
 
 ### Example Workflow
@@ -388,7 +388,7 @@ await snow_query_table({
 })
 
 // 2. Find available technicians
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var available = getAvailableTechnicians(
             new GlideDateTime(),

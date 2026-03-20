@@ -10,7 +10,7 @@ metadata:
 tools:
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_create_event
 ---
 
@@ -380,7 +380,7 @@ function disableUser(user) {
 | --------------------------------- | ----------------------- |
 | `snow_query_table`                | Query SecOps tables     |
 | `snow_find_artifact`              | Find security configs   |
-| `snow_execute_script_with_output` | Test SecOps scripts     |
+| `snow_execute_script` | Test SecOps scripts     |
 | `snow_create_event`               | Trigger security events |
 
 ### Example Workflow
@@ -401,7 +401,7 @@ await snow_query_table({
 })
 
 // 3. Check threat indicator
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var result = checkThreatIndicator('suspicious-domain.com', 'domain');
         gs.info(JSON.stringify(result));

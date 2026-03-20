@@ -11,7 +11,7 @@ tools:
   - snow_review_access_control
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # ACL Security Patterns for ServiceNow

@@ -11,7 +11,7 @@ tools:
   - snow_csm_case_create
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # Customer Service Management for ServiceNow
@@ -374,7 +374,7 @@ function checkEntitlement(accountSysId, entitlementType) {
 | --------------------------------- | ----------------------- |
 | `snow_query_table`                | Query CSM tables        |
 | `snow_find_artifact`              | Find CSM configurations |
-| `snow_execute_script_with_output` | Test CSM scripts        |
+| `snow_execute_script` | Test CSM scripts        |
 | `snow_deploy`                     | Deploy CSM widgets      |
 
 ### Example Workflow
@@ -388,7 +388,7 @@ await snow_query_table({
 })
 
 // 2. Check entitlements
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var result = checkEntitlement('account_sys_id', 'premium_support');
         gs.info(JSON.stringify(result));

@@ -27,7 +27,7 @@ export const toolDefinition: MCPToolDefinition = {
 • Message-level Headers - apply to ALL methods (list_message_headers, create_message_header, delete_message_header)
 • Method-level Headers - apply to specific method (list_method_headers, create_method_header, delete_method_header)
 • Query Parameters (list_parameters, create_parameter, delete_parameter)
-• Testing (test) - generates ES5-compatible test script for snow_schedule_script_job`,
+• Testing (test) - generates ES5-compatible test script for snow_execute_script`,
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "rest",
@@ -1448,11 +1448,11 @@ ${paramLines.length > 0 ? "    " + paramLines.join("\n    ") : "    // No parame
         test_params_provided: test_params,
         test_script: testScript,
         usage: {
-          description: "Use snow_schedule_script_job to execute this test script",
-          example: `snow_schedule_script_job({ script: <test_script>, description: 'Test REST: ${restMessageName}' })`,
+          description: "Use snow_execute_script to execute this test script",
+          example: `snow_execute_script({ script: <test_script>, description: 'Test REST: ${restMessageName}' })`,
           manual_test: `In ServiceNow: System Web Services > Outbound > REST Message > ${restMessageName} > ${method.name} > Test`,
         },
-        note: "Direct REST message testing requires ServiceNow script execution. Copy the test_script and run it via snow_schedule_script_job.",
+        note: "Direct REST message testing requires ServiceNow script execution. Copy the test_script and run it via snow_execute_script.",
       },
       { operation: "test_rest_message" },
     )

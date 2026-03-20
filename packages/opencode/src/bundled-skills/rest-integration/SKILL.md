@@ -6,7 +6,7 @@ tools:
   - snow_create_rest_message
   - snow_test_rest_connection
   - snow_test_web_service
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # REST Integration Patterns for ServiceNow

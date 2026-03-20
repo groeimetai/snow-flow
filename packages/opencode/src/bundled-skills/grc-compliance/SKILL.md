@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_audit_compliance
   - snow_assess_risk
 ---
@@ -412,7 +412,7 @@ function getComplianceSummary() {
 | Tool                              | Purpose               |
 | --------------------------------- | --------------------- |
 | `snow_query_table`                | Query GRC tables      |
-| `snow_execute_script_with_output` | Test GRC scripts      |
+| `snow_execute_script` | Test GRC scripts      |
 | `snow_audit_compliance`           | Run compliance audits |
 | `snow_assess_risk`                | Risk assessment       |
 
@@ -434,7 +434,7 @@ await snow_query_table({
 })
 
 // 3. Get compliance summary
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var summary = getComplianceSummary();
         gs.info(JSON.stringify(summary));

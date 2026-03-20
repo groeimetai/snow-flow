@@ -11,7 +11,7 @@ tools:
   - snow_discover_table_fields
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # Data Policies & Dictionary for ServiceNow
@@ -377,7 +377,7 @@ function fieldExists(tableName, fieldName) {
 | --------------------------------- | ----------------------- |
 | `snow_query_table`                | Query dictionary        |
 | `snow_discover_table_fields`      | Get field definitions   |
-| `snow_execute_script_with_output` | Test dictionary scripts |
+| `snow_execute_script` | Test dictionary scripts |
 | `snow_find_artifact`              | Find data policies      |
 
 ### Example Workflow

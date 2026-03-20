@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_find_artifact
 ---
 
@@ -360,7 +360,7 @@ function onboardTenant(tenantData) {
 | Tool                              | Purpose                    |
 | --------------------------------- | -------------------------- |
 | `snow_query_table`                | Query domain-aware data    |
-| `snow_execute_script_with_output` | Test domain scripts        |
+| `snow_execute_script` | Test domain scripts        |
 | `snow_find_artifact`              | Find domain configurations |
 
 ### Example Workflow

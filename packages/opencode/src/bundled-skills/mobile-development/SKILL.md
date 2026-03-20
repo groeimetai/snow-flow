@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_find_artifact
 ---
 
@@ -427,7 +427,7 @@ function findNearbyAssets(latitude, longitude, radiusMeters) {
 | Tool                              | Purpose              |
 | --------------------------------- | -------------------- |
 | `snow_query_table`                | Query mobile configs |
-| `snow_execute_script_with_output` | Test mobile scripts  |
+| `snow_execute_script` | Test mobile scripts  |
 | `snow_find_artifact`              | Find configurations  |
 
 ### Example Workflow

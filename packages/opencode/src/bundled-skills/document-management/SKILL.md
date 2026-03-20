@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_find_artifact
 ---
 
@@ -403,7 +403,7 @@ function canAccessAttachment(attachmentSysId) {
 | Tool                              | Purpose               |
 | --------------------------------- | --------------------- |
 | `snow_query_table`                | Query attachments     |
-| `snow_execute_script_with_output` | Test document scripts |
+| `snow_execute_script` | Test document scripts |
 | `snow_find_artifact`              | Find templates        |
 
 ### Example Workflow
@@ -417,7 +417,7 @@ await snow_query_table({
 })
 
 // 2. Generate document
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var html = generateDocumentFromTemplate('Incident Summary', 'inc_sys_id');
         gs.info('Generated: ' + (html ? 'success' : 'failed'));

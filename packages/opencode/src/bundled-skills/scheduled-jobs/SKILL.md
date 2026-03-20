@@ -11,7 +11,7 @@ tools:
   - snow_schedule_job
   - snow_find_artifact
   - snow_edit_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
 ---
 
 # Scheduled Jobs for ServiceNow
@@ -374,7 +374,7 @@ while (history.next()) {
 | --------------------------------- | ------------------------ |
 | `snow_schedule_job`               | Create scheduled job     |
 | `snow_find_artifact`              | Find existing jobs       |
-| `snow_execute_script_with_output` | Test job script          |
+| `snow_execute_script` | Test job script          |
 | `snow_get_logs`                   | Check job execution logs |
 
 ### Example Workflow
@@ -390,7 +390,7 @@ await snow_schedule_job({
 })
 
 // 2. Test the script
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: "/* test job script */",
 })
 

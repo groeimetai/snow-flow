@@ -10,7 +10,7 @@ metadata:
 tools:
   - snow_query_table
   - snow_find_artifact
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_create_event
 ---
 
@@ -406,7 +406,7 @@ function getThresholdName(severity) {
 | --------------------------------- | ----------------------- |
 | `snow_query_table`                | Query events and alerts |
 | `snow_find_artifact`              | Find event rules        |
-| `snow_execute_script_with_output` | Test event scripts      |
+| `snow_execute_script` | Test event scripts      |
 | `snow_create_event`               | Trigger system events   |
 
 ### Example Workflow
@@ -427,7 +427,7 @@ await snow_query_table({
 })
 
 // 3. Create test event
-await snow_execute_script_with_output({
+await snow_execute_script({
   script: `
         var event = new GlideRecord('em_event');
         event.initialize();

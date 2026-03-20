@@ -9,7 +9,7 @@ metadata:
   category: servicenow
 tools:
   - snow_query_table
-  - snow_execute_script_with_output
+  - snow_execute_script
   - snow_find_artifact
   - snow_update_set_create
 ---
@@ -377,7 +377,7 @@ function prepareAppExport(appScope) {
 | Tool                              | Purpose              |
 | --------------------------------- | -------------------- |
 | `snow_query_table`                | Query app components |
-| `snow_execute_script_with_output` | Test app scripts     |
+| `snow_execute_script` | Test app scripts     |
 | `snow_find_artifact`              | Find configurations  |
 | `snow_update_set_create`          | Create update sets   |
 
