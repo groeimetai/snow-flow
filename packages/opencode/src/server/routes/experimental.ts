@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { ToolRegistry } from "../../tool/registry"
 import { Worktree } from "../../worktree"
@@ -14,7 +15,7 @@ export const ExperimentalRoutes = lazy(() =>
   new Hono()
     .get(
       "/tool/ids",
-      describeRoute({
+      describe({
         summary: "List tool IDs",
         description:
           "Get a list of all available tool IDs, including both built-in tools and dynamically registered tools.",
@@ -37,7 +38,7 @@ export const ExperimentalRoutes = lazy(() =>
     )
     .get(
       "/tool",
-      describeRoute({
+      describe({
         summary: "List tools",
         description:
           "Get a list of available tools with their JSON schema parameters for a specific provider and model combination.",
@@ -88,7 +89,7 @@ export const ExperimentalRoutes = lazy(() =>
     )
     .post(
       "/worktree",
-      describeRoute({
+      describe({
         summary: "Create worktree",
         description: "Create a new git worktree for the current project and run any configured startup scripts.",
         operationId: "worktree.create",
@@ -113,7 +114,7 @@ export const ExperimentalRoutes = lazy(() =>
     )
     .get(
       "/worktree",
-      describeRoute({
+      describe({
         summary: "List worktrees",
         description: "List all sandbox worktrees for the current project.",
         operationId: "worktree.list",
@@ -135,7 +136,7 @@ export const ExperimentalRoutes = lazy(() =>
     )
     .delete(
       "/worktree",
-      describeRoute({
+      describe({
         summary: "Remove worktree",
         description: "Remove a git worktree and delete its branch.",
         operationId: "worktree.remove",
@@ -161,7 +162,7 @@ export const ExperimentalRoutes = lazy(() =>
     )
     .post(
       "/worktree/reset",
-      describeRoute({
+      describe({
         summary: "Reset worktree",
         description: "Reset a worktree branch to the primary default branch.",
         operationId: "worktree.reset",
@@ -186,7 +187,7 @@ export const ExperimentalRoutes = lazy(() =>
     )
     .get(
       "/resource",
-      describeRoute({
+      describe({
         summary: "Get MCP resources",
         description: "Get all available MCP resources from connected servers. Optionally filter by name.",
         operationId: "experimental.resource.list",

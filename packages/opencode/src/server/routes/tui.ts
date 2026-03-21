@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { Bus } from "../../bus"
 import { Session } from "../../session"
@@ -30,7 +31,7 @@ export async function callTui(ctx: Context) {
 const TuiControlRoutes = new Hono()
   .get(
     "/next",
-    describeRoute({
+    describe({
       summary: "Get next TUI request",
       description: "Retrieve the next TUI (Terminal User Interface) request from the queue for processing.",
       operationId: "tui.control.next",
@@ -52,7 +53,7 @@ const TuiControlRoutes = new Hono()
   )
   .post(
     "/response",
-    describeRoute({
+    describe({
       summary: "Submit TUI response",
       description: "Submit a response to the TUI request queue to complete a pending request.",
       operationId: "tui.control.response",
@@ -79,7 +80,7 @@ export const TuiRoutes = lazy(() =>
   new Hono()
     .post(
       "/append-prompt",
-      describeRoute({
+      describe({
         summary: "Append TUI prompt",
         description: "Append prompt to the TUI",
         operationId: "tui.appendPrompt",
@@ -103,7 +104,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/open-help",
-      describeRoute({
+      describe({
         summary: "Open help dialog",
         description: "Open the help dialog in the TUI to display user assistance information.",
         operationId: "tui.openHelp",
@@ -127,7 +128,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/open-sessions",
-      describeRoute({
+      describe({
         summary: "Open sessions dialog",
         description: "Open the session dialog",
         operationId: "tui.openSessions",
@@ -151,7 +152,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/open-themes",
-      describeRoute({
+      describe({
         summary: "Open themes dialog",
         description: "Open the theme dialog",
         operationId: "tui.openThemes",
@@ -175,7 +176,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/open-models",
-      describeRoute({
+      describe({
         summary: "Open models dialog",
         description: "Open the model dialog",
         operationId: "tui.openModels",
@@ -199,7 +200,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/submit-prompt",
-      describeRoute({
+      describe({
         summary: "Submit TUI prompt",
         description: "Submit the prompt",
         operationId: "tui.submitPrompt",
@@ -223,7 +224,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/clear-prompt",
-      describeRoute({
+      describe({
         summary: "Clear TUI prompt",
         description: "Clear the prompt",
         operationId: "tui.clearPrompt",
@@ -247,7 +248,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/execute-command",
-      describeRoute({
+      describe({
         summary: "Execute TUI command",
         description: "Execute a TUI command (e.g. agent_cycle)",
         operationId: "tui.executeCommand",
@@ -289,7 +290,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/show-toast",
-      describeRoute({
+      describe({
         summary: "Show TUI toast",
         description: "Show a toast notification in the TUI",
         operationId: "tui.showToast",
@@ -312,7 +313,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/publish",
-      describeRoute({
+      describe({
         summary: "Publish TUI event",
         description: "Publish a TUI event",
         operationId: "tui.publish",
@@ -351,7 +352,7 @@ export const TuiRoutes = lazy(() =>
     )
     .post(
       "/select-session",
-      describeRoute({
+      describe({
         summary: "Select session",
         description: "Navigate the TUI to display the specified session.",
         operationId: "tui.selectSession",

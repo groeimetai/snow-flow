@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { File } from "../../file"
 import { Ripgrep } from "../../file/ripgrep"
@@ -11,7 +12,7 @@ export const FileRoutes = lazy(() =>
   new Hono()
     .get(
       "/find",
-      describeRoute({
+      describe({
         summary: "Find text",
         description: "Search for text patterns across files in the project using ripgrep.",
         operationId: "find.text",
@@ -44,7 +45,7 @@ export const FileRoutes = lazy(() =>
     )
     .get(
       "/find/file",
-      describeRoute({
+      describe({
         summary: "Find files",
         description: "Search for files or directories by name or pattern in the project directory.",
         operationId: "find.files",
@@ -84,7 +85,7 @@ export const FileRoutes = lazy(() =>
     )
     .get(
       "/find/symbol",
-      describeRoute({
+      describe({
         summary: "Find symbols",
         description: "Search for workspace symbols like functions, classes, and variables using LSP.",
         operationId: "find.symbols",
@@ -116,7 +117,7 @@ export const FileRoutes = lazy(() =>
     )
     .get(
       "/file",
-      describeRoute({
+      describe({
         summary: "List files",
         description: "List files and directories in a specified path.",
         operationId: "file.list",
@@ -145,7 +146,7 @@ export const FileRoutes = lazy(() =>
     )
     .get(
       "/file/content",
-      describeRoute({
+      describe({
         summary: "Read file",
         description: "Read the content of a specified file.",
         operationId: "file.read",
@@ -174,7 +175,7 @@ export const FileRoutes = lazy(() =>
     )
     .get(
       "/file/status",
-      describeRoute({
+      describe({
         summary: "Get file status",
         description: "Get the git status of all files in the project.",
         operationId: "file.status",

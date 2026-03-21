@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { Config } from "../../config/config"
 import { Provider } from "../../provider/provider"
@@ -28,7 +29,7 @@ export const ProviderRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "List providers",
         description: "Get a list of all available AI providers, including both available and connected ones.",
         operationId: "provider.list",
@@ -76,7 +77,7 @@ export const ProviderRoutes = lazy(() =>
     )
     .get(
       "/auth",
-      describeRoute({
+      describe({
         summary: "Get provider auth methods",
         description: "Retrieve available authentication methods for all AI providers.",
         operationId: "provider.auth",
@@ -97,7 +98,7 @@ export const ProviderRoutes = lazy(() =>
     )
     .post(
       "/:providerID/oauth/authorize",
-      describeRoute({
+      describe({
         summary: "OAuth authorize",
         description: "Initiate OAuth authorization for a specific AI provider to get an authorization URL.",
         operationId: "provider.oauth.authorize",
@@ -137,7 +138,7 @@ export const ProviderRoutes = lazy(() =>
     )
     .post(
       "/:providerID/oauth/callback",
-      describeRoute({
+      describe({
         summary: "OAuth callback",
         description: "Handle the OAuth callback from a provider after user authorization.",
         operationId: "provider.oauth.callback",

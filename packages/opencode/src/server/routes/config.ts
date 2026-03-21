@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { Config } from "../../config/config"
 import { Provider } from "../../provider/provider"
@@ -14,7 +15,7 @@ export const ConfigRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "Get configuration",
         description: "Retrieve the current OpenCode configuration settings and preferences.",
         operationId: "config.get",
@@ -35,7 +36,7 @@ export const ConfigRoutes = lazy(() =>
     )
     .patch(
       "/",
-      describeRoute({
+      describe({
         summary: "Update configuration",
         description: "Update OpenCode configuration settings and preferences.",
         operationId: "config.update",
@@ -60,7 +61,7 @@ export const ConfigRoutes = lazy(() =>
     )
     .get(
       "/providers",
-      describeRoute({
+      describe({
         summary: "List config providers",
         description: "Get a list of all configured AI providers and their default models.",
         operationId: "config.providers",

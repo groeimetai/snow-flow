@@ -1,7 +1,8 @@
 import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
 import { Log } from "../util/log"
-import { describeRoute, generateSpecs, validator, resolver, openAPIRouteHandler } from "hono-openapi"
+import { generateSpecs, validator, resolver, openAPIRouteHandler } from "hono-openapi"
+import { describe } from "./describe"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 import { streamSSE } from "hono/streaming"
@@ -226,7 +227,7 @@ export namespace Server {
         .route("/tui", TuiRoutes())
         .post(
           "/instance/dispose",
-          describeRoute({
+          describe({
             summary: "Dispose instance",
             description: "Clean up and dispose the current OpenCode instance, releasing all resources.",
             operationId: "instance.dispose",
@@ -248,7 +249,7 @@ export namespace Server {
         )
         .get(
           "/path",
-          describeRoute({
+          describe({
             summary: "Get paths",
             description:
               "Retrieve the current working directory and related path information for the OpenCode instance.",
@@ -288,7 +289,7 @@ export namespace Server {
         )
         .get(
           "/vcs",
-          describeRoute({
+          describe({
             summary: "Get VCS info",
             description:
               "Retrieve version control system (VCS) information for the current project, such as git branch.",
@@ -313,7 +314,7 @@ export namespace Server {
         )
         .get(
           "/command",
-          describeRoute({
+          describe({
             summary: "List commands",
             description: "Get a list of all available commands in the OpenCode system.",
             operationId: "command.list",
@@ -335,7 +336,7 @@ export namespace Server {
         )
         .post(
           "/log",
-          describeRoute({
+          describe({
             summary: "Write log",
             description: "Write a log entry to the server logs with specified level and metadata.",
             operationId: "app.log",
@@ -391,7 +392,7 @@ export namespace Server {
         )
         .get(
           "/agent",
-          describeRoute({
+          describe({
             summary: "List agents",
             description: "Get a list of all available AI agents in the OpenCode system.",
             operationId: "app.agents",
@@ -413,7 +414,7 @@ export namespace Server {
         )
         .get(
           "/skill",
-          describeRoute({
+          describe({
             summary: "List skills",
             description: "Get a list of all available skills in the OpenCode system.",
             operationId: "app.skills",
@@ -435,7 +436,7 @@ export namespace Server {
         )
         .get(
           "/lsp",
-          describeRoute({
+          describe({
             summary: "Get LSP status",
             description: "Get LSP server status",
             operationId: "lsp.status",
@@ -456,7 +457,7 @@ export namespace Server {
         )
         .get(
           "/formatter",
-          describeRoute({
+          describe({
             summary: "Get formatter status",
             description: "Get formatter status",
             operationId: "formatter.status",
@@ -477,7 +478,7 @@ export namespace Server {
         )
         .put(
           "/auth/:providerID",
-          describeRoute({
+          describe({
             summary: "Set auth credentials",
             description: "Set authentication credentials",
             operationId: "auth.set",
@@ -509,7 +510,7 @@ export namespace Server {
         )
         .delete(
           "/auth/:providerID",
-          describeRoute({
+          describe({
             summary: "Remove auth credentials",
             description: "Remove authentication credentials",
             operationId: "auth.remove",
@@ -539,7 +540,7 @@ export namespace Server {
         )
         .get(
           "/event",
-          describeRoute({
+          describe({
             summary: "Subscribe to events",
             description: "Get events",
             operationId: "event.subscribe",

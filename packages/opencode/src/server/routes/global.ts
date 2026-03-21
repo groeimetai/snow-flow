@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, resolver } from "hono-openapi"
+import { resolver } from "hono-openapi"
+import { describe } from "../describe"
 import { streamSSE } from "hono/streaming"
 import z from "zod"
 import { BusEvent } from "@/bus/bus-event"
@@ -17,7 +18,7 @@ export const GlobalRoutes = lazy(() =>
   new Hono()
     .get(
       "/health",
-      describeRoute({
+      describe({
         summary: "Get health",
         description: "Get health information about the OpenCode server.",
         operationId: "global.health",
@@ -38,7 +39,7 @@ export const GlobalRoutes = lazy(() =>
     )
     .get(
       "/event",
-      describeRoute({
+      describe({
         summary: "Get global events",
         description: "Subscribe to global events from the OpenCode system using server-sent events.",
         operationId: "global.event",
@@ -105,7 +106,7 @@ export const GlobalRoutes = lazy(() =>
     )
     .post(
       "/dispose",
-      describeRoute({
+      describe({
         summary: "Dispose instance",
         description: "Clean up and dispose all OpenCode instances, releasing all resources.",
         operationId: "global.dispose",

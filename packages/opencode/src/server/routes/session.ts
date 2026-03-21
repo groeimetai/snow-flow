@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { stream } from "hono/streaming"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { Session } from "../../session"
 import { MessageV2 } from "../../session/message-v2"
@@ -23,7 +24,7 @@ export const SessionRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "List sessions",
         description: "Get a list of all OpenCode sessions, sorted by most recently updated.",
         operationId: "session.list",
@@ -68,7 +69,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/status",
-      describeRoute({
+      describe({
         summary: "Get session status",
         description: "Retrieve the current status of all sessions, including active, idle, and completed states.",
         operationId: "session.status",
@@ -91,7 +92,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/:sessionID",
-      describeRoute({
+      describe({
         summary: "Get session",
         description: "Retrieve detailed information about a specific OpenCode session.",
         tags: ["Session"],
@@ -123,7 +124,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/:sessionID/children",
-      describeRoute({
+      describe({
         summary: "Get session children",
         tags: ["Session"],
         description: "Retrieve all child sessions that were forked from the specified parent session.",
@@ -154,7 +155,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/:sessionID/todo",
-      describeRoute({
+      describe({
         summary: "Get session todos",
         description: "Retrieve the todo list associated with a specific session, showing tasks and action items.",
         operationId: "session.todo",
@@ -184,7 +185,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/",
-      describeRoute({
+      describe({
         summary: "Create session",
         description: "Create a new OpenCode session for interacting with AI assistants and managing conversations.",
         operationId: "session.create",
@@ -209,7 +210,7 @@ export const SessionRoutes = lazy(() =>
     )
     .delete(
       "/:sessionID",
-      describeRoute({
+      describe({
         summary: "Delete session",
         description: "Delete a session and permanently remove all associated data, including messages and history.",
         operationId: "session.delete",
@@ -239,7 +240,7 @@ export const SessionRoutes = lazy(() =>
     )
     .patch(
       "/:sessionID",
-      describeRoute({
+      describe({
         summary: "Update session",
         description: "Update properties of an existing session, such as title or other metadata.",
         operationId: "session.update",
@@ -292,7 +293,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/init",
-      describeRoute({
+      describe({
         summary: "Initialize session",
         description:
           "Analyze the current application and create an AGENTS.md file with project-specific agent configurations.",
@@ -325,7 +326,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/fork",
-      describeRoute({
+      describe({
         summary: "Fork session",
         description: "Create a new session by forking an existing session at a specific message point.",
         operationId: "session.fork",
@@ -356,7 +357,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/abort",
-      describeRoute({
+      describe({
         summary: "Abort session",
         description: "Abort an active session and stop any ongoing AI processing or command execution.",
         operationId: "session.abort",
@@ -385,7 +386,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/share",
-      describeRoute({
+      describe({
         summary: "Share session",
         description: "Create a shareable link for a session, allowing others to view the conversation.",
         operationId: "session.share",
@@ -416,7 +417,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/:sessionID/diff",
-      describeRoute({
+      describe({
         summary: "Get message diff",
         description: "Get the file changes (diff) that resulted from a specific user message in the session.",
         operationId: "session.diff",
@@ -455,7 +456,7 @@ export const SessionRoutes = lazy(() =>
     )
     .delete(
       "/:sessionID/share",
-      describeRoute({
+      describe({
         summary: "Unshare session",
         description: "Remove the shareable link for a session, making it private again.",
         operationId: "session.unshare",
@@ -486,7 +487,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/summarize",
-      describeRoute({
+      describe({
         summary: "Summarize session",
         description: "Generate a concise summary of the session using AI compaction to preserve key information.",
         operationId: "session.summarize",
@@ -545,7 +546,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/:sessionID/message",
-      describeRoute({
+      describe({
         summary: "Get session messages",
         description: "Retrieve all messages in a session, including user prompts and AI responses.",
         operationId: "session.messages",
@@ -584,7 +585,7 @@ export const SessionRoutes = lazy(() =>
     )
     .get(
       "/:sessionID/message/:messageID",
-      describeRoute({
+      describe({
         summary: "Get message",
         description: "Retrieve a specific message from a session by its message ID.",
         operationId: "session.message",
@@ -623,7 +624,7 @@ export const SessionRoutes = lazy(() =>
     )
     .delete(
       "/:sessionID/message/:messageID/part/:partID",
-      describeRoute({
+      describe({
         description: "Delete a part from a message",
         operationId: "part.delete",
         responses: {
@@ -658,7 +659,7 @@ export const SessionRoutes = lazy(() =>
     )
     .patch(
       "/:sessionID/message/:messageID/part/:partID",
-      describeRoute({
+      describe({
         description: "Update a part in a message",
         operationId: "part.update",
         responses: {
@@ -696,7 +697,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/message",
-      describeRoute({
+      describe({
         summary: "Send message",
         description: "Create and send a new message to a session, streaming the AI response.",
         operationId: "session.prompt",
@@ -737,7 +738,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/prompt_async",
-      describeRoute({
+      describe({
         summary: "Send async message",
         description:
           "Create and send a new message to a session asynchronously, starting the session if needed and returning immediately.",
@@ -768,7 +769,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/command",
-      describeRoute({
+      describe({
         summary: "Send command",
         description: "Send a new command to a session for execution by the AI assistant.",
         operationId: "session.command",
@@ -805,7 +806,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/shell",
-      describeRoute({
+      describe({
         summary: "Run shell command",
         description: "Execute a shell command within the session context and return the AI's response.",
         operationId: "session.shell",
@@ -837,7 +838,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/revert",
-      describeRoute({
+      describe({
         summary: "Revert message",
         description: "Revert a specific message in a session, undoing its effects and restoring the previous state.",
         operationId: "session.revert",
@@ -872,7 +873,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/unrevert",
-      describeRoute({
+      describe({
         summary: "Restore reverted messages",
         description: "Restore all previously reverted messages in a session.",
         operationId: "session.unrevert",
@@ -902,7 +903,7 @@ export const SessionRoutes = lazy(() =>
     )
     .post(
       "/:sessionID/permissions/:permissionID",
-      describeRoute({
+      describe({
         summary: "Respond to permission",
         deprecated: true,
         description: "Approve or deny a permission request from the AI assistant.",

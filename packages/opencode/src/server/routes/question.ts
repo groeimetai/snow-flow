@@ -1,6 +1,7 @@
 import { Hono } from "hono"
-import { describeRoute, validator } from "hono-openapi"
+import { validator } from "hono-openapi"
 import { resolver } from "hono-openapi"
+import { describe } from "../describe"
 import { Question } from "../../question"
 import z from "zod"
 import { errors } from "../error"
@@ -10,7 +11,7 @@ export const QuestionRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "List pending questions",
         description: "Get all pending question requests across all sessions.",
         operationId: "question.list",
@@ -32,7 +33,7 @@ export const QuestionRoutes = lazy(() =>
     )
     .post(
       "/:requestID/reply",
-      describeRoute({
+      describe({
         summary: "Reply to question request",
         description: "Provide answers to a question request from the AI assistant.",
         operationId: "question.reply",
@@ -67,7 +68,7 @@ export const QuestionRoutes = lazy(() =>
     )
     .post(
       "/:requestID/reject",
-      describeRoute({
+      describe({
         summary: "Reject question request",
         description: "Reject a question request from the AI assistant.",
         operationId: "question.reject",

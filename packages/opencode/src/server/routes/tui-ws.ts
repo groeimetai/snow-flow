@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, resolver } from "hono-openapi"
+import { resolver } from "hono-openapi"
+import { describe } from "../describe"
 import { upgradeWebSocket } from "hono/bun"
 import z from "zod"
 import { lazy } from "../../util/lazy"
@@ -76,7 +77,7 @@ async function spawnTui(cols: number, rows: number, env?: Record<string, string>
 export const TuiWsRoutes = lazy(() =>
   new Hono().get(
     "/ws",
-    describeRoute({
+    describe({
       summary: "Connect to TUI via WebSocket",
       description:
         "Establish a WebSocket connection that spawns a TUI instance as a PTY and streams terminal I/O. Send JSON messages with type 'resize' to change terminal dimensions. All other messages are forwarded as terminal input.",

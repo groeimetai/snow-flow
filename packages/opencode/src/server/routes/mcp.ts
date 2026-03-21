@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { MCP } from "../../mcp"
 import { Config } from "../../config/config"
@@ -10,7 +11,7 @@ export const McpRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "Get MCP status",
         description: "Get the status of all Model Context Protocol (MCP) servers.",
         operationId: "mcp.status",
@@ -31,7 +32,7 @@ export const McpRoutes = lazy(() =>
     )
     .post(
       "/",
-      describeRoute({
+      describe({
         summary: "Add MCP server",
         description: "Dynamically add a new Model Context Protocol (MCP) server to the system.",
         operationId: "mcp.add",
@@ -62,7 +63,7 @@ export const McpRoutes = lazy(() =>
     )
     .post(
       "/:name/auth",
-      describeRoute({
+      describe({
         summary: "Start MCP OAuth",
         description: "Start OAuth authentication flow for a Model Context Protocol (MCP) server.",
         operationId: "mcp.auth.start",
@@ -94,7 +95,7 @@ export const McpRoutes = lazy(() =>
     )
     .post(
       "/:name/auth/callback",
-      describeRoute({
+      describe({
         summary: "Complete MCP OAuth",
         description:
           "Complete OAuth authentication for a Model Context Protocol (MCP) server using the authorization code.",
@@ -126,7 +127,7 @@ export const McpRoutes = lazy(() =>
     )
     .post(
       "/:name/auth/authenticate",
-      describeRoute({
+      describe({
         summary: "Authenticate MCP OAuth",
         description: "Start OAuth flow and wait for callback (opens browser)",
         operationId: "mcp.auth.authenticate",
@@ -154,7 +155,7 @@ export const McpRoutes = lazy(() =>
     )
     .delete(
       "/:name/auth",
-      describeRoute({
+      describe({
         summary: "Remove MCP OAuth",
         description: "Remove OAuth credentials for an MCP server",
         operationId: "mcp.auth.remove",
@@ -178,7 +179,7 @@ export const McpRoutes = lazy(() =>
     )
     .post(
       "/:name/connect",
-      describeRoute({
+      describe({
         description: "Connect an MCP server",
         operationId: "mcp.connect",
         responses: {
@@ -201,7 +202,7 @@ export const McpRoutes = lazy(() =>
     )
     .post(
       "/:name/disconnect",
-      describeRoute({
+      describe({
         description: "Disconnect an MCP server",
         operationId: "mcp.disconnect",
         responses: {

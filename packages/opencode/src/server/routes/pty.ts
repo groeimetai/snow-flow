@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import { upgradeWebSocket } from "hono/bun"
 import z from "zod"
 import { Pty } from "@/pty"
@@ -11,7 +12,7 @@ export const PtyRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "List PTY sessions",
         description: "Get a list of all active pseudo-terminal (PTY) sessions managed by OpenCode.",
         operationId: "pty.list",
@@ -32,7 +33,7 @@ export const PtyRoutes = lazy(() =>
     )
     .post(
       "/",
-      describeRoute({
+      describe({
         summary: "Create PTY session",
         description: "Create a new pseudo-terminal (PTY) session for running shell commands and processes.",
         operationId: "pty.create",
@@ -56,7 +57,7 @@ export const PtyRoutes = lazy(() =>
     )
     .get(
       "/:ptyID",
-      describeRoute({
+      describe({
         summary: "Get PTY session",
         description: "Retrieve detailed information about a specific pseudo-terminal (PTY) session.",
         operationId: "pty.get",
@@ -83,7 +84,7 @@ export const PtyRoutes = lazy(() =>
     )
     .put(
       "/:ptyID",
-      describeRoute({
+      describe({
         summary: "Update PTY session",
         description: "Update properties of an existing pseudo-terminal (PTY) session.",
         operationId: "pty.update",
@@ -108,7 +109,7 @@ export const PtyRoutes = lazy(() =>
     )
     .delete(
       "/:ptyID",
-      describeRoute({
+      describe({
         summary: "Remove PTY session",
         description: "Remove and terminate a specific pseudo-terminal (PTY) session.",
         operationId: "pty.remove",
@@ -132,7 +133,7 @@ export const PtyRoutes = lazy(() =>
     )
     .get(
       "/:ptyID/connect",
-      describeRoute({
+      describe({
         summary: "Connect to PTY session",
         description: "Establish a WebSocket connection to interact with a pseudo-terminal (PTY) session in real-time.",
         operationId: "pty.connect",

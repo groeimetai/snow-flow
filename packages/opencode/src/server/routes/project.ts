@@ -1,6 +1,7 @@
 import { Hono } from "hono"
-import { describeRoute, validator } from "hono-openapi"
+import { validator } from "hono-openapi"
 import { resolver } from "hono-openapi"
+import { describe } from "../describe"
 import { Instance } from "../../project/instance"
 import { Project } from "../../project/project"
 import z from "zod"
@@ -11,7 +12,7 @@ export const ProjectRoutes = lazy(() =>
   new Hono()
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "List all projects",
         description: "Get a list of projects that have been opened with OpenCode.",
         operationId: "project.list",
@@ -33,7 +34,7 @@ export const ProjectRoutes = lazy(() =>
     )
     .get(
       "/current",
-      describeRoute({
+      describe({
         summary: "Get current project",
         description: "Retrieve the currently active project that OpenCode is working with.",
         operationId: "project.current",
@@ -54,7 +55,7 @@ export const ProjectRoutes = lazy(() =>
     )
     .patch(
       "/:projectID",
-      describeRoute({
+      describe({
         summary: "Update project",
         description: "Update project properties such as name, icon, and commands.",
         operationId: "project.update",

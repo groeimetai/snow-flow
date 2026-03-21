@@ -1,5 +1,6 @@
 import { Hono } from "hono"
-import { describeRoute, validator, resolver } from "hono-openapi"
+import { validator, resolver } from "hono-openapi"
+import { describe } from "../describe"
 import z from "zod"
 import { PermissionNext } from "@/permission/next"
 import { errors } from "../error"
@@ -9,7 +10,7 @@ export const PermissionRoutes = lazy(() =>
   new Hono()
     .post(
       "/:requestID/reply",
-      describeRoute({
+      describe({
         summary: "Respond to permission request",
         description: "Approve or deny a permission request from the AI assistant.",
         operationId: "permission.reply",
@@ -45,7 +46,7 @@ export const PermissionRoutes = lazy(() =>
     )
     .get(
       "/",
-      describeRoute({
+      describe({
         summary: "List pending permissions",
         description: "Get all pending permission requests across all sessions.",
         operationId: "permission.list",
