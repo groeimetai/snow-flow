@@ -12,5 +12,4 @@ import type { MiddlewareHandler } from "hono"
  * This wrapper casts the result so that Hono's `HandlerInterface` overloads
  * resolve correctly on all platforms.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const describe = describeRoute as (spec: DescribeRouteOptions) => MiddlewareHandler<any, any, {}>
+export const describe = describeRoute as unknown as (spec: DescribeRouteOptions) => MiddlewareHandler<any, any, {}>
