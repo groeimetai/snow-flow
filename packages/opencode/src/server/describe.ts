@@ -1,21 +1,17 @@
 import { describeRoute, type DescribeRouteOptions } from "hono-openapi"
-import { createMiddleware } from "hono/factory"
 
 /**
  * Typed wrapper around hono-openapi's `describeRoute` that preserves
  * middleware type-chain compatibility.
  *
- * `describeRoute()` returns `MiddlewareHandler` with a fixed string path
- * parameter, which causes overload-resolution failures in tsgo on Linux
- * when combined with `validator()` middleware in a route handler chain.
+ * Root cause: monorepo has hono 4.11.10 (root) and 4.12.2 (packages/opencode).
+ * tsgo on Linux treats these as incompatible types, breaking describeRoute's
+ * MiddlewareHandler return type in route chains with validator().
  *
- * This wrapper calls `describeRoute` internally but returns a properly
- * typed middleware created via Hono's `createMiddleware`, which preserves
- * generic type parameters through the handler chain.
+ * Fix: return type `any` erases the cross-package type boundary so Hono's
+ * HandlerInterface overloads resolve from the caller's own hono version.
  */
-export function describe(spec: DescribeRouteOptions) {
-  const original = describeRoute(spec)
-  return createMiddleware(async (c, next) => {
-    return original(c, next)
-  })
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function describe(spec: DescribeRouteOptions): any {
+  return describeRoute(spec)
 }
