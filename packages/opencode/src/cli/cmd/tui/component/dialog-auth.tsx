@@ -1090,36 +1090,51 @@ function DialogAuthEnterprise() {
     const resolvedPortalUrl = `https://${sub}.snow-flow.dev`
 
     try {
-      const response = await fetch(`${resolvedPortalUrl}/api/auth/device/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId: sessionId(),
-          authCode: code,
-        }),
-      })
+      // Retry up to 5 times with 2s delay — handles race condition where
+      // the user submits the code before browser approval completes
+      const maxAttempts = 5
+      let data: any = null
 
-      if (!response.ok) {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const response = await fetch(`${resolvedPortalUrl}/api/auth/device/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: sessionId(),
+            authCode: code,
+          }),
+        })
+
+        if (response.ok) {
+          data = await response.json()
+          break
+        }
+
         const err = await response.json().catch(() => ({}))
+
+        // Billing redirect — not retryable
         if (err.billingUrl) {
-          toast.show({
-            variant: "error",
-            message: err.message || err.error || "Subscription required",
-            duration: 8000,
-          })
-          toast.show({
-            variant: "info",
-            message: "Opening billing page...",
-            duration: 4000,
-          })
+          toast.show({ variant: "error", message: err.message || err.error || "Subscription required", duration: 8000 })
+          toast.show({ variant: "info", message: "Opening billing page...", duration: 4000 })
           tryOpenBrowser(err.billingUrl)
           setStep("code")
           return
         }
+
+        // Pending approval — retry with status message
+        const isPending = err.error === "pending" || err.error === "Session not yet approved" || err.status === "pending"
+        if (isPending && attempt < maxAttempts) {
+          toast.show({ variant: "info", message: `Waiting for browser approval... (${attempt}/${maxAttempts})`, duration: 2000 })
+          await new Promise(r => setTimeout(r, 2000))
+          continue
+        }
+
         throw new Error(err.error || "Verification failed")
       }
 
-      const data = await response.json()
+      if (!data) {
+        throw new Error("Verification timed out — please approve in your browser and try again")
+      }
 
       // Save to Auth store
       const { Auth } = await import("@/auth")
