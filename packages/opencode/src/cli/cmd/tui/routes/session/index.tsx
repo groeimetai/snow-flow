@@ -1470,10 +1470,10 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "question"}>
           <Question {...toolprops} />
         </Match>
-        <Match when={props.part.tool === "tool_execute"}>
+        <Match when={props.part.tool.endsWith("tool_execute")}>
           <ToolExecute {...toolprops} />
         </Match>
-        <Match when={props.part.tool === "tool_search"}>
+        <Match when={props.part.tool.endsWith("tool_search")}>
           <ToolSearchResult {...toolprops} />
         </Match>
         <Match when={true}>
