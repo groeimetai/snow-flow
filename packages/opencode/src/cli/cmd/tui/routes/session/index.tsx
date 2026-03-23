@@ -1470,6 +1470,12 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool === "question"}>
           <Question {...toolprops} />
         </Match>
+        <Match when={props.part.tool === "tool_execute"}>
+          <ToolExecute {...toolprops} />
+        </Match>
+        <Match when={props.part.tool === "tool_search"}>
+          <ToolSearchResult {...toolprops} />
+        </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
         </Match>
@@ -1486,6 +1492,96 @@ type ToolProps<T extends Tool.Info> = {
   output?: string
   part: ToolPart
 }
+function ToolExecute(props: ToolProps<any>) {
+  const { theme } = useTheme()
+  const [expanded, setExpanded] = createSignal(false)
+
+  const toolName = createMemo(() => (props.input as any).tool ?? "unknown")
+  const toolArgs = createMemo(() => {
+    const args = (props.input as any).args
+    if (!args || typeof args !== "object") return ""
+    return input(args as Record<string, any>)
+  })
+  const argEntries = createMemo(() => {
+    const args = (props.input as any).args
+    if (!args || typeof args !== "object") return []
+    return Object.entries(args)
+      .filter(([, v]) => typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+      .slice(0, 4)
+  })
+
+  const parsed = createMemo(() => {
+    if (!props.output) return null
+    try {
+      return JSON.parse(props.output)
+    } catch {
+      return null
+    }
+  })
+  const success = createMemo(() => parsed()?.success === true)
+  const summary = createMemo(() => {
+    const p = parsed()
+    if (!p) return ""
+    if (p.result?.summary) return p.result.summary
+    if (p.error) return p.error
+    return success() ? "Completed" : "Failed"
+  })
+
+  return (
+    <Show
+      when={props.output}
+      fallback={
+        <InlineTool icon="⚙" pending={`Executing ${toolName()}...`} complete={false} part={props.part}>
+          {toolName()} {toolArgs()}
+        </InlineTool>
+      }
+    >
+      <BlockTool
+        title={`# ${toolName()} ${toolArgs()}`}
+        part={props.part}
+        onClick={() => setExpanded((prev) => !prev)}
+      >
+        <box gap={0}>
+          <For each={argEntries()}>
+            {([key, val]) => (
+              <text fg={theme.textMuted}>
+                {"  "}
+                {key as string}: {String(val).slice(0, 80)}
+              </text>
+            )}
+          </For>
+          <text fg={success() ? theme.success : theme.error}>
+            {"  "}
+            {success() ? "✓" : "✗"} {summary().slice(0, 120)}
+          </text>
+          <Show when={expanded()}>
+            <text fg={theme.textMuted}>{props.output}</text>
+          </Show>
+        </box>
+      </BlockTool>
+    </Show>
+  )
+}
+
+function ToolSearchResult(props: ToolProps<any>) {
+  const parsed = createMemo(() => {
+    if (!props.output) return null
+    try {
+      return JSON.parse(props.output)
+    } catch {
+      return null
+    }
+  })
+  const count = createMemo(() => parsed()?.count ?? 0)
+  const query = createMemo(() => (props.input as any).query ?? "")
+
+  return (
+    <InlineTool icon="🔍" pending={`Searching tools: ${query()}...`} complete={props.output} part={props.part}>
+      tool_search [{query()}] → {count()} tools found
+    </InlineTool>
+  )
+}
+
 function GenericTool(props: ToolProps<any>) {
   const { theme } = useTheme()
   const ctx = use()
