@@ -1105,31 +1105,35 @@ function DialogAuthEnterprise() {
           }),
         })
 
-        if (response.ok) {
-          data = await response.json()
-          break
-        }
+        const responseData = await response.json().catch(() => ({}))
 
-        const err = await response.json().catch(() => ({}))
-
-        // Billing redirect — not retryable
-        if (err.billingUrl) {
-          toast.show({ variant: "error", message: err.message || err.error || "Subscription required", duration: 8000 })
-          toast.show({ variant: "info", message: "Opening billing page...", duration: 4000 })
-          tryOpenBrowser(err.billingUrl)
-          setStep("code")
-          return
-        }
-
-        // Pending approval — retry with status message
-        const isPending = err.error === "pending" || err.error === "Session not yet approved" || err.status === "pending"
+        // 202 = pending approval, or explicit pending status
+        const isPending = response.status === 202 || responseData.status === "pending" || responseData.error === "pending"
         if (isPending && attempt < maxAttempts) {
           toast.show({ variant: "info", message: `Waiting for browser approval... (${attempt}/${maxAttempts})`, duration: 2000 })
           await new Promise(r => setTimeout(r, 2000))
           continue
         }
 
-        throw new Error(err.error || "Verification failed")
+        if (response.ok && !isPending) {
+          data = responseData
+          break
+        }
+
+        // Billing redirect — not retryable
+        if (responseData.billingUrl) {
+          toast.show({ variant: "error", message: responseData.message || responseData.error || "Subscription required", duration: 8000 })
+          toast.show({ variant: "info", message: "Opening billing page...", duration: 4000 })
+          tryOpenBrowser(responseData.billingUrl)
+          setStep("code")
+          return
+        }
+
+        if (isPending) {
+          throw new Error("Verification timed out — please approve in your browser and try again")
+        }
+
+        throw new Error(responseData.error || "Verification failed")
       }
 
       if (!data) {
