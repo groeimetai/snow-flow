@@ -1,6 +1,4 @@
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js"
-import type { ServiceNowClient } from "../../../../utils/servicenow-client.js"
-import type { MCPLogger } from "../../../shared/mcp-logger.js"
 import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/types.js"
 
 export const toolDefinition: MCPToolDefinition = {
@@ -76,7 +74,7 @@ export interface CreateAccessControlArgs {
   active?: boolean
 }
 
-export async function createAccessControl(args: CreateAccessControlArgs, client: ServiceNowClient, logger: MCPLogger) {
+export async function createAccessControl(args: CreateAccessControlArgs, client: any, logger: any) {
   try {
     logger.info("Creating Access Control...")
 
@@ -118,7 +116,7 @@ export async function createAccessControl(args: CreateAccessControlArgs, client:
 
 async function getTableInfo(
   tableName: string,
-  client: ServiceNowClient,
+  client: any,
 ): Promise<{ name: string; label: string } | null> {
   try {
     const tableResponse = await client.searchRecords("sys_db_object", `name=${tableName}`, 1)

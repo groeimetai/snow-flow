@@ -1,6 +1,4 @@
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js"
-import type { ServiceNowClient } from "../../../../utils/servicenow-client.js"
-import type { MCPLogger } from "../../../shared/mcp-logger.js"
 import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/types.js"
 
 export const toolDefinition: MCPToolDefinition = {
@@ -79,7 +77,7 @@ export interface CreateAuditRuleArgs {
   active?: boolean
 }
 
-export async function createAuditRule(args: CreateAuditRuleArgs, client: ServiceNowClient, logger: MCPLogger) {
+export async function createAuditRule(args: CreateAuditRuleArgs, client: any, logger: any) {
   try {
     logger.info("Creating Audit Rule...")
 

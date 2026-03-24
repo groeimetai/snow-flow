@@ -1,6 +1,4 @@
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js"
-import type { ServiceNowClient } from "../../../../utils/servicenow-client.js"
-import type { MCPLogger } from "../../../shared/mcp-logger.js"
 import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/types.js"
 
 export const toolDefinition: MCPToolDefinition = {
@@ -64,8 +62,8 @@ export interface AutomateThreatResponseArgs {
 
 export async function automateThreatResponse(
   args: AutomateThreatResponseArgs,
-  client: ServiceNowClient,
-  logger: MCPLogger,
+  client: any,
+  logger: any,
 ) {
   try {
     const { threat_id, response_level, automated_actions = false, notification_groups = [] } = args

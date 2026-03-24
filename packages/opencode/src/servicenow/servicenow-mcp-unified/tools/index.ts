@@ -56,9 +56,6 @@ export * from "./lists/index.js"
 // Business Rules (2 tools)
 export * from "./business-rules/index.js"
 
-// Script Includes (1 tool)
-export * from "./script-includes/index.js"
-
 // REST API tools moved to Integration folder (see snow_rest_message_manage, snow_create_rest_message)
 
 // SLA (2 tools)
@@ -93,9 +90,6 @@ export * from "./journals/index.js"
 
 // Data Policies (2 tools)
 export * from "./data-policies/index.js"
-
-// UI Actions (1 tool)
-export * from "./ui-actions/index.js"
 
 // Workspace (10 tools)
 export * from "./workspace/index.js"
@@ -187,9 +181,6 @@ export * from "./project/index.js"
 // Performance Analytics (3 tools)
 export * from "./performance-analytics/index.js"
 
-// Predictive Intelligence (5 tools)
-export * from "./predictive-intelligence/index.js"
-
 // Service Portal (3 tools)
 export * from "./service-portal/index.js"
 
@@ -217,12 +208,6 @@ export * from "./notifications/index.js"
 // Mobile (3 tools)
 export * from "./mobile/index.js"
 
-// AI & ML (3 tools)
-export * from "./ai-ml/index.js"
-
-// Machine Learning - TensorFlow.js Neural Networks (9 tools)
-export * from "./machine-learning/index.js"
-
 // ATF (Automated Test Framework) (6 tools)
 export * from "./atf/index.js"
 
@@ -243,9 +228,6 @@ export * from "./integration/index.js"
 
 // Platform (8 tools)
 export * from "./platform/index.js"
-
-// Monitoring (1 tool)
-export * from "./monitoring/index.js"
 
 // Blast Radius (5 tools)
 export * from "./blast-radius/index.js"

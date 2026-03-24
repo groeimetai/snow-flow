@@ -1,6 +1,4 @@
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js"
-import type { ServiceNowClient } from "../../../../utils/servicenow-client.js"
-import type { MCPLogger } from "../../../shared/mcp-logger.js"
 import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/types.js"
 
 export const toolDefinition: MCPToolDefinition = {
@@ -63,7 +61,7 @@ export interface AuditTrailAnalysisArgs {
   exportFormat?: "json" | "csv" | "pdf"
 }
 
-export async function auditTrailAnalysis(args: AuditTrailAnalysisArgs, client: ServiceNowClient, logger: MCPLogger) {
+export async function auditTrailAnalysis(args: AuditTrailAnalysisArgs, client: any, logger: any) {
   try {
     const timeframe = args.timeframe || "24h"
     let query = ""

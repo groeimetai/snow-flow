@@ -4,7 +4,7 @@
  * Implements MCP prompts protocol for reusable prompt templates and workflows
  */
 
-import { Logger } from "../utils/logger.js"
+import { mcpDebug } from "./mcp-debug.js"
 
 /**
  * Prompt argument definition
@@ -85,13 +85,13 @@ export type PromptHandler = (args: Record<string, string>) => Promise<MCPPromptR
  * Manages prompt templates, registration, and execution
  */
 export class MCPPromptManager {
-  private logger: Logger
+  private prefix: string
   private promptRegistry: Map<string, MCPPrompt> = new Map()
   private promptHandlers: Map<string, PromptHandler> = new Map()
   private categories: PromptCategory[] = []
 
   constructor(serverName: string = "mcp-server") {
-    this.logger = new Logger(`PromptManager:${serverName}`)
+    this.prefix = `[PromptManager:${serverName}]`
     this.initializeDefaultPrompts()
   }
 
@@ -109,7 +109,7 @@ export class MCPPromptManager {
   registerPrompt(prompt: MCPPrompt, handler: PromptHandler): void {
     this.promptRegistry.set(prompt.name, prompt)
     this.promptHandlers.set(prompt.name, handler)
-    this.logger.debug(`Registered prompt: ${prompt.name}`)
+    mcpDebug(`Registered prompt: ${prompt.name}`)
   }
 
   /**
@@ -119,7 +119,7 @@ export class MCPPromptManager {
     const deleted = this.promptRegistry.delete(name)
     this.promptHandlers.delete(name)
     if (deleted) {
-      this.logger.debug(`Unregistered prompt: ${name}`)
+      mcpDebug(`Unregistered prompt: ${name}`)
     }
     return deleted
   }
@@ -161,7 +161,7 @@ export class MCPPromptManager {
       }
     }
 
-    this.logger.debug(`Executing prompt: ${name}`, { args })
+    mcpDebug(`Executing prompt: ${name}`, { args })
     return await handler(args)
   }
 
@@ -218,6 +218,6 @@ export class MCPPromptManager {
     this.promptRegistry.clear()
     this.promptHandlers.clear()
     this.categories = []
-    this.logger.debug("All prompts cleared")
+    mcpDebug("All prompts cleared")
   }
 }

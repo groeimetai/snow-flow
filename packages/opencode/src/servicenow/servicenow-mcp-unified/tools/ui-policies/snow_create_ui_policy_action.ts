@@ -4,9 +4,22 @@
  * Creates a UI Policy Action (sys_ui_policy_action) that controls field
  * visibility, mandatory state, or read-only state when a UI policy's
  * conditions are met.
+ *
+ * ServiceNow field mapping:
+ *   - visible/mandatory/disabled are STRING fields with values: "true", "false", "ignore"
+ *   - "disabled" is the actual column name for "Read only" in the UI
+ *   - "table" is auto-derived from the parent UI policy but must be sent for field validation
+ *
+ * Platform limitation:
+ *   The "ui_policy" reference field on sys_ui_policy_action cannot be set via
+ *   the REST Table API (POST/PUT/PATCH all silently ignore it). This is a known
+ *   ServiceNow platform restriction for parent-child reference fields.
+ *   Workaround: after Table API creation, a direct XML POST is attempted to set
+ *   the ui_policy reference. If the XML POST also fails, the action is created
+ *   without the reference — it can be linked manually in the UI.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
@@ -15,7 +28,7 @@ export const toolDefinition: MCPToolDefinition = {
   description:
     "Create a UI policy action to control field behavior (visible/mandatory/readonly) when a UI policy condition is met. Requires the parent UI policy sys_id and the target table name.",
   category: "development",
-  subcategory: "platform",
+  subcategory: "ui-policies",
   use_cases: ["ui-policy-actions", "form-control", "ui-automation"],
   complexity: "intermediate",
   frequency: "medium",
@@ -31,7 +44,8 @@ export const toolDefinition: MCPToolDefinition = {
       },
       table: {
         type: "string",
-        description: "Table name the UI policy applies to (e.g. 'incident', 'change_request'). Must match the table on the parent UI policy.",
+        description:
+          "Table name the UI policy applies to (e.g. 'incident', 'change_request'). Must match the table on the parent UI policy.",
       },
       field: {
         type: "string",
@@ -39,15 +53,17 @@ export const toolDefinition: MCPToolDefinition = {
       },
       visible: {
         type: "boolean",
-        description: "Set field visibility. true = visible, false = hidden. Omit to leave unchanged.",
+        description: "Set field visibility. true = visible, false = hidden. Omit to leave unchanged ('ignore').",
       },
       mandatory: {
         type: "boolean",
-        description: "Set field mandatory state. true = required, false = optional. Omit to leave unchanged.",
+        description:
+          "Set field mandatory state. true = required, false = optional. Omit to leave unchanged ('ignore').",
       },
       readonly: {
         type: "boolean",
-        description: "Set field read-only state. true = read-only, false = editable. Omit to leave unchanged.",
+        description:
+          "Set field read-only state. true = read-only, false = editable. Omit to leave unchanged ('ignore').",
       },
       cleared: {
         type: "boolean",
@@ -58,50 +74,89 @@ export const toolDefinition: MCPToolDefinition = {
   },
 }
 
-export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { ui_policy_sys_id, table, field, visible, mandatory, readonly, cleared } = args
+function toActionValue(val: boolean | undefined): string {
+  if (val === undefined) return "ignore"
+  return val ? "true" : "false"
+}
+
+export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+  const uid = args.ui_policy_sys_id as string
+  const table = args.table as string
+  const field = args.field as string
+  const visible = args.visible as boolean | undefined
+  const mandatory = args.mandatory as boolean | undefined
+  const readonly = args.readonly as boolean | undefined
+  const cleared = args.cleared as boolean | undefined
+
   try {
     const client = await getAuthenticatedClient(context)
 
-    // Look up the parent UI policy to validate it exists and get its table
-    const policyResponse = await client.get(
-      "/api/now/table/sys_ui_policy/" + ui_policy_sys_id + "?sysparm_fields=sys_id,table,short_description",
+    const policyRes = await client.get(
+      "/api/now/table/sys_ui_policy/" + uid + "?sysparm_fields=sys_id,table,short_description",
     )
-    const policy = policyResponse.data.result
+    const policy = policyRes.data.result
     if (!policy || !policy.sys_id) {
-      return createErrorResult("UI Policy not found with sys_id: " + ui_policy_sys_id)
+      return createErrorResult("UI Policy not found with sys_id: " + uid)
     }
 
-    const actionData: any = {
-      ui_policy: ui_policy_sys_id,
+    const payload: Record<string, string | boolean> = {
+      ui_policy: uid,
       table: table,
       field: field,
-      visible: visible !== undefined ? visible : true,
-      mandatory: mandatory !== undefined ? mandatory : false,
-      readonly: readonly !== undefined ? readonly : false,
-      cleared: cleared !== undefined ? cleared : false,
+      visible: toActionValue(visible),
+      mandatory: toActionValue(mandatory),
+      disabled: toActionValue(readonly),
+      cleared: cleared === true,
     }
 
-    const response = await client.post("/api/now/table/sys_ui_policy_action", actionData)
+    const response = await client.post("/api/now/table/sys_ui_policy_action", payload)
     const action = response.data.result
+    const actionSysId = action.sys_id?.value || action.sys_id
+
+    const linked = await (async () => {
+      try {
+        const xmlBody =
+          "<record>" + "<sys_id>" + actionSysId + "</sys_id>" + "<ui_policy>" + uid + "</ui_policy>" + "</record>"
+        await client.post("/sys_ui_policy_action.do?XML&sys_id=" + actionSysId, xmlBody, {
+          headers: { "Content-Type": "application/xml" },
+        })
+
+        const verify = await client.get(
+          "/api/now/table/sys_ui_policy_action/" + actionSysId + "?sysparm_fields=ui_policy",
+        )
+        const ref = verify.data.result?.ui_policy
+        const val = typeof ref === "object" && ref !== null ? ref.value : ref
+        return !!val && val !== ""
+      } catch (_e) {
+        return false
+      }
+    })()
+
+    const refVal = action.ui_policy
+    const resolvedRef = typeof refVal === "object" && refVal !== null ? refVal.value : refVal
 
     return createSuccessResult({
       created: true,
       action: {
-        sys_id: action.sys_id,
-        ui_policy: ui_policy_sys_id,
-        table: table,
-        field: action.field,
-        visible: action.visible,
-        mandatory: action.mandatory,
-        readonly: action.readonly,
-        cleared: action.cleared,
+        sys_id: actionSysId,
+        ui_policy: linked ? uid : resolvedRef || "",
+        ui_policy_linked: linked,
+        table: action.table?.value || action.table,
+        field: action.field?.value || action.field,
+        visible: action.visible?.value || action.visible,
+        mandatory: action.mandatory?.value || action.mandatory,
+        disabled: action.disabled?.value || action.disabled,
+        cleared: action.cleared?.value || action.cleared,
       },
+      warning: linked
+        ? undefined
+        : "The ui_policy reference field could not be set via the REST API (ServiceNow platform limitation). The action was created but is not linked to the parent UI policy. Link it manually in the ServiceNow UI.",
     })
-  } catch (error: any) {
-    return createErrorResult(error.message)
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error)
+    return createErrorResult(msg)
   }
 }
 
-export const version = "1.0.0"
+export const version = "1.1.0"
 export const author = "Snow-Flow SDK Migration"

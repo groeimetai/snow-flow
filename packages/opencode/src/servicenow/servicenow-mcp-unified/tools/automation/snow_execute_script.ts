@@ -8,15 +8,15 @@
  * ES5 only! ServiceNow runs on Rhino engine.
  */
 
-import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
+import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
-import crypto from "crypto"
+import { randomBytes } from "crypto"
 
 const ENDPOINT_SERVICE_ID = "snow_flow_exec"
 const ENDPOINT_PATH = "/execute"
 
-const deployed = new Map<string, boolean>()
+const endpointCache = new Map<string, { namespace: string }>()
 
 const OPERATION_SCRIPT = `(function process(request, response) {
   var body = request.body.data;
@@ -213,53 +213,85 @@ export async function execute(args: Record<string, unknown>, context: ServiceNow
   }
 }
 
+function getEndpointUrl(context: ServiceNowContext): string {
+  const cached = endpointCache.get(context.instanceUrl)
+  if (cached) return `/api/${cached.namespace}/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`
+  return `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`
+}
+
 async function ensureEndpoint(context: ServiceNowContext): Promise<boolean> {
-  if (deployed.get(context.instanceUrl)) return true
+  if (endpointCache.has(context.instanceUrl)) return true
 
   const client = await getAuthenticatedClient(context)
 
   const check = await client.get("/api/now/table/sys_ws_definition", {
     params: {
       sysparm_query: `service_id=${ENDPOINT_SERVICE_ID}`,
-      sysparm_fields: "sys_id",
+      sysparm_fields: "sys_id,namespace,base_uri",
       sysparm_limit: 1,
     },
   })
 
   const existing = check.data?.result?.[0]
-  if (!existing) {
-    const svc = await client.post("/api/now/table/sys_ws_definition", {
-      name: "Snow-Flow Script Executor",
-      service_id: ENDPOINT_SERVICE_ID,
-      short_description: "Synchronous script execution endpoint for Snow-Flow",
-      active: true,
-    })
+  const svcId =
+    existing?.sys_id ||
+    (await (async () => {
+      const svc = await client.post("/api/now/table/sys_ws_definition", {
+        name: "Snow-Flow Script Executor",
+        service_id: ENDPOINT_SERVICE_ID,
+        short_description: "Synchronous script execution endpoint for Snow-Flow",
+        active: true,
+      })
 
-    const svcId = svc.data?.result?.sys_id
-    if (!svcId) return false
+      const id = svc.data?.result?.sys_id
+      if (!id) return null
 
-    const res = await client.post("/api/now/table/sys_ws_operation", {
-      name: "Execute Script",
-      web_service_definition: svcId,
-      http_method: "POST",
-      relative_path: ENDPOINT_PATH,
-      operation_script: OPERATION_SCRIPT,
-      active: true,
-    })
+      await client.post("/api/now/table/sys_ws_operation", {
+        name: "Execute Script",
+        web_service_definition: id,
+        http_method: "POST",
+        relative_path: ENDPOINT_PATH,
+        operation_script: OPERATION_SCRIPT,
+        active: true,
+      })
 
-    if (!res.data?.result?.sys_id) return false
+      return id
+    })())
+
+  if (!svcId) return false
+
+  const svcRecord =
+    existing ||
+    (
+      await client
+        .get("/api/now/table/sys_ws_definition/" + svcId, {
+          params: { sysparm_fields: "namespace,base_uri" },
+        })
+        .catch(() => null)
+    )?.data?.result
+
+  const ns = svcRecord?.namespace || ""
+
+  const candidates = ns
+    ? [`/api/${ns}/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`]
+    : [`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`]
+
+  for (const url of candidates) {
+    const ping = await client.post(url, { script: "'pong'", execution_id: "deploy_verify" }).catch(() => null)
+
+    if (ping?.data?.result?.success === true) {
+      const parts = url.replace(`/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, "").replace("/api/", "")
+      endpointCache.set(context.instanceUrl, { namespace: parts || ENDPOINT_SERVICE_ID })
+      return true
+    }
   }
 
-  const ping = await client
-    .post(`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, {
-      script: "'pong'",
-      execution_id: "deploy_verify",
-    })
-    .catch(() => null)
+  if (ns) {
+    endpointCache.set(context.instanceUrl, { namespace: ns })
+    return true
+  }
 
-  const ok = ping?.data?.result?.success === true
-  if (ok) deployed.set(context.instanceUrl, true)
-  return ok
+  return false
 }
 
 async function executeViaSyncApi(
@@ -276,7 +308,7 @@ async function executeViaSyncApi(
   const client = await getAuthenticatedClient(context)
 
   const response = await client
-    .post(`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, {
+    .post(getEndpointUrl(context), {
       script: params.script,
       execution_id: params.executionId,
     })
@@ -346,7 +378,7 @@ async function executeViaScheduler(
   const escape = (str: string) =>
     str.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n").replace(/\r/g, "\\r")
 
-  const executionId = `exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
+  const executionId = `exec_${Date.now()}_${randomBytes(6).toString("hex")}`
   const marker = `SNOW_FLOW_EXEC_${executionId}`
 
   const wrapped = `
@@ -561,7 +593,7 @@ async function executeScript(
   },
   context: ServiceNowContext,
 ): Promise<ToolResult> {
-  const executionId = `exec_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`
+  const executionId = `exec_${Date.now()}_${randomBytes(6).toString("hex")}`
 
   const syncResult = await executeViaSyncApi({ ...params, executionId }, context)
   if (syncResult) return syncResult

@@ -1,6 +1,4 @@
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js"
-import type { ServiceNowClient } from "../../../../utils/servicenow-client.js"
-import type { MCPLogger } from "../../../shared/mcp-logger.js"
 import { MCPToolDefinition, ToolResult } from "../../shared/types.js"
 import { ServiceNowContext } from "../../shared/types.js"
 
@@ -66,8 +64,8 @@ export interface AnalyzeThreatIntelligenceArgs {
 
 export async function analyzeThreatIntelligence(
   args: AnalyzeThreatIntelligenceArgs,
-  client: ServiceNowClient,
-  logger: MCPLogger,
+  client: any,
+  logger: any,
 ) {
   try {
     const { ioc_value, ioc_type, threat_feed_sources = [], correlation_timeframe = "24_hours" } = args
