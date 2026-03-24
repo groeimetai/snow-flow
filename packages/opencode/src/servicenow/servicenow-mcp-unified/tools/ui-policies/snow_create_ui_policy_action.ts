@@ -10,18 +10,15 @@
  *   - "disabled" is the actual column name for "Read only" in the UI
  *   - "table" is auto-derived from the parent UI policy but must be sent for field validation
  *
- * Platform limitation:
- *   The "ui_policy" reference field on sys_ui_policy_action cannot be set via
- *   the REST Table API (POST/PUT/PATCH all silently ignore it). This is a known
- *   ServiceNow platform restriction for parent-child reference fields.
- *   Workaround: after Table API creation, a direct XML POST is attempted to set
- *   the ui_policy reference. If the XML POST also fails, the action is created
- *   without the reference — it can be linked manually in the UI.
+ * The "ui_policy" reference field is set via POST during creation. If the
+ * platform silently ignores it, a cascading fallback (PATCH → PUT → GlideRecord)
+ * ensures the link is established.
  */
 
 import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
+import { linkUiPolicyReference, verifyUiPolicyLink } from "./link-ui-policy.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_ui_policy_action",
@@ -113,24 +110,9 @@ export async function execute(args: Record<string, unknown>, context: ServiceNow
     const action = response.data.result
     const actionSysId = action.sys_id?.value || action.sys_id
 
-    const linked = await (async () => {
-      try {
-        const xmlBody =
-          "<record>" + "<sys_id>" + actionSysId + "</sys_id>" + "<ui_policy>" + uid + "</ui_policy>" + "</record>"
-        await client.post("/sys_ui_policy_action.do?XML&sys_id=" + actionSysId, xmlBody, {
-          headers: { "Content-Type": "application/xml" },
-        })
-
-        const verify = await client.get(
-          "/api/now/table/sys_ui_policy_action/" + actionSysId + "?sysparm_fields=ui_policy",
-        )
-        const ref = verify.data.result?.ui_policy
-        const val = typeof ref === "object" && ref !== null ? ref.value : ref
-        return !!val && val !== ""
-      } catch (_e) {
-        return false
-      }
-    })()
+    // Check if the POST already set the reference; if not, use the fallback chain
+    const alreadyLinked = await verifyUiPolicyLink(client, actionSysId, uid)
+    const linked = alreadyLinked || (await linkUiPolicyReference(client, actionSysId, uid))
 
     const refVal = action.ui_policy
     const resolvedRef = typeof refVal === "object" && refVal !== null ? refVal.value : refVal

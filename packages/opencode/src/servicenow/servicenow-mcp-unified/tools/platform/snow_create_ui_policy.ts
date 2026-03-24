@@ -8,6 +8,7 @@
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
+import { linkUiPolicyReference, verifyUiPolicyLink } from "../ui-policies/link-ui-policy.js"
 
 /**
  * Extract sys_id from API response - handles both string and object formats
@@ -129,6 +130,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     // Create UI Policy Actions
     const createdActions = []
+    const unlinkableActions: string[] = []
     for (const action of actions) {
       const actionData: any = {
         ui_policy: policySysId,
@@ -140,10 +142,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       }
 
       const actionResponse = await client.post("/api/now/table/sys_ui_policy_action", actionData)
-      createdActions.push(actionResponse.data.result)
+      const actionResult = actionResponse.data.result
+      const actionSysId = extractSysId(actionResult.sys_id)
+
+      // Verify ui_policy link; if POST didn't set it, use fallback chain
+      const alreadyLinked = await verifyUiPolicyLink(client, actionSysId, policySysId)
+      if (!alreadyLinked) {
+        const linked = await linkUiPolicyReference(client, actionSysId, policySysId)
+        if (!linked) unlinkableActions.push(action.field_name)
+      }
+
+      createdActions.push(actionResult)
     }
 
-    return createSuccessResult({
+    const result: Record<string, any> = {
       created: true,
       ui_policy: {
         sys_id: policySysId,
@@ -161,7 +173,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         mandatory: action.mandatory === "true",
         readonly: action.readonly === "true",
         cleared: action.cleared === "true",
-        ui_policy_reference: policySysId,
+        ui_policy_linked: !unlinkableActions.includes(action.field),
       })),
       total_actions: createdActions.length,
       best_practices: [
@@ -171,7 +183,16 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         "Order matters when multiple policies affect same field",
         "Test with different user roles and data",
       ],
-    })
+    }
+
+    if (unlinkableActions.length > 0) {
+      result.warning =
+        "Some actions could not be linked to the UI policy: " +
+        unlinkableActions.join(", ") +
+        ". Link them manually in the ServiceNow UI."
+    }
+
+    return createSuccessResult(result)
   } catch (error: any) {
     return createErrorResult(error.message)
   }
