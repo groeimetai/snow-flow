@@ -122,6 +122,10 @@ export class ServiceNowAuthManager {
     // Get fresh access token
     const accessToken = await this.getAccessToken(context)
 
+    if (!accessToken) {
+      throw new Error("Failed to obtain access token. Please verify ServiceNow credentials and run: snow-flow auth login")
+    }
+
     // Determine correct Authorization header format
     // Basic auth tokens already include "Basic " prefix, Bearer tokens don't
     const authHeader = accessToken.startsWith("Basic ") ? accessToken : `Bearer ${accessToken}`
@@ -203,6 +207,10 @@ export class ServiceNowAuthManager {
 
             mcpDebug("[Auth] 401 received, clearing invalid accessToken and forcing refresh...")
             const newAccessToken = await this.getAccessToken(context)
+
+            if (!newAccessToken) {
+              throw new Error("Failed to obtain access token after 401 refresh. Please run: snow-flow auth login")
+            }
 
             // Update request with new token
             // Check if it's already a full auth header (Basic auth) or just a Bearer token
