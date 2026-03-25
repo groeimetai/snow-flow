@@ -28,6 +28,7 @@ import { Truncate } from "./truncation"
 import { PlanExitTool, PlanEnterTool } from "./plan"
 import { ReviewEnterTool, ReviewExitTool } from "./review"
 import { ApplyPatchTool } from "./apply_patch"
+import { Auth } from "@/auth"
 
 export namespace ToolRegistry {
   const log = Log.create({ service: "tool.registry" })
@@ -99,6 +100,9 @@ export namespace ToolRegistry {
     const custom = await state().then((x) => x.custom)
     const config = await Config.get()
 
+    // Check if the user has the code-review feature (enterprise subscription)
+    const hasCodeReview = await hasFeature("code-review")
+
     return [
       InvalidTool,
       ...(["app", "cli", "desktop"].includes(Flag.OPENCODE_CLIENT) ? [QuestionTool] : []),
@@ -118,9 +122,21 @@ export namespace ToolRegistry {
       ApplyPatchTool,
       ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
-      ...(Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool, PlanEnterTool, ReviewEnterTool, ReviewExitTool] : []),
+      ...(Flag.OPENCODE_CLIENT === "cli" ? [PlanExitTool, PlanEnterTool] : []),
+      ...(Flag.OPENCODE_CLIENT === "cli" && hasCodeReview ? [ReviewEnterTool, ReviewExitTool] : []),
       ...custom,
     ]
+  }
+
+  /** Check if the user has a specific feature in their enterprise subscription */
+  async function hasFeature(feature: string): Promise<boolean> {
+    try {
+      const auths = await Auth.all()
+      for (const auth of Object.values(auths)) {
+        if (auth.type === "enterprise" && auth.features?.includes(feature)) return true
+      }
+    } catch {}
+    return false
   }
 
   export async function ids() {
