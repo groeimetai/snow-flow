@@ -39,6 +39,37 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       status: responseTime < 1000 ? "good" : responseTime < 3000 ? "fair" : "slow",
     })
   } catch (error: any) {
+    const msg = error.message || ""
+    const status = error.response?.status
+
+    // Detect hibernating instance
+    if (
+      status === 502 || status === 503
+      || msg.includes("ECONNREFUSED")
+      || msg.includes("ETIMEDOUT")
+      || msg.includes("socket hang up")
+      || (msg.includes("Failed to obtain access token") && !msg.includes("Invalid credentials"))
+    ) {
+      return createErrorResult(
+        `ServiceNow instance appears to be hibernating or starting up.\n\n` +
+        `Developer instances automatically hibernate after periods of inactivity. ` +
+        `To wake it up:\n` +
+        `1. Open your instance URL in a browser: ${context.instanceUrl}\n` +
+        `2. Wait 1-2 minutes for it to fully start\n` +
+        `3. Try this command again\n\n` +
+        `Technical detail: ${status ? `HTTP ${status}` : msg}`
+      )
+    }
+
+    // Detect auth issues separately
+    if (msg.includes("Failed to obtain access token") || status === 401) {
+      return createErrorResult(
+        `Authentication failed. Your access token may be expired.\n\n` +
+        `Run: snow-flow auth login\n\n` +
+        `If you've already logged in, check: snow-flow auth status`
+      )
+    }
+
     return createErrorResult(error.message)
   }
 }

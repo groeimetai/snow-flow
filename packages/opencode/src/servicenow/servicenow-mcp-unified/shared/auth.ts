@@ -123,7 +123,12 @@ export class ServiceNowAuthManager {
     const accessToken = await this.getAccessToken(context)
 
     if (!accessToken) {
-      throw new Error("Failed to obtain access token. Please verify ServiceNow credentials and run: snow-flow auth login")
+      throw new Error(
+        "Failed to obtain access token. This can happen when:\n" +
+        "• Your ServiceNow instance is hibernating — open it in a browser to wake it up\n" +
+        "• Your credentials have expired — run: snow-flow auth login\n" +
+        "• Your OAuth client ID/secret are incorrect"
+      )
     }
 
     // Determine correct Authorization header format
@@ -171,6 +176,19 @@ export class ServiceNowAuthManager {
         return response
       },
       async (error) => {
+        const status = error.response?.status
+
+        // Detect hibernating instance (502/503 from proxy or ServiceNow itself)
+        if (status === 502 || status === 503) {
+          const err = new Error(
+            `ServiceNow instance is hibernating or starting up (HTTP ${status}). ` +
+            `Open ${context.instanceUrl} in your browser to wake it up, then wait 1-2 minutes and try again.`
+          )
+          ;(err as any).response = error.response
+          ;(err as any).isHibernating = true
+          throw err
+        }
+
         // Check if the error response has ServiceNow error structure
         if (error.response?.data?.error) {
           const snowError = error.response.data.error
