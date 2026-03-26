@@ -28,6 +28,19 @@ function getMachineId(): string | undefined {
   }
 }
 
+function detectInstallMethod(): string {
+  // Check npm
+  if (process.env.npm_config_user_agent) return "npm"
+  // Check bun
+  if (typeof globalThis.Bun !== "undefined") return "bun"
+  // Check homebrew
+  const execPath = process.execPath || ""
+  if (execPath.includes("Cellar") || execPath.includes("homebrew") || execPath.includes("linuxbrew")) return "brew"
+  // Check standalone binary (no node_modules in path suggests binary distribution)
+  if (!execPath.includes("node_modules") && !execPath.includes("node") && !execPath.includes("bun")) return "binary"
+  return "other"
+}
+
 async function sendPing(payload: Record<string, unknown>): Promise<void> {
   try {
     const response = await fetch(`${PORTAL_URL}/api/telemetry/ping`, {
@@ -63,15 +76,29 @@ export namespace AnonymousTelemetry {
       }
 
       let messageCount = 0
+      let exitReason: "normal" | "error" | "interrupt" = "normal"
       let configDisabled = false
       const startTime = Date.now()
       const sessionId = crypto.randomUUID()
+      const installMethod = detectInstallMethod()
 
       const unsubs = [
         Bus.subscribe(MessageV2.Event.Updated, (event) => {
           if (event.properties.info.role === "user") messageCount++
         }),
       ]
+
+      // Track exit reason via process signals
+      const onError = () => {
+        exitReason = "error"
+      }
+      const onInterrupt = () => {
+        exitReason = "interrupt"
+      }
+      process.on("uncaughtException", onError)
+      process.on("unhandledRejection", onError)
+      process.on("SIGINT", onInterrupt)
+      process.on("SIGTERM", onInterrupt)
 
       const basePayload = {
         machineId,
@@ -80,6 +107,7 @@ export namespace AnonymousTelemetry {
         channel: Installation.CHANNEL,
         os: process.platform,
         arch: process.arch,
+        installMethod,
       }
 
       log.info("anonymous telemetry initializing", { machineId: machineId.slice(0, 8) + "..." })
@@ -111,8 +139,17 @@ export namespace AnonymousTelemetry {
         get messageCount() {
           return messageCount
         },
+        get exitReason() {
+          return exitReason
+        },
         get configDisabled() {
           return configDisabled
+        },
+        cleanup() {
+          process.removeListener("uncaughtException", onError)
+          process.removeListener("unhandledRejection", onError)
+          process.removeListener("SIGINT", onInterrupt)
+          process.removeListener("SIGTERM", onInterrupt)
         },
       }
     },
@@ -120,11 +157,14 @@ export namespace AnonymousTelemetry {
       for (const unsub of current.unsubs) unsub()
       if (current.disabled || current.configDisabled) return
 
+      if ("cleanup" in current) current.cleanup()
+
       const sessionDurationSec = Math.round((Date.now() - current.startTime) / 1000)
 
       await sendPing({
         ...current.basePayload,
         type: "end",
+        exitReason: current.exitReason,
         sessionDurationSec,
         messageCount: current.messageCount,
         timestamp: Date.now(),
