@@ -77,6 +77,7 @@ export namespace AnonymousTelemetry {
 
       let messageCount = 0
       let exitReason: "normal" | "error" | "interrupt" = "normal"
+      let exitErrorMessage: string | undefined
       let configDisabled = false
       const startTime = Date.now()
       const sessionId = crypto.randomUUID()
@@ -89,8 +90,11 @@ export namespace AnonymousTelemetry {
       ]
 
       // Track exit reason via process signals
-      const onError = () => {
+      const onError = (err: unknown) => {
         exitReason = "error"
+        if (err instanceof Error) exitErrorMessage = `${err.name}: ${err.message}`.slice(0, 500)
+        else if (typeof err === "string") exitErrorMessage = err.slice(0, 500)
+        else exitErrorMessage = String(err).slice(0, 500)
       }
       const onInterrupt = () => {
         exitReason = "interrupt"
@@ -142,6 +146,9 @@ export namespace AnonymousTelemetry {
         get exitReason() {
           return exitReason
         },
+        get exitErrorMessage() {
+          return exitErrorMessage
+        },
         get configDisabled() {
           return configDisabled
         },
@@ -165,6 +172,7 @@ export namespace AnonymousTelemetry {
         ...current.basePayload,
         type: "end",
         exitReason: current.exitReason,
+        exitErrorMessage: current.exitErrorMessage,
         sessionDurationSec,
         messageCount: current.messageCount,
         timestamp: Date.now(),
