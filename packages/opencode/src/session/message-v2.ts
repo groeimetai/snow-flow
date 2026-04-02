@@ -2,7 +2,14 @@ import { BusEvent } from "@/bus/bus-event"
 import { Bus } from "@/bus"
 import z from "zod"
 import { NamedError } from "@opencode-ai/util/error"
-import { APICallError, convertToModelMessages, LoadAPIKeyError, type ModelMessage, type UIMessage } from "ai"
+import {
+  APICallError,
+  convertToModelMessages,
+  LoadAPIKeyError,
+  NoOutputGeneratedError,
+  type ModelMessage,
+  type UIMessage,
+} from "ai"
 import { Identifier } from "../id/id"
 import { LSP } from "../lsp"
 import { Snapshot } from "@/snapshot"
@@ -801,6 +808,13 @@ export namespace MessageV2 {
       case e instanceof DOMException && e.name === "AbortError":
         return new MessageV2.AbortedError(
           { message: e.message },
+          {
+            cause: e,
+          },
+        ).toObject()
+      case NoOutputGeneratedError.isInstance(e):
+        return new MessageV2.AbortedError(
+          { message: e.message || "Stream interrupted before any output was generated" },
           {
             cause: e,
           },

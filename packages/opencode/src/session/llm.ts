@@ -3,6 +3,7 @@ import { Installation } from "@/installation"
 import { Provider } from "@/provider/provider"
 import { Log } from "@/util/log"
 import {
+  NoOutputGeneratedError,
   streamText,
   wrapLanguageModel,
   type ModelMessage,
@@ -189,6 +190,10 @@ export namespace LLM {
 
     return streamText({
       onError(error) {
+        if (NoOutputGeneratedError.isInstance(error.error)) {
+          l.debug("stream aborted before output was generated")
+          return
+        }
         l.error("stream error", {
           error,
         })
