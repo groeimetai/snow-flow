@@ -5,11 +5,31 @@ import { Log } from "@/util/log"
 import { Installation } from "@/installation"
 import { Flag } from "@/flag/flag"
 import { Config } from "@/config/config"
+import { Global } from "@/global"
 import { machineIdSync } from "node-machine-id"
+import fs from "fs"
+import path from "path"
 
 const log = Log.create({ service: "usage.anonymous-telemetry" })
 
 const PORTAL_URL = process.env.SNOW_FLOW_PORTAL_URL || "https://portal.snow-flow.dev"
+const PENDING_END_PING_PATH = path.join(Global.Path.state, "anonymous-telemetry-pending-end.json")
+
+interface TelemetryPingPayload {
+  machineId: string
+  sessionId: string
+  version: string
+  channel: string
+  os: string
+  arch: string
+  installMethod: string
+  type: "start" | "end"
+  sessionDurationSec: number
+  messageCount: number
+  timestamp: number
+  exitReason?: "normal" | "error" | "interrupt"
+  exitErrorMessage?: string
+}
 
 function isDisabled(): boolean {
   const dnt = process.env.DO_NOT_TRACK?.toLowerCase()
@@ -41,7 +61,41 @@ function detectInstallMethod(): string {
   return "other"
 }
 
-async function sendPing(payload: Record<string, unknown>): Promise<void> {
+function writePendingEndPing(payload: TelemetryPingPayload): void {
+  try {
+    fs.mkdirSync(path.dirname(PENDING_END_PING_PATH), { recursive: true })
+    fs.writeFileSync(PENDING_END_PING_PATH, JSON.stringify(payload), "utf-8")
+  } catch (error) {
+    log.info("failed to persist pending telemetry ping", { error: String(error) })
+  }
+}
+
+function readPendingEndPing(): TelemetryPingPayload | undefined {
+  try {
+    if (!fs.existsSync(PENDING_END_PING_PATH)) return undefined
+    return JSON.parse(fs.readFileSync(PENDING_END_PING_PATH, "utf-8")) as TelemetryPingPayload
+  } catch (error) {
+    log.info("failed to read pending telemetry ping", { error: String(error) })
+    return undefined
+  }
+}
+
+function clearPendingEndPing(): void {
+  try {
+    if (fs.existsSync(PENDING_END_PING_PATH)) fs.unlinkSync(PENDING_END_PING_PATH)
+  } catch (error) {
+    log.info("failed to clear pending telemetry ping", { error: String(error) })
+  }
+}
+
+async function flushPendingEndPing(): Promise<void> {
+  const pending = readPendingEndPing()
+  if (!pending) return
+  const sent = await sendPing(pending)
+  if (sent) clearPendingEndPing()
+}
+
+async function sendPing(payload: TelemetryPingPayload): Promise<boolean> {
   try {
     const response = await fetch(`${PORTAL_URL}/api/telemetry/ping`, {
       method: "POST",
@@ -53,11 +107,13 @@ async function sendPing(payload: Record<string, unknown>): Promise<void> {
     if (process.env.SNOW_FLOW_DEBUG_TELEMETRY) {
       console.error(`[telemetry] ping OK (${payload.type}) → ${response.status}`)
     }
+    return response.ok
   } catch (error) {
     log.info("telemetry ping failed", { error: String(error), type: payload.type })
     if (process.env.SNOW_FLOW_DEBUG_TELEMETRY) {
       console.error(`[telemetry] ping failed (${payload.type}):`, String(error))
     }
+    return false
   }
 }
 
@@ -90,23 +146,30 @@ export namespace AnonymousTelemetry {
         }),
       ]
 
-      const flushEndPing = async (reason?: "normal" | "error" | "interrupt", errorMessage?: string) => {
+      const flushEndPing = async (
+        reason?: "normal" | "error" | "interrupt",
+        errorMessage?: string,
+        options?: { persist?: boolean },
+      ) => {
         if (configDisabled || endPingSent) return
         if (reason) exitReason = reason
         if (errorMessage) exitErrorMessage = errorMessage.slice(0, 500)
         endPingSent = true
 
-        const sessionDurationSec = Math.round((Date.now() - startTime) / 1000)
-
-        await sendPing({
+        const payload: TelemetryPingPayload = {
           ...basePayload,
           type: "end",
           exitReason,
           exitErrorMessage,
-          sessionDurationSec,
+          sessionDurationSec: Math.round((Date.now() - startTime) / 1000),
           messageCount,
           timestamp: Date.now(),
-        })
+        }
+
+        if (options?.persist) writePendingEndPing(payload)
+
+        const sent = await sendPing(payload)
+        if (sent) clearPendingEndPing()
       }
 
       // Track exit reason via process signals
@@ -115,11 +178,11 @@ export namespace AnonymousTelemetry {
         if (err instanceof Error) exitErrorMessage = `${err.name}: ${err.message}`.slice(0, 500)
         else if (typeof err === "string") exitErrorMessage = err.slice(0, 500)
         else exitErrorMessage = String(err).slice(0, 500)
-        void flushEndPing("error", exitErrorMessage)
+        void flushEndPing("error", exitErrorMessage, { persist: true })
       }
       const onInterrupt = () => {
         exitReason = "interrupt"
-        void flushEndPing("interrupt")
+        void flushEndPing("interrupt", undefined, { persist: true })
       }
       process.on("uncaughtException", onError)
       process.on("unhandledRejection", onError)
@@ -139,7 +202,7 @@ export namespace AnonymousTelemetry {
       log.info("anonymous telemetry initializing", { machineId: machineId.slice(0, 8) + "..." })
 
       Config.get()
-        .then((config) => {
+        .then(async (config) => {
           if (config.telemetry === false) {
             configDisabled = true
             log.info("anonymous telemetry disabled (config)")
@@ -147,12 +210,14 @@ export namespace AnonymousTelemetry {
             unsubs.length = 0
             return
           }
+          await flushPendingEndPing()
           log.info("anonymous telemetry active, sending start ping")
-          sendPing({ ...basePayload, type: "start", sessionDurationSec: 0, messageCount: 0, timestamp: Date.now() })
+          await sendPing({ ...basePayload, type: "start", sessionDurationSec: 0, messageCount: 0, timestamp: Date.now() })
         })
-        .catch(() => {
+        .catch(async () => {
+          await flushPendingEndPing()
           log.info("anonymous telemetry active (config unavailable), sending start ping")
-          sendPing({ ...basePayload, type: "start", sessionDurationSec: 0, messageCount: 0, timestamp: Date.now() })
+          await sendPing({ ...basePayload, type: "start", sessionDurationSec: 0, messageCount: 0, timestamp: Date.now() })
         })
 
       return {
