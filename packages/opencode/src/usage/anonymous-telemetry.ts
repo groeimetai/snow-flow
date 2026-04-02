@@ -79,6 +79,7 @@ export namespace AnonymousTelemetry {
       let exitReason: "normal" | "error" | "interrupt" = "normal"
       let exitErrorMessage: string | undefined
       let configDisabled = false
+      let endPingSent = false
       const startTime = Date.now()
       const sessionId = crypto.randomUUID()
       const installMethod = detectInstallMethod()
@@ -89,15 +90,36 @@ export namespace AnonymousTelemetry {
         }),
       ]
 
+      const flushEndPing = async (reason?: "normal" | "error" | "interrupt", errorMessage?: string) => {
+        if (configDisabled || endPingSent) return
+        if (reason) exitReason = reason
+        if (errorMessage) exitErrorMessage = errorMessage.slice(0, 500)
+        endPingSent = true
+
+        const sessionDurationSec = Math.round((Date.now() - startTime) / 1000)
+
+        await sendPing({
+          ...basePayload,
+          type: "end",
+          exitReason,
+          exitErrorMessage,
+          sessionDurationSec,
+          messageCount,
+          timestamp: Date.now(),
+        })
+      }
+
       // Track exit reason via process signals
       const onError = (err: unknown) => {
         exitReason = "error"
         if (err instanceof Error) exitErrorMessage = `${err.name}: ${err.message}`.slice(0, 500)
         else if (typeof err === "string") exitErrorMessage = err.slice(0, 500)
         else exitErrorMessage = String(err).slice(0, 500)
+        void flushEndPing("error", exitErrorMessage)
       }
       const onInterrupt = () => {
         exitReason = "interrupt"
+        void flushEndPing("interrupt")
       }
       process.on("uncaughtException", onError)
       process.on("unhandledRejection", onError)
@@ -152,6 +174,9 @@ export namespace AnonymousTelemetry {
         get configDisabled() {
           return configDisabled
         },
+        async flushEndPing() {
+          await flushEndPing()
+        },
         cleanup() {
           process.removeListener("uncaughtException", onError)
           process.removeListener("unhandledRejection", onError)
@@ -165,18 +190,7 @@ export namespace AnonymousTelemetry {
       if (current.disabled || current.configDisabled) return
 
       if ("cleanup" in current) current.cleanup()
-
-      const sessionDurationSec = Math.round((Date.now() - current.startTime) / 1000)
-
-      await sendPing({
-        ...current.basePayload,
-        type: "end",
-        exitReason: current.exitReason,
-        exitErrorMessage: current.exitErrorMessage,
-        sessionDurationSec,
-        messageCount: current.messageCount,
-        timestamp: Date.now(),
-      })
+      if ("flushEndPing" in current) await current.flushEndPing()
     },
   )
 
