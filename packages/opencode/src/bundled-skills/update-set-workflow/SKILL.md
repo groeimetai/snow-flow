@@ -112,3 +112,41 @@ snow_update_set_export({
 3. **Complete when done** - Don't leave Update Sets open indefinitely
 4. **Test before completing** - Verify all changes work correctly
 5. **Never use Default** - Always create a named Update Set
+
+## OAuth Context & Update Set Tracking
+
+**Snow-Flow uses OAuth service account authentication.** All API calls run as an OAuth **service account**, not as your UI user. Update Sets must be "current" for the user making the changes — for API changes that means current for the service account.
+
+### The Two Contexts
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ YOUR UI SESSION (when you log in to ServiceNow UI)         │
+│ User: john.doe                                              │
+│ Current Update Set: [Whatever you selected in the UI]      │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ SNOW-FLOW OAUTH SESSION (API calls)                        │
+│ User: oauth.service.account                                 │
+│ Current Update Set: [Set via Update Set tools]             │
+│ ← All snow-flow changes are tracked here                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### auto_switch — REQUIRED for tracking
+
+- **`auto_switch=true` (DEFAULT)** — Update Set is set as current for the service account, all changes ARE tracked ✅
+- **`auto_switch=false`** — Changes will NOT be tracked. Only use for queries/analysis, NEVER for development.
+
+### Key points
+
+- ✅ **Update Sets ARE created** — they exist in ServiceNow
+- ✅ **Changes ARE tracked** when `auto_switch=true` — all snow-flow artifacts go into the Update Set automatically
+- ❌ **NOT visible in YOUR UI session** unless you provide the `servicenow_username` parameter (which also makes it current for that UI user)
+- ✅ **Deployment still works** — the Update Set can be exported/imported normally
+- ⚠️ Don't disable `auto_switch` for development tasks
+
+### When to use `servicenow_username`
+
+Optional. Pass your ServiceNow username when you want the Update Set to also appear as current in your UI session — handy when you're working in the ServiceNow UI alongside snow-flow and want to see the same Update Set selected in both places. It does not affect tracking; tracking is governed by `auto_switch`.

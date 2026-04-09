@@ -29,6 +29,20 @@ To create and manage flows programmatically, first discover the Flow Designer to
   - `connected_to` = IF's `logicId` (the sysId returned when creating the IF)
 - Getting this wrong causes "Unsupported flowLogic type" errors when saving the flow
 
+**CRITICAL — TRY/CATCH placement rules:**
+
+When you add a TRY block, the CATCH companion is **auto-created** by the tool. TRY and CATCH are **containers** — actions go INSIDE them, not next to them.
+
+- **Actions inside TRY** (steps that may fail):
+  - `parent_ui_id` = TRY's `uiUniqueIdentifier`
+  - `order`: 1, 2, 3, ... within the TRY
+- **Actions inside CATCH** (error handling):
+  - `parent_ui_id` = CATCH's `uiUniqueIdentifier` (returned as `catch_ui_id` from the TRY creation response)
+  - `order`: 1, 2, 3, ... within the CATCH
+- The `next_order` returned from creating the TRY/CATCH pair is for the next **sibling** after the pair, NOT for children inside them. Use it for the action *after* the try/catch, not for actions *inside* them.
+
+**Do NOT** create flows via background scripts, GlideRecord, or REST calls to `sys_hub_*` tables. Always discover and use the Flow Designer tool via `tool_search({query: "flow designer"})` — it handles the GraphQL mutations correctly. Background-script approaches will silently produce broken flows.
+
 ## Flow Designer Components
 
 | Component   | Purpose                               | Reusable |
