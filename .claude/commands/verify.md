@@ -2,7 +2,7 @@ Run the right tests and type checks for your current diff — not the full suite
 
 ## Steps
 
-1. **Read the diff** via `git diff --name-only dev...HEAD` (or `git status --short` if not on a branch). List the changed files.
+1. **Read the diff** via `git diff --name-only main...HEAD` (or `git status --short` if not on a branch). List the changed files.
 
 2. **Classify the changes by which packages they touch.** A file under `packages/opencode/` means core. Under `packages/app/` means web UI. `packages/desktop/` means Tauri. And so on.
 

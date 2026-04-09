@@ -12,7 +12,7 @@ The repo ships an optional harness with seven slash commands (`/setup`, `/pick-i
 
 1. **Issue-First Policy.** Every PR links an existing issue (`Fixes #N` or `Closes #N`). No exceptions. The harness refuses to open a PR without one.
 2. **No AI-generated walls of text.** PR descriptions and issue bodies must be short, focused, and written in your own words. The `/open-pr` command will ask *you* for the summary and refuse to generate prose on your behalf. Pasting generated paragraphs defeats the purpose; maintainers close PRs that do this.
-3. **Default branch is `dev`.** Always branch from `dev`, never from `main`. PRs target `dev`.
+3. **Default branch is `main`.** Always branch from `main`. PRs target `main`.
 4. **Conventional commit prefixes.** `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `perf:`, optionally scoped like `feat(opencode):`.
 
 ## Style guide

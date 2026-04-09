@@ -64,7 +64,7 @@ Suggestions (focus: <area or "broad">)
    The operations domain has create/get/delete but no bulk update. #2341 already
    tracks it. Start from tools/operations/snow_update_record.ts.
 
-2. [S, Type 4 — bug fix] Fix telemetry crash exit reporting on dev branch
+2. [S, Type 4 — bug fix] Fix telemetry crash exit reporting
    #3102. Affects the opencode CLI. See packages/opencode/src/session/prompt.ts
    around line 847.
 

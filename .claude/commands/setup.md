@@ -6,7 +6,7 @@ First-time bootstrap for contributing to Snow-Flow. Run this once after cloning.
    - `bun --version` (must be 1.3+, reject otherwise with a clear message pointing to https://bun.sh)
    - `node --version` (informational, not blocking)
    - `gh --version` and `gh auth status` (informational for `/pick-issue`, `/suggest-contribution`, and `/open-pr` — warn if not authenticated)
-   - `git branch --show-current` — if not on `dev`, tell the user that Snow-Flow's default branch is `dev` and suggest `git checkout dev`
+   - `git branch --show-current` — if not on `main`, tell the user that Snow-Flow's default branch is `main` and suggest `git checkout main`
 
 2. **Install dependencies.** From the repo root: `bun install`. Stream the output. If it fails: do not proceed, surface the error as-is.
 
@@ -14,7 +14,7 @@ First-time bootstrap for contributing to Snow-Flow. Run this once after cloning.
 
 4. **Orient the user.** Read `.claude/README.md` and `.claude/playbook.md`, then tell the user:
    - Which packages exist under `packages/` (one-line each)
-   - The default branch (`dev`) and the conventional commit prefixes they'll need for PR titles
+   - The default branch (`main`) and the conventional commit prefixes they'll need for PR titles
    - The two golden rules: Issue-First Policy and "no AI walls of text"
    - The three or four slash commands they're most likely to use next (`/pick-issue`, `/suggest-contribution`, `/verify`, `/open-pr`)
 
@@ -33,7 +33,7 @@ Setup 2026-04-09 10:14
 
 ✓ Bun 1.3.2
 ✓ gh authenticated as <username>
-✓ On branch dev
+✓ On branch main
 ✓ bun install (2,341 packages, 14.8s)
 ✓ bun dev --help runs
 
@@ -41,7 +41,7 @@ Packages under packages/: app, console, desktop, docs, enterprise, extensions,
 function, identity, mobile, opencode, plugin, script, sdk, slack, ui, util, web.
 Core code lives in packages/opencode/.
 
-Default branch: dev. PR titles use conventional commits (feat:, fix:, docs:, etc).
+Default branch: main. PR titles use conventional commits (feat:, fix:, docs:, etc).
 
 Golden rules (from CONTRIBUTING.md):
 - Issue-First: every PR must link an existing issue

@@ -33,7 +33,7 @@ Snow-Flow requires every PR to link an existing issue. `/pick-issue` starts from
 - **Bun 1.3+** — for the repo itself
 - **`gh` CLI** — authenticated (`gh auth status` should say you're logged in). Used by `/pick-issue`, `/suggest-contribution` and `/open-pr` to read issues and open PRs. No custom MCP server required.
 - **Claude Code or another harness** that loads `.claude/commands/` as slash commands
-- **Default branch is `dev`**, not `main`. Always branch from `dev`.
+- **Default branch is `main`.** Always branch from `main`.
 
 ## First-time setup
 
@@ -41,7 +41,7 @@ Snow-Flow requires every PR to link an existing issue. `/pick-issue` starts from
 # Clone the repo
 git clone https://github.com/groeimetai/snow-flow.git
 cd snow-flow
-git checkout dev
+git checkout main
 
 # Open in your AI harness, then run:
 /setup
