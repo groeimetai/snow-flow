@@ -1,6 +1,7 @@
 - To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
 - ALWAYS USE PARALLEL TOOLS WHEN APPLICABLE.
 - The default branch in this repo is `dev`.
+- If you are an AI coding agent helping with contributions, read [`.claude/README.md`](./.claude/README.md) and [`.claude/playbook.md`](./.claude/playbook.md) first. They contain the repo-specific contribution workflow, slash commands, and the non-negotiable rules (Issue-First Policy, no AI walls of text in PR bodies). See also [`CLAUDE.md`](./CLAUDE.md) and [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## Style Guide
 
