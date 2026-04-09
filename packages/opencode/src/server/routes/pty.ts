@@ -151,7 +151,9 @@ export const PtyRoutes = lazy(() =>
       }),
       validator("param", z.object({ ptyID: z.string() })),
       upgradeWebSocket((c) => {
-        const id = c.req.param("ptyID")
+        // The `validator("param", ...)` middleware above guarantees ptyID is a string at runtime,
+        // but hono >= 4.12.12 narrowed c.req.param() to string | undefined regardless of validators.
+        const id = c.req.param("ptyID")!
         let handler: ReturnType<typeof Pty.connect>
         if (!Pty.get(id)) throw new Error("Session not found")
         return {

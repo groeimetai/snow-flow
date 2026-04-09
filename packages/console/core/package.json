@@ -12,7 +12,7 @@
     "@opencode-ai/console-resource": "workspace:*",
     "@planetscale/database": "1.19.0",
     "aws4fetch": "1.0.20",
-    "drizzle-orm": "0.41.0",
+    "drizzle-orm": "0.45.2",
     "postgres": "3.4.7",
     "stripe": "18.0.0",
     "ulid": "catalog:",
