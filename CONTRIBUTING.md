@@ -258,3 +258,16 @@ These are not strictly enforced, they are just general guidelines:
 ## Feature Requests
 
 For net-new functionality, start with a design conversation. Open an issue describing the problem, your proposed approach (optional), and why it belongs in Snow-Flow. The core team will help decide whether it should move forward; please wait for that approval instead of opening a feature PR directly.
+
+## Contributing with an AI coding agent (optional)
+
+If you use an AI coding agent (Claude Code, OpenCode, or any harness that reads `.claude/commands/`), this repo ships a minimal harness in [`.claude/`](./.claude/) that knows where Snow-Flow's pieces live and what a good contribution looks like. Use it if it helps — it's optional and the same rules apply to AI-assisted and regular PRs.
+
+Start here: [`.claude/README.md`](./.claude/README.md). The six slash commands cover first-time setup, picking an existing issue, finding gaps to work on, scaffolding a new ServiceNow tool or bundled skill, running the right tests for your diff, and opening a PR.
+
+**Two rules the harness will not bend, because this file already says so:**
+
+1. **Issue-First** — every PR links an existing issue. The harness refuses to open a PR without one.
+2. **No AI-generated walls of text** — the `/open-pr` command will ask *you* for a short, human-written summary and refuse to write prose for you. Pasting generated paragraphs defeats the purpose; maintainers will close the PR.
+
+Patterns that drift out of sync with the codebase are the whole reason `.claude/playbook.md` exists instead of living as tribal knowledge. If a command scaffolds something in the wrong place or the playbook's paths are stale, open an issue with the `harness` label.
