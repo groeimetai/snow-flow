@@ -270,7 +270,7 @@ export namespace SessionProcessor {
                   SessionSummary.summarize({
                     sessionID: input.sessionID,
                     messageID: input.assistantMessage.parentID,
-                  })
+                  }).catch((err) => log.warn("summarize failed", { error: err }))
                   if (
                     !input.assistantMessage.summary &&
                     (await SessionCompaction.isOverflow({ tokens: usage.tokens, model: input.model }))

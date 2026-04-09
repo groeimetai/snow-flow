@@ -56,7 +56,13 @@ export namespace SessionSuggestion {
         retries: 2,
       })
 
-      const result = (await stream.text).trim()
+      let result: string
+      try {
+        result = (await stream.text).trim()
+      } catch (err) {
+        log.warn("suggestion generation failed", { error: err })
+        return
+      }
       if (!result) return
 
       log.info("suggestion", { sessionID: input.sessionID, suggestion: result })

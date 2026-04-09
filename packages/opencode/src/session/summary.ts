@@ -159,7 +159,14 @@ export namespace SessionSummary {
         system: [],
         retries: 3,
       })
-      const result = await stream.text
+      let result: string
+      try {
+        result = await stream.text
+      } catch (err) {
+        log.warn("title generation failed", { error: err })
+        return
+      }
+      if (!result) return
       log.info("title", { title: result })
       userMsg.summary.title = result
       await Session.updateMessage(userMsg)

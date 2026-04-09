@@ -581,7 +581,7 @@ export namespace SessionPrompt {
         SessionSummary.summarize({
           sessionID: sessionID,
           messageID: lastUser.id,
-        })
+        }).catch((err) => log.warn("summarize failed", { error: err }))
       }
 
       // Ephemerally wrap queued user messages with a reminder to stay on track.
