@@ -16,6 +16,7 @@ import { Truncate } from "../tool/truncation"
 import path from "path"
 import AGENTS_TEMPLATE from "./agents-template.txt"
 import INSTANCE_TEMPLATE from "./instance-template.txt"
+import SKILLS_INDEX from "./skills-index.txt"
 
 /**
  * Ensures AGENTS.md exists in the project directory.
@@ -58,6 +59,30 @@ async function ensureInstanceMd() {
   }
 }
 
+/**
+ * Ensures SKILLS.md exists in the project directory.
+ * Creates it from template if it doesn't exist.
+ * SKILLS.md is the index of bundled skills, loaded by the agent on demand
+ * via Skill({ skill: "name" }). It is intentionally separate from AGENTS.md
+ * so the behavioral rules stay slim and the skill catalog can grow without
+ * bloating every session's context window.
+ */
+async function ensureSkillsMd() {
+  const skillsMdPath = path.join(Instance.directory, "SKILLS.md")
+
+  try {
+    const exists = await Bun.file(skillsMdPath).exists()
+    if (!exists) {
+      await Bun.write(skillsMdPath, SKILLS_INDEX)
+      Log.Default.info("created SKILLS.md", { path: skillsMdPath })
+    }
+  } catch (error) {
+    Log.Default.warn("failed to create SKILLS.md", {
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
   await Plugin.init()
@@ -71,9 +96,10 @@ export async function InstanceBootstrap() {
   Snapshot.init()
   Truncate.init()
 
-  // Create AGENTS.md and INSTANCE.md if they don't exist
+  // Create AGENTS.md, INSTANCE.md, and SKILLS.md if they don't exist
   await ensureAgentsMd()
   await ensureInstanceMd()
+  await ensureSkillsMd()
 
   bootstrapUnsub?.()
   bootstrapUnsub = Bus.subscribe(Command.Event.Executed, async (payload) => {
