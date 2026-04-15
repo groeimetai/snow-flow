@@ -245,6 +245,17 @@ for (const item of targets) {
       2,
     ),
   )
+
+  // Ad-hoc sign darwin binaries when building on macOS. Unsigned arm64 binaries
+  // distributed via npm get the com.apple.provenance xattr on install and are
+  // killed by macOS without a signature. For Linux CI, the publish workflow
+  // runs rcodesign after this step.
+  if (item.os === "darwin" && process.platform === "darwin") {
+    const bin = `dist/${name}/bin/snow-code`
+    await $`codesign --remove-signature ${bin}`.nothrow().quiet()
+    await $`codesign --force -s - ${bin}`
+  }
+
   binaries[name] = Script.version
 }
 

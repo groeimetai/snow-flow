@@ -92,6 +92,23 @@ jobs:
           SNOW_CODE_CHANNEL: test
           SNOW_CODE_VERSION: ${{ steps.version.outputs.version }}
 
+      - name: Ad-hoc sign macOS binaries
+        # Unsigned arm64/x64 binaries get killed by Gatekeeper on recent macOS
+        # (com.apple.provenance xattr + unsigned = SIGKILL). rcodesign produces
+        # a valid ad-hoc signature from Linux, which is enough to unblock launch.
+        run: |
+          RCODESIGN_VERSION="0.29.0"
+          curl -fsSL -o rcodesign.tar.gz \
+            "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F${RCODESIGN_VERSION}/apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          tar -xzf rcodesign.tar.gz
+          RCODESIGN="$(pwd)/apple-codesign-${RCODESIGN_VERSION}-x86_64-unknown-linux-musl/rcodesign"
+
+          shopt -s nullglob
+          for bin in packages/opencode/dist/*darwin*/bin/snow-code; do
+            echo "Signing $bin"
+            "$RCODESIGN" sign "$bin"
+          done
+
       - name: Rename output directories
         run: |
           cd packages/opencode/dist
