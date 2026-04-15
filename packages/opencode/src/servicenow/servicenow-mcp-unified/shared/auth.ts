@@ -157,6 +157,7 @@ export class ServiceNowAuthManager {
           mcpDebug("[Auth] ServiceNow returned error in response body:", errorMsg)
           const err = new Error(errorMsg)
           ;(err as any).response = response
+          ;(err as any).config = response.config
           ;(err as any).isServiceNowError = true
           throw err
         }
@@ -185,6 +186,7 @@ export class ServiceNowAuthManager {
             `Open ${context.instanceUrl} in your browser to wake it up, then wait 1-2 minutes and try again.`
           )
           ;(err as any).response = error.response
+          ;(err as any).config = error.config
           ;(err as any).isHibernating = true
           throw err
         }
@@ -197,6 +199,7 @@ export class ServiceNowAuthManager {
           // Re-throw with clearer message
           const err = new Error(`ServiceNow: ${errorMsg}`)
           ;(err as any).response = error.response
+          ;(err as any).config = error.config
           ;(err as any).originalError = error
           throw err
         }
@@ -211,7 +214,9 @@ export class ServiceNowAuthManager {
         const originalRequest = error.config
 
         // If 401 and not already retrying, refresh token and retry
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Guard against missing config (happens when an earlier interceptor threw
+        // a synthetic error without a config reference)
+        if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
           originalRequest._retry = true
 
           try {
