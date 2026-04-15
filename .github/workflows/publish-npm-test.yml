@@ -96,11 +96,14 @@ jobs:
         # Unsigned arm64/x64 binaries get killed by Gatekeeper on recent macOS
         # (com.apple.provenance xattr + unsigned = SIGKILL). Bun embeds a
         # malformed placeholder signature that rcodesign refuses to overwrite,
-        # so we use ldid which is tolerant of this. `ldid -S` performs an
-        # ad-hoc signature, which is enough to unblock launch on macOS.
+        # so we build ldid (which is tolerant of this) from source. `ldid -S`
+        # performs an ad-hoc signature, which is enough to unblock launch.
         run: |
           sudo apt-get update
-          sudo apt-get install -y ldid
+          sudo apt-get install -y build-essential libplist-dev pkg-config
+          git clone --depth=1 --recurse-submodules https://github.com/ProcursusTeam/ldid.git /tmp/ldid
+          make -C /tmp/ldid -j"$(nproc)"
+          sudo make -C /tmp/ldid install
 
           shopt -s nullglob
           for bin in packages/opencode/dist/*darwin*/bin/snow-code; do
