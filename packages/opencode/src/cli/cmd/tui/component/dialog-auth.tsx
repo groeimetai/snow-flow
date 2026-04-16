@@ -1304,16 +1304,8 @@ function DialogAuthEnterprise() {
         try {
           const allInstances = await fetchSnInstances(resolvedPortalUrl, data.token)
 
-          if (allInstances.length === 1) {
-            // Single instance — auto-connect
-            const creds = await fetchSnInstanceById(resolvedPortalUrl, data.token, allInstances[0].id)
-            if (creds) {
-              portalInstanceName = allInstances[0].instanceName
-              await connectSnInstance(creds)
-              serviceNowStarted = true
-            }
-          } else if (allInstances.length > 1) {
-            // Multiple instances — let user choose
+          if (allInstances.length >= 1) {
+            // Show instance selection — always let user see and confirm
             const userName = data.user?.username || data.user?.email || "Enterprise"
             toast.show({
               variant: "info",
@@ -1322,7 +1314,6 @@ function DialogAuthEnterprise() {
             })
             setSnInstances(allInstances)
             setStep("select-sn-instance")
-            // Skip the rest — user will pick an instance from the selection dialog
           }
 
           // If portal had no instances, try local auth store as fallback
@@ -1637,20 +1628,20 @@ function DialogAuthEnterprise() {
                   await connectSnInstance(creds)
                   toast.show({
                     variant: "info",
-                    message: `ServiceNow connected to ${inst.instanceName}! MCP server is now active.`,
+                    message: `Connected to ${inst.instanceName} (${inst.instanceUrl}). MCP server is now active.`,
                     duration: 5000,
                   })
                   dialog.clear()
                 } catch {
                   toast.show({
                     variant: "info",
-                    message: "ServiceNow credentials saved! MCP server will be available on next restart.",
+                    message: `Credentials saved for ${inst.instanceName} (${inst.instanceUrl}). MCP server will be available on next restart.`,
                     duration: 5000,
                   })
                   dialog.clear()
                 }
               } else {
-                toast.show({ variant: "error", message: "Failed to fetch instance credentials.", duration: 5000 })
+                toast.show({ variant: "error", message: `Failed to fetch credentials for ${inst.instanceName}.`, duration: 5000 })
               }
             },
           }))}
@@ -1689,7 +1680,7 @@ export function DialogAuthSelectInstance() {
     } catch {
       toast.show({
         variant: "info",
-        message: "ServiceNow credentials saved! MCP server will be available on next restart.",
+        message: `Credentials saved for ${creds.instanceUrl}. MCP server will be available on next restart.`,
         duration: 5000,
       })
       dialog.clear()
@@ -1713,22 +1704,6 @@ export function DialogAuthSelectInstance() {
       if (result.length === 0) {
         toast.show({ variant: "error", message: "No ServiceNow instances found on enterprise portal.", duration: 5000 })
         dialog.replace(() => <DialogAuth />)
-        return
-      }
-
-      if (result.length === 1) {
-        toast.show({
-          variant: "info",
-          message: `Auto-selecting instance: ${result[0].instanceName}`,
-          duration: 3000,
-        })
-        const creds = await fetchSnInstanceById(entAuth.enterpriseUrl, entAuth.token, result[0].id)
-        if (creds) {
-          await connectInstance(creds)
-        } else {
-          toast.show({ variant: "error", message: "Failed to fetch instance credentials.", duration: 5000 })
-          dialog.replace(() => <DialogAuth />)
-        }
         return
       }
 
@@ -2143,27 +2118,12 @@ function DialogAuthEnterpriseCombined() {
           duration: 3000,
         })
         setStep("sn-method")
-      } else if (instances.length === 1) {
-        // Single instance — fetch creds and proceed
-        toast.show({
-          variant: "info",
-          message: `ServiceNow instance found: ${instances[0].instanceName}`,
-          duration: 3000,
-        })
-        const creds = await fetchSnInstanceById(portalUrl, data.token, instances[0].id)
-        if (creds) {
-          setPortalSnCredentials(creds)
-          await startBothMcpServersWithPortalCreds(portalUrl, data.token, creds, data.user)
-        } else {
-          toast.show({ variant: "error", message: "Failed to fetch instance credentials.", duration: 3000 })
-          setStep("sn-method")
-        }
       } else {
-        // Multiple instances — show selection
+        // Show instance selection — always let user see and confirm
         setSnInstances(instances)
         toast.show({
           variant: "info",
-          message: `${instances.length} ServiceNow instances found. Please select one.`,
+          message: `${instances.length} ServiceNow instance${instances.length > 1 ? "s" : ""} found. Please select one.`,
           duration: 3000,
         })
         setStep("select-sn-instance")
