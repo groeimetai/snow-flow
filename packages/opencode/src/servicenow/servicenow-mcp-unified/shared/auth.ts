@@ -12,13 +12,35 @@
  * - Connection pooling
  */
 
-import axios, { AxiosInstance } from "axios"
+import axios, { AxiosInstance, AxiosError } from "axios"
 import * as fs from "fs/promises"
 import * as path from "path"
 import * as crypto from "node:crypto"
 import * as os from "node:os"
 import { ServiceNowContext, OAuthTokenResponse, EnterpriseLicense } from "./types"
 import { mcpDebug } from "../../shared/mcp-debug.js"
+
+/**
+ * Extract a human-readable error message from a ServiceNow error response.
+ * ServiceNow returns errors in various formats; this normalizes them.
+ */
+function extractSnError(error: any): string {
+  const resp = error?.response
+  if (!resp) return error?.message || "Unknown error"
+  const status = resp.status
+  const data = resp.data
+
+  // ServiceNow oauth_token.do returns error_description
+  if (data?.error_description) return `${data.error_description} (${status})`
+  // ServiceNow REST API returns error.message or error.detail
+  if (data?.error?.message) return `${data.error.message} (${status})`
+  if (data?.error?.detail) return `${data.error.detail} (${status})`
+  // Sometimes just a string error field
+  if (typeof data?.error === "string") return `${data.error} (${status})`
+  // HTML response (e.g., instance down or login page)
+  if (typeof data === "string" && data.includes("<html")) return `ServiceNow returned HTML instead of JSON — instance may be hibernating or URL is wrong (${status})`
+  return error?.message || `HTTP ${status}`
+}
 
 // Extended AxiosInstance with ServiceNow helper methods
 export interface ExtendedAxiosInstance extends AxiosInstance {
@@ -245,9 +267,11 @@ export class ServiceNowAuthManager {
 
             // Retry original request
             return client(originalRequest)
-          } catch (refreshError) {
-            mcpDebug("[Auth] Token refresh failed:", refreshError)
-            throw refreshError
+          } catch (refreshError: any) {
+            const detail = extractSnError(refreshError)
+            mcpDebug("[Auth] Token refresh failed:", detail)
+            throw new Error(`ServiceNow authentication failed after token refresh: ${detail}`)
+
           }
         }
 
@@ -411,7 +435,7 @@ export class ServiceNowAuthManager {
         mcpDebug("[Auth] Access token refreshed successfully (OAuth Refresh Token)")
         return tokenData.access_token
       } catch (error: any) {
-        mcpDebug("[Auth] OAuth refresh token flow failed:", error.message)
+        mcpDebug("[Auth] OAuth refresh token flow failed:", extractSnError(error))
         mcpDebug("[Auth] Will try OAuth client credentials flow...")
       }
     }
@@ -452,7 +476,8 @@ export class ServiceNowAuthManager {
       mcpDebug("[Auth] Access token acquired successfully (OAuth Client Credentials)")
       return tokenData.access_token
     } catch (error: any) {
-      mcpDebug("[Auth] OAuth client credentials flow failed:", error.message)
+      const detail = extractSnError(error)
+      mcpDebug("[Auth] OAuth client credentials flow failed:", detail)
 
       // Only try username/password if explicitly provided
       const hasBasicAuth =
@@ -463,7 +488,7 @@ export class ServiceNowAuthManager {
         return await this.authenticateWithPassword(context)
       } else {
         mcpDebug("[Auth] No username/password credentials available for fallback")
-        throw new Error(`OAuth authentication failed: ${error.message}. Please verify ServiceNow OAuth configuration.`)
+        throw new Error(`OAuth authentication failed: ${detail}. Check your ServiceNow OAuth app configuration (client_id, client_secret, redirect URL, and "OAuth application user" field).`)
       }
     }
 
@@ -516,11 +541,13 @@ export class ServiceNowAuthManager {
         mcpDebug("[Auth] Basic auth successful")
         return accessToken
       } catch (testError: any) {
-        throw new Error(`Basic auth failed: Invalid credentials`)
+        const detail = extractSnError(testError)
+        throw new Error(`Basic auth failed: ${detail}`)
       }
     } catch (error: any) {
-      mcpDebug("[Auth] Basic auth failed:", error.message)
-      throw new Error(`Authentication failed: ${error.message}`)
+      const detail = extractSnError(error)
+      mcpDebug("[Auth] Basic auth failed:", detail)
+      throw new Error(`Authentication failed: ${detail}`)
     }
   }
 
@@ -575,11 +602,13 @@ export class ServiceNowAuthManager {
         mcpDebug("[Auth] Username/password authentication successful")
         return accessToken
       } catch (testError: any) {
-        throw new Error(`Username/password authentication failed: Invalid credentials`)
+        const detail = extractSnError(testError)
+        throw new Error(`Username/password authentication failed: ${detail}`)
       }
     } catch (error: any) {
-      mcpDebug("[Auth] Username/password authentication failed:", error.message)
-      throw new Error(`Authentication failed: ${error.message}`)
+      const detail = extractSnError(error)
+      mcpDebug("[Auth] Username/password authentication failed:", detail)
+      throw new Error(`Authentication failed: ${detail}`)
     }
   }
 
