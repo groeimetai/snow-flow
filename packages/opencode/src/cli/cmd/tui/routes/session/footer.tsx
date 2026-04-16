@@ -1,4 +1,4 @@
-import { createMemo, Match, onCleanup, onMount, Show, Switch } from "solid-js"
+import { createMemo, createSignal, Match, onCleanup, onMount, Show, Switch } from "solid-js"
 import { useTheme } from "../../context/theme"
 import { useSync } from "../../context/sync"
 import { useDirectory } from "../../context/directory"
@@ -13,14 +13,7 @@ export function Footer() {
   const mcp = createMemo(() => Object.values(sync.data.mcp).filter((x) => x.status === "connected").length)
   const mcpError = createMemo(() => Object.values(sync.data.mcp).some((x) => x.status === "failed"))
   const lsp = createMemo(() => Object.keys(sync.data.lsp))
-  const snInstance = createMemo(() => {
-    const sn = sync.data.config.mcp?.["servicenow-unified"]
-    if (!sn || !("environment" in sn)) return undefined
-    const url = (sn as any).environment?.SERVICENOW_INSTANCE_URL
-    if (!url) return undefined
-    const match = url.match(/https?:\/\/([^.]+)/)
-    return match?.[1]
-  })
+  const [snInstance, setSnInstance] = createSignal<string | undefined>()
   const permissions = createMemo(() => {
     if (route.data.type !== "session") return []
     return sync.data.permission[route.data.sessionID] ?? []
@@ -30,6 +23,19 @@ export function Footer() {
 
   const [store, setStore] = createStore({
     welcome: false,
+  })
+
+  onMount(async () => {
+    try {
+      const { Auth } = await import("@/auth")
+      const snAuth = await Auth.get("servicenow")
+      if ((snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") && snAuth.instance) {
+        const match = snAuth.instance.match(/https?:\/\/([^.]+)/)
+        if (match) setSnInstance(match[1])
+      }
+    } catch {
+      // Auth module not available
+    }
   })
 
   onMount(() => {

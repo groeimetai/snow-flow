@@ -1,5 +1,5 @@
 import { Prompt, type PromptRef } from "@tui/component/prompt"
-import { createEffect, createMemo, Match, on, onMount, Show, Switch } from "solid-js"
+import { createEffect, createMemo, createSignal, Match, on, onMount, Show, Switch } from "solid-js"
 import { useTheme } from "@tui/context/theme"
 import { useKeybind } from "@tui/context/keybind"
 import { Logo } from "../component/logo"
@@ -34,14 +34,7 @@ export function Home() {
   const connectedMcpCount = createMemo(() => {
     return Object.values(sync.data.mcp).filter((x) => x.status === "connected").length
   })
-  const snInstance = createMemo(() => {
-    const sn = sync.data.config.mcp?.["servicenow-unified"]
-    if (!sn || !("environment" in sn)) return undefined
-    const url = (sn as any).environment?.SERVICENOW_INSTANCE_URL
-    if (!url) return undefined
-    const match = url.match(/https?:\/\/([^.]+)/)
-    return match?.[1]
-  })
+  const [snInstance, setSnInstance] = createSignal<string | undefined>()
 
   const isFirstTimeUser = createMemo(() => sync.data.session.length === 0)
   const tipsHidden = createMemo(() => kv.get("tips_hidden", false))
@@ -82,6 +75,19 @@ export function Home() {
       </box>
     </Show>
   )
+
+  onMount(async () => {
+    try {
+      const { Auth } = await import("@/auth")
+      const snAuth = await Auth.get("servicenow")
+      if ((snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") && snAuth.instance) {
+        const match = snAuth.instance.match(/https?:\/\/([^.]+)/)
+        if (match) setSnInstance(match[1])
+      }
+    } catch {
+      // Auth module not available
+    }
+  })
 
   let prompt: PromptRef
   const args = useArgs()
