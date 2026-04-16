@@ -331,11 +331,27 @@ export namespace Config {
     const result = { ...mcp }
 
     // Check for ServiceNow OAuth credentials
+    // Always update environment when auth store has fresh credentials, even if a
+    // servicenow-unified entry already exists from a config file (which may be stale).
     const snAuth = auth["servicenow"]
     if (snAuth?.type === "servicenow-oauth" && snAuth.instance && snAuth.clientId) {
-      // Only add if not already configured
-      if (!result["servicenow-unified"]) {
-        const sessionId = getCurrentSessionId()
+      const sessionId = getCurrentSessionId()
+      const freshEnv = {
+        SERVICENOW_INSTANCE_URL: snAuth.instance,
+        SERVICENOW_CLIENT_ID: snAuth.clientId,
+        SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
+        SNOW_LAZY_TOOLS: "true",
+        ...(sessionId && { SNOW_SESSION_ID: sessionId }),
+        ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
+        ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
+      }
+      const existing = result["servicenow-unified"]
+      if (existing && "environment" in existing) {
+        existing.environment = { ...existing.environment, ...freshEnv }
+        log.info("updated servicenow-unified MCP environment from auth store (OAuth)", {
+          instance: snAuth.instance,
+        })
+      } else {
         log.info("auto-configuring servicenow-unified MCP server from auth store", {
           SNOW_LAZY_TOOLS: "true",
           SNOW_SESSION_ID: sessionId || "none",
@@ -343,15 +359,7 @@ export namespace Config {
         result["servicenow-unified"] = {
           type: "local",
           command: getMcpServerCommand("servicenow-unified"),
-          environment: {
-            SERVICENOW_INSTANCE_URL: snAuth.instance,
-            SERVICENOW_CLIENT_ID: snAuth.clientId,
-            SERVICENOW_CLIENT_SECRET: snAuth.clientSecret ?? "",
-            SNOW_LAZY_TOOLS: "true",
-            ...(sessionId && { SNOW_SESSION_ID: sessionId }),
-            ...(snAuth.accessToken && { SERVICENOW_ACCESS_TOKEN: snAuth.accessToken }),
-            ...(snAuth.refreshToken && { SERVICENOW_REFRESH_TOKEN: snAuth.refreshToken }),
-          },
+          environment: freshEnv,
           enabled: true,
         }
       }
@@ -359,19 +367,26 @@ export namespace Config {
 
     // Check for ServiceNow Basic Auth credentials
     if (snAuth?.type === "servicenow-basic" && snAuth.instance && snAuth.username) {
-      if (!result["servicenow-unified"]) {
+      const sessionId = getCurrentSessionId()
+      const freshEnv = {
+        SERVICENOW_INSTANCE_URL: snAuth.instance,
+        SERVICENOW_USERNAME: snAuth.username,
+        SERVICENOW_PASSWORD: snAuth.password ?? "",
+        SNOW_LAZY_TOOLS: "true",
+        ...(sessionId && { SNOW_SESSION_ID: sessionId }),
+      }
+      const existing = result["servicenow-unified"]
+      if (existing && "environment" in existing) {
+        existing.environment = { ...existing.environment, ...freshEnv }
+        log.info("updated servicenow-unified MCP environment from auth store (Basic)", {
+          instance: snAuth.instance,
+        })
+      } else {
         log.info("auto-configuring servicenow-unified MCP server from basic auth")
-        const sessionId = getCurrentSessionId()
         result["servicenow-unified"] = {
           type: "local",
           command: getMcpServerCommand("servicenow-unified"),
-          environment: {
-            SERVICENOW_INSTANCE_URL: snAuth.instance,
-            SERVICENOW_USERNAME: snAuth.username,
-            SERVICENOW_PASSWORD: snAuth.password ?? "",
-            SNOW_LAZY_TOOLS: "true",
-            ...(sessionId && { SNOW_SESSION_ID: sessionId }),
-          },
+          environment: freshEnv,
           enabled: true,
         }
       }
@@ -382,16 +397,21 @@ export namespace Config {
     // at runtime using the JWT token, so no local ServiceNow secrets are needed.
     const entAuth = auth["enterprise"]
     if (entAuth?.type === "enterprise" && (entAuth.licenseKey || entAuth.token) && entAuth.enterpriseUrl) {
-      if (!result["servicenow-unified"]) {
-        const sessionId = getCurrentSessionId()
+      const sessionId = getCurrentSessionId()
+      const freshEnv = {
+        SNOW_LAZY_TOOLS: "true",
+        ...(sessionId && { SNOW_SESSION_ID: sessionId }),
+      }
+      const existing = result["servicenow-unified"]
+      if (existing && "environment" in existing) {
+        existing.environment = { ...existing.environment, ...freshEnv }
+        log.info("updated servicenow-unified MCP environment from enterprise auth")
+      } else if (!existing) {
         log.info("auto-configuring servicenow-unified MCP server from enterprise auth (credentials fetched at runtime)")
         result["servicenow-unified"] = {
           type: "local",
           command: getMcpServerCommand("servicenow-unified"),
-          environment: {
-            SNOW_LAZY_TOOLS: "true",
-            ...(sessionId && { SNOW_SESSION_ID: sessionId }),
-          },
+          environment: freshEnv,
           enabled: true,
         }
       }

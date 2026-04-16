@@ -132,6 +132,104 @@ This file contains instructions for AI agents working in this codebase.
   }
 }
 
+/**
+ * Shared ServiceNow instance type used across auth dialogs
+ */
+type SnInstance = {
+  id: number
+  instanceName: string
+  instanceUrl: string
+  environmentType: string
+  isDefault: boolean
+  enabled: boolean
+}
+
+/**
+ * Fetch all enabled ServiceNow instances from the enterprise portal
+ */
+async function fetchSnInstances(url: string, bearerToken: string): Promise<SnInstance[]> {
+  try {
+    const response = await fetch(`${url}/api/servicenow/instances`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        Accept: "application/json",
+      },
+    })
+    if (!response.ok) return []
+    const data = await response.json()
+    if (!data.success || !Array.isArray(data.instances)) return []
+    return data.instances.filter((i: any) => i.enabled)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Fetch credentials for a specific ServiceNow instance from the enterprise portal
+ */
+async function fetchSnInstanceById(
+  url: string,
+  bearerToken: string,
+  instanceId: number,
+): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> {
+  try {
+    const response = await fetch(`${url}/api/servicenow/instances/${instanceId}/for-cli`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        Accept: "application/json",
+      },
+    })
+    if (!response.ok) return null
+    const data = await response.json()
+    if (!data.success || !data.instance) return null
+    const inst = data.instance
+    if (!inst.instanceUrl || !inst.clientId || !inst.clientSecret) return null
+    return {
+      instanceUrl: inst.instanceUrl,
+      clientId: inst.clientId,
+      clientSecret: inst.clientSecret,
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Save ServiceNow credentials and start MCP server for a given instance
+ */
+async function connectSnInstance(creds: { instanceUrl: string; clientId: string; clientSecret: string }): Promise<void> {
+  const { Auth } = await import("@/auth")
+  const { MCP } = await import("@/mcp")
+  const { Config } = await import("@/config/config")
+
+  await Auth.set("servicenow", {
+    type: "servicenow-oauth",
+    instance: creds.instanceUrl,
+    clientId: creds.clientId,
+    clientSecret: creds.clientSecret,
+  })
+
+  const savedAuth = await Auth.get("servicenow")
+  const accessToken = savedAuth?.type === "servicenow-oauth" ? savedAuth.accessToken : undefined
+  const refreshToken = savedAuth?.type === "servicenow-oauth" ? savedAuth.refreshToken : undefined
+
+  await MCP.add("servicenow-unified", {
+    type: "local",
+    command: Config.getMcpServerCommand("servicenow-unified"),
+    environment: {
+      SERVICENOW_INSTANCE_URL: creds.instanceUrl,
+      SERVICENOW_CLIENT_ID: creds.clientId,
+      SERVICENOW_CLIENT_SECRET: creds.clientSecret,
+      SNOW_LAZY_TOOLS: "true",
+      ...(accessToken && { SERVICENOW_ACCESS_TOKEN: accessToken }),
+      ...(refreshToken && { SERVICENOW_REFRESH_TOKEN: refreshToken }),
+    },
+    enabled: true,
+  })
+}
+
 type AuthMethod =
   | "servicenow-oauth"
   | "servicenow-basic"
@@ -934,13 +1032,17 @@ function DialogAuthEnterprise() {
   const toast = useToast()
   const { theme } = useTheme()
 
-  const [step, setStep] = createSignal<"plan-type" | "subdomain" | "code" | "verifying" | "sn-choice">("plan-type")
+  const [step, setStep] = createSignal<
+    "plan-type" | "subdomain" | "code" | "verifying" | "sn-choice" | "select-sn-instance"
+  >("plan-type")
   const [planType, setPlanType] = createSignal<"individual-teams" | "enterprise" | "">("")
   const [subdomain, setSubdomain] = createSignal("")
   const [sessionId, setSessionId] = createSignal("")
   const [authCode, setAuthCode] = createSignal("")
   const [verificationUrl, setVerificationUrl] = createSignal("")
   const [portalUrl, setPortalUrl] = createSignal("")
+  const [snInstances, setSnInstances] = createSignal<SnInstance[]>([])
+  const [entToken, setEntToken] = createSignal("")
 
   let subdomainInput: TextareaRenderable
   let codeInput: TextareaRenderable
@@ -980,7 +1082,7 @@ function DialogAuthEnterprise() {
         setSessionId("")
         setAuthCode("")
         setTimeout(() => subdomainInput?.focus(), 10)
-      } else if (currentStep === "sn-choice") {
+      } else if (currentStep === "sn-choice" || currentStep === "select-sn-instance") {
         // Enterprise auth is already saved, just close dialog
         dialog.clear()
       }
@@ -1195,51 +1297,36 @@ function DialogAuthEnterprise() {
           enabled: true,
         })
 
-        // Try to fetch ServiceNow credentials from enterprise portal
+        // Fetch all ServiceNow instances from the portal and let user choose if multiple
         let serviceNowStarted = false
         let portalInstanceName = ""
+        setEntToken(data.token)
         try {
-          // Fetch default ServiceNow instance from the portal (works for all user types)
-          const portalSnResponse = await fetch(`${resolvedPortalUrl}/api/servicenow/instances/default-for-cli`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${data.token}`,
-              Accept: "application/json",
-            },
-          })
+          const allInstances = await fetchSnInstances(resolvedPortalUrl, data.token)
 
-          if (portalSnResponse.ok) {
-            const portalSnData = await portalSnResponse.json()
-            if (portalSnData.success && portalSnData.instance) {
-              const instance = portalSnData.instance
-              if (instance.instanceUrl && instance.clientId && instance.clientSecret) {
-                portalInstanceName = instance.instanceName || ""
-                // Save ServiceNow credentials to auth store
-                await Auth.set("servicenow", {
-                  type: "servicenow-oauth",
-                  instance: instance.instanceUrl,
-                  clientId: instance.clientId,
-                  clientSecret: instance.clientSecret,
-                })
-
-                // Start servicenow-unified MCP server with portal credentials
-                await MCP.add("servicenow-unified", {
-                  type: "local",
-                  command: Config.getMcpServerCommand("servicenow-unified"),
-                  environment: {
-                    SERVICENOW_INSTANCE_URL: instance.instanceUrl,
-                    SERVICENOW_CLIENT_ID: instance.clientId,
-                    SERVICENOW_CLIENT_SECRET: instance.clientSecret,
-                  },
-                  enabled: true,
-                })
-                serviceNowStarted = true
-              }
+          if (allInstances.length === 1) {
+            // Single instance — auto-connect
+            const creds = await fetchSnInstanceById(resolvedPortalUrl, data.token, allInstances[0].id)
+            if (creds) {
+              portalInstanceName = allInstances[0].instanceName
+              await connectSnInstance(creds)
+              serviceNowStarted = true
             }
+          } else if (allInstances.length > 1) {
+            // Multiple instances — let user choose
+            const userName = data.user?.username || data.user?.email || "Enterprise"
+            toast.show({
+              variant: "info",
+              message: `Connected as ${userName}! Select a ServiceNow instance.`,
+              duration: 3000,
+            })
+            setSnInstances(allInstances)
+            setStep("select-sn-instance")
+            // Skip the rest — user will pick an instance from the selection dialog
           }
 
-          // If portal didn't have ServiceNow credentials, check local auth store
-          if (!serviceNowStarted) {
+          // If portal had no instances, try local auth store as fallback
+          if (!serviceNowStarted && allInstances.length === 0) {
             const snAuth = await Auth.get("servicenow")
             if (snAuth?.type === "servicenow-oauth" || snAuth?.type === "servicenow-basic") {
               const snEnv: Record<string, string> = {
@@ -1267,7 +1354,10 @@ function DialogAuthEnterprise() {
           // ServiceNow credentials not available from portal or local, skip
         }
 
-        if (serviceNowStarted) {
+        // Don't show additional toasts if we're in the instance selection step
+        if (step() === "select-sn-instance") {
+          // User is choosing — skip to doc update
+        } else if (serviceNowStarted) {
           const userName = data.user?.username || data.user?.email || "Enterprise"
           const snMsg = portalInstanceName
             ? `Using ServiceNow instance '${portalInstanceName}' from your portal account.`
@@ -1530,6 +1620,42 @@ function DialogAuthEnterprise() {
           </box>
         </box>
       </Show>
+
+      <Show when={step() === "select-sn-instance"}>
+        <DialogSelect
+          title="Select ServiceNow Instance"
+          options={snInstances().map((inst) => ({
+            title: inst.instanceName,
+            value: String(inst.id),
+            description: inst.instanceUrl,
+            footer: inst.environmentType + (inst.isDefault ? " (default)" : ""),
+            category: "ServiceNow Instances",
+            onSelect: async () => {
+              const creds = await fetchSnInstanceById(portalUrl(), entToken(), inst.id)
+              if (creds) {
+                try {
+                  await connectSnInstance(creds)
+                  toast.show({
+                    variant: "info",
+                    message: `ServiceNow connected to ${inst.instanceName}! MCP server is now active.`,
+                    duration: 5000,
+                  })
+                  dialog.clear()
+                } catch {
+                  toast.show({
+                    variant: "info",
+                    message: "ServiceNow credentials saved! MCP server will be available on next restart.",
+                    duration: 5000,
+                  })
+                  dialog.clear()
+                }
+              } else {
+                toast.show({ variant: "error", message: "Failed to fetch instance credentials.", duration: 5000 })
+              }
+            },
+          }))}
+        />
+      </Show>
     </box>
   )
 }
@@ -1538,7 +1664,7 @@ function DialogAuthEnterprise() {
  * Standalone "Select ServiceNow Instance" dialog
  * For users already authenticated with enterprise portal who want to switch SN instance
  */
-function DialogAuthSelectInstance() {
+export function DialogAuthSelectInstance() {
   const dialog = useDialog()
   const toast = useToast()
   const { theme } = useTheme()
@@ -1546,110 +1672,14 @@ function DialogAuthSelectInstance() {
   type SelectStep = "loading" | "not-enterprise" | "select-instance" | "connecting"
 
   const [step, setStep] = createSignal<SelectStep>("loading")
-  const [instances, setInstances] = createSignal<
-    Array<{
-      id: number
-      instanceName: string
-      instanceUrl: string
-      environmentType: string
-      isDefault: boolean
-      enabled: boolean
-    }>
-  >([])
+  const [instances, setInstances] = createSignal<SnInstance[]>([])
   const [portalUrl, setPortalUrl] = createSignal("")
   const [token, setToken] = createSignal("")
-
-  const fetchSnInstances = async (
-    url: string,
-    bearerToken: string,
-  ): Promise<
-    Array<{
-      id: number
-      instanceName: string
-      instanceUrl: string
-      environmentType: string
-      isDefault: boolean
-      enabled: boolean
-    }>
-  > => {
-    try {
-      const response = await fetch(`${url}/api/servicenow/instances`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${bearerToken}`,
-          Accept: "application/json",
-        },
-      })
-      if (!response.ok) return []
-      const data = await response.json()
-      if (!data.success || !Array.isArray(data.instances)) return []
-      return data.instances.filter((i: any) => i.enabled)
-    } catch {
-      return []
-    }
-  }
-
-  const fetchSnInstanceById = async (
-    url: string,
-    bearerToken: string,
-    instanceId: number,
-  ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
-    try {
-      const response = await fetch(`${url}/api/servicenow/instances/${instanceId}/for-cli`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${bearerToken}`,
-          Accept: "application/json",
-        },
-      })
-      if (!response.ok) return null
-      const data = await response.json()
-      if (!data.success || !data.instance) return null
-      const inst = data.instance
-      if (!inst.instanceUrl || !inst.clientId || !inst.clientSecret) return null
-      return {
-        instanceUrl: inst.instanceUrl,
-        clientId: inst.clientId,
-        clientSecret: inst.clientSecret,
-      }
-    } catch {
-      return null
-    }
-  }
 
   const connectInstance = async (creds: { instanceUrl: string; clientId: string; clientSecret: string }) => {
     setStep("connecting")
     try {
-      const { Auth } = await import("@/auth")
-      const { MCP } = await import("@/mcp")
-      const { Config } = await import("@/config/config")
-
-      await Auth.set("servicenow", {
-        type: "servicenow-oauth",
-        instance: creds.instanceUrl,
-        clientId: creds.clientId,
-        clientSecret: creds.clientSecret,
-      })
-
-      // Read back the saved auth to include any existing tokens
-      const savedAuth = await Auth.get("servicenow")
-      const accessToken = savedAuth?.type === "servicenow-oauth" ? savedAuth.accessToken : undefined
-      const refreshToken = savedAuth?.type === "servicenow-oauth" ? savedAuth.refreshToken : undefined
-
-      await MCP.add("servicenow-unified", {
-        type: "local",
-        command: Config.getMcpServerCommand("servicenow-unified"),
-        environment: {
-          SERVICENOW_INSTANCE_URL: creds.instanceUrl,
-          SERVICENOW_CLIENT_ID: creds.clientId,
-          SERVICENOW_CLIENT_SECRET: creds.clientSecret,
-          SNOW_LAZY_TOOLS: "true",
-          ...(accessToken && { SERVICENOW_ACCESS_TOKEN: accessToken }),
-          ...(refreshToken && { SERVICENOW_REFRESH_TOKEN: refreshToken }),
-        },
-        enabled: true,
-      })
-
+      await connectSnInstance(creds)
       toast.show({
         variant: "info",
         message: `ServiceNow connected to ${creds.instanceUrl}! MCP server is now active.`,
@@ -2103,7 +2133,7 @@ function DialogAuthEnterpriseCombined() {
 
       // Check if enterprise portal has ServiceNow instances
       setStep("checking-portal-sn")
-      const instances = await fetchPortalSnInstances(portalUrl, data.token)
+      const instances = await fetchSnInstances(portalUrl, data.token)
 
       if (instances.length === 0) {
         // No instances — manual setup
@@ -2120,7 +2150,7 @@ function DialogAuthEnterpriseCombined() {
           message: `ServiceNow instance found: ${instances[0].instanceName}`,
           duration: 3000,
         })
-        const creds = await fetchPortalSnInstanceById(portalUrl, data.token, instances[0].id)
+        const creds = await fetchSnInstanceById(portalUrl, data.token, instances[0].id)
         if (creds) {
           setPortalSnCredentials(creds)
           await startBothMcpServersWithPortalCreds(portalUrl, data.token, creds, data.user)
@@ -2146,64 +2176,6 @@ function DialogAuthEnterpriseCombined() {
   }
 
   // === Portal ServiceNow Credentials ===
-
-  const fetchPortalSnInstances = async (
-    portalUrl: string,
-    token: string,
-  ): Promise<
-    Array<{
-      id: number
-      instanceName: string
-      instanceUrl: string
-      environmentType: string
-      isDefault: boolean
-      enabled: boolean
-    }>
-  > => {
-    try {
-      const response = await fetch(`${portalUrl}/api/servicenow/instances`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      })
-      if (!response.ok) return []
-      const data = await response.json()
-      if (!data.success || !Array.isArray(data.instances)) return []
-      return data.instances.filter((i: any) => i.enabled)
-    } catch {
-      return []
-    }
-  }
-
-  const fetchPortalSnInstanceById = async (
-    portalUrl: string,
-    token: string,
-    instanceId: number,
-  ): Promise<{ instanceUrl: string; clientId: string; clientSecret: string } | null> => {
-    try {
-      const response = await fetch(`${portalUrl}/api/servicenow/instances/${instanceId}/for-cli`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      })
-      if (!response.ok) return null
-      const data = await response.json()
-      if (!data.success || !data.instance) return null
-      const inst = data.instance
-      if (!inst.instanceUrl || !inst.clientId || !inst.clientSecret) return null
-      return {
-        instanceUrl: inst.instanceUrl,
-        clientId: inst.clientId,
-        clientSecret: inst.clientSecret,
-      }
-    } catch {
-      return null
-    }
-  }
 
   const startBothMcpServersWithPortalCreds = async (
     portalUrl: string,
@@ -2607,7 +2579,7 @@ function DialogAuthEnterpriseCombined() {
               setStep("completing")
               const portalUrl = `https://${subdomain().trim().toLowerCase()}.snow-flow.dev`
               const token = enterpriseData().token!
-              const creds = await fetchPortalSnInstanceById(portalUrl, token, inst.id)
+              const creds = await fetchSnInstanceById(portalUrl, token, inst.id)
               if (creds) {
                 setPortalSnCredentials(creds)
                 await startBothMcpServersWithPortalCreds(portalUrl, token, creds, enterpriseData().user)

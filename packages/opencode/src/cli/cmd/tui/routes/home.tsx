@@ -34,6 +34,14 @@ export function Home() {
   const connectedMcpCount = createMemo(() => {
     return Object.values(sync.data.mcp).filter((x) => x.status === "connected").length
   })
+  const snInstance = createMemo(() => {
+    const sn = sync.data.config.mcp?.["servicenow-unified"]
+    if (!sn || !("environment" in sn)) return undefined
+    const url = (sn as any).environment?.SERVICENOW_INSTANCE_URL
+    if (!url) return undefined
+    const match = url.match(/https?:\/\/([^.]+)/)
+    return match?.[1]
+  })
 
   const isFirstTimeUser = createMemo(() => sync.data.session.length === 0)
   const tipsHidden = createMemo(() => kv.get("tips_hidden", false))
@@ -141,6 +149,12 @@ export function Home() {
               </Switch>
               {connectedMcpCount()} MCP
             </text>
+            <Show when={snInstance()}>
+              <text fg={theme.text}>
+                <span style={{ fg: theme.success }}>SN</span> {snInstance()}
+              </text>
+              <text fg={theme.textMuted}>/instance</text>
+            </Show>
             <text fg={theme.textMuted}>/status</text>
           </Show>
         </box>

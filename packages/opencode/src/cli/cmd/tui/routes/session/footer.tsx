@@ -13,6 +13,14 @@ export function Footer() {
   const mcp = createMemo(() => Object.values(sync.data.mcp).filter((x) => x.status === "connected").length)
   const mcpError = createMemo(() => Object.values(sync.data.mcp).some((x) => x.status === "failed"))
   const lsp = createMemo(() => Object.keys(sync.data.lsp))
+  const snInstance = createMemo(() => {
+    const sn = sync.data.config.mcp?.["servicenow-unified"]
+    if (!sn || !("environment" in sn)) return undefined
+    const url = (sn as any).environment?.SERVICENOW_INSTANCE_URL
+    if (!url) return undefined
+    const match = url.match(/https?:\/\/([^.]+)/)
+    return match?.[1]
+  })
   const permissions = createMemo(() => {
     if (route.data.type !== "session") return []
     return sync.data.permission[route.data.sessionID] ?? []
@@ -81,6 +89,12 @@ export function Footer() {
                 </Switch>
                 {mcp()} MCP
               </text>
+            </Show>
+            <Show when={snInstance()}>
+              <text fg={theme.text}>
+                <span style={{ fg: theme.success }}>SN</span> {snInstance()}
+              </text>
+              <text fg={theme.textMuted}>/instance</text>
             </Show>
             <text fg={theme.textMuted}>/status</text>
           </Match>

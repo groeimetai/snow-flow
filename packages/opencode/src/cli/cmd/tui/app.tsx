@@ -24,7 +24,7 @@ import { KeybindProvider } from "@tui/context/keybind"
 import { ThemeProvider, useTheme } from "@tui/context/theme"
 import { Home } from "@tui/routes/home"
 import { Session } from "@tui/routes/session"
-import { DialogAuth } from "@tui/component/dialog-auth"
+import { DialogAuth, DialogAuthSelectInstance } from "@tui/component/dialog-auth"
 import { DialogDeployments } from "@tui/component/dialog-deployments"
 import { PromptHistoryProvider } from "./component/prompt/history"
 import { FrecencyProvider } from "./component/prompt/frecency"
@@ -559,6 +559,18 @@ function App() {
       },
       onSelect: () => {
         dialog.replace(() => <DialogAuth />)
+      },
+      category: "ServiceNow",
+    },
+    {
+      title: "Switch ServiceNow Instance",
+      value: "servicenow.instance",
+      slash: {
+        name: "instance",
+        aliases: ["switch-instance"],
+      },
+      onSelect: () => {
+        dialog.replace(() => <DialogAuthSelectInstance />)
       },
       category: "ServiceNow",
     },
