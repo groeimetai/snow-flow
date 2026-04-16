@@ -48,6 +48,7 @@ import { Shell } from "@/shell/shell"
 import { Truncate } from "@/tool/truncation"
 import { UsageReporter, ActivityReporter, AnonymousTelemetry } from "@/usage"
 import { ContextDB } from "@/context/context-db"
+import { Governance } from "@/governance/client"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -756,7 +757,69 @@ export namespace SessionPrompt {
               args,
             },
           )
-          const result = await item.execute(args, ctx)
+
+          // --- Governance: policy gate (before write) ---
+          const classified = Governance.classifyTool(item.id, args)
+          if (classified?.isWrite && (await Governance.hasFeature(Governance.Feature.PolicyEngine))) {
+            const decision = await Governance.evaluatePolicy(classified.artifactType, classified.body, {
+              artifactRef: classified.artifactRef,
+            })
+            if (!decision.allowed) {
+              const reasons = decision.blockers.map((b) => `- ${b.name}: ${b.reason}`).join("\n")
+              // Best-effort audit the blocked call so the violation is recorded.
+              if (await Governance.hasFeature(Governance.Feature.AiAudit)) {
+                await Governance.recordAudit({
+                  eventType: "tool.blocked",
+                  modelProvider: input.model.providerID,
+                  modelId: input.model.api.id,
+                  prompt: `${item.id} ${classified.artifactRef ?? ""}`.trim(),
+                  toolsUsed: [item.id],
+                  artifacts: classified.artifactRef
+                    ? [{ type: classified.artifactType, ref: classified.artifactRef }]
+                    : undefined,
+                  resultStatus: "blocked",
+                  sessionId: ctx.sessionID,
+                })
+              }
+              throw new Error(
+                `Policy engine blocked ${item.id}:\n${reasons}\n\nUpdate the artifact or request an override from a policy admin.`,
+              )
+            }
+          }
+
+          let resultStatus: Governance.AuditResult = "success"
+          const result = await item.execute(args, ctx).catch((err) => {
+            resultStatus = "error"
+            throw err
+          })
+
+          // --- Governance: audit + dependency edges (after) ---
+          if (classified && (await Governance.hasFeature(Governance.Feature.AiAudit))) {
+            await Governance.recordAudit({
+              eventType: classified.isWrite ? "tool.write" : "tool.read",
+              modelProvider: input.model.providerID,
+              modelId: input.model.api.id,
+              prompt: `${item.id} ${classified.artifactRef ?? ""}`.trim(),
+              toolsUsed: [item.id],
+              artifacts: classified.artifactRef
+                ? [{ type: classified.artifactType, ref: classified.artifactRef }]
+                : undefined,
+              resultStatus,
+              sessionId: ctx.sessionID,
+            })
+          }
+          if (
+            classified &&
+            classified.artifactRef &&
+            (await Governance.hasFeature(Governance.Feature.DependencyGraph))
+          ) {
+            await Governance.recordEdge(
+              { type: "session", id: ctx.sessionID },
+              { type: classified.artifactType, id: classified.artifactRef },
+              classified.isWrite ? "writes" : "reads",
+            )
+          }
+
           await Plugin.trigger(
             "tool.execute.after",
             {
@@ -791,6 +854,34 @@ export namespace SessionPrompt {
           },
         )
 
+        // --- Governance: policy gate (before write) for MCP tools ---
+        const classified = Governance.classifyTool(key, args)
+        if (classified?.isWrite && (await Governance.hasFeature(Governance.Feature.PolicyEngine))) {
+          const decision = await Governance.evaluatePolicy(classified.artifactType, classified.body, {
+            artifactRef: classified.artifactRef,
+          })
+          if (!decision.allowed) {
+            const reasons = decision.blockers.map((b) => `- ${b.name}: ${b.reason}`).join("\n")
+            if (await Governance.hasFeature(Governance.Feature.AiAudit)) {
+              await Governance.recordAudit({
+                eventType: "tool.blocked",
+                modelProvider: input.model.providerID,
+                modelId: input.model.api.id,
+                prompt: `${key} ${classified.artifactRef ?? ""}`.trim(),
+                toolsUsed: [key],
+                artifacts: classified.artifactRef
+                  ? [{ type: classified.artifactType, ref: classified.artifactRef }]
+                  : undefined,
+                resultStatus: "blocked",
+                sessionId: ctx.sessionID,
+              })
+            }
+            throw new Error(
+              `Policy engine blocked ${key}:\n${reasons}\n\nUpdate the artifact or request an override from a policy admin.`,
+            )
+          }
+        }
+
         await ctx.ask({
           permission: key,
           metadata: {},
@@ -798,7 +889,37 @@ export namespace SessionPrompt {
           always: ["*"],
         })
 
-        const result = await execute(args, opts)
+        let resultStatus: Governance.AuditResult = "success"
+        const result = await execute(args, opts).catch((err: unknown) => {
+          resultStatus = "error"
+          throw err
+        })
+
+        if (classified && (await Governance.hasFeature(Governance.Feature.AiAudit))) {
+          await Governance.recordAudit({
+            eventType: classified.isWrite ? "tool.write" : "tool.read",
+            modelProvider: input.model.providerID,
+            modelId: input.model.api.id,
+            prompt: `${key} ${classified.artifactRef ?? ""}`.trim(),
+            toolsUsed: [key],
+            artifacts: classified.artifactRef
+              ? [{ type: classified.artifactType, ref: classified.artifactRef }]
+              : undefined,
+            resultStatus,
+            sessionId: ctx.sessionID,
+          })
+        }
+        if (
+          classified &&
+          classified.artifactRef &&
+          (await Governance.hasFeature(Governance.Feature.DependencyGraph))
+        ) {
+          await Governance.recordEdge(
+            { type: "session", id: ctx.sessionID },
+            { type: classified.artifactType, id: classified.artifactRef },
+            classified.isWrite ? "writes" : "reads",
+          )
+        }
 
         await Plugin.trigger(
           "tool.execute.after",
