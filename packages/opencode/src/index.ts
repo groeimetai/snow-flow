@@ -26,7 +26,6 @@ import { EOL } from "os"
 import { WebCommand } from "./cli/cmd/web"
 import { PrCommand } from "./cli/cmd/pr"
 import { SessionCommand } from "./cli/cmd/session"
-import { UpgradeScanCommand } from "./cli/cmd/upgrade-scan"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -98,7 +97,6 @@ const cli = yargs(hideBin(process.argv))
   .command(GithubCommand)
   .command(PrCommand)
   .command(SessionCommand)
-  .command(UpgradeScanCommand)
   .fail((msg, err) => {
     if (
       msg?.startsWith("Unknown argument") ||
