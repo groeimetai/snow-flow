@@ -24,6 +24,11 @@ function extractSysId(value: any): string {
   return String(value)
 }
 
+function toActionValue(val: boolean | undefined): string {
+  if (val === undefined) return "ignore"
+  return val ? "true" : "false"
+}
+
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_ui_policy",
   description: "Create UI Policy for form field control (visibility, mandatory, readonly)",
@@ -74,15 +79,27 @@ export const toolDefinition: MCPToolDefinition = {
       },
       actions: {
         type: "array",
-        description: "UI Policy actions",
+        description: "UI Policy actions. Each action controls one field.",
         items: {
           type: "object",
           properties: {
             field_name: { type: "string", description: "Field to control" },
-            visible: { type: "boolean", description: "Make field visible" },
-            mandatory: { type: "boolean", description: "Make field mandatory" },
-            readonly: { type: "boolean", description: "Make field readonly" },
-            cleared: { type: "boolean", description: "Clear field value" },
+            visible: {
+              type: "boolean",
+              description: "Set visibility. true = visible, false = hidden. Omit to leave unchanged.",
+            },
+            mandatory: {
+              type: "boolean",
+              description: "Set mandatory state. true = required, false = optional. Omit to leave unchanged.",
+            },
+            readonly: {
+              type: "boolean",
+              description: "Set read-only state. true = read-only, false = editable. Omit to leave unchanged.",
+            },
+            cleared: {
+              type: "boolean",
+              description: "Clear the field value when the policy condition is true. Default: false.",
+            },
           },
           required: ["field_name"],
         },
@@ -129,16 +146,23 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     const policySysId = extractSysId(uiPolicy.sys_id)
 
     // Create UI Policy Actions
+    //
+    // ServiceNow field mapping notes:
+    //   - visible/mandatory/disabled are STRING fields: "true" | "false" | "ignore"
+    //   - the column for "Read only" is named "disabled" (not "readonly")
+    //   - "table" is required server-side; without it the action is created malformed
+    //     (empty ui_policy/table) and orphaned — this was the root cause of issue #82
     const createdActions = []
     const unlinkableActions: string[] = []
     for (const action of actions) {
       const actionData: any = {
         ui_policy: policySysId,
+        table,
         field: action.field_name,
-        visible: action.visible !== undefined ? action.visible : true,
-        mandatory: action.mandatory || false,
-        readonly: action.readonly || false,
-        cleared: action.cleared || false,
+        visible: toActionValue(action.visible),
+        mandatory: toActionValue(action.mandatory),
+        disabled: toActionValue(action.readonly),
+        cleared: action.cleared === true,
       }
 
       const actionResponse = await client.post("/api/now/table/sys_ui_policy_action", actionData)
@@ -171,7 +195,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         field: action.field,
         visible: action.visible === "true",
         mandatory: action.mandatory === "true",
-        readonly: action.readonly === "true",
+        readonly: action.disabled === "true",
         cleared: action.cleared === "true",
         ui_policy_linked: !unlinkableActions.includes(action.field),
       })),
