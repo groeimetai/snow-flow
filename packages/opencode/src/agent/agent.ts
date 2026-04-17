@@ -281,21 +281,31 @@ export namespace Agent {
       item.permission = PermissionNext.merge(item.permission, PermissionNext.fromConfig(value.permission ?? {}))
     }
 
-    // Unhide review agent for enterprise users with the code-review module
+    // Enterprise-gated agents: force hidden=true AFTER user config merge,
+    // then selectively unhide if the user has a valid enterprise JWT with
+    // the matching feature. User config cannot bypass this gate by setting
+    // `"review": { "hidden": false }` in their local config.
+    const ENTERPRISE_AGENTS: Record<string, string> = {
+      review: "code-review",
+    }
+    for (const agentName of Object.keys(ENTERPRISE_AGENTS)) {
+      if (result[agentName]) result[agentName].hidden = true
+    }
+
     const enterpriseAuth = await Auth.all().then((all) =>
       Object.values(all).find((e) => e.type === "enterprise" && (e.licenseKey || e.token)),
     )
-    if (enterpriseAuth && result.review && enterpriseAuth.type === "enterprise") {
-      const jwt = enterpriseAuth.token
-      if (jwt) {
-        try {
-          const payload = JSON.parse(Buffer.from(jwt.split(".")[1], "base64").toString())
-          if (Array.isArray(payload.features) && payload.features.includes("code-review")) {
-            result.review.hidden = false
+    if (enterpriseAuth && enterpriseAuth.type === "enterprise" && enterpriseAuth.token) {
+      try {
+        const payload = JSON.parse(Buffer.from(enterpriseAuth.token.split(".")[1], "base64").toString())
+        const features: string[] = Array.isArray(payload.features) ? payload.features : []
+        for (const [agentName, requiredFeature] of Object.entries(ENTERPRISE_AGENTS)) {
+          if (result[agentName] && features.includes(requiredFeature)) {
+            result[agentName].hidden = false
           }
-        } catch {
-          // malformed token — keep review agent hidden
         }
+      } catch {
+        // malformed token — leave enterprise agents hidden
       }
     }
 
