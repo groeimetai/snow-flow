@@ -5,7 +5,7 @@ license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:
   author: groeimetai
-  version: "1.0.0"
+  version: "2.0.0"
   category: servicenow
 tools:
   - snow_blast_radius_apps
@@ -29,6 +29,57 @@ Blast Radius provides configuration dependency analysis across a ServiceNow inst
 | `snow_blast_radius_artifact_dependencies` | Forward dependency analysis | "What does this business rule read/write?" |
 | `snow_blast_radius_reverse_dependencies` | Reverse artifact lookup | "What calls the IncidentUtils script include?" |
 
+## Coverage
+
+`snow_blast_radius_field_references` and `snow_blast_radius_table_configs` scan the following artifact types in parallel. Types backed by plugins that are not activated on the instance fail silently — the tool reports them under `errors_by_type` and continues.
+
+**Table-scoped (queried with the table name as filter):**
+- Business rules (`sys_script`) — script + condition + filter_condition + role_conditions
+- Client scripts (`sys_script_client`)
+- UI actions (`sys_ui_action`) — script + condition
+- UI policies (`sys_ui_policy`) — script_true + script_false + conditions
+- UI policy actions (`sys_ui_policy_action`) — exact field match
+- Data policies (`sys_data_policy2`)
+- Data policy rules (`sys_data_policy_rule`) — exact table_field match
+- ACLs (`sys_security_acl`) — field-level name match always included, table-level only when script/condition references the field
+- Email notifications (`sysevent_email_action`) — subject + message_html + message_text + condition + advanced_condition
+- Metric definitions (`metric_definition`) — script + exact field match
+- Inbound email actions (`sysevent_in_email_action`) — script + condition
+- Transform entries (`sys_transform_entry`) — target_field / source_field
+- Dictionary `dependent` / `dependent_on_field` — UI-level field dependencies
+
+**Global (no table column — grep all records, filter client-side by script content mentioning the table name):**
+- Script includes (`sys_script_include`)
+- Scheduled jobs (`sysauto_script`)
+- Fix scripts (`sys_script_fix`)
+- Script actions (`sysevent_script_action`)
+- Transform scripts (`sys_transform_script`)
+- Processors (`sys_processor`)
+- UI scripts (`sys_ui_script`)
+- Scripted REST resources (`sys_ws_operation`) — operation_script
+- Email scripts (`sys_script_email`)
+- Service Portal widgets (`sp_widget`) — server script + client script + link
+- Catalog client scripts (`catalog_script_client`)
+- Catalog UI policies (`catalog_ui_policy`)
+- ATF step inputs (`sys_atf_step`)
+
+**Table hierarchy:** By default the tools walk `sys_db_object.super_class` up to three levels, so a query on `incident` also returns artifacts scoped to `task`. Disable via `include_parent_tables: false`.
+
+## Known Limitations
+
+These gaps are inherent to static regex-based analysis over the REST Table API:
+
+- **Reference dotwalks**: `current.assignment_group.manager` is parsed as a reference to `assignment_group`, not to `sys_user_group.manager`. Dotwalked field changes are not flagged transitively.
+- **Dynamic field access**: `gr.setValue(someVar, value)` cannot be resolved because `someVar` is computed at runtime.
+- **Dynamic table access**: `new GlideRecord(tableVar)` — global artifacts won't be matched unless the table name appears literally in the script.
+- **Legacy workflows** (`wf_workflow`, `wf_activity`) are not scanned — migrating to Flow Designer is recommended anyway.
+- **Reports/dashboards** filter conditions are not scanned.
+- **Service Portal option schemas / angular providers** beyond `sp_widget` are not scanned.
+- **Field-level ACLs without scripts** that also don't match the `name=<table>.<field>` exact pattern (e.g., using a regex-like ACL naming) may be missed.
+- **`include_parent_tables`** adds at most three `sys_db_object` lookups; deeper hierarchies (incident_task → task → incident) are capped at depth 3.
+
+If the tool reports "0 references", treat it as "no *static* references found in the artifact types we scan" — not as a proof of safety. For high-risk changes (renaming a widely-used field), combine with grep of the export XML, and consider running a sandboxed test after the change.
+
 ## Recommended Workflow
 
 ### 1. Instance Overview
@@ -45,16 +96,12 @@ Pick a table and see everything running on it:
 → snow_blast_radius_table_configs(table_name: "incident")
 ```
 
-This returns all business rules, client scripts, UI actions, UI policies, ACLs, script includes, and data policies on that table.
-
 ### 3. Field Impact Check
 Before changing a field, find every artifact that touches it:
 
 ```
 → snow_blast_radius_field_references(table_name: "incident", field_name: "assignment_group")
 ```
-
-This is the most powerful tool — it searches across all artifact types and classifies each reference as read, write, or condition.
 
 ### 4. Artifact Analysis
 Analyze what a specific artifact depends on:
@@ -84,16 +131,6 @@ Find what depends on a specific artifact (e.g., a script include):
 | "Is it safe to remove this field?" | `snow_blast_radius_field_references` |
 | "How complex is this business rule?" | `snow_blast_radius_artifact_dependencies` |
 | "What's the blast radius of changing this script include?" | `snow_blast_radius_reverse_dependencies` |
-
-## Configuration Types Tracked
-
-- **Business Rules** (`sys_script`) — server-side scripts triggered on table operations
-- **Client Scripts** (`sys_script_client`) — browser-side scripts for form interactions
-- **UI Actions** (`sys_ui_action`) — buttons, links, and context menu items
-- **UI Policies** (`sys_ui_policy`) — field visibility, mandatory, and read-only rules
-- **ACLs** (`sys_security_acl`) — access control rules per table/field/operation
-- **Script Includes** (`sys_script_include`) — reusable server-side libraries
-- **Data Policies** (`sys_data_policy2`) — data validation rules
 
 ## Script Analysis Patterns
 
