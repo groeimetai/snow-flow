@@ -85,6 +85,24 @@ import * as virtualAgentTools from "../tools/virtual-agent/index.js"
 import * as flowDesignerTools from "../tools/flow-designer/index.js"
 import * as pluginsTools from "../tools/plugins/index.js"
 import * as agileTools from "../tools/agile/index.js"
+import * as blastRadiusTools from "../tools/blast-radius/index.js"
+import * as addonsTools from "../tools/addons/index.js"
+import * as aggregatorsTools from "../tools/aggregators/index.js"
+import * as calculatorsTools from "../tools/calculators/index.js"
+import * as decodersTools from "../tools/decoders/index.js"
+import * as developmentTools from "../tools/development/index.js"
+import * as generatorsTools from "../tools/generators/index.js"
+import * as mappersTools from "../tools/mappers/index.js"
+import * as parsersTools from "../tools/parsers/index.js"
+import * as performanceAnalyticsTools from "../tools/performance-analytics/index.js"
+import * as processorsTools from "../tools/processors/index.js"
+import * as procurementTools from "../tools/procurement/index.js"
+import * as projectTools from "../tools/project/index.js"
+import * as servicePortalTools from "../tools/service-portal/index.js"
+import * as systemPropertiesTools from "../tools/system-properties/index.js"
+import * as transformersTools from "../tools/transformers/index.js"
+import * as csmTools from "../tools/csm/index.js"
+import * as hrTools from "../tools/hr/index.js"
 
 // ES Module compatible __dirname
 const __filename = fileURLToPath(import.meta.url)
@@ -154,6 +172,24 @@ const STATIC_TOOL_MODULES: Record<string, any> = {
   "flow-designer": flowDesignerTools,
   plugins: pluginsTools,
   agile: agileTools,
+  "blast-radius": blastRadiusTools,
+  addons: addonsTools,
+  aggregators: aggregatorsTools,
+  calculators: calculatorsTools,
+  decoders: decodersTools,
+  development: developmentTools,
+  generators: generatorsTools,
+  mappers: mappersTools,
+  parsers: parsersTools,
+  "performance-analytics": performanceAnalyticsTools,
+  processors: processorsTools,
+  procurement: procurementTools,
+  project: projectTools,
+  "service-portal": servicePortalTools,
+  "system-properties": systemPropertiesTools,
+  transformers: transformersTools,
+  csm: csmTools,
+  hr: hrTools,
 }
 
 export class ToolRegistry {
