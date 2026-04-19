@@ -2,5 +2,1351 @@
   "cursor": "cb1a50055c9112bf18bec20f64026a3357c0d35b",
   "last_synced_upstream": null,
   "last_synced_at": "2026-04-19",
-  "decisions": {}
+  "decisions": {
+    "33b2795cc84c79e91e15549609713567eb08348a": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "10bd044c55600408f2bca606bb6ce37c88b459f9": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "83227be0ca3653063adbea694f640a7f2371fa6d": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "8ee47a0533e61dc49c896aa2ce295e2e4e949168": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "a546e88f37d1816adadf1e833a5fb4f39b7d56df": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "e998c9e9cb9973919468ca49f4962d1b37d3bfc3": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "7f3b64c7c49147143eb7c544a019c103d70b890f": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "e60a6e3a829f3598aba3707efc843a5364f0dc69": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "135c8f0e99814fb2184b9da657914126d4a81115": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "f02504bb803dbd9de4103c4ea509836a19801e61": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "40834fdf2feda0ed3eded2a5e4076b7c77204989": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "fc0588954b01ab421bb4833173fa48c422cea4d5": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "75960e3bf3db67c4eb763fed2e282ed2ca0e62b1": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "f14ac472a3ba96c1cf400223c5957d86ed7a4a2d": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "9ed93715efde1db921b952448a4bc64f7a48ee1e": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "b34ca44abed7eb214cdaff26467ff786d17da523": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "e543acf9230347f5642dbabffde35a493451748a": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ad0545335a9ac5c371f4bd51674cd6da2414e2e9": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "cfbbae73236913794c2c63a469849cd6c88470a9": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "940f971ca0368fadd03d654ccab79594672f4c48": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "1d54b0e54065e3ad09093cff658447d0e2ffde3b": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "7e971d8302c3d2c0020bd81e94d3ca039b4fd9a9": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "54b3b3fe05fd66f8f3b479ec438b53d38dbc6d0d": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "9d012b062186ef9900cc2673b77c446d38ebd789": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "fbb0a93e12740c7fb3f5f7ff62eee027c157e351": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "c5c38cad9c444070fa3b18d569fa75eb2ab40407": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "dd8c424806dd2c78c35205566824017ffa3a37fa": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "95edbc0ae68a5e4f9a24a5d0249391ef18b168f5": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "5e9d5c734ea883c00bdb2936e3bd6d786b220db4": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "b382d1a4677622f94c9927ef3ccbd38e74bd5799": {
+      "status": "skipped",
+      "reason": "upstream docs, wij hebben eigen documentatie",
+      "date": "2026-04-19"
+    },
+    "23f31475e7e8a5dce16b8095a45e954774ea65ca": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "8a1e85d0c827b138a3af94f233a343cf8fbcccf2": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "2793502db20ffc88c18fdec91133ac157d470461": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "9f7bd0246c14620758865513ceddfe0a768bec2e": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "a6a4350d1032da8b1ae1ae1a51f11b7a0844fcff": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "471b9f4dc443869795e0732c668e366150951d36": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "fc5b353144b6d370df21e2da3a8c1fad7e63123a": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "1dd257b76a98a159f763ec009bf061e6bd4ae718": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "5fa1673341f2ebde860cb06799626c6dfbcde2c3": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "daaa1c7e26a06d2239133c857d7f8863b60fb97a": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "866188a643271ddfca3c3ae007d6cddad8d0d11c": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "e6fd57165e7dad5796de278b4127614e3e08ba4f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "a5d99e7a3c484fc020ae1f9a466542332b103807": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "a92c75e5f4286d603c44887e50f7f9adf9e56b40": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "826fd3350ce8aa1a855956f956038fad7ecffb86": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "5181f9b4e141fc6c0c3c3d26169721af9e63ca51": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f52ae28432f66eef13ea48203899b23992f89eb9": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "05cdb7c1071a2ba900ba14449085d261755ff3e0": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "b493dabfe6edac3b671d9c369892a99d24650916": {
+      "status": "skipped",
+      "reason": "upstream docs, wij hebben eigen documentatie",
+      "date": "2026-04-19"
+    },
+    "c4816f944e6cbc1ff4c03484189c11f5fcd45e9c": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "cf0a53c501d069832be51640d1264cf658f381c9": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "2899984819f49b2e1119021d313f78caa0db0e2f": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "eafbe5c57c41528b52974b671793896e1aa98e96": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "cded68a2e2e233b8026c50408771b25d0f4e9682": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "89e8994fd15c4ac1235930a07e0b6e37254df22b": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "89029a20ef1548f6637c15f63f39f281e4a6dae7": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "ce69bd97b90200a4d9794bd0409d3b4bb7996e54": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "ed0f0225025336ad84c04210850fcd7bfb38f221": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "b1307d5c2a41c12d6696b31fe46bea7882993753": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "dc16013b4f0aa5e4d3eb433046965e1274da3990": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "d11268ece76d132108feda4bb91f0caacac51719": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "650a13a6908e23c30e07329f9f3ec816d7a6f2a7": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "54435325b6adf292d720885622f1282eaed98c92": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "11fa257549a1094b43d25f014e54557ed6aab660": {
+      "status": "deferred",
+      "reason": "upstream Zod → Effect Schema migratie, afhankelijk van Effect adoption beslissing",
+      "date": "2026-04-19"
+    },
+    "6af8ab0df201e245fac503aa8822750662ebf6b9": {
+      "status": "skipped",
+      "reason": "upstream docs, wij hebben eigen documentatie",
+      "date": "2026-04-19"
+    },
+    "c2061c6bbfa83147792ab9aec251cf193ccb6b0d": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "b708e8431ec3fcda2a53a3c3e3b8608e5edfb16d": {
+      "status": "skipped",
+      "reason": "upstream docs, wij hebben eigen documentatie",
+      "date": "2026-04-19"
+    },
+    "9b0659d4f9b64cb2416bb340c503037d0778349e": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "88582566bf2bfd2d26000f0c25735bf48ddeca00": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "d6e1362fee569e9d9fa9bc0c6c982f64b2027b30": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "467be08e679d82c20164870f067eb759abe5f6ec": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "4c30a78cd9623fe8f3a7c27860a7b8a0cc760e39": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "fcb473ff64f0767461c27db8942ce41df3e115d3": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "797953c88d29319deb8e003594f31fe6d2e9b8b3": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ce0cfb0ea5c86af77b97fc41e9076721f601c052": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "38cd3979f20b4d7842268b501568bf930b8e867a": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "3a4b49095c5273383ea581dfbc31628d80ac43a2": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ac5b395c5d709378592ea6b3ab8c9fe5061b53d5": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "2415820ecdacf1c8a7c94572297515036207238e": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "20103eb97be978deec529b718e15678875462098": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "cc063d4c32a9d9800a27b4e73fc46781e2c2f08b": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "3707e4a49cb97639408a9e0da7cf148ca5ce8834": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "cb425ac927cde685ef9b6e38a62ad71c408a47df": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "e78d75a003acfdbd9263753913d1bee395ef652a": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "c57c5315c17e1648d6699abd25db8ee195f44de1": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "a7265307355e7efed9e276da6625c96458009db6": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "81f0885879f1e89b21774fc1fc6c603bd0ecd967": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "7605acff650db0d41d80429b662b5c0725d89675": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "72d7cb717d5b2994a525257cd7fccf0533ca34ee": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "f0caeb9b25ae4f57232a152a4e1c8bdd823e2f65": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "dfaae1454454f02db7879ad7bdfd8a18feba83b5": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "79e9baf55acd6b5d2c8b49486cbd6a507897bf84": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "9ee89f7868bbdb5b412b9b475c41af22ac4f2a20": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "67dbb3cf18279c1a8f3f60e242d9b09e1270d01a": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "4260c40efa332deeebaf730382d5388adc95d024": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "fbbab9d6c8a03c4cd5bed0d13a85f52e3aca47ce": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ee7339f2c6a4575a81bcaff2240076571db03e11": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "dc38f22bd8fcb77347759069f7082d15d1c95f29": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "220e3e9a2bbd9578f84ec28b6db2b59c7a5a1b7f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f135c0b5eefae50e95f549002aea4bd1e510c4f7": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ebe6ea580d6f7985b5ae805f373454079f1ca116": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "61c4815a372e28518fb0761ea4e53849b94d20b0": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "01bb54a94dba8e797dbe45d083027ff9002a5575": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f592c3846b285a53d9f657d1eb57f124d5b9b18b": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "c026e25088bcd8668fba7333f97be03b70971f30": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "8ba73bed23c88c0c28c530ca57cdd6329269ecbd": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "4f8986aa48cbab66ca6e72272c3c7d27ffc8e0eb": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "9c87a144e879dd9b76c90cb1415e63005aac2843": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "5b9fa322551b77ddf2ab004c5491a82d37081b22": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "326471a25c50cb83d33e6b327bc88faf38a4db11": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "8afb625bab10c44e5b0437af4550f020f332cdf5": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "94878d76f8a32c36909647a0d9e1f6e383f60908": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "5022895e2b9b556275c5cd419cb32452329ada08": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "54046e0b985d8ffd5e343cadcc479570b96f8a5b": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "d2cb1613ace83609db6a60f3065914e322f93d02": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "266fb9342238a62cf9d66437c81c91ee40e8632c": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "51d8219c46f902b90cee716f3b8475e163e21e7c": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "54078c4caea1adadea25ca1c4ec1479f3ab4e423": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "53dc7b164940edbc5793bac83f91d7fca7b78fe5": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "635970b0a117481603d9894975ca502bc3887224": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "059b32c2124da9bb7a9e3cc1e9a49e3a72f29740": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "2704ad9110e6705dacd1b018a7245c1950a3ae80": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "06d247c70982b9bba0bb25f4b990fb59e3374650": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "974fa1b8b1990c2e51172e32ef321e5fdce0843d": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "fb0274446043401d48fae0aefb8e21f75a080ee8": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "79732ab17560c59745eef6d151b4b6cc69e23163": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f6dbb2f3e0de46d2a5e07618548c94259889a22a": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "fdd5b77bfd9c525a2ae6656a011c1419748761e3": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "cde105e7a8832b9c6d9d0a43d5699b4768156533": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "1291e82bb4d881a1c0ac5cb882da2b97a169ae9d": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "19d15d9ff7826db276219bccce278f78b654a431": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "4e27804160e7df606c27bdc72c1a8acae2304629": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "bae80af1b4620961664076bd257c22b88b57eeaf": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f9aa3d77cd543ad3a46f86e36a2908f0cc2e652f": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "5d47ea091879b026b8efb9d09af06deb0643e46a": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "c03fa362572d8108d2d76c2a18bbf616a7345dac": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "1089fa041561d76a58d72e464d95219af682eb8c": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "715786bbf96304f617c5f2a48ed49fe6101c90ef": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "218eca7c2bc95355f594c0fe50853326c86c469f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "30fc791480ebdabc9c62c70713e6cb52b44caff2": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "e2d161dfdd54fdd30f8e36e8cf4f46e261dab96e": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "23d48a7cf1af47870ef39def684eb8d569c66f4b": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "0e86466f990edd046867820b9fac97766d11db3f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "32548bcb4af7db393d91f315ec2222954326e766": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "1694c5bfe1248c4997bbf76849f6e297e31d710d": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "cdfbb26c003a42d2fd1e2875dd6cce43e5d19678": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "2638e2acfa4dc5198dc3454986515022fac6559b": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "49bbea5aed2c4662c9740745b760817c1a88cd56": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "5fccdc9fc7979be5f5b04ae9701d550fbec21535": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "664b2c36e8200c70d4b6a70702aceaf0604cd00a": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "964474a1b1cb2d864ef982e6ab7280b5b509c26f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "ab15fc1575fbdc9d9233bf7a130b4ae7b9cf8754": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "99d392a4fbff2f4203240709221f986c3ffe60a7": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "ae9a6966075042863cd061f798c0ce09fea3ff64": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "bd51a0d35bcdec47a980bb3c34c1d5d7ba144866": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "8c191b10c2bdceee607b0b549f9632f5adb5b511": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "cb6a9253fe8c4439bcfeff6c152b22b470de2eda": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "23f97ac49d5e39f8b9cd1f269ad3f1c33404a557": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "021ab50fb105153de174c664ce90f5c90e4ba840": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "3fe906f517eb60aa20fd47c95ec3c131452e8d91": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "9b77430d0d3bf84fa7784a093b783fad3d7ca824": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "1045a43603436d2328dcdaccc9160bd945e8b765": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "76275fc3ab8f39cd02ae7eed87c47679e1f4c28e": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "219b473e660994ac69a0c5d753ac65da951f3bf8": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "7c1b30291c8f8bde6e3ca7b257259384728a1eef": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "370770122c355f50cfc98193a25b1150e0288f31": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "c60862fc9e0a3378fe7be7c5079545c0d5c8d405": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "d82bc3a421c04e3abbade123344dc40d81e03395": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "06afd332913e1ad4b067a0f1a1c906ca8376bc45": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "8c0205a84ab225e6901eff92e6a589e8fc88b679": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "cc7acd90ab2fda54f06ff687a46d7364e479dc32": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "a200f6fb8b5e02aaf50a4f3e6c1a377f66e1c582": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "7341718f9234b0cf3a8758c87e91d2006b71bff6": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "ef6c26c730c7767ec5fc904927f2c5f1628de190": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "8b3b608ba9ddfe6ba088639435cf8187d5661a32": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "97918500d4020a7b44f3636f23daabc8c477008b": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "e2c08039624ac7c799ea5ba6ce94e3c671a8ed7c": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "f418fd56323c42f7bf1a0009db966632ca9bbab2": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "150ab07a833f0b10f4af17b3dd713cfedb16a6ff": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "c8af8f96ce2059ebf114a25ec958ab88dc15ff76": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "c802695ee9555ccfd8b0a6ae2215f750bccda712": {
+      "status": "skipped",
+      "reason": "upstream docs, wij hebben eigen documentatie",
+      "date": "2026-04-19"
+    },
+    "225a769411f35a0e2dd357589374766dae77ae6a": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "0beaf04df5d04e09edf58471244243098e34c324": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "f6243603f8e432361a0f75a3e4705e14e88c0d4a": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "6c7e9f6f3ac211454576e6e51cc5ff65718cd491": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "48f88af9aa930e245321b2cec5765896b02c36ef": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "069cef8a44f134a9a3517144b54ea5b1046bf6ff": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "64cc4623b54a45c6d399110dbe4e147ef050dc8c": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "70aeebf2dfe59009ba7254facaa81b8baf73c3cf": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "7baf998752f0cd1df0ff818d1cd5587e27f8d721": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "0fb0135e514216732b982a9b302ee5e10f3c8e51": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "a147ad68e6aed8a6a3eeaf2ce1e56f73fab7fa31": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ac2fa668cfef16935317e8f0fa3a6b709c1f6fdc": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "4dd0d1f67e6f600f629617e3b7c7881f4d4a1a6e": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "83e257b468d75f6361f9ce50d930f110dfd37365": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "3b75f16119b914fa6eb7dd451a0f3fb20d22d69f": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "8ba4799b3ee67e681ada264702d235522520c570": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "f06d82b6e8b98b77b0f8f63d824c800c6b99fa6e": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "5fc656e2a0dff7e1cfb8baa40a63418673a1be48": {
+      "status": "skipped",
+      "reason": "upstream docs, wij hebben eigen documentatie",
+      "date": "2026-04-19"
+    },
+    "47af00b2452ef7374cdda8769910799938d1303c": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "004a9284afb09b31105cb2bc26d993af0726585b": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "d7718d41d465cc1e84bc4d6c2e81af8baf46a23e": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ccaa12ee799a102390bc9dce6dc76e7d2620c448": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "5687d617a323f072c96fa80dcf5e12073c910403": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "8f1ac2ddf6223ac6220fd9b3b68374396cf893f0": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "1bea2a95a8a3ebebc638fe4ab9d374101cb4f4f5": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "6a7ca45ae6dc9b144f9e86d489fd6abb628a9884": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "c48a4cc05b610043d82333d7791be41bcf6c850d": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "df9eafa92cd670c75a9c3cda1b4d1759eb895bec": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "e24d104e943331077c7c775f08c024d9f7960c40": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "66de7bef8902557874d8811f657697866cafffec": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "d06bc3c2ca2b11f8c102c0802bff4c88f0c57fc5": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "a60fd89d1eaf5dd0445d2d6dea9bdc8d48534461": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "da0f81d36fd7af9cee2752bfc29adee50ad83a60": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "f44aa02e2677b2b89a1a9f517c0ff8990383deaa": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "1ca98046045d6c20481e1191927691961979c5c1": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "ddad871b46ca3dbd373280b70fdeb0f1553bfba4": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "d215188e4c00af6730fffc439158689b3c69eb89": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "68a9a47976fc0388370d9e3e760181ea67e85e9d": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "fb92bd470cfcc94b224b824817e267331d547dc1": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "02f8a24e23cfe7398d30db585dba67f589a5a8e7": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "87b2a9d749ac39f47ea2d9d6806e32f224fe8ba9": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "8df7ccc304273f3642f93543a36c955491be8490": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "2c36bf9490ef346d48680bc31fce51e90c52f47c": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "50c1d0a43ba8d43157b6bbb50feeb04784f2e4cc": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "60b8041ebbbed0081dc69f3be6abb0d1d2d119dc": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "3b2a2c461debb1afebe65378f978389d06152e1e": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "bbd5faf5cdc702a143f4b1438405131312a63533": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "4ed3afea84b13b400f8e4304d673ff8bd751e469": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "85674f4bfd15723c6c8afd96d74120ded9b8437b": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "8c42d391f5a765212e5b221d8382b3c01835cbe4": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "68384613be9b3869760064521ad5d0f3ba30062a": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "020c47a055532c024eba2089bfea11adea7a545d": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "64171db1731b3c54efe7644b0a02c566aa8dcb13": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "ad265797ab24d4d445fa71e54aeb069fd11cabb0": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "7cbe1627ec979e0523ab1a4c2c96def7cb352d06": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "d6840868d49bb3d31ed99bdef8ba874adb6c96a7": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f954854232231c66546a781507e17ecb51ebab85": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "0a8b6298cd830cd55862814ba333a02c41dd6254": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f40209bdfb1f7c5efda65dccb3ae3345dcb5bfee": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "a2cb4909daac81a297e80c3a5059b9bcff8f6b3e": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "7a05ba47d11ee19b26389d3af109cf91b49ea43f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "36745caa2a406bfb817e775c8285efc29d4fba26": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "10ba68c772b21947d7b0602b98f54fa2ea769310": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "e8471256f23c022348ff109f95fb84aa599fc230": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "d199648aebd68cbd95b8af0afd59e608c9c18136": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "b22add292c194697c1581baf1a323996f966d04b": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "67aaecacaca91fbb1b7671e28d3f88437aa84fad": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "29c202e6ab0b84d3884da5f8ab94f4873597084c": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "dcbf11f41a299cf18879a1096584dcaf99fa6b76": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "14ccff40379b9dabd4e7276881f93939113b8b12": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "1d81c0266cb731ed42c2ccd89d94873a4398781c": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "1dc69359d5351c4fb4dfbefef9e87a34c7c15b12": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "329fcb040be17a5779c3b88cab9367127e491638": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "b8801dbd22e561e3ddaf83744726d8d98744f255": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "f7c6943817e91189c44e1dab9271501c02c9e36f": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "91fe4db27c3ca0f9de8b06e9e508de6b6365956b": {
+      "status": "skipped",
+      "reason": "out-of-scope: raakt alleen packages we niet bouwen (app/desktop-electron/docs/…)",
+      "date": "2026-04-19"
+    },
+    "21d7a85e76983026bdd131b045f197386ef4c7ab": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "663e798e7624c345dd302fb316c67c7ce10551b0": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "c22e34853df71b4d31825614bea61e7c9184f0ba": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "6825b0bbc7f6f3863a5159b9153e0f3878ace76e": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "3644581b55c45bd889cc198cdf48744a68a9b612": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "ca6200121bd370d0335556b2390f230dbe37fd1d": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "7239b38b7f15ca2a393fa655342e46212b0b6cb9": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "9ae8dc2d017316c9ff0b9833926719bf088ce873": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "7164662be2fcf72410e3f895c9dee9b564b750a3": {
+      "status": "skipped",
+      "reason": "auto-regenerated artifact, geen inhoudelijke waarde",
+      "date": "2026-04-19"
+    },
+    "3eb6508a64d33922930d18c8659a9e1a5819e9ea": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "6fdb8ab90d353819833657a43f16e556eeb42693": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    },
+    "321bf1f8e1477dcca1b35173279d145e5fa5bf5a": {
+      "status": "deferred",
+      "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
+      "date": "2026-04-19"
+    }
+  }
 }
