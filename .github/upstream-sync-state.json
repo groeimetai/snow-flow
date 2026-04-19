@@ -1906,6 +1906,631 @@
       "status": "deferred",
       "reason": "MCP OAuth immediate-connect fix — Effect-based rewrite, our mcp/index.ts structure differs too much for a clean adaptation right now",
       "date": "2026-04-19"
+    },
+    "78ca49a1bcdfe42482cb8e902d0e9c3248a50d7a": {
+      "status": "skipped",
+      "reason": "test-only commit — tests follow from their accompanying fix",
+      "date": "2026-04-19"
+    },
+    "078d8a07cf848a7dd8067121d7c21c00d717b9d6": {
+      "status": "deferred",
+      "reason": "OTEL/telemetry — depends on Effect observability stack",
+      "date": "2026-04-19"
+    },
+    "c0eab9e44285596066555688057335cd58a1f84e": {
+      "status": "skipped",
+      "reason": "desktop (electron/tauri UI) fix — we use our own Tauri build",
+      "date": "2026-04-19"
+    },
+    "357301991624ae6c361350c1c1aca222268a6d5d": {
+      "status": "skipped",
+      "reason": "upstream generate script — we regenerate our SDK separately",
+      "date": "2026-04-19"
+    },
+    "1fae784b81a01fed3dcd6209e26427410158af30": {
+      "status": "deferred",
+      "reason": "effect-zod bridge feature — depends on Effect Schema adoption",
+      "date": "2026-04-19"
+    },
+    "81b7b58a5e396fb7d932ac77c7503d6271fa30ea": {
+      "status": "skipped",
+      "reason": "GitHub Copilot-specific fix — we don't optimize for Copilot",
+      "date": "2026-04-19"
+    },
+    "36119ff1731b3bc94ed0cffcb32b05987a48b088": {
+      "status": "deferred",
+      "reason": "effect-zod bridge feature — depends on Effect Schema adoption",
+      "date": "2026-04-19"
+    },
+    "bb90f3bbf99e00c2b5d780b38da318cfa3fd4c72": {
+      "status": "deferred",
+      "reason": "effect-zod bridge feature — depends on Effect Schema adoption",
+      "date": "2026-04-19"
+    },
+    "211136e3a8cfdfcca658d97d5b0a1ce7b1b0a940": {
+      "status": "deferred",
+      "reason": "effect-zod bridge feature — depends on Effect Schema adoption",
+      "date": "2026-04-19"
+    },
+    "7b98f544ff6b58f8dde9421bd1e7bf3e8c395d4f": {
+      "status": "deferred",
+      "reason": "effect-zod bridge feature — depends on Effect Schema adoption",
+      "date": "2026-04-19"
+    },
+    "d5c4c26b4b1a62271c7278ffc81485577a46a8e4": {
+      "status": "deferred",
+      "reason": "server OTEL/Effect route instrumentation — depends on Effect observability",
+      "date": "2026-04-19"
+    },
+    "0068ccec35493e2657678a4ab0654a278bd14685": {
+      "status": "skipped",
+      "reason": "GitHub Copilot-specific fix — we don't optimize for Copilot",
+      "date": "2026-04-19"
+    },
+    "e7686dbd643241f7e4ebf4a5e37e5ef33ad7797f": {
+      "status": "deferred",
+      "reason": "effect-zod bridge feature — depends on Effect Schema adoption",
+      "date": "2026-04-19"
+    },
+    "b1f076558cf75c9ae5322f6195e68c3c380e3f9c": {
+      "status": "skipped",
+      "reason": "test-only commit — tests follow from their accompanying fix",
+      "date": "2026-04-19"
+    },
+    "c0bfccc15ea6e2baea1d5b67f73d689317caa2af": {
+      "status": "skipped",
+      "reason": "upstream tooling/script infrastructure — not our build",
+      "date": "2026-04-19"
+    },
+    "dbe2ff52b25abf8cdeb878aa32614be22f28131f": {
+      "status": "deferred",
+      "reason": "OTEL/telemetry — depends on Effect observability stack",
+      "date": "2026-04-19"
+    },
+    "e0d71f124ef52f557387753ee19abe0f04f0faeb": {
+      "status": "skipped",
+      "reason": "upstream tooling/script infrastructure — not our build",
+      "date": "2026-04-19"
+    },
+    "9afbdc102c2e7e449c98a08082b382cd2696715e": {
+      "status": "skipped",
+      "reason": "test-only commit — tests follow from their accompanying fix",
+      "date": "2026-04-19"
+    },
+    "bee5f919fc5ae915aad0a4b5138e1e7f8274b9de": {
+      "status": "deferred",
+      "reason": "upstream config refactor series — depends on config migration",
+      "date": "2026-04-19"
+    },
+    "cefa7f04c66fce1fb586736222a2d6b8a5609ded": {
+      "status": "deferred",
+      "reason": "upstream config refactor series — depends on config migration",
+      "date": "2026-04-19"
+    },
+    "8b1f0e2d90c03fc5de6077f868af1548485cc466": {
+      "status": "deferred",
+      "reason": "upstream config refactor series — depends on config migration",
+      "date": "2026-04-19"
+    },
+    "9bf2dfea353135874e2ba5d284e6eb0cd1b9e35d": {
+      "status": "deferred",
+      "reason": "upstream config refactor series — depends on config migration",
+      "date": "2026-04-19"
+    },
+    "6ce481e95b7c5da814efcb379b8578552514e43e": {
+      "status": "skipped",
+      "reason": "upstream tooling/script infrastructure — not our build",
+      "date": "2026-04-19"
+    },
+    "509bc11f81430575c58887960a02e63fa0107c03": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "581d5208ca0317dd0f441bc50eeda8e1ad614529": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "a427a28fa9750e5a9bcae3e72cfa582b071c640b": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "b0eae5e12f271ee53e6ac269c12c8eeee7f65496": {
+      "status": "deferred",
+      "reason": "Effect HttpApi bridge — experimental, depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "665a8430864fb7a55dedea63a6cbdbe400218f80": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "1508196c0f4f4892325accddb5affeadbc4e8574": {
+      "status": "deferred",
+      "reason": "Effect HttpApi bridge — experimental, depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "60c927cf4faa5e95c7c7a3aeb1a43e5431a069fb": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "62ddb9d3ad774f97d34c4004ee607fc86e69ddfc": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "0b975b01fbb4e2774fdd6d690675fd92b81d6029": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "bb90aa6cb2e9c39e43420da29927250f384e1ca0": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "ce4e47a2e3456924b9a8306d63ab2241772d02f5": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "e3677c2ba2077d2dfdd188c31a55f8cdc1efa209": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "a653a4b8871e5d58c56f588e4cd3b2001f8bc6a1": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "f7edffc11aeceeab1000026cfcd7063671a1e7bb": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "dc16488bd78ccecb10613cf8dbe017be4c9b2408": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "d7a072dd464e09a3b5ef21943cf126f374884c4b": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "5ae91aa81047d3fa7e50e9e2d260835f100409c7": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "47577ae8574dd64b3b0773ce9239d6d103fea8d3": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "d22b5f026d38562550a9394aff9dbe9839b09812": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "26cdbc20b2f889d27d5e84c6b87774c61ec87f99": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "360d8dd940887ad2f01f57e3bd01d0e5a4d4b0c7": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "426815a829fc56ec39121542ea2a741d93b162e8": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "c6286d1bb94d208ba66a97d16445978bba7c5c6b": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "710c81984aa38618ca7106b9521100a9964ae51d": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "a1dbfb5967c564bd082c84a6fb8510208edde12f": {
+      "status": "deferred",
+      "reason": "namespace unwrap series — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "6bed7d469d8f6a18d5543cc668d951d0d1e09776": {
+      "status": "deferred",
+      "reason": "OTEL/telemetry — depends on Effect observability stack",
+      "date": "2026-04-19"
+    },
+    "9640d889baa58fa01ed612a6372ba77462f79d9f": {
+      "status": "deferred",
+      "reason": "OTEL/telemetry — depends on Effect observability stack",
+      "date": "2026-04-19"
+    },
+    "be3be32bf12872d536f7b21b0e1b0e98400c3031": {
+      "status": "deferred",
+      "reason": "OTEL/telemetry — depends on Effect observability stack",
+      "date": "2026-04-19"
+    },
+    "5bc2d2498d06e50dda17c4daca73df1648ab971b": {
+      "status": "skipped",
+      "reason": "test-only commit — tests follow from their accompanying fix",
+      "date": "2026-04-19"
+    },
+    "984f5ed6eb0cbf3048d8c1dbd8f643f5a01d2501": {
+      "status": "deferred",
+      "reason": "share sync event — upstream share.ts refactor we haven't adopted",
+      "date": "2026-04-19"
+    },
+    "074ef032eef2cb6a9a9b8dde5626ad5c0080d808": {
+      "status": "deferred",
+      "reason": "sync fence for strong consistency — depends on sync routes refactor",
+      "date": "2026-04-19"
+    },
+    "b28956f0dbc22d786fab24b2a34fd07fba6d27ec": {
+      "status": "deferred",
+      "reason": "global sync event structure — depends on upstream sync routes",
+      "date": "2026-04-19"
+    },
+    "af20191d1cd60a7f4a421ad81eca5053f7deace1": {
+      "status": "deferred",
+      "reason": "sync routes + proxy refactor — cross-cutting, Effect-based",
+      "date": "2026-04-19"
+    },
+    "c51f3e35cabb5cbb49d4fddc240b880c58286a97": {
+      "status": "deferred",
+      "reason": "retire namespace migration tooling — namespace series",
+      "date": "2026-04-19"
+    },
+    "c59df636cc3d9b203e2b84dcefecba15eda5b457": {
+      "status": "deferred",
+      "reason": "v2 session-common cleanup — v2 experimental",
+      "date": "2026-04-19"
+    },
+    "02f2cf439e58d3f3db2e7927ecad9c0d4e1bca16": {
+      "status": "deferred",
+      "reason": "namespace → flat export migration Bus PoC — namespace series",
+      "date": "2026-04-19"
+    },
+    "5b8b874732d7027564e69891561ceb3ebd65b845": {
+      "status": "deferred",
+      "reason": "upstream Effect docs update",
+      "date": "2026-04-19"
+    },
+    "fe01fa7249f84100e97d97f346dcda4647e5bc5b": {
+      "status": "deferred",
+      "reason": "remove makeRuntime facade — Effect refactor",
+      "date": "2026-04-19"
+    },
+    "b1312a3181bdd5f93ab2fcefdf4423ed464e33e3": {
+      "status": "deferred",
+      "reason": "ACP duplicate messages — we may not share the same ACP flow",
+      "date": "2026-04-19"
+    },
+    "a8f9f6b7059bc9edf8184f8ebddf32dd1c6030e8": {
+      "status": "deferred",
+      "reason": "ACP user_message_chunk — we may not share the same ACP flow",
+      "date": "2026-04-19"
+    },
+    "c98f61638535c9cc57a2b710decc780f7289fc2f": {
+      "status": "skipped",
+      "reason": "packages/app accordion styles — web UI, not our TUI",
+      "date": "2026-04-19"
+    },
+    "5069cd97982d5040710f5c442f9670538cb1dc72": {
+      "status": "skipped",
+      "reason": "packages/app accordion disabled state — web UI, not our TUI",
+      "date": "2026-04-19"
+    },
+    "8d89c3417bcfb6bb29793a640a37686957e82692": {
+      "status": "skipped",
+      "reason": "packages/app tooltip fix — web UI, not our TUI",
+      "date": "2026-04-19"
+    },
+    "9b2648dd57cea6005361bfceb4ee26723c1b6f30": {
+      "status": "deferred",
+      "reason": "single-file executable size — our build pipeline differs",
+      "date": "2026-04-19"
+    },
+    "79cc15335ec63dd04dd99d504250b03927848b3c": {
+      "status": "skipped",
+      "reason": "e2e app runtime disposal — e2e tests we don't run",
+      "date": "2026-04-19"
+    },
+    "62bd0230864910e3f32a3de54ff628a41e1b9ff9": {
+      "status": "skipped",
+      "reason": "packages/app parseDiffFromFile — web app only",
+      "date": "2026-04-19"
+    },
+    "305460b25fc673f707a238f180d93e58d80f1ee9": {
+      "status": "skipped",
+      "reason": "add tests for sync/session restore — depends on sync refactor",
+      "date": "2026-04-19"
+    },
+    "916131be19893b84f17902825a163a0b67274249": {
+      "status": "deferred",
+      "reason": "plugin init in config layer override — later reverted",
+      "date": "2026-04-19"
+    },
+    "6d42f976447f1b150dd6582e38dd29e0f7100c1b": {
+      "status": "deferred",
+      "reason": "revert of 916131be1 — cancels out",
+      "date": "2026-04-19"
+    },
+    "d1835686440d60686b7b9f66e160d47e747266da": {
+      "status": "skipped",
+      "reason": "Docker build executable permissions — we don't build via Docker",
+      "date": "2026-04-19"
+    },
+    "992435aaf8371dc784f9f3489e998e5c93451d18": {
+      "status": "deferred",
+      "reason": "flock-until-reify — shared Npm service refactor",
+      "date": "2026-04-19"
+    },
+    "ef90b9320592fbea174d704850855821982f4f76": {
+      "status": "deferred",
+      "reason": ".gitignore logic + shared Npm service — shared-package migration",
+      "date": "2026-04-19"
+    },
+    "5621373bc2d5ca106e9fbb2d2fbc3bc547dd744c": {
+      "status": "deferred",
+      "reason": "instance middleware ordering — control-plane routing we may not share",
+      "date": "2026-04-19"
+    },
+    "f27eb8f09ef0d9071ebb4d1b11625b27f49a8939": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "1ee712e549f8e31e38d70abd600ed48010659f8a": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "f13778215ae8927e8bb500f421f835566eb9a017": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "26af77cd1e0b34de2bc171a665c2cc7819c15110": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "5e650fd9e2c8ebaedb49af2ff771af9721782d98": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "3f7df08be97a0a6f6d224c1c8c93ace80ad97c33": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "a992d8b733716148feb392b84b27198141ca5094": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "4246368a881f262c2d548e29977f86e03305cb0c": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "548d9ac7263357b59963318524cbdc697d16565e": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "3695057bee6a2d6810e4b569632d6e49b7522d6f": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "3cf7c7536b42eadb3dfbe8f20b13a47ec82e3174": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "9a5178e4ac0c3fabe4ab07f8f8784f496906748e": {
+      "status": "picked",
+      "our_commit": "00a05266795d5992e5e4af34cdd7c2f8bf670b92",
+      "date": "2026-04-19"
+    },
+    "ff60859e3607c4f270fa50e5d56f8e1cbe763a6e": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "5b60e51c9f36fd21036cff3012d90dd52cfa299e": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "e7f8f7fa3bceab49b1606de72d969be63c3e8785": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "c09bcfe5314ff4d78d169a9a373450d19df9b407": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "889087c9662a41438867f2b2b7a974f58dfda245": {
+      "status": "deferred",
+      "reason": "app/ripgrep change — inspect when relevant",
+      "date": "2026-04-19"
+    },
+    "40ba8f357024351c7437d8227e18906a2aadf824": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "ce7923adafd03e9cea88f42b68a9adc6fece7156": {
+      "status": "deferred",
+      "reason": "AI SDK dep bump — update independently when tested",
+      "date": "2026-04-19"
+    },
+    "5eaef6b758cbfb683deadb8d440a420c3c1ee1f8": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "882b8e1e7587c4b24e5cb7ee9409e93b9455c5b0": {
+      "status": "deferred",
+      "reason": "upstream core refactor — depends on Effect session-entry series",
+      "date": "2026-04-19"
+    },
+    "11cd4fb63904768da73fad323dc82a83e052f87c": {
+      "status": "deferred",
+      "reason": "upstream core refactor — depends on Effect session-entry series",
+      "date": "2026-04-19"
+    },
+    "24fb9b1296d7bb5942ef5690ee3a806856b18dae": {
+      "status": "skipped",
+      "reason": "upstream release tooling / dead-code cleanup — not applicable",
+      "date": "2026-04-19"
+    },
+    "a35b8a95c27d28e979a3826e1289d7ee87f40251": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "999d8651aab7f9531539f686f685375fcbb19437": {
+      "status": "deferred",
+      "reason": "server route OTEL spans — depends on Effect observability",
+      "date": "2026-04-19"
+    },
+    "9b6c3971712baaecacb1d09eb21c4d6f77955622": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "bbb422d1250da1400c9c228d363bebb336e238ca": {
+      "status": "deferred",
+      "reason": "AI SDK dep bump — update independently when tested",
+      "date": "2026-04-19"
+    },
+    "c491161c0c6b69fe95672bba395a13b506940512": {
+      "status": "deferred",
+      "reason": "AI SDK dep bump — update independently when tested",
+      "date": "2026-04-19"
+    },
+    "0d582f9d3f9b20d5443fdee72aaf653778bf885e": {
+      "status": "deferred",
+      "reason": "AI SDK dep bump — update independently when tested",
+      "date": "2026-04-19"
+    },
+    "803d9eb7ad5f4dfd832d7506a7cad83ded52253e": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "551216a452836a033e35bf88f64845bc966eef8f": {
+      "status": "deferred",
+      "reason": "single-line fix depends on a surrounding theme-helpers block we don't have",
+      "date": "2026-04-19"
+    },
+    "10c4ab9a3d63dc55ecba89985c3fd23517e769fd": {
+      "status": "deferred",
+      "reason": "opentui version bump — pin independently in our fork",
+      "date": "2026-04-19"
+    },
+    "7e39c9b95001ce93d2f3124fe12fb307ea5427be": {
+      "status": "deferred",
+      "reason": "opentui version bump — pin independently in our fork",
+      "date": "2026-04-19"
+    },
+    "06ae43920b3f2384187135cbd71248a8f49ba98f": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "ec3ac0c4b0a78d0f4de268a1d54401182497fabc": {
+      "status": "deferred",
+      "reason": "opentui version bump — pin independently in our fork",
+      "date": "2026-04-19"
+    },
+    "9f201d637034ff0a4c1e518481c76ba1a4f0eeb6": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "25a9de301ad83ac7f6c8ec5ed67d81ee4d2a0221": {
+      "status": "deferred",
+      "reason": "upstream core refactor — depends on Effect session-entry series",
+      "date": "2026-04-19"
+    },
+    "143817d44e1ededeccbaff3e61690dfea4fe4109": {
+      "status": "deferred",
+      "reason": "AI SDK dep bump — update independently when tested",
+      "date": "2026-04-19"
+    },
+    "34213d444681a8953c5693bd01dd754c4e79a30b": {
+      "status": "skipped",
+      "reason": "upstream release tooling / dead-code cleanup — not applicable",
+      "date": "2026-04-19"
+    },
+    "672ee28635f471c5fcdc7e77c518d4465678d786": {
+      "status": "deferred",
+      "reason": "config startup change — our config.ts diverged",
+      "date": "2026-04-19"
+    },
+    "e16589f8b535c216939d690d721cd1eefc3c1c2a": {
+      "status": "deferred",
+      "reason": "app/ripgrep change — inspect when relevant",
+      "date": "2026-04-19"
+    },
+    "765932199021cf1dd7a813e37da744f391752bd1": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "dfc72838d70bea6df14859e90c6df91507b5f406": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "d25a7fbb2c5316473adac115961ee9b5afea38db": {
+      "status": "deferred",
+      "reason": "AI SDK dep bump — update independently when tested",
+      "date": "2026-04-19"
+    },
+    "467e5689ec6187f811afacc337d411863dc9e9ca": {
+      "status": "deferred",
+      "reason": "upstream server extraction plan — we haven't adopted packages/server",
+      "date": "2026-04-19"
+    },
+    "fba752a5016a93ad7ea54890cf444de02a89a0f8": {
+      "status": "deferred",
+      "reason": "upstream server extraction plan — we haven't adopted packages/server",
+      "date": "2026-04-19"
+    },
+    "bddf83008360aa6633a4890a89c1b184a0169af3": {
+      "status": "skipped",
+      "reason": "upstream release commit — versions managed separately in our fork",
+      "date": "2026-04-19"
+    },
+    "6706358a6e93daffcde534d4c23fb934a6be2fad": {
+      "status": "deferred",
+      "reason": "upstream server extraction plan — we haven't adopted packages/server",
+      "date": "2026-04-19"
+    },
+    "7f9bf910739dec89da1a032d695437f68677f353": {
+      "status": "deferred",
+      "reason": "opentui version bump — pin independently in our fork",
+      "date": "2026-04-19"
     }
   }
 }
