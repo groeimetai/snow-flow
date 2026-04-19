@@ -28,6 +28,10 @@ export {
   execute as snow_discover_security_policies_exec,
 } from "./snow_discover_security_policies.js"
 export {
+  toolDefinition as snow_elevate_role_def,
+  execute as snow_elevate_role_exec,
+} from "./snow_elevate_role.js"
+export {
   toolDefinition as snow_escalate_permissions_def,
   execute as snow_escalate_permissions_exec,
 } from "./snow_escalate_permissions.js"
