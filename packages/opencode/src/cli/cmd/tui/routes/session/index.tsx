@@ -1476,6 +1476,9 @@ function ToolPart(props: { last: boolean; part: ToolPart; message: AssistantMess
         <Match when={props.part.tool.endsWith("tool_search")}>
           <ToolSearchResult {...toolprops} />
         </Match>
+        <Match when={props.part.tool.endsWith("snow_create_sp_widget")}>
+          <SPWidget {...toolprops} />
+        </Match>
         <Match when={true}>
           <GenericTool {...toolprops} />
         </Match>
@@ -1579,6 +1582,95 @@ function ToolSearchResult(props: ToolProps<any>) {
     <InlineTool icon="🔍" pending={`Searching tools: ${query()}...`} complete={props.output} part={props.part}>
       tool_search [{query()}] → {count()} tools found
     </InlineTool>
+  )
+}
+
+function SPWidget(props: ToolProps<any>) {
+  const { theme } = useTheme()
+  const [expanded, setExpanded] = createSignal(false)
+
+  const fieldOrder = ["template", "css", "server_script", "client_script", "link"] as const
+  const fields = createMemo(() => {
+    const inp = props.input as Record<string, any>
+    return fieldOrder
+      .filter((n) => typeof inp[n] === "string" && (inp[n] as string).length > 0)
+      .map((n) => ({
+        name: n,
+        content: inp[n] as string,
+        lines: (inp[n] as string).split("\n").length,
+        chars: (inp[n] as string).length,
+      }))
+  })
+
+  const meta = createMemo(() => {
+    const inp = props.input as Record<string, any>
+    const bits: string[] = []
+    if (inp.id) bits.push(`id=${inp.id}`)
+    if (inp.name) bits.push(`name=${String(inp.name).slice(0, 60)}`)
+    if (inp.roles) bits.push(`roles=${inp.roles}`)
+    return bits.join(", ")
+  })
+
+  const parsed = createMemo(() => {
+    if (!props.output) return null
+    try {
+      return JSON.parse(props.output)
+    } catch {
+      return null
+    }
+  })
+  const success = createMemo(() => {
+    const p = parsed()
+    return p?.success === true || p?.result?.success === true
+  })
+  const sysId = createMemo(() => parsed()?.result?.data?.widget?.sys_id ?? "")
+  const errorMsg = createMemo(() => parsed()?.result?.error ?? parsed()?.error ?? "")
+
+  return (
+    <Show
+      when={props.output}
+      fallback={
+        <InlineTool icon="◆" pending="Creating widget..." complete={false} part={props.part}>
+          snow_create_sp_widget [{meta()}]
+        </InlineTool>
+      }
+    >
+      <BlockTool
+        title={`# snow_create_sp_widget [${meta()}]`}
+        part={props.part}
+        onClick={() => setExpanded((prev) => !prev)}
+      >
+        <box gap={0}>
+          <text fg={success() ? theme.success : theme.error}>
+            {"  "}
+            {success() ? "✓" : "✗"}{" "}
+            {success() ? `Widget created${sysId() ? ` (${sysId()})` : ""}` : `Failed${errorMsg() ? `: ${errorMsg().slice(0, 120)}` : ""}`}
+          </text>
+          <For each={fields()}>
+            {(f) => (
+              <text fg={theme.textMuted}>
+                {"  "}
+                {f.name}: {f.lines} {f.lines === 1 ? "line" : "lines"} ({f.chars} chars)
+              </text>
+            )}
+          </For>
+          <Show when={expanded()}>
+            <For each={fields()}>
+              {(f) => (
+                <box gap={0} marginTop={1}>
+                  <text fg={theme.text}>── {f.name} ──</text>
+                  <text fg={theme.textMuted}>{f.content}</text>
+                </box>
+              )}
+            </For>
+          </Show>
+          <text fg={theme.textMuted}>
+            {"  "}
+            {expanded() ? "Click to collapse" : "Click to expand all fields"}
+          </text>
+        </box>
+      </BlockTool>
+    </Show>
   )
 }
 
