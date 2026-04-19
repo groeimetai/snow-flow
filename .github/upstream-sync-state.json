@@ -1891,6 +1891,21 @@
       "status": "deferred",
       "reason": "grep exact file path — Effect-based adds file[] to Ripgrep.search; our ripgrep.ts uses async/await",
       "date": "2026-04-19"
+    },
+    "33bb847a1dfb5e79b4815813739671a40afa0e51": {
+      "status": "deferred",
+      "reason": "config refactor — cross-cutting 14 files, depends on Effect migration",
+      "date": "2026-04-19"
+    },
+    "66257663509bc12bb208c4c65f73c45206106aae": {
+      "status": "deferred",
+      "reason": "MCP namespace unwrap — depends on namespace migration",
+      "date": "2026-04-19"
+    },
+    "4626458175704270e294a7deee7e830b27f705d1": {
+      "status": "deferred",
+      "reason": "MCP OAuth immediate-connect fix — Effect-based rewrite, our mcp/index.ts structure differs too much for a clean adaptation right now",
+      "date": "2026-04-19"
     }
   }
 }
