@@ -67,7 +67,7 @@ export namespace ProviderTransform {
     }
 
     if (model.api.id.includes("claude")) {
-      return msgs.map((msg) => {
+      msgs = msgs.map((msg) => {
         if ((msg.role === "assistant" || msg.role === "tool") && Array.isArray(msg.content)) {
           msg.content = msg.content.map((part) => {
             if ((part.type === "tool-call" || part.type === "tool-result") && "toolCallId" in part) {
@@ -80,6 +80,22 @@ export namespace ProviderTransform {
           })
         }
         return msg
+      })
+    }
+    if (["@ai-sdk/anthropic", "@ai-sdk/google-vertex/anthropic"].includes(model.api.npm)) {
+      // Anthropic rejects assistant turns where tool_use blocks are followed by non-tool
+      // content, e.g. [tool_use, tool_use, text]. Reorder that shape into
+      // [text] + [tool_use, tool_use]. Adapted from upstream 348a84969.
+      msgs = msgs.flatMap((msg) => {
+        if (msg.role !== "assistant" || !Array.isArray(msg.content)) return [msg]
+        const parts = msg.content
+        const first = parts.findIndex((part) => part.type === "tool-call")
+        if (first === -1) return [msg]
+        if (!parts.slice(first).some((part) => part.type !== "tool-call")) return [msg]
+        return [
+          { ...msg, content: parts.filter((part) => part.type !== "tool-call") },
+          { ...msg, content: parts.filter((part) => part.type === "tool-call") },
+        ]
       })
     }
     if (model.providerID === "mistral" || model.api.id.toLowerCase().includes("mistral")) {
