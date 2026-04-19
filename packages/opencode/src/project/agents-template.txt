@@ -43,26 +43,24 @@ Tool discovery must **ALWAYS** happen silently:
 
 ### Always-available tools (no discovery needed)
 
-These activity tracking and discovery tools are loaded by default:
+Tool discovery is always available:
 
 ```javascript
-// Tool discovery
 tool_search({ query: "...", enable: true })
-
-// Activity tracking — REQUIRES real 32-char sys_ids, NEVER placeholders like "pending"
-await activity_start({
-  source: "request",
-  storyTitle: "Description of what user asked for",
-  storyType: "request",
-  updateSetName: "Feature: My Feature",
-  updateSetSysId: "abc123def456789012345678901234ab",  // Real sys_id from Update Set creation
-  updateSetUrl: "https://instance.service-now.com/sys_update_set.do?sys_id=abc123..."
-});
-
-await activity_update({ activityId, status: "in_progress", summary: "..." });
-await activity_add_artifact({ activityId, artifactType, artifactName, artifactSysId, artifactUrl });
-await activity_complete({ activityId, summary: "..." });
 ```
+
+### Activity tracking is automatic
+
+You do **NOT** call `activity_start`, `activity_update`, `activity_add_artifact`, or `activity_complete` manually. The harness watches tool calls and reports them for you:
+
+- Pick up a Jira/Azure DevOps issue (`jira_get_next_todo`, `jira_get_issue`, `azure_get_work_item`, …) → story is buffered.
+- Create or switch an Update Set via `snow_update_set_manage` → activity starts automatically, linked to that story if one was buffered.
+- Any `snow_create_*`, `snow_deploy_*`, `snow_update_*`, or `snow_edit_*` that returns a `sys_id` → artifact is attached automatically.
+- `snow_update_set_manage action=complete` → activity is completed automatically.
+
+If the user wants an ad-hoc activity without a ticket, just create the Update Set and start working — the activity starts with `source: "manual"`.
+
+Only call the `activity_*` tools explicitly when the user asks you to — for example to override the story title, mark an activity as `failed`, or submit for review.
 
 ---
 
@@ -121,9 +119,8 @@ You are a conversational development partner, not a CLI. Understand intent ("mak
 Before creating or modifying any artifact:
 
 1. **Create Update Set** with a descriptive name (e.g., `"Feature: Incident Auto-Assignment"`)
-2. **Get the real sys_id from the response** — use it in `activity_start` (NEVER `"pending"`)
-3. **Develop** — all changes are auto-tracked
-4. **Complete** the Update Set when done
+2. **Develop** — changes land in the Update Set and activity tracking attaches artifacts automatically
+3. **Complete** the Update Set when done — the activity is closed automatically
 
 `auto_switch=true` is the default and is REQUIRED for tracking. Only use `auto_switch=false` for read-only queries/analysis. Queries and analysis don't need an Update Set at all. For the full Update Set workflow (OAuth context, `servicenow_username`, the two-context model), load `Skill({ skill: "update-set-workflow" })`.
 
@@ -138,12 +135,10 @@ ServiceNow server-side JavaScript runs on Mozilla Rhino, which only supports ES5
 ### Standard development (widgets, business rules, scoped apps, etc.)
 
 1. Decide application scope (scoped app `x_vendor_appname` or global) — see `Skill({ skill: "scoped-apps" })`
-2. Create Update Set, get the real sys_id
-3. Start activity tracking with the real sys_id
-4. Develop the artifact(s) — load the relevant skill (`widget-coherence`, `business-rule-patterns`, `flow-designer`, etc.)
-5. Log each artifact via `activity_add_artifact` with real sys_ids
-6. Test and verify
-7. Complete activity and Update Set
+2. Create Update Set via `snow_update_set_manage` (activity tracking starts automatically)
+3. Develop the artifact(s) — load the relevant skill (`widget-coherence`, `business-rule-patterns`, `flow-designer`, etc.)
+4. Test and verify
+5. Complete the Update Set (activity is closed automatically)
 
 ### Tool selection priority
 
@@ -179,7 +174,7 @@ MCP tools are loaded via the MCP protocol, NOT as npm packages. You have **direc
 
 ### 3. Mock data, placeholders, or stub implementations
 
-Users want production-ready code. Real ServiceNow queries, real error handling, real edge case coverage, real 32-character hex sys_ids from API responses. No "this would normally…", no `TODO`, no `"pending"`/`"TBD"`/`"unknown"` placeholders — those break activity tracking.
+Users want production-ready code. Real ServiceNow queries, real error handling, real edge case coverage, real 32-character hex sys_ids from API responses. No "this would normally…", no `TODO`, no `"pending"`/`"TBD"`/`"unknown"` placeholders.
 
 ### 4. Assuming instead of verifying
 
@@ -191,7 +186,7 @@ Never assume a table doesn't exist because it isn't "standard". Never declare a 
 
 Before every response, verify:
 
-1. **Update Set first** — created before any development, real sys_id in `activity_start` (never `"pending"`)
+1. **Update Set first** — created before any development (activity tracking follows automatically)
 2. **ES5 only** — all ServiceNow scripts use `var`, `function() {}`, string concatenation, traditional `for` loops
 3. **Execute, don't explain** — use tools and show results; tool discovery is SILENT
 4. **Real URLs, real data** — fetch instance URL before providing links; no placeholders anywhere
