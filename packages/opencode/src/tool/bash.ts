@@ -235,7 +235,9 @@ export const BashTool = Tool.define("bash", async () => {
       const resultMetadata: string[] = []
 
       if (timedOut) {
-        resultMetadata.push(`bash tool terminated command after exceeding timeout ${timeout} ms`)
+        resultMetadata.push(
+          `bash tool terminated command after exceeding timeout ${timeout} ms. If this command is expected to take longer and is not waiting for interactive input, retry with a larger timeout value in milliseconds.`,
+        )
       }
 
       if (aborted) {
