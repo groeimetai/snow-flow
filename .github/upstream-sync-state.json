@@ -1347,6 +1347,306 @@
       "status": "deferred",
       "reason": "upstream interne refactor (effectify/InstanceState/barrels), niet functioneel voor ons",
       "date": "2026-04-19"
+    },
+    "47f553f9ba9d98056fa5a20fd1a4e6d4d63df016": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "aa05b9abe5ff3a4b29b72fb878be969567eda5bb": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "b275b8580d7bd3b884cf535e28c1b826759eb14b": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "a8c78fc005a9a1cff3622a68f65b1df550cb2ccc": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "0f80c827ed2f0ee32f8dfb8812605ed64ab47254": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "0bedea52b19515c69057866ec958769004147f66": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "a8d8a35cd3033602befc6648d00ed6be37aed826": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "bf50d1c028e973ccc0beffdf568fca417b62f020": {
+      "status": "deferred",
+      "reason": "upstream workspace feature — experimenteel, wij hebben 't niet geadopteerd",
+      "date": "2026-04-19"
+    },
+    "5980b0a5eeb8f7a8dc31433f86e458dbe3358269": {
+      "status": "deferred",
+      "reason": "Effect Schema migration — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "68834cfcc37ce51c1b0b4895b9563a86f1611c9a": {
+      "status": "deferred",
+      "reason": "hooks into Effect observability layer we don't have",
+      "date": "2026-04-19"
+    },
+    "2f73e73e9d03262fb59d4e942b3e1e073cb76cb9": {
+      "status": "deferred",
+      "reason": "Effect runtime tracing — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "d9950598d0da16fc0f8e6c289050a9d3da055af7": {
+      "status": "deferred",
+      "reason": "config loading migrated to Effect — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "d6af5a686cd45dc68504283645de990bbeaf2005": {
+      "status": "deferred",
+      "reason": "TuiConfig namespace → ES module — paired with larger unwrap series",
+      "date": "2026-04-19"
+    },
+    "03e20e6ac125b6a792c567451c2f904c6ed6941c": {
+      "status": "deferred",
+      "reason": "config parser modularization — depends on config refactor series",
+      "date": "2026-04-19"
+    },
+    "5011465c8118491fb839e020c78ecc721a377846": {
+      "status": "deferred",
+      "reason": "tool namespace unwrap — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "f6cc228684ef9022c93a158b3fd1cd69c677ec1a": {
+      "status": "deferred",
+      "reason": "cli-tui namespace unwrap — would touch every TUI file",
+      "date": "2026-04-19"
+    },
+    "1ca257e356e404a659d6ee39d5e26a41e729ca54": {
+      "status": "deferred",
+      "reason": "config namespace unwrap — depends on namespace migration",
+      "date": "2026-04-19"
+    },
+    "1d81335ab5c7e4f3a4c0652c9c7d59240028fe9f": {
+      "status": "deferred",
+      "reason": "Provider namespace unwrap — depends on namespace migration",
+      "date": "2026-04-19"
+    },
+    "bbdbc107ae1f935f9694fc36b79c833643ee87a4": {
+      "status": "deferred",
+      "reason": "Config namespace unwrap — depends on namespace migration",
+      "date": "2026-04-19"
+    },
+    "343a564183d3c1aa3fc4f46896c2350bda2d2058": {
+      "status": "deferred",
+      "reason": "11 util namespaces unwrap (189 files) — massive cross-cutting",
+      "date": "2026-04-19"
+    },
+    "80f1f1b5b8535b6008af54621665738115346cde": {
+      "status": "deferred",
+      "reason": "type-aware no-floating-promises (177 violations) — cross-cutting lint",
+      "date": "2026-04-19"
+    },
+    "bd2900483150d690acdc53acb37e98eda7bb7fe5": {
+      "status": "deferred",
+      "reason": "no-misused-spread lint rule — depends on lint setup we don't share",
+      "date": "2026-04-19"
+    },
+    "be9432a893dd1662c10ff41c7ab552bcba8f3e1b": {
+      "status": "deferred",
+      "reason": "new @opencode-ai/shared package — requires infra setup",
+      "date": "2026-04-19"
+    },
+    "4ae7c77f8abda8d51ddf52ee6e07890fa19b6629": {
+      "status": "deferred",
+      "reason": "depends on shared package migration",
+      "date": "2026-04-19"
+    },
+    "94f71f59a3eb3a4d376e371c5958a7f0cbf0a27e": {
+      "status": "deferred",
+      "reason": "InstanceBootstrap → Effect — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "bfffc3c2c6349d9199dd1a73260612b5ec2da88d": {
+      "status": "deferred",
+      "reason": "depends on config refactor series",
+      "date": "2026-04-19"
+    },
+    "675a46e23e679c294355435584ae662a7c0903c7": {
+      "status": "deferred",
+      "reason": "CLI perf PR touches 82 files — high conflict risk with fork",
+      "date": "2026-04-19"
+    },
+    "f2525a63c92dd46beeefc8741afcb98153abc776": {
+      "status": "deferred",
+      "reason": "experimental question HttpApi slice — upstream experimental",
+      "date": "2026-04-19"
+    },
+    "cccb907a9b3df7eb6fae71ee9e2392dccc73e9d3": {
+      "status": "skipped",
+      "reason": "upsell dialog for opencode GO SaaS — we don't have that",
+      "date": "2026-04-19"
+    },
+    "43b37346b639bcaf6cd74e725bd912c16ce45bb0": {
+      "status": "skipped",
+      "reason": "upstream logo animation — we'd override anyway",
+      "date": "2026-04-19"
+    },
+    "1a5913316850b256e497b899e29f7995302dcfa0": {
+      "status": "skipped",
+      "reason": "upstream copy tweaks in app.tsx header",
+      "date": "2026-04-19"
+    },
+    "cf423d27693ab5718eb836bdba7ba3ed357204b0": {
+      "status": "skipped",
+      "reason": "unused-import cleanup — our diverged imports will conflict",
+      "date": "2026-04-19"
+    },
+    "cce05c16658a39d091f658bdb53dcce1e88c66d0": {
+      "status": "skipped",
+      "reason": "unused-variable cleanup — our diverged code will conflict",
+      "date": "2026-04-19"
+    },
+    "d6b14e24678db678163c281257322c5a9bf0e6fa": {
+      "status": "skipped",
+      "reason": "_-prefix unused params cleanup — would conflict with our code",
+      "date": "2026-04-19"
+    },
+    "f7d4665e4091c88c2fde0f9db70d6333f83b86fd": {
+      "status": "skipped",
+      "reason": "oxlint warnings — we don't run oxlint with the same config",
+      "date": "2026-04-19"
+    },
+    "86c54c5acc7b3bf4d527cbd9fdfbd5dfc925b4d6": {
+      "status": "skipped",
+      "reason": "workspace-related logging cleanup",
+      "date": "2026-04-19"
+    },
+    "ae584332b36668ddfe4faa1b65157f5d276d34ad": {
+      "status": "skipped",
+      "reason": "one-line import uncomment — not applicable to our tree",
+      "date": "2026-04-19"
+    },
+    "9db40996cc5ce5877565d99e4199656345e8b80f": {
+      "status": "skipped",
+      "reason": "their build script fix",
+      "date": "2026-04-19"
+    },
+    "fffc496f41ffc2be3149dbd2faf9a577be0a390a": {
+      "status": "skipped",
+      "reason": "remove log — trivial",
+      "date": "2026-04-19"
+    },
+    "2b1696f1d174fde75f57abd9f498b53bf00e0d68": {
+      "status": "skipped",
+      "reason": "revert of 8ab17f5ce — cancels out",
+      "date": "2026-04-19"
+    },
+    "8ab17f5ce0bb3e74a49aa661fc1beef8314b8e04": {
+      "status": "skipped",
+      "reason": "reverted by 2b1696f1d — net zero",
+      "date": "2026-04-19"
+    },
+    "1c33b866ba962ed7a4c147c316ad807886a0045e": {
+      "status": "skipped",
+      "reason": "`as any` cast removal — our diverged types will conflict",
+      "date": "2026-04-19"
+    },
+    "2fe9d9447070f6967d80b0a8f74239e1969d9e1c": {
+      "status": "skipped",
+      "reason": "`as any` cast removal — our diverged types will conflict",
+      "date": "2026-04-19"
+    },
+    "bf4c1078290a5bf7e580141b17e7b37d905de311": {
+      "status": "skipped",
+      "reason": "`as any` cast removal — our diverged types will conflict",
+      "date": "2026-04-19"
+    },
+    "d2ea6700aa2e6bdf5d04fe70ba893afbb320adbd": {
+      "status": "skipped",
+      "reason": "removal of obsolete list tool — we still reference similar code",
+      "date": "2026-04-19"
+    },
+    "551216a45": {
+      "status": "deferred",
+      "reason": "single-line fix zit in groter theme-system dat wij niet hebben — geïsoleerd pakken niet mogelijk",
+      "date": "2026-04-19"
+    },
+    "a53fae15110ee87bd19012b167ed800b27f14f9b": {
+      "status": "picked",
+      "our_commit": "f7ca0d740a5aa18578716e871510af8ca36e5608",
+      "date": "2026-04-19"
+    },
+    "ee708040f6c21b6779ed3d0795928a56a78b8416": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "6405e3a7b12d49ade2f251360d221999836ccc02": {
+      "status": "picked",
+      "our_commit": "ccde9e07aeed91d7bc6d61720847eacacbd9dbbe",
+      "date": "2026-04-19"
+    },
+    "b5aba5807cfbcafc57ffd488cbcb0148f8f1f4d6": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "a554fad2327c68b2dc562a19e62a96415028b6d8": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "6c3b28db64e47895553949880f296bae74691f4a": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "405b0b037c7597448e6b36438425042c8b0cf772": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "a27d3c162335946d3e6ed8a6a5a621006a88511e": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "55315bdffaae45d8a983b90836308ad460fc45e4": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "39342b0e759a265045a2b49f34af8ae5da773a8c": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "13dfe569efda341cb7b6d4d163e4aee471e65043": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "a26d53151b11151a5580f11790b768ac334fa6a8": {
+      "status": "picked",
+      "our_commit": "356ffd7bbe25462c427881f62a8d45a332751b00",
+      "date": "2026-04-19"
+    },
+    "65b2a10e97d34e6b8a832a69b5a75f90f21e076c": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
+    },
+    "4bd5a158a5cbc09ac52df8dc7001fb3dc4110506": {
+      "status": "deferred",
+      "reason": "cherry-pick conflict — inspect later",
+      "date": "2026-04-19"
     }
   }
 }
