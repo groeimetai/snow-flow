@@ -39,6 +39,10 @@ export {
   toolDefinition as snow_execute_script_def,
   execute as snow_execute_script_exec,
 } from "./snow_execute_script.js"
+export {
+  toolDefinition as snow_redeploy_script_endpoint_def,
+  execute as snow_redeploy_script_endpoint_exec,
+} from "./snow_redeploy_script_endpoint.js"
 export { toolDefinition as snow_get_logs_def, execute as snow_get_logs_exec } from "./snow_get_logs.js"
 export {
   toolDefinition as snow_get_email_logs_def,

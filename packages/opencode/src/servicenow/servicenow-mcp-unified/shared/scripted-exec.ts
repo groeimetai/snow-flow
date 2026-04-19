@@ -17,7 +17,7 @@ import { getAuthenticatedClient } from "./auth"
 const ENDPOINT_SERVICE_ID = "snow_flow_exec"
 const ENDPOINT_PATH = "/execute"
 
-const endpointCache = new Map<string, { namespace: string }>()
+const endpointCache = new Map<string, { url: string }>()
 
 const OPERATION_SCRIPT = `(function process(request, response) {
   var body = request.body.data;
@@ -103,7 +103,7 @@ export interface ScriptExecutionResult {
 
 function getEndpointUrl(context: ServiceNowContext): string {
   const cached = endpointCache.get(context.instanceUrl)
-  if (cached) return `/api/${cached.namespace}/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`
+  if (cached) return cached.url
   return `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`
 }
 
@@ -115,6 +115,12 @@ function getEndpointUrl(context: ServiceNowContext): string {
 export function resetEndpointCache(instanceUrl?: string): void {
   if (instanceUrl) endpointCache.delete(instanceUrl)
   else endpointCache.clear()
+}
+
+export interface EndpointDeployResult {
+  ok: boolean
+  url?: string
+  diagnostics: string[]
 }
 
 async function pingEndpoint(client: AxiosInstance, url: string): Promise<boolean> {
@@ -137,29 +143,76 @@ async function tryPingWithRetries(
   return false
 }
 
+function buildCandidateUrls(
+  operationUri: string | undefined,
+  baseUri: string | undefined,
+  namespace: string | undefined,
+): string[] {
+  const seen = new Set<string>()
+  const urls: string[] = []
+  const push = (u: string | undefined) => {
+    if (!u) return
+    const normalized = u.startsWith("/") ? u : "/" + u
+    if (seen.has(normalized)) return
+    seen.add(normalized)
+    urls.push(normalized)
+  }
+
+  // Most authoritative: the operation's own URI from sys_ws_operation.
+  push(operationUri)
+
+  // Next: the definition's base_uri with our relative path appended.
+  if (baseUri) push(baseUri.replace(/\/+$/, "") + ENDPOINT_PATH)
+
+  // Then: namespace-prefixed and unprefixed variants.
+  if (namespace) push(`/api/${namespace}/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`)
+  push(`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`)
+
+  // Last-resort guesses for common global/now namespaces.
+  push(`/api/global/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`)
+  push(`/api/now/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`)
+
+  return urls
+}
+
 export async function ensureEndpoint(context: ServiceNowContext): Promise<boolean> {
-  if (endpointCache.has(context.instanceUrl)) return true
+  return (await ensureEndpointDiagnosed(context)).ok
+}
+
+/**
+ * Same as ensureEndpoint, but returns diagnostics describing what was tried
+ * and where it failed. Used by the redeploy tool to surface actionable
+ * info when auto-deploy can't recover on its own.
+ */
+export async function ensureEndpointDiagnosed(context: ServiceNowContext): Promise<EndpointDeployResult> {
+  const diagnostics: string[] = []
+  if (endpointCache.has(context.instanceUrl)) {
+    return { ok: true, url: endpointCache.get(context.instanceUrl)!.url, diagnostics: ["endpoint cache hit"] }
+  }
 
   const client = await getAuthenticatedClient(context)
 
-  // Look up an existing definition first — if it's there, skip creation.
+  // Look up the existing definition (if any).
   const check = await client
     .get("/api/now/table/sys_ws_definition", {
       params: {
         sysparm_query: `service_id=${ENDPOINT_SERVICE_ID}`,
-        sysparm_fields: "sys_id,namespace,base_uri",
+        sysparm_fields: "sys_id,namespace,base_uri,active",
         sysparm_limit: 1,
       },
     })
-    .catch(() => null)
+    .catch((err: { response?: { status?: number } }) => {
+      diagnostics.push(`sys_ws_definition lookup failed: HTTP ${err.response?.status ?? "unknown"}`)
+      return null
+    })
 
-  let existing = check?.data?.result?.[0] as { sys_id?: string; namespace?: string } | undefined
+  let existing = check?.data?.result?.[0] as
+    | { sys_id?: string; namespace?: string; base_uri?: string; active?: string | boolean }
+    | undefined
   let needsOperationCreate = false
 
   if (!existing) {
-    // Create sys_ws_definition. If the caller lacks web_service_admin /
-    // admin rights, this will 403 — catch it and return false so callers
-    // can fall through to the scheduler path.
+    diagnostics.push(`no existing sys_ws_definition with service_id=${ENDPOINT_SERVICE_ID}; creating`)
     const svc = await client
       .post("/api/now/table/sys_ws_definition", {
         name: "Snow-Flow Script Executor",
@@ -167,31 +220,61 @@ export async function ensureEndpoint(context: ServiceNowContext): Promise<boolea
         short_description: "Synchronous script execution endpoint for Snow-Flow",
         active: true,
       })
-      .catch(() => null)
+      .catch((err: { response?: { status?: number; data?: { error?: { message?: string } } } }) => {
+        diagnostics.push(
+          `sys_ws_definition create failed: HTTP ${err.response?.status ?? "unknown"} — ${err.response?.data?.error?.message ?? "no detail"}. Caller likely lacks web_service_admin or admin role.`,
+        )
+        return null
+      })
 
     const newId = svc?.data?.result?.sys_id
-    if (!newId) return false
-    existing = { sys_id: String(newId), namespace: svc.data.result.namespace }
+    if (!newId) return { ok: false, diagnostics }
+    existing = {
+      sys_id: String(newId),
+      namespace: svc.data.result.namespace,
+      base_uri: svc.data.result.base_uri,
+      active: svc.data.result.active,
+    }
     needsOperationCreate = true
+    diagnostics.push(`created sys_ws_definition sys_id=${existing.sys_id}`)
+  } else {
+    diagnostics.push(`found existing sys_ws_definition sys_id=${existing.sys_id}`)
+    if (existing.active === "false" || existing.active === false) {
+      diagnostics.push("definition is inactive; reactivating")
+      await client
+        .patch("/api/now/table/sys_ws_definition/" + existing.sys_id, { active: true })
+        .catch(() => diagnostics.push("reactivation patch failed"))
+    }
   }
 
   const svcId = existing.sys_id
-  if (!svcId) return false
+  if (!svcId) return { ok: false, diagnostics }
 
-  // Make sure the operation exists for this service definition. If the
-  // definition was found but the operation was deleted (or the definition
-  // is fresh), create it now.
+  // Look up (or create) the operation record.
+  let operationUri: string | undefined
   if (!needsOperationCreate) {
     const opCheck = await client
       .get("/api/now/table/sys_ws_operation", {
         params: {
           sysparm_query: `web_service_definition=${svcId}^relative_path=${ENDPOINT_PATH}`,
-          sysparm_fields: "sys_id",
+          sysparm_fields: "sys_id,operation_uri,active",
           sysparm_limit: 1,
         },
       })
       .catch(() => null)
-    if (!opCheck?.data?.result?.[0]) needsOperationCreate = true
+    const op = opCheck?.data?.result?.[0] as { sys_id?: string; operation_uri?: string; active?: string } | undefined
+    if (!op?.sys_id) {
+      diagnostics.push("existing definition has no matching sys_ws_operation; creating one")
+      needsOperationCreate = true
+    } else {
+      operationUri = op.operation_uri
+      if (op.active === "false") {
+        diagnostics.push("operation record is inactive; reactivating")
+        await client
+          .patch("/api/now/table/sys_ws_operation/" + op.sys_id, { active: true })
+          .catch(() => diagnostics.push("operation reactivation patch failed"))
+      }
+    }
   }
 
   if (needsOperationCreate) {
@@ -204,39 +287,34 @@ export async function ensureEndpoint(context: ServiceNowContext): Promise<boolea
         operation_script: OPERATION_SCRIPT,
         active: true,
       })
-      .catch(() => null)
-    if (!opCreate?.data?.result?.sys_id) return false
-  }
-
-  // Fetch namespace if we don't have it yet.
-  let ns = existing.namespace || ""
-  if (!ns) {
-    const svcRecord = await client
-      .get("/api/now/table/sys_ws_definition/" + svcId, {
-        params: { sysparm_fields: "namespace,base_uri" },
+      .catch((err: { response?: { status?: number; data?: { error?: { message?: string } } } }) => {
+        diagnostics.push(
+          `sys_ws_operation create failed: HTTP ${err.response?.status ?? "unknown"} — ${err.response?.data?.error?.message ?? "no detail"}.`,
+        )
+        return null
       })
-      .catch(() => null)
-    ns = svcRecord?.data?.result?.namespace || ""
+    const opId = opCreate?.data?.result?.sys_id
+    if (!opId) return { ok: false, diagnostics }
+    operationUri = opCreate.data.result.operation_uri
+    diagnostics.push(`created sys_ws_operation sys_id=${opId} operation_uri=${operationUri ?? "(unknown)"}`)
   }
 
-  // Ping with retries — a freshly-created Scripted REST can take a few
-  // seconds to become routable.
-  const candidates = ns
-    ? [`/api/${ns}/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`]
-    : [`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`]
+  const candidates = buildCandidateUrls(operationUri, existing.base_uri, existing.namespace)
+  diagnostics.push(`candidate URLs to ping: ${candidates.join(", ")}`)
 
-  const pingAttempts = needsOperationCreate ? 5 : 2
+  const pingAttempts = needsOperationCreate ? 5 : 3
   const pingDelay = 1500
 
   for (const url of candidates) {
     if (await tryPingWithRetries(client, url, pingAttempts, pingDelay)) {
-      const parts = url.replace(`/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, "").replace("/api/", "")
-      endpointCache.set(context.instanceUrl, { namespace: parts || ENDPOINT_SERVICE_ID })
-      return true
+      endpointCache.set(context.instanceUrl, { url })
+      diagnostics.push(`endpoint live at ${url}`)
+      return { ok: true, url, diagnostics }
     }
   }
 
-  return false
+  diagnostics.push("no candidate URL responded with success=true; endpoint may not be routable yet or path is wrong")
+  return { ok: false, diagnostics }
 }
 
 async function executeViaSyncApi(
@@ -359,19 +437,36 @@ gs.info('${marker}:DONE');
 
   const name = `Snow-Flow Exec - ${executionId}`
 
-  const job = await client.post("/api/now/table/sysauto_script", {
-    name,
-    script: wrapped,
-    active: true,
-    run_type: "on_demand",
-    conditional: false,
-  })
+  const job = await client
+    .post("/api/now/table/sysauto_script", {
+      name,
+      script: wrapped,
+      active: true,
+      run_type: "on_demand",
+      conditional: false,
+    })
+    .catch((err: { response?: { status?: number; data?: { error?: { message?: string } } } }) => {
+      const status = err.response?.status ?? "unknown"
+      const detail = err.response?.data?.error?.message ?? err.response?.data?.error ?? "no detail"
+      return { __error: `Scheduler fallback failed to create sysauto_script: HTTP ${status} — ${detail}` } as const
+    })
+
+  if ("__error" in job) {
+    return {
+      success: false,
+      error: job.__error,
+      method: "scheduled_job_pending",
+      executionId,
+      fallbackWarning:
+        "Sync REST endpoint unreachable and the sysauto_script fallback was rejected. User likely lacks web_service_admin / admin rights to deploy the executor endpoint or schedule jobs.",
+    }
+  }
 
   const jobId = job.data?.result?.sys_id
   if (!jobId) {
     return {
       success: false,
-      error: "Failed to create scheduled script job",
+      error: "Failed to create scheduled script job (no sys_id returned)",
       method: "scheduled_job_pending",
       executionId,
     }
@@ -473,14 +568,23 @@ export async function executeServerScript(
 
   const client = await getAuthenticatedClient(context)
 
-  const sync = await executeViaSyncApi(client, context, script, executionId)
+  const sync = await executeViaSyncApi(client, context, script, executionId).catch(() => null)
   if (sync) return sync
 
   const ok = await ensureEndpoint(context).catch(() => false)
   if (ok) {
-    const retry = await executeViaSyncApi(client, context, script, executionId)
+    const retry = await executeViaSyncApi(client, context, script, executionId).catch(() => null)
     if (retry) return retry
   }
 
-  return executeViaScheduler(client, context, script, executionId, timeout, description)
+  return executeViaScheduler(client, context, script, executionId, timeout, description).catch(
+    (err: Error): ScriptExecutionResult => ({
+      success: false,
+      error: `Scheduler fallback threw: ${err.message}`,
+      method: "scheduled_job_pending",
+      executionId,
+      fallbackWarning:
+        "Both sync REST endpoint and scheduler fallback failed. Check ServiceNow permissions (needs admin or web_service_admin + schedule_admin).",
+    }),
+  )
 }
