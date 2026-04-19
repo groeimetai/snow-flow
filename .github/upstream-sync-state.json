@@ -1849,6 +1849,48 @@
       "status": "deferred",
       "reason": "LLM Gateway provider — new feature, requires provider.ts changes that diverged from our fork",
       "date": "2026-04-19"
+    },
+    "685d79e953a02a3a78b91235c811932105574a66": {
+      "status": "deferred",
+      "reason": "OTEL tool-execution spans — depends on Effect observability",
+      "date": "2026-04-19"
+    },
+    "6ce5c01b1a9f6151da99c620ed8060d0e899ed89": {
+      "status": "deferred",
+      "reason": "v2 experiments — out of scope",
+      "date": "2026-04-19"
+    },
+    "fde3d9133bdf53d5bab9cf44f7f9ec4a23ae4fb4": {
+      "status": "skipped",
+      "reason": "EXA_API_KEY for upstream mcp-exa websearch — we use different MCP tools",
+      "date": "2026-04-19"
+    },
+    "9c16bd1e30d631d482ae696f426bf5f7eb73dbdb": {
+      "status": "deferred",
+      "reason": "skill tool token efficiency — upstream rewrites skill.ts to Effect-based with DESCRIPTION.txt; our fork uses async/await with custom agent permission filtering",
+      "date": "2026-04-19"
+    },
+    "7b3bb9a76181c478553b9319b734354f988cdac3": {
+      "status": "picked",
+      "our_commit": "f57e6168091098d129fa68bc62aa27312a628a86",
+      "reason": "manually adapted — registry.ts is async/await not Effect, same logic ported",
+      "date": "2026-04-19"
+    },
+    "307251bf3cc80131b4df4877d5c0cefc127828dd": {
+      "status": "deferred",
+      "reason": "bash memory fix — 121-line Effect-based rewrite; our bash.ts is async/await with different structure",
+      "date": "2026-04-19"
+    },
+    "4f967d5bc05d545fde9deccdb632276ec642722e": {
+      "status": "picked",
+      "our_commit": "222516452721dceb332bfdf3938e41578b9a30cc",
+      "reason": "manually adapted — bash.ts structure differs but one-line metadata string ported cleanly",
+      "date": "2026-04-19"
+    },
+    "a06f40297b06e3ce39c0618f4347db34074003f7": {
+      "status": "deferred",
+      "reason": "grep exact file path — Effect-based adds file[] to Ripgrep.search; our ripgrep.ts uses async/await",
+      "date": "2026-04-19"
     }
   }
 }
