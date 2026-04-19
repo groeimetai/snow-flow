@@ -1647,6 +1647,137 @@
       "status": "deferred",
       "reason": "cherry-pick conflict — inspect later",
       "date": "2026-04-19"
+    },
+    "23a2d0128254480e51c630f8cd077af29dc39efa": {
+      "status": "deferred",
+      "reason": "hooks into Effect logger we don't have",
+      "date": "2026-04-19"
+    },
+    "f83cecaaf6ee29da70109575595901884cdbc312": {
+      "status": "deferred",
+      "reason": "untrace hot paths — depends on Effect observability layer",
+      "date": "2026-04-19"
+    },
+    "76a141090ea33da574d06e17cd1c5dbddbde2952": {
+      "status": "deferred",
+      "reason": "delete filetime module — 34-file refactor cross-cutting",
+      "date": "2026-04-19"
+    },
+    "6b2083898120c02413dae806e749872ae407d9d1": {
+      "status": "deferred",
+      "reason": "provider namespace unwrap — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "0e2038239699b430595980be2939c08c5e4cde93": {
+      "status": "deferred",
+      "reason": "depends on namespace unwrap series",
+      "date": "2026-04-19"
+    },
+    "f24207844f84d43536b1ac5655e6f3cb80237f9f": {
+      "status": "deferred",
+      "reason": "storage namespace unwrap — our fork still uses namespaces",
+      "date": "2026-04-19"
+    },
+    "d4cfbd020da730ad8e9d72ffe61d6496d48ccf30": {
+      "status": "deferred",
+      "reason": "effect namespace unwrap — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "379e40d7720ab1caecfc750ca87ab3d039957ba3": {
+      "status": "deferred",
+      "reason": "InstanceState/EffectBridge unwrap — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "18538e359b22ff52231766b6880d70a9bdf9a063": {
+      "status": "deferred",
+      "reason": "usession namespace unwrap — depends on namespace migration",
+      "date": "2026-04-19"
+    },
+    "250e30bc7da7afa1c83578108e9af23210dda87a": {
+      "status": "deferred",
+      "reason": "experimental permission HttpApi slice",
+      "date": "2026-04-19"
+    },
+    "f1751401aa2c53a4a0215c6deddf93df306aac8b": {
+      "status": "deferred",
+      "reason": "Effect bridge for callback contexts — Effect infra",
+      "date": "2026-04-19"
+    },
+    "f73ff781e797aac8beaaaab9a49218ec5d9e0f14": {
+      "status": "deferred",
+      "reason": "AI SDK telemetry spans — depends on Effect runtime",
+      "date": "2026-04-19"
+    },
+    "f6409759e569cb3cf0479f9ba3453ff3b40ed1c2": {
+      "status": "deferred",
+      "reason": "Effect instance context in prompt runs",
+      "date": "2026-04-19"
+    },
+    "aeb7d99d208bdd5e72278d16ed49c17479196a80": {
+      "status": "deferred",
+      "reason": "Effect logger context preservation",
+      "date": "2026-04-19"
+    },
+    "d312c677c5883d9b30a2438ea32af586315547ad": {
+      "status": "deferred",
+      "reason": "Effect logger → old logger fallback in processor",
+      "date": "2026-04-19"
+    },
+    "59c0fc28ee53b9e63381ebd1190bf35bd74353e5": {
+      "status": "deferred",
+      "reason": "v2 experimental session-entry",
+      "date": "2026-04-19"
+    },
+    "913120759afccbfaeefaf12ead0929deb522ffae": {
+      "status": "deferred",
+      "reason": "v2 session entry experimental",
+      "date": "2026-04-19"
+    },
+    "7a6ce05d0939826aa6c8e1c481489a713b2d633f": {
+      "status": "deferred",
+      "reason": "v2 architecture exploration",
+      "date": "2026-04-19"
+    },
+    "9f4b73b6a330dc606faa22e44454638fa45e49ba": {
+      "status": "skipped",
+      "reason": "unused-vars cleanup — cross-cutting, will conflict with our tree",
+      "date": "2026-04-19"
+    },
+    "702f7412676deae8317213a56a3b32095dba5aa4": {
+      "status": "skipped",
+      "reason": "oxlint suspicious rule — we don't run oxlint",
+      "date": "2026-04-19"
+    },
+    "3d6f90cb536ec30ff5091e1cbe3b1e619a93e1b0": {
+      "status": "skipped",
+      "reason": "add oxlint — we don't use oxlint",
+      "date": "2026-04-19"
+    },
+    "f9d99f044df4d506aac897a1c27d1a0b1f894ae9": {
+      "status": "skipped",
+      "reason": "GitHub Copilot-specific llm.ts fix — we don't optimize for Copilot",
+      "date": "2026-04-19"
+    },
+    "4ca809ef4e71ee6d62990c815c82c7ee57395a8b": {
+      "status": "picked",
+      "our_commit": "3c90c0434c736b7a93f7ef56f123ddc5be15e3a9",
+      "reason": "manually adapted — surrounding upstream block not present in our fork",
+      "date": "2026-04-19"
+    },
+    "9918f389e7ffe0b5b6e6327045ecd6559775f7c6": {
+      "status": "deferred",
+      "reason": "attachment mime sniffing — touches read.ts heavily (137 lines); our ServiceNow read tools diverged",
+      "date": "2026-04-19"
+    },
+    "e83b22159d0c6b393acf9b04fdd6798397bb782d": {
+      "status": "deferred",
+      "reason": "compaction tracking for GitHub Copilot — not a priority, low value",
+      "date": "2026-04-19"
+    },
+    "34e2429c492495d059cbc63b86d02a58a1b3ca65": {
+      "status": "deferred",
+      "reason": "experimental.compaction.autocontinue hook — upstream experimental flag",
+      "date": "2026-04-19"
     }
   }
 }
