@@ -810,6 +810,43 @@ export namespace MCP {
     return s.status
   }
 
+  /**
+   * Call an MCP tool by name on whichever connected server exposes it.
+   * Returns the MCP CallToolResult (`{ content: [...] }`). Throws if no
+   * connected client exposes the tool.
+   *
+   * Used by internal harness-side hooks (e.g. activity tracking) that need
+   * to invoke MCP tools without going through the agent.
+   */
+  export async function callToolByName(
+    toolName: string,
+    args: Record<string, unknown>,
+    opts: { timeout?: number } = {},
+  ): Promise<any> {
+    const timeout = opts.timeout ?? DEFAULT_TIMEOUT
+    const cached = Array.from(lazyToolCache.values()).find((e) => e.tools.some((t) => t.name === toolName))
+    if (cached) {
+      return cached.client.callTool({ name: toolName, arguments: args }, CallToolResultSchema, {
+        resetTimeoutOnProgress: true,
+        timeout,
+      })
+    }
+    const snapshot = await clients()
+    for (const [clientName, client] of Object.entries(snapshot)) {
+      const s = await state()
+      if (s.status[clientName]?.status !== "connected") continue
+      const list = await client.listTools().catch(() => undefined)
+      if (!list) continue
+      if (list.tools.some((t) => t.name === toolName)) {
+        return client.callTool({ name: toolName, arguments: args }, CallToolResultSchema, {
+          resetTimeoutOnProgress: true,
+          timeout,
+        })
+      }
+    }
+    throw new Error(`MCP tool "${toolName}" not available on any connected server`)
+  }
+
   export async function tools() {
     const result: Record<string, Tool> = {}
     const s = await state()

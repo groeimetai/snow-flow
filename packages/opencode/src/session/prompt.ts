@@ -49,6 +49,7 @@ import { Truncate } from "@/tool/truncation"
 import { UsageReporter, ActivityReporter, AnonymousTelemetry } from "@/usage"
 import { ContextDB } from "@/context/context-db"
 import { Governance } from "@/governance/client"
+import { ActivityTracker } from "@/session/activity-tracker"
 
 // @ts-ignore
 globalThis.AI_SDK_LOG_WARNINGS = false
@@ -829,6 +830,7 @@ export namespace SessionPrompt {
             },
             result,
           )
+          await ActivityTracker.onToolAfter(ctx.sessionID, item.id, args, result)
           return result
         },
       })
@@ -930,6 +932,7 @@ export namespace SessionPrompt {
           },
           result,
         )
+        await ActivityTracker.onToolAfter(ctx.sessionID, key, args, result)
 
         const textParts: string[] = []
         const attachments: MessageV2.FilePart[] = []
