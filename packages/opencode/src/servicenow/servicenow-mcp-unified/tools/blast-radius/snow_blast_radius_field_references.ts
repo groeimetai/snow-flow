@@ -173,10 +173,25 @@ function buildScopeClause(spec: ArtifactSearchSpec, tables: string[], fieldName:
 
 /**
  * Build the content-match clause: script LIKE field OR condition LIKE field OR structured = field.
+ *
+ * For global-scope artifacts (no table filter to narrow on — script_includes,
+ * scheduled_jobs, widgets, fix_scripts, ...) we use tighter patterns that
+ * match *real* field references (.field / 'field' / "field") instead of any
+ * substring containing the field name. Without this, a common field like
+ * "priority" on a common table like "incident" returns hundreds of candidates
+ * in the global pool, blows past `limit_per_type`, and hides real matches
+ * behind truncation.
  */
 function buildContentClause(spec: ArtifactSearchSpec, fieldName: string): string {
   const parts: string[] = []
-  for (const col of spec.scriptFields) parts.push(`${col}LIKE${fieldName}`)
+  const scriptPatterns =
+    spec.scope.kind === "global"
+      ? [`.${fieldName}`, `'${fieldName}'`, `"${fieldName}"`]
+      : [fieldName]
+
+  for (const col of spec.scriptFields) {
+    for (const pattern of scriptPatterns) parts.push(`${col}LIKE${pattern}`)
+  }
   for (const col of spec.conditionFields || []) parts.push(`${col}LIKE${fieldName}`)
   for (const sf of spec.structuredFields || []) parts.push(`${sf.column}=${fieldName}`)
   if (parts.length === 0) return ""

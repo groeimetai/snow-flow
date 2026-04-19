@@ -11,6 +11,7 @@
  */
 
 // ==================== Development Tools ====================
+export { toolDefinition as snow_code_search_def, execute as snow_code_search_exec } from "./snow_code_search.js"
 export { toolDefinition as snow_get_by_sysid_def, execute as snow_get_by_sysid_exec } from "./snow_get_by_sysid.js"
 export {
   toolDefinition as snow_analyze_requirements_def,

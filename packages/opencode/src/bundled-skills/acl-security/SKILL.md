@@ -12,6 +12,8 @@ tools:
   - snow_query_table
   - snow_find_artifact
   - snow_execute_script_with_output
+  - snow_impersonate_user
+  - snow_session_context
 ---
 
 # ACL Security Patterns for ServiceNow
@@ -222,6 +224,8 @@ gs.hasRole("itil") || current.caller_id == gs.getUserID()
 // Check: Navigation, List views, Forms, Related lists
 // Verify: Fields hidden, buttons disabled, records filtered
 ```
+
+Use `snow_impersonate_user` to generate an audited impersonation deep-link (admin-only, writes to `~/.snow-flow/audit/impersonations.jsonl`). Use `snow_session_context` to confirm the caller's current roles and update set before diagnosing an ACL failure.
 
 ## Debug ACLs
 

@@ -9,13 +9,17 @@ import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/t
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
+const SUPPORTED_LOG_TABLES = ["syslog", "syslog_app_scope", "syslog_transaction", "sys_script_execution_history"] as const
+const SYSLOG_LIKE = ["syslog", "syslog_app_scope"] as const
+
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_get_logs",
-  description: "Retrieve ServiceNow system logs with filtering by level, source, and time range",
+  description:
+    "Retrieve ServiceNow platform logs with filtering by level, source, and time range. Supports four log tables: 'syslog' (default — system log), 'syslog_app_scope' (scoped-app log), 'syslog_transaction' (HTTP transactions), 'sys_script_execution_history' (background-script execution traces).",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "monitoring",
-  use_cases: ["automation", "logs", "monitoring"],
+  use_cases: ["automation", "logs", "monitoring", "debugging", "observability"],
   complexity: "beginner",
   frequency: "high",
 
@@ -26,15 +30,22 @@ export const toolDefinition: MCPToolDefinition = {
   inputSchema: {
     type: "object",
     properties: {
+      log_table: {
+        type: "string",
+        enum: [...SUPPORTED_LOG_TABLES],
+        description:
+          "Log table to read. 'syslog' (default) for system log; 'syslog_app_scope' for scoped-app log; 'syslog_transaction' for HTTP transactions; 'sys_script_execution_history' for background-script traces.",
+        default: "syslog",
+      },
       level: {
         type: "string",
         enum: ["error", "warn", "info", "debug", "all"],
-        description: "Log level filter",
+        description: "Log level filter (applies to syslog / syslog_app_scope only)",
         default: "all",
       },
       source: {
         type: "string",
-        description: "Filter by log source (e.g., widget name, script name)",
+        description: "Filter by log source (e.g., widget name, script name) — syslog / syslog_app_scope only",
       },
       limit: {
         type: "number",
@@ -49,14 +60,22 @@ export const toolDefinition: MCPToolDefinition = {
       },
       search: {
         type: "string",
-        description: "Search term in log messages",
+        description: "Search term in log messages (syslog / syslog_app_scope only)",
       },
     },
   },
 }
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { level = "all", source, limit = 100, since, search } = args
+  const { log_table = "syslog", level = "all", source, limit = 100, since, search } = args
+
+  if (!SUPPORTED_LOG_TABLES.includes(log_table)) {
+    return createErrorResult(
+      `Unsupported log_table '${log_table}'. Use one of: ${SUPPORTED_LOG_TABLES.join(", ")}`,
+    )
+  }
+
+  const isSyslogLike = (SYSLOG_LIKE as readonly string[]).includes(log_table)
 
   try {
     const client = await getAuthenticatedClient(context)
@@ -64,14 +83,11 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     // Build query
     const queryParts: string[] = []
 
-    // Level filter
-    if (level !== "all") {
-      queryParts.push(`level=${level}`)
-    }
-
-    // Source filter
-    if (source) {
-      queryParts.push(`sourceLIKE${source}`)
+    // Level / source / search filters apply to syslog-style tables only
+    if (isSyslogLike) {
+      if (level !== "all") queryParts.push(`level=${level}`)
+      if (source) queryParts.push(`sourceLIKE${source}`)
+      if (search) queryParts.push(`messageLIKE${search}`)
     }
 
     // Time range filter
@@ -80,23 +96,41 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       queryParts.push(`sys_created_on>${sinceTimestamp}`)
     }
 
-    // Search filter
-    if (search) {
-      queryParts.push(`messageLIKE${search}`)
-    }
-
     const query = queryParts.join("^")
+    const orderBy = query ? query + "^ORDERBYDESCsys_created_on" : "ORDERBYDESCsys_created_on"
 
-    // Get logs from syslog table
-    const response = await client.get("/api/now/table/syslog", {
+    const fields = isSyslogLike
+      ? "sys_created_on,level,source,message,sys_id"
+      : undefined // let ServiceNow return the full record for non-syslog tables
+
+    const response = await client.get(`/api/now/table/${log_table}`, {
       params: {
-        sysparm_query: query + "^ORDERBYDESCsys_created_on",
+        sysparm_query: orderBy,
         sysparm_limit: limit,
-        sysparm_fields: "sys_created_on,level,source,message,sys_id",
+        ...(fields ? { sysparm_fields: fields } : {}),
+        sysparm_display_value: "true",
       },
     })
 
-    const logs = response.data.result.map((log: any) => ({
+    const rows: any[] = response.data.result ?? []
+
+    // For non-syslog tables, return raw rows (schema varies per table)
+    if (!isSyslogLike) {
+      const rawSummary = [
+        `Fetched ${rows.length} ${log_table} entr${rows.length === 1 ? "y" : "ies"}`,
+        since ? `Window: since ${since}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+
+      return createSuccessResult(
+        { log_table, entries: rows, count: rows.length, filters: { since } },
+        {},
+        rawSummary,
+      )
+    }
+
+    const logs = rows.map((log: any) => ({
       timestamp: log.sys_created_on,
       level: log.level,
       source: log.source,
@@ -163,6 +197,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
 
     return createSuccessResult(
       {
+        log_table,
         logs,
         count: logs.length,
         by_level: byLevel,

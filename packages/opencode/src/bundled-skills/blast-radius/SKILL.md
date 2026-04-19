@@ -13,6 +13,7 @@ tools:
   - snow_blast_radius_artifact_dependencies
   - snow_blast_radius_field_references
   - snow_blast_radius_reverse_dependencies
+  - snow_code_search
 ---
 
 # Blast Radius for ServiceNow
@@ -28,6 +29,7 @@ Blast Radius provides configuration dependency analysis across a ServiceNow inst
 | `snow_blast_radius_field_references` | Reverse field lookup | "What touches incident.assignment_group?" |
 | `snow_blast_radius_artifact_dependencies` | Forward dependency analysis | "What does this business rule read/write?" |
 | `snow_blast_radius_reverse_dependencies` | Reverse artifact lookup | "What calls the IncidentUtils script include?" |
+| `snow_code_search` | Substring search across every script-bearing table (business rules, script includes, client scripts, widgets, scripted REST ops, UI actions, ACLs, notifications, UX scripts, …) | "Where is `IncidentUtils.resolve` referenced anywhere?" — use when reverse-dependency tools don't index what you need |
 
 ## Coverage
 
@@ -64,6 +66,26 @@ Blast Radius provides configuration dependency analysis across a ServiceNow inst
 - ATF step inputs (`sys_atf_step`)
 
 **Table hierarchy:** By default the tools walk `sys_db_object.super_class` up to three levels, so a query on `incident` also returns artifacts scoped to `task`. Disable via `include_parent_tables: false`.
+
+## When results are truncated
+
+`snow_blast_radius_field_references` returns a `truncated_types` array naming artifact types where the sysparm_limit was hit. Global-scope types (script_includes, scheduled_jobs, widgets, ATF steps) are the usual suspects — they have no table column, so the pre-filter matches any script mentioning the field name anywhere.
+
+**What to do when `truncated_types` is non-empty:**
+
+1. Re-run `snow_blast_radius_field_references` with a higher `limit_per_type` (e.g. 100) — often enough for medium-size instances.
+2. If still truncated, switch to `snow_code_search` for the affected tables with a tighter pattern. Example for `incident.priority` references in script includes:
+   ```
+   snow_code_search({
+     query: "current.priority",
+     tables: ["sys_script_include"],
+     per_table_limit: 100,
+   })
+   ```
+   Repeat with `"'priority'"` and `'"priority"'` to catch `setValue('priority')` / `"priority"` patterns. Results are unclassified (no read/write split) but complete.
+3. Intersect the `snow_code_search` hits with the script-analyzer output by running `snow_blast_radius_artifact_dependencies` on each individual script include for accurate read/write classification.
+
+Treat `truncated_types` as a signal that blast-radius's structured answer is incomplete, not as a safe zero.
 
 ## Known Limitations
 

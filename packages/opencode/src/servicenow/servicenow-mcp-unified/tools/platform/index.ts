@@ -2,6 +2,11 @@
  * Platform Development Tools - Export all platform tool modules
  */
 
+export { toolDefinition as snow_url_doctor_def, execute as snow_url_doctor_exec } from "./snow_url_doctor.js"
+export {
+  toolDefinition as snow_session_context_def,
+  execute as snow_session_context_exec,
+} from "./snow_session_context.js"
 export {
   toolDefinition as snow_create_script_include_def,
   execute as snow_create_script_include_exec,

@@ -17,6 +17,7 @@ tools:
   - snow_get_outbound_http_logs
   - snow_audit_trail_analysis
   - snow_manage_flow
+  - snow_session_context
 ---
 
 # Debugging & Mutation Inspection
@@ -28,7 +29,8 @@ When you've executed a tool against a ServiceNow instance and need to verify wha
 | Tool | Purpose |
 |---|---|
 | `snow_inspect_mutations` | Inspect record changes (INSERT/UPDATE/DELETE) since a timestamp via `sys_audit` |
-| `snow_get_logs` | Query syslog (errors, warnings, info) with a time filter |
+| `snow_get_logs` | Query platform logs with a time filter. Pass `log_table` to switch source: `syslog` (default), `syslog_app_scope` (scoped-app log), `syslog_transaction` (HTTP transactions), `sys_script_execution_history` (background-script traces) |
+| `snow_session_context` | Dump the authenticated user, roles, current update set, domain. Use before ACL-sensitive debugging — "is this failing because I lack a role?" |
 | `snow_get_script_output` | Output of previously executed scripts |
 | `snow_trace_execution` | Server-side script execution tracing |
 | `snow_get_flow_execution_logs` | Flow Designer execution history |
@@ -60,6 +62,9 @@ Flow Designer uses GraphQL mutations against `sys_hub_*` tables, which `sys_audi
 | Symptom | Tool to reach for |
 |---|---|
 | Script error | `snow_get_logs` with `level="error"` |
+| Scoped-app log output | `snow_get_logs` with `log_table="syslog_app_scope"` |
+| Background-script ran, output lost | `snow_get_logs` with `log_table="sys_script_execution_history"` |
+| Permission-denied / unexpected 403 | `snow_session_context` to verify caller's roles + update set |
 | Did the flow mutation work? | `snow_manage_flow` with `verify=true` |
 | What's the flow execution status? | `snow_manage_flow action=check_execution` |
 | What did the Table API actually change? | `snow_inspect_mutations` with a time window |

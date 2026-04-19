@@ -12,11 +12,14 @@ tools:
   - snow_create_ui_policy
   - snow_find_artifact
   - snow_edit_artifact
+  - snow_analyze_form
 ---
 
 # UI Actions & UI Policies for ServiceNow
 
 UI Actions add buttons, links, and context menus. UI Policies control form field behavior dynamically.
+
+Before modifying an existing form, reach for `snow_analyze_form` — it returns every active UI policy, client script, data policy, record + field ACL, and UI action on the target table in one call. Use it to answer "why is this form behaving like this?" before guessing.
 
 ## UI Actions
 
