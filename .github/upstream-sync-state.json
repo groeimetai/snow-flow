@@ -1778,6 +1778,77 @@
       "status": "deferred",
       "reason": "experimental.compaction.autocontinue hook — upstream experimental flag",
       "date": "2026-04-19"
+    },
+    "5eae92684658c36a5026c9a36edcdf1163517022": {
+      "status": "deferred",
+      "reason": "experimental provider auth HttpApi slice",
+      "date": "2026-04-19"
+    },
+    "6a99079012f8be6c9bde5a042e4c72f2cd5cd0cc": {
+      "status": "deferred",
+      "reason": "kit/env Effect InstanceState — depends on Effect adoption",
+      "date": "2026-04-19"
+    },
+    "627159acac04409d7697a6739e2c572c2a010943": {
+      "status": "deferred",
+      "reason": "delete-all-e2e-tests — 82-file sweep, out of scope",
+      "date": "2026-04-19"
+    },
+    "e2e7a8d722cf4b0a387717e9eee6d2f8fd4a81d4": {
+      "status": "skipped",
+      "reason": "Bedrock default flag — we don't deploy on AWS",
+      "date": "2026-04-19"
+    },
+    "8fbbca5f4bf6a7a971ce49d7ac2c8122767f5308": {
+      "status": "skipped",
+      "reason": "GitHub Copilot Opus 4.7 medium — Copilot-specific tuning",
+      "date": "2026-04-19"
+    },
+    "cb18f2ef407c49e7e91e03f0b7c4a72c2d4d05c1": {
+      "status": "skipped",
+      "reason": "Azure prompt cache key default — Azure-specific",
+      "date": "2026-04-19"
+    },
+    "610c036ef1e30d0209dbeb0a815c9b16e03ab1e3": {
+      "status": "skipped",
+      "reason": "Copilot gpt-5 low reasoning — Copilot-specific",
+      "date": "2026-04-19"
+    },
+    "c5deeee8c7b2e5b3927d28958d2ceb9ebddeb256": {
+      "status": "skipped",
+      "reason": "Azure store=true default — Azure-specific",
+      "date": "2026-04-19"
+    },
+    "8aa0f9fe9515ba0234ab6a0a58c868068913bb05": {
+      "status": "skipped",
+      "reason": "no-base-to-string lint (56 violations) — cross-cutting",
+      "date": "2026-04-19"
+    },
+    "348a84969de64cc1623d8ddcf73336b449c5b1f5": {
+      "status": "picked",
+      "our_commit": "5c92a3edec03cef4374ed3c3b7d468f98d8b59f5",
+      "reason": "manually adapted — claude block early-return dropped, anthropic reorder block added",
+      "date": "2026-04-19"
+    },
+    "c2403d0f155b55ad067e742ed6f091312445d24e": {
+      "status": "deferred",
+      "reason": "reasoningSummary guard — our fork already scopes reasoningSummary to opencode providerID, so unconditional injection isn't present in our code",
+      "date": "2026-04-19"
+    },
+    "47e0e2342cbd9fd335864a403dbac9b3ec9a19af": {
+      "status": "deferred",
+      "reason": "Opus 4.7 display:summarized — depends on provider/transform.ts variants() refactor that diverged from our fork",
+      "date": "2026-04-19"
+    },
+    "378c05f202b0fda6561451a93639712a11400972": {
+      "status": "deferred",
+      "reason": "Opus 4.7 xhigh adaptive effort — our provider/transform.ts variants() diverged significantly; upstream's refactor requires adopting isAnthropicAdaptive → adaptiveEfforts pattern",
+      "date": "2026-04-19"
+    },
+    "3fe602cda3e34761256c53254accc46abdff1c17": {
+      "status": "deferred",
+      "reason": "LLM Gateway provider — new feature, requires provider.ts changes that diverged from our fork",
+      "date": "2026-04-19"
     }
   }
 }
