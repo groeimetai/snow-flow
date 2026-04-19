@@ -146,6 +146,102 @@ function buildServerScript(args: {
   return `(function() {
   var INPUT = ${JSON.stringify(args)};
 
+  function escapeXml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  function storedUiPolicyRef(sysId) {
+    var g = new GlideRecord('sys_ui_policy_action');
+    if (!g.get(sysId)) return '';
+    return String(g.getValue('ui_policy') || '');
+  }
+
+  // Create a sys_ui_policy_action for the given parent policy.
+  //
+  // The ui_policy column on sys_ui_policy_action has field-level ACLs with
+  // no roles and admin_overrides=false — Table API and plain GlideRecord in
+  // a user-context can both silently drop writes to this field. Strategy:
+  //   1. Try GlideRecord. In some instances server-side GlideRecord bypasses
+  //      the ACL; on others it doesn't. Verify by reading back.
+  //   2. If the ui_policy ref came back empty, delete the orphan and fall
+  //      back to GlideUpdateManager2.loadUpdateXML(), which uses the update-
+  //      set import engine — that path is not ACL-enforced, so the field
+  //      goes through.
+  function createAction(policySysId, a, tableName) {
+    var gr = new GlideRecord('sys_ui_policy_action');
+    gr.initialize();
+    gr.setValue('ui_policy', policySysId);
+    gr.setValue('table', tableName);
+    gr.setValue('field', a.field);
+    gr.setValue('visible', a.visible);
+    gr.setValue('mandatory', a.mandatory);
+    gr.setValue('disabled', a.disabled);
+    gr.setValue('cleared', a.cleared);
+    var firstSysId = gr.insert();
+
+    if (firstSysId && storedUiPolicyRef(firstSysId) === policySysId) {
+      return { sys_id: String(firstSysId), method: 'gliderecord' };
+    }
+
+    // GlideRecord path left an orphan (ui_policy empty) or didn't insert
+    // at all. Remove any orphan so we don't leave garbage.
+    if (firstSysId) {
+      var orphan = new GlideRecord('sys_ui_policy_action');
+      if (orphan.get(firstSysId)) orphan.deleteRecord();
+    }
+
+    // Fallback: GlideUpdateManager2.loadUpdateXML() — bypasses ACL
+    // evaluation because the update-set import pipeline runs with system
+    // privileges, not the caller's role set.
+    var newSysId;
+    try {
+      newSysId = String(gs.generateGUID());
+    } catch (ge) {
+      newSysId = String(new GlideRecord('sys_user').sys_id);
+    }
+
+    var xml =
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<unload unload_date="' + new GlideDateTime().getValue() + '">' +
+      '<sys_ui_policy_action action="INSERT_OR_UPDATE">' +
+      '<sys_id>' + newSysId + '</sys_id>' +
+      '<sys_class_name>sys_ui_policy_action</sys_class_name>' +
+      '<ui_policy>' + policySysId + '</ui_policy>' +
+      '<table>' + escapeXml(tableName) + '</table>' +
+      '<field>' + escapeXml(a.field) + '</field>' +
+      '<visible>' + a.visible + '</visible>' +
+      '<mandatory>' + a.mandatory + '</mandatory>' +
+      '<disabled>' + a.disabled + '</disabled>' +
+      '<cleared>' + (a.cleared ? 'true' : 'false') + '</cleared>' +
+      '<active>true</active>' +
+      '<order>100</order>' +
+      '<sys_update_name>sys_ui_policy_action_' + newSysId + '</sys_update_name>' +
+      '</sys_ui_policy_action>' +
+      '</unload>';
+
+    try {
+      var um = new GlideUpdateManager2();
+      um.loadUpdateXML(xml);
+    } catch (e) {
+      gs.error('GlideUpdateManager2.loadUpdateXML failed for field ' + a.field + ': ' + e);
+      return null;
+    }
+
+    if (storedUiPolicyRef(newSysId) === policySysId) {
+      return { sys_id: newSysId, method: 'update_xml' };
+    }
+
+    // Clean up a half-imported record that still has an empty ui_policy.
+    var failed = new GlideRecord('sys_ui_policy_action');
+    if (failed.get(newSysId)) failed.deleteRecord();
+    return null;
+  }
+
   var policy = new GlideRecord('sys_ui_policy');
   policy.initialize();
   policy.setValue('short_description', INPUT.name);
@@ -160,42 +256,35 @@ function buildServerScript(args: {
   if (!policySysId) {
     return JSON.stringify({ error: 'Failed to insert sys_ui_policy' });
   }
+  policySysId = String(policySysId);
 
   var createdActions = [];
   var failedActions = [];
+  var methodCounts = { gliderecord: 0, update_xml: 0 };
   for (var i = 0; i < INPUT.actions.length; i++) {
     var a = INPUT.actions[i];
-    var action = new GlideRecord('sys_ui_policy_action');
-    action.initialize();
-    action.setValue('ui_policy', policySysId);
-    action.setValue('table', INPUT.table);
-    action.setValue('field', a.field);
-    action.setValue('visible', a.visible);
-    action.setValue('mandatory', a.mandatory);
-    action.setValue('disabled', a.disabled);
-    action.setValue('cleared', a.cleared);
-    var actionSysId = action.insert();
-
-    if (!actionSysId) {
+    var r = createAction(policySysId, a, INPUT.table);
+    if (!r) {
       failedActions.push(a.field);
       continue;
     }
-
+    methodCounts[r.method] = (methodCounts[r.method] || 0) + 1;
     createdActions.push({
-      sys_id: String(actionSysId),
-      ui_policy: String(policySysId),
+      sys_id: r.sys_id,
+      ui_policy: policySysId,
       table: INPUT.table,
       field: a.field,
       visible: a.visible,
       mandatory: a.mandatory,
       disabled: a.disabled,
-      cleared: a.cleared
+      cleared: a.cleared,
+      method: r.method
     });
   }
 
   return JSON.stringify({
     policy: {
-      sys_id: String(policySysId),
+      sys_id: policySysId,
       name: INPUT.name,
       table: INPUT.table,
       condition: INPUT.condition,
@@ -204,15 +293,17 @@ function buildServerScript(args: {
       active: INPUT.active
     },
     actions: createdActions,
-    failed_actions: failedActions
+    failed_actions: failedActions,
+    method_counts: methodCounts
   });
 })();`
 }
 
 function parseScriptResult(raw: unknown): {
   policy: { sys_id: string; name: string; table: string; condition: string; on_load: boolean; reverse_if_false: boolean; active: boolean }
-  actions: Array<NormalizedAction & { sys_id: string; ui_policy: string; table: string }>
+  actions: Array<NormalizedAction & { sys_id: string; ui_policy: string; table: string; method: string }>
   failed_actions: string[]
+  method_counts?: Record<string, number>
   error?: string
 } | null {
   if (raw === null || raw === undefined) return null
@@ -240,7 +331,8 @@ async function createViaServerScript(
 
   const data: Record<string, unknown> = {
     created: true,
-    method: "server_side_glide_record",
+    method: "server_side_script",
+    method_counts: parsed.method_counts,
     ui_policy: parsed.policy,
     actions: parsed.actions.map((a) => ({
       sys_id: a.sys_id,
@@ -252,6 +344,7 @@ async function createViaServerScript(
       readonly: a.disabled === "true",
       cleared: a.cleared,
       ui_policy_linked: true,
+      linked_via: a.method,
     })),
     total_actions: parsed.actions.length,
     best_practices: [

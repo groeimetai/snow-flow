@@ -107,76 +107,133 @@ function getEndpointUrl(context: ServiceNowContext): string {
   return `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`
 }
 
+/**
+ * Clear the in-memory endpoint cache for a specific instance. Useful when
+ * callers suspect the scripted REST endpoint was deleted or renamed on the
+ * server — forces the next `ensureEndpoint()` to re-verify and re-deploy.
+ */
+export function resetEndpointCache(instanceUrl?: string): void {
+  if (instanceUrl) endpointCache.delete(instanceUrl)
+  else endpointCache.clear()
+}
+
+async function pingEndpoint(client: AxiosInstance, url: string): Promise<boolean> {
+  const ping = await client
+    .post(url, { script: "'pong'", execution_id: "deploy_verify" })
+    .catch(() => null)
+  return ping?.data?.result?.success === true
+}
+
+async function tryPingWithRetries(
+  client: AxiosInstance,
+  url: string,
+  attempts: number,
+  delayMs: number,
+): Promise<boolean> {
+  for (let i = 0; i < attempts; i++) {
+    if (await pingEndpoint(client, url)) return true
+    if (i < attempts - 1) await new Promise((resolve) => setTimeout(resolve, delayMs))
+  }
+  return false
+}
+
 export async function ensureEndpoint(context: ServiceNowContext): Promise<boolean> {
   if (endpointCache.has(context.instanceUrl)) return true
 
   const client = await getAuthenticatedClient(context)
 
-  const check = await client.get("/api/now/table/sys_ws_definition", {
-    params: {
-      sysparm_query: `service_id=${ENDPOINT_SERVICE_ID}`,
-      sysparm_fields: "sys_id,namespace,base_uri",
-      sysparm_limit: 1,
-    },
-  })
+  // Look up an existing definition first — if it's there, skip creation.
+  const check = await client
+    .get("/api/now/table/sys_ws_definition", {
+      params: {
+        sysparm_query: `service_id=${ENDPOINT_SERVICE_ID}`,
+        sysparm_fields: "sys_id,namespace,base_uri",
+        sysparm_limit: 1,
+      },
+    })
+    .catch(() => null)
 
-  const existing = check.data?.result?.[0]
-  const svcId =
-    existing?.sys_id ||
-    (await (async () => {
-      const svc = await client.post("/api/now/table/sys_ws_definition", {
+  let existing = check?.data?.result?.[0] as { sys_id?: string; namespace?: string } | undefined
+  let needsOperationCreate = false
+
+  if (!existing) {
+    // Create sys_ws_definition. If the caller lacks web_service_admin /
+    // admin rights, this will 403 — catch it and return false so callers
+    // can fall through to the scheduler path.
+    const svc = await client
+      .post("/api/now/table/sys_ws_definition", {
         name: "Snow-Flow Script Executor",
         service_id: ENDPOINT_SERVICE_ID,
         short_description: "Synchronous script execution endpoint for Snow-Flow",
         active: true,
       })
+      .catch(() => null)
 
-      const id = svc.data?.result?.sys_id
-      if (!id) return null
+    const newId = svc?.data?.result?.sys_id
+    if (!newId) return false
+    existing = { sys_id: String(newId), namespace: svc.data.result.namespace }
+    needsOperationCreate = true
+  }
 
-      await client.post("/api/now/table/sys_ws_operation", {
+  const svcId = existing.sys_id
+  if (!svcId) return false
+
+  // Make sure the operation exists for this service definition. If the
+  // definition was found but the operation was deleted (or the definition
+  // is fresh), create it now.
+  if (!needsOperationCreate) {
+    const opCheck = await client
+      .get("/api/now/table/sys_ws_operation", {
+        params: {
+          sysparm_query: `web_service_definition=${svcId}^relative_path=${ENDPOINT_PATH}`,
+          sysparm_fields: "sys_id",
+          sysparm_limit: 1,
+        },
+      })
+      .catch(() => null)
+    if (!opCheck?.data?.result?.[0]) needsOperationCreate = true
+  }
+
+  if (needsOperationCreate) {
+    const opCreate = await client
+      .post("/api/now/table/sys_ws_operation", {
         name: "Execute Script",
-        web_service_definition: id,
+        web_service_definition: svcId,
         http_method: "POST",
         relative_path: ENDPOINT_PATH,
         operation_script: OPERATION_SCRIPT,
         active: true,
       })
+      .catch(() => null)
+    if (!opCreate?.data?.result?.sys_id) return false
+  }
 
-      return id
-    })())
+  // Fetch namespace if we don't have it yet.
+  let ns = existing.namespace || ""
+  if (!ns) {
+    const svcRecord = await client
+      .get("/api/now/table/sys_ws_definition/" + svcId, {
+        params: { sysparm_fields: "namespace,base_uri" },
+      })
+      .catch(() => null)
+    ns = svcRecord?.data?.result?.namespace || ""
+  }
 
-  if (!svcId) return false
-
-  const svcRecord =
-    existing ||
-    (
-      await client
-        .get("/api/now/table/sys_ws_definition/" + svcId, {
-          params: { sysparm_fields: "namespace,base_uri" },
-        })
-        .catch(() => null)
-    )?.data?.result
-
-  const ns = svcRecord?.namespace || ""
-
+  // Ping with retries — a freshly-created Scripted REST can take a few
+  // seconds to become routable.
   const candidates = ns
     ? [`/api/${ns}/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`]
     : [`/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`]
 
-  for (const url of candidates) {
-    const ping = await client.post(url, { script: "'pong'", execution_id: "deploy_verify" }).catch(() => null)
+  const pingAttempts = needsOperationCreate ? 5 : 2
+  const pingDelay = 1500
 
-    if (ping?.data?.result?.success === true) {
+  for (const url of candidates) {
+    if (await tryPingWithRetries(client, url, pingAttempts, pingDelay)) {
       const parts = url.replace(`/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`, "").replace("/api/", "")
       endpointCache.set(context.instanceUrl, { namespace: parts || ENDPOINT_SERVICE_ID })
       return true
     }
-  }
-
-  if (ns) {
-    endpointCache.set(context.instanceUrl, { namespace: ns })
-    return true
   }
 
   return false
