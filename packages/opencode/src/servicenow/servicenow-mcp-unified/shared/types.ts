@@ -104,6 +104,23 @@ export interface ToolResult {
    * ```
    */
   summary?: string
+  /**
+   * Artifact reference for write tools (create/update/deploy/edit).
+   * Hoisted to top-level so post-hooks (activity tracking, governance) can
+   * extract it without parsing the per-tool data shape.
+   *
+   * Populated automatically by `createSuccessResult` when the data contains
+   * a `sys_id` — either at the top level or inside a single wrapper key
+   * (e.g. `{ business_rule: { sys_id, name, table, ... } }`). Tools can
+   * also pass an explicit `artifact` argument to override the auto-detection.
+   */
+  artifact?: {
+    sys_id: string
+    type?: string
+    name?: string
+    url?: string
+    table?: string
+  }
   metadata?: {
     executionTime?: number
     apiCalls?: number

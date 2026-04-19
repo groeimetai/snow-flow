@@ -371,13 +371,89 @@ export function handleError(
 }
 
 /**
+ * Keys on `data` that are structural/metadata, not the artifact itself.
+ * Used by `detectArtifact` to skip them when scanning for a wrapper key.
+ */
+const ARTIFACT_SKIP_KEYS = new Set([
+  "created",
+  "updated",
+  "deleted",
+  "action",
+  "tips",
+  "usage",
+  "warnings",
+  "errors",
+  "script_source",
+  "script_size",
+  "metadata",
+  "summary",
+  "success",
+  "message",
+  "status",
+  "was_updated",
+  "upsert",
+])
+
+/**
+ * Detect a ServiceNow artifact reference from tool result `data`.
+ *
+ * Looks for two common patterns:
+ *   1. `{ sys_id: "...", name: "...", ... }` at the top level of `data`
+ *   2. `{ <wrapperKey>: { sys_id: "...", ... } }` — the dominant pattern
+ *      across snow_create_* tools (e.g. `business_rule`, `widget`,
+ *      `script_include`).
+ *
+ * Returns `undefined` if no sys_id can be found — read-only tools, tools
+ * returning lists, or tools with no artifact.
+ */
+function detectArtifact(data: any): ToolResult["artifact"] | undefined {
+  if (!data || typeof data !== "object") return undefined
+
+  // Top-level sys_id
+  if (typeof data.sys_id === "string" && data.sys_id.length > 0) {
+    return {
+      sys_id: data.sys_id,
+      type: typeof data.artifact_type === "string" ? data.artifact_type : undefined,
+      name: typeof data.name === "string" ? data.name : undefined,
+      url: typeof data.url === "string" ? data.url : undefined,
+      table: typeof data.table === "string" ? data.table : undefined,
+    }
+  }
+
+  // Nested wrapper with sys_id
+  for (const [key, value] of Object.entries(data)) {
+    if (ARTIFACT_SKIP_KEYS.has(key)) continue
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue
+    const v = value as Record<string, any>
+    if (typeof v.sys_id !== "string" || v.sys_id.length === 0) continue
+    return {
+      sys_id: v.sys_id,
+      // Prefer an explicit `type` field on the inner object (some tools carry
+      // the ServiceNow artifact kind there); fall back to the wrapper key.
+      type: typeof v.type === "string" ? v.type : key,
+      name: typeof v.name === "string" ? v.name : undefined,
+      url: typeof v.url === "string" ? v.url : undefined,
+      table: typeof v.table === "string" ? v.table : typeof v.collection === "string" ? v.collection : undefined,
+    }
+  }
+
+  return undefined
+}
+
+/**
  * Create success ToolResult
  *
  * @param data - The result data
  * @param metadata - Optional metadata
  * @param summary - Optional human-readable summary (displayed at top of output)
+ * @param artifact - Optional explicit artifact reference. Overrides auto-detection.
  */
-export function createSuccessResult(data: any, metadata: any = {}, summary?: string): ToolResult {
+export function createSuccessResult(
+  data: any,
+  metadata: any = {},
+  summary?: string,
+  artifact?: ToolResult["artifact"],
+): ToolResult {
   var result: ToolResult = {
     success: true,
     data,
@@ -385,6 +461,10 @@ export function createSuccessResult(data: any, metadata: any = {}, summary?: str
   }
   if (summary) {
     result.summary = summary
+  }
+  const hoisted = artifact ?? detectArtifact(data)
+  if (hoisted?.sys_id) {
+    result.artifact = hoisted
   }
   return result
 }
