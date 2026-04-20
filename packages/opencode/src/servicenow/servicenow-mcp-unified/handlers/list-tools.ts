@@ -15,8 +15,8 @@ import { mcpDebug } from "../../shared/mcp-debug.js"
 import { MCPToolDefinition } from "../shared/types.js"
 import { HandlerDeps } from "./types.js"
 
-export const listTools = (deps: HandlerDeps) => async (request: any) => {
-  const ctx = await deps.resolveContext(request)
+export const listTools = (deps: HandlerDeps) => async (request: any, extra?: any) => {
+  const ctx = await deps.resolveContext(request, extra)
   // Fail fast if an HTTP resolver forgets to set tenantId — falling back
   // to the "stdio" sentinel under HTTP traffic would silently share
   // ToolSessionStore state across tenants.
