@@ -24,6 +24,10 @@ import {
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_artifact_manage",
+  // Stdio-only: the `export` + `format: "files"` branch trusts a caller-
+  // supplied absolute path for `fs.mkdir`/`fs.writeFile`. Unsafe on HTTP
+  // until export writes go through a tenant-scoped filesystem sandbox.
+  transports: ["stdio"],
   description: `Unified tool for ServiceNow artifact management (create, get, update, delete, find, list, analyze, export, import)
 
 ⚡ ACTIONS:

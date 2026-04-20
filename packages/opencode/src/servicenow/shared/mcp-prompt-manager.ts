@@ -83,16 +83,48 @@ export type PromptHandler = (args: Record<string, string>) => Promise<MCPPromptR
 /**
  * MCP Prompt Manager
  * Manages prompt templates, registration, and execution
+ *
+ * Multi-tenant note: instances can be shared across requests. Once a
+ * transport has finished bootstrapping, it SHOULD call `freeze()` on its
+ * prompt manager — further `registerPrompt`/`unregisterPrompt`/`clearPrompts`
+ * calls will then throw instead of silently mutating a shared registry.
+ * This prevents a stray future handler or tool from leaking prompts across
+ * tenants in HTTP context.
  */
 export class MCPPromptManager {
   private prefix: string
   private promptRegistry: Map<string, MCPPrompt> = new Map()
   private promptHandlers: Map<string, PromptHandler> = new Map()
   private categories: PromptCategory[] = []
+  private frozen: boolean = false
 
   constructor(serverName: string = "mcp-server") {
     this.prefix = `[PromptManager:${serverName}]`
     this.initializeDefaultPrompts()
+  }
+
+  /**
+   * Mark this manager as frozen. Subsequent mutation attempts
+   * (registerPrompt, unregisterPrompt, clearPrompts) throw instead of
+   * silently mutating shared state.
+   */
+  freeze(): void {
+    this.frozen = true
+  }
+
+  /**
+   * Whether mutation methods are disabled.
+   */
+  isFrozen(): boolean {
+    return this.frozen
+  }
+
+  private assertMutable(op: string): void {
+    if (this.frozen) {
+      throw new Error(
+        `${this.prefix} Cannot ${op}: manager is frozen. Prompt state must not mutate after bootstrap.`,
+      )
+    }
   }
 
   /**
@@ -107,6 +139,7 @@ export class MCPPromptManager {
    * Register a new prompt with its handler
    */
   registerPrompt(prompt: MCPPrompt, handler: PromptHandler): void {
+    this.assertMutable("registerPrompt")
     this.promptRegistry.set(prompt.name, prompt)
     this.promptHandlers.set(prompt.name, handler)
     mcpDebug(`Registered prompt: ${prompt.name}`)
@@ -116,6 +149,7 @@ export class MCPPromptManager {
    * Unregister a prompt
    */
   unregisterPrompt(name: string): boolean {
+    this.assertMutable("unregisterPrompt")
     const deleted = this.promptRegistry.delete(name)
     this.promptHandlers.delete(name)
     if (deleted) {
@@ -215,6 +249,7 @@ export class MCPPromptManager {
    * Clear all registered prompts (useful for testing)
    */
   clearPrompts(): void {
+    this.assertMutable("clearPrompts")
     this.promptRegistry.clear()
     this.promptHandlers.clear()
     this.categories = []

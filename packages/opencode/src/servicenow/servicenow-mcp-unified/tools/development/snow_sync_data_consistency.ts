@@ -12,6 +12,9 @@ import { join } from "path"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_sync_data_consistency",
+  // Stdio-only: reads `process.cwd()/.snow-flow/memory` (shared across
+  // tenants in HTTP mode).
+  transports: ["stdio"],
   description:
     "Synchronizes cached data with ServiceNow, validates sys_id mappings, and repairs consistency issues. Includes automatic cache refresh and reindexing.",
   // Metadata for tool discovery (not sent to LLM)

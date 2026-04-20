@@ -17,7 +17,19 @@ import { getAuthenticatedClient } from "./auth"
 const ENDPOINT_SERVICE_ID = "snow_flow_exec"
 const ENDPOINT_PATH = "/execute"
 
+/**
+ * Endpoint URL cache. Key is composed of the tenant ID and the normalized
+ * instance URL (same pattern as `shared/auth.ts`). This prevents one tenant's
+ * endpoint-URL invalidation from wiping another tenant's cached URL when the
+ * two happen to share a ServiceNow instance (cross-tenant DoS vector).
+ */
 const endpointCache = new Map<string, { url: string }>()
+
+const getEndpointCacheKey = (context: ServiceNowContext): string => {
+  const rawTenant = context.tenantId ?? "stdio"
+  const tenant = rawTenant.replace(/[\x00:]/g, "_")
+  return `${tenant}\x00${context.instanceUrl}`
+}
 
 const OPERATION_SCRIPT = `(function process(request, response) {
   var body = request.body.data;
@@ -102,18 +114,21 @@ export interface ScriptExecutionResult {
 }
 
 function getEndpointUrl(context: ServiceNowContext): string {
-  const cached = endpointCache.get(context.instanceUrl)
+  const cached = endpointCache.get(getEndpointCacheKey(context))
   if (cached) return cached.url
   return `/api/${ENDPOINT_SERVICE_ID}${ENDPOINT_PATH}`
 }
 
 /**
- * Clear the in-memory endpoint cache for a specific instance. Useful when
- * callers suspect the scripted REST endpoint was deleted or renamed on the
- * server — forces the next `ensureEndpoint()` to re-verify and re-deploy.
+ * Clear the in-memory endpoint cache for a specific tenant+instance. Useful
+ * when callers suspect the scripted REST endpoint was deleted or renamed on
+ * the server — forces the next `ensureEndpoint()` to re-verify and re-deploy.
+ *
+ * Pass a `ServiceNowContext` to invalidate just that tenant's entry; omit it
+ * to clear the entire cache (intended only for stdio teardown).
  */
-export function resetEndpointCache(instanceUrl?: string): void {
-  if (instanceUrl) endpointCache.delete(instanceUrl)
+export function resetEndpointCache(context?: ServiceNowContext): void {
+  if (context) endpointCache.delete(getEndpointCacheKey(context))
   else endpointCache.clear()
 }
 
@@ -186,8 +201,9 @@ export async function ensureEndpoint(context: ServiceNowContext): Promise<boolea
  */
 export async function ensureEndpointDiagnosed(context: ServiceNowContext): Promise<EndpointDeployResult> {
   const diagnostics: string[] = []
-  if (endpointCache.has(context.instanceUrl)) {
-    return { ok: true, url: endpointCache.get(context.instanceUrl)!.url, diagnostics: ["endpoint cache hit"] }
+  const cacheKey = getEndpointCacheKey(context)
+  if (endpointCache.has(cacheKey)) {
+    return { ok: true, url: endpointCache.get(cacheKey)!.url, diagnostics: ["endpoint cache hit"] }
   }
 
   const client = await getAuthenticatedClient(context)
@@ -307,7 +323,7 @@ export async function ensureEndpointDiagnosed(context: ServiceNowContext): Promi
 
   for (const url of candidates) {
     if (await tryPingWithRetries(client, url, pingAttempts, pingDelay)) {
-      endpointCache.set(context.instanceUrl, { url })
+      endpointCache.set(cacheKey, { url })
       diagnostics.push(`endpoint live at ${url}`)
       return { ok: true, url, diagnostics }
     }

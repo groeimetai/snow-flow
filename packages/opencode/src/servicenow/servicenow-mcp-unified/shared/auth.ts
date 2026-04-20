@@ -134,7 +134,7 @@ export class ServiceNowAuthManager {
       context.enterprise = (this as any)._enterpriseLicense
     }
 
-    const cacheKey = this.getCacheKey(context.instanceUrl)
+    const cacheKey = this.getCacheKey(context)
 
     // Return existing client if valid token exists
     if (this.clients.has(cacheKey) && this.isTokenValid(cacheKey)) {
@@ -300,7 +300,7 @@ export class ServiceNowAuthManager {
    * Get valid access token (from cache or refresh)
    */
   async getAccessToken(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl)
+    const cacheKey = this.getCacheKey(context)
 
     // Return cached token if valid
     if (this.isTokenValid(cacheKey)) {
@@ -329,7 +329,7 @@ export class ServiceNowAuthManager {
    * Refresh access token using refresh token, OAuth client credentials, OR username/password
    */
   private async refreshAccessToken(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl)
+    const cacheKey = this.getCacheKey(context)
     mcpDebug("[Auth] Refreshing access token for:", context.instanceUrl)
 
     // Check if instance URL is valid
@@ -501,7 +501,7 @@ export class ServiceNowAuthManager {
    * Used when auth.json has servicenow-basic type credentials
    */
   private async authenticateWithBasicAuth(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl)
+    const cacheKey = this.getCacheKey(context)
 
     try {
       // Use credentials from context (loaded from auth.json)
@@ -556,7 +556,7 @@ export class ServiceNowAuthManager {
    * Used when OAuth fails and SERVICENOW_USERNAME/PASSWORD env vars are set
    */
   private async authenticateWithPassword(context: ServiceNowContext): Promise<string> {
-    const cacheKey = this.getCacheKey(context.instanceUrl)
+    const cacheKey = this.getCacheKey(context)
 
     try {
       // First try context credentials (from auth.json), then environment variables
@@ -635,14 +635,26 @@ export class ServiceNowAuthManager {
   }
 
   /**
-   * Get cache key for instance URL
+   * Get cache key for a ServiceNow context.
+   *
+   * The key is composed of the sanitized tenant ID and the normalized
+   * instance URL, joined by a NUL separator that cannot appear in either
+   * component. This guarantees that two tenants with the same instance URL
+   * (shared dev boxes, PDI instances, partner sandboxes) have disjoint cache
+   * entries — preventing the cross-tenant OAuth-token and Axios-client leak
+   * described in the multi-tenant audit.
+   *
+   * Stdio callers without a tenantId fall back to the sentinel `"stdio"`.
    */
-  private getCacheKey(instanceUrl: string): string {
-    // Normalize instance URL (remove trailing slash, protocol)
-    return instanceUrl
+  private getCacheKey(context: ServiceNowContext): string {
+    // Disallow NUL and colon in tenantId so the separator can't be spoofed.
+    const rawTenant = context.tenantId ?? "stdio"
+    const tenant = rawTenant.replace(/[\x00:]/g, "_")
+    const urlKey = context.instanceUrl
       .replace(/^https?:\/\//, "")
       .replace(/\/$/, "")
       .toLowerCase()
+    return `${tenant}\x00${urlKey}`
   }
 
   /**
@@ -749,12 +761,15 @@ export class ServiceNowAuthManager {
         }
       }
 
-      // Load tokens into memory cache
+      // Load tokens into memory cache.
+      // Pre-PR-6a caches had flat keys (just the normalized URL). Auto-migrate
+      // them into the new composed format under the "stdio" tenant so local
+      // dev users don't lose their tokens across an upgrade.
       Object.entries(cached).forEach(([key, token]) => {
         // Only load if not expired
-        if (token.expiresAt > Date.now()) {
-          this.tokenCache.set(key, token)
-        }
+        if (token.expiresAt <= Date.now()) return
+        const composedKey = key.includes("\x00") ? key : `stdio\x00${key}`
+        this.tokenCache.set(composedKey, token)
       })
 
       // Re-save as encrypted if we loaded from plaintext (migration)

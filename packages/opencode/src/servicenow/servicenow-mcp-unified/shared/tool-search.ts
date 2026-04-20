@@ -1,12 +1,18 @@
 /**
  * Tool Search - Session-based tool enabling for lazy loading mode
  *
- * Ported from snow-flow (JavaScript) to snow-flow-ts (TypeScript)
+ * Ported from snow-flow (JavaScript) to snow-flow-ts (TypeScript).
  *
  * This module provides:
- * - Tool index for lightweight search (name + description only)
- * - Per-session enabled tools tracking
- * - File-based persistence for enabled tools
+ *   - Tool index for lightweight search (name + description only)
+ *   - Per-(tenant, session) enabled-tools tracking via an injectable store
+ *   - File-based default store for stdio, memory-backed for HTTP
+ *
+ * Multi-tenant safety (PR-6a): all state operations take a `tenantId` so
+ * two tenants with the same session ID cannot see each other's enabled
+ * tools. The default tenantId `"stdio"` is safe only in the single-user
+ * stdio context; HTTP callers must always pass the resolved tenant ID
+ * (`ctx.serviceNow.tenantId`). See also `ToolSessionStore`.
  *
  * @see https://www.anthropic.com/engineering/advanced-tool-use
  */
@@ -15,6 +21,7 @@ import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
 import { mcpDebug } from "../../shared/mcp-debug.js"
+import { FileToolSessionStore, type ToolSessionStore } from "./tool-session-store.js"
 
 /**
  * Tool index entry - lightweight representation for search
@@ -28,62 +35,55 @@ export interface ToolIndexEntry {
 }
 
 /**
- * Get the storage directory for enabled tools
+ * Sentinel tenant ID used when no explicit tenant is provided. Safe for
+ * stdio (single-user) but never valid in HTTP context.
  */
-function getStorageDir(): string {
-  // Use platform-specific data directory
-  let dataDir: string
+const STDIO_TENANT = "stdio"
+
+/**
+ * Active session store. Defaults to file-backed for stdio; the HTTP
+ * transport should call `setSessionStore(new MemoryToolSessionStore())`
+ * at startup to opt into in-memory, per-tenant isolation.
+ */
+let sessionStore: ToolSessionStore = new FileToolSessionStore()
+
+/**
+ * Replace the session store at runtime. Called by transports during bootstrap.
+ */
+export function setSessionStore(store: ToolSessionStore): void {
+  sessionStore = store
+}
+
+/**
+ * Get the storage directory for the current-session pointer file.
+ * (Stdio-only — used by `setCurrentSessionId` / `getCurrentSessionId`.)
+ */
+function getCurrentSessionDir(): string {
   if (process.platform === "darwin") {
-    dataDir = path.join(os.homedir(), "Library", "Application Support", "snow-code")
-  } else if (process.platform === "win32" && process.env.APPDATA) {
-    dataDir = path.join(process.env.APPDATA, "snow-code")
-  } else {
-    dataDir = path.join(os.homedir(), ".local", "share", "snow-code")
+    return path.join(os.homedir(), "Library", "Application Support", "snow-code")
   }
-
-  // Ensure directory exists
-  const enabledToolsDir = path.join(dataDir, "enabled-tools")
-  if (!fs.existsSync(enabledToolsDir)) {
-    fs.mkdirSync(enabledToolsDir, { recursive: true })
+  if (process.platform === "win32" && process.env.APPDATA) {
+    return path.join(process.env.APPDATA, "snow-code")
   }
-
-  return enabledToolsDir
+  return path.join(os.homedir(), ".local", "share", "snow-code")
 }
 
 /**
- * Get the file path for a session's enabled tools
- */
-function getSessionFilePath(sessionID: string): string {
-  // Sanitize sessionID to be filesystem-safe
-  const safeSessionID = sessionID.replace(/[^a-zA-Z0-9-_]/g, "_")
-  return path.join(getStorageDir(), `enabled-tools-${safeSessionID}.json`)
-}
-
-/**
- * Get the current session ID file path
- * This file is written by snow-code and read by MCP server
+ * Get the current session ID file path (stdio only).
+ * This file is written by snow-code and read by MCP server.
  */
 function getCurrentSessionFilePath(): string {
-  // Use platform-specific data directory
-  let dataDir: string
-  if (process.platform === "darwin") {
-    dataDir = path.join(os.homedir(), "Library", "Application Support", "snow-code")
-  } else if (process.platform === "win32" && process.env.APPDATA) {
-    dataDir = path.join(process.env.APPDATA, "snow-code")
-  } else {
-    dataDir = path.join(os.homedir(), ".local", "share", "snow-code")
-  }
-
+  const dataDir = getCurrentSessionDir()
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true })
   }
-
   return path.join(dataDir, "current-session.json")
 }
 
 /**
- * Get the current session ID from the session file
- * Falls back to environment variable or undefined
+ * STDIO-ONLY: Get the current session ID from env var or session file.
+ * HTTP callers must extract sessionId from the JWT payload — the machine-local
+ * session file has no meaning in a multi-tenant server.
  */
 export function getCurrentSessionId(): string | undefined {
   // First check environment variable
@@ -108,7 +108,7 @@ export function getCurrentSessionId(): string | undefined {
 }
 
 /**
- * Set the current session ID (called by snow-code when session starts)
+ * STDIO-ONLY: Set the current session ID (called by snow-code when session starts).
  */
 export function setCurrentSessionId(sessionId: string): void {
   try {
@@ -128,58 +128,8 @@ export function setCurrentSessionId(sessionId: string): void {
   }
 }
 
-// In-memory cache for enabled tools per session
-const enabledToolsCache = new Map<string, Set<string>>()
-
-// Tool index (lightweight search index)
+// Tool index (lightweight search index) — purely static data, shared across tenants.
 let toolIndex: ToolIndexEntry[] = []
-
-/**
- * Persist enabled tools to storage
- */
-async function persistEnabledTools(sessionID: string, tools: Set<string>): Promise<void> {
-  try {
-    const filePath = getSessionFilePath(sessionID)
-    const data = JSON.stringify(
-      {
-        sessionID,
-        tools: Array.from(tools),
-        updatedAt: new Date().toISOString(),
-      },
-      null,
-      2,
-    )
-    fs.writeFileSync(filePath, data, "utf-8")
-    mcpDebug(`[ToolSearch] Persisted ${tools.size} enabled tools for session ${sessionID}`)
-  } catch (e: any) {
-    mcpDebug(`[ToolSearch] Failed to persist enabled tools: ${e.message}`)
-  }
-}
-
-/**
- * Restore enabled tools from storage
- */
-async function restoreEnabledTools(sessionID: string): Promise<Set<string>> {
-  try {
-    const filePath = getSessionFilePath(sessionID)
-    if (!fs.existsSync(filePath)) {
-      return new Set()
-    }
-
-    const data = JSON.parse(fs.readFileSync(filePath, "utf-8"))
-    if (data.tools && Array.isArray(data.tools)) {
-      const tools = new Set<string>(data.tools)
-      mcpDebug(`[ToolSearch] Restored ${tools.size} enabled tools for session ${sessionID}`)
-      return tools
-    }
-  } catch (e: any) {
-    // File not found or parse error is expected for new sessions
-    if (e.code !== "ENOENT") {
-      mcpDebug(`[ToolSearch] Failed to restore enabled tools: ${e.message}`)
-    }
-  }
-  return new Set()
-}
 
 /**
  * ToolSearch namespace - session-based tool enabling
@@ -276,80 +226,61 @@ export namespace ToolSearch {
   }
 
   /**
-   * Enable a deferred tool for a session
+   * Enable a deferred tool for a (tenant, session).
+   * `tenantId` defaults to the stdio sentinel for backwards-compat; HTTP
+   * callers must always pass the tenant's actual ID.
    */
-  export async function enableTool(sessionID: string, toolID: string): Promise<void> {
-    if (!enabledToolsCache.has(sessionID)) {
-      // Restore from disk if available
-      const restored = await restoreEnabledTools(sessionID)
-      enabledToolsCache.set(sessionID, restored)
-    }
-    enabledToolsCache.get(sessionID)!.add(toolID)
-    // Persist to disk
-    await persistEnabledTools(sessionID, enabledToolsCache.get(sessionID)!)
-    mcpDebug(`[ToolSearch] Enabled tool '${toolID}' for session ${sessionID}`)
+  export async function enableTool(sessionID: string, toolID: string, tenantId: string = STDIO_TENANT): Promise<void> {
+    const current = await sessionStore.getEnabled(tenantId, sessionID)
+    current.add(toolID)
+    await sessionStore.setEnabled(tenantId, sessionID, current)
+    mcpDebug(`[ToolSearch] Enabled tool '${toolID}' for ${tenantId}/${sessionID}`)
   }
 
   /**
-   * Enable multiple deferred tools for a session
+   * Enable multiple deferred tools for a (tenant, session).
    */
-  export async function enableTools(sessionID: string, toolIDs: string[]): Promise<void> {
-    if (!enabledToolsCache.has(sessionID)) {
-      // Restore from disk if available
-      const restored = await restoreEnabledTools(sessionID)
-      enabledToolsCache.set(sessionID, restored)
-    }
-
-    const cache = enabledToolsCache.get(sessionID)!
+  export async function enableTools(
+    sessionID: string,
+    toolIDs: string[],
+    tenantId: string = STDIO_TENANT,
+  ): Promise<void> {
+    const current = await sessionStore.getEnabled(tenantId, sessionID)
     for (const toolID of toolIDs) {
-      cache.add(toolID)
+      current.add(toolID)
     }
-
-    // Persist once after all additions
-    await persistEnabledTools(sessionID, cache)
-    mcpDebug(`[ToolSearch] Enabled ${toolIDs.length} tools for session ${sessionID}`)
+    await sessionStore.setEnabled(tenantId, sessionID, current)
+    mcpDebug(`[ToolSearch] Enabled ${toolIDs.length} tools for ${tenantId}/${sessionID}`)
   }
 
   /**
-   * Check if a deferred tool is enabled for a session
+   * Check if a deferred tool is enabled for a (tenant, session).
    */
-  export async function isToolEnabled(sessionID: string, toolID: string): Promise<boolean> {
-    if (!enabledToolsCache.has(sessionID)) {
-      // Restore from disk if available
-      const restored = await restoreEnabledTools(sessionID)
-      enabledToolsCache.set(sessionID, restored)
-    }
-    return enabledToolsCache.get(sessionID)?.has(toolID) ?? false
+  export async function isToolEnabled(
+    sessionID: string,
+    toolID: string,
+    tenantId: string = STDIO_TENANT,
+  ): Promise<boolean> {
+    const current = await sessionStore.getEnabled(tenantId, sessionID)
+    return current.has(toolID)
   }
 
   /**
-   * Get all enabled tools for a session
+   * Get all enabled tools for a (tenant, session).
    */
-  export async function getEnabledTools(sessionID: string): Promise<Set<string>> {
-    if (!enabledToolsCache.has(sessionID)) {
-      // Restore from disk if available
-      const restored = await restoreEnabledTools(sessionID)
-      enabledToolsCache.set(sessionID, restored)
-    }
-    return enabledToolsCache.get(sessionID) ?? new Set()
+  export async function getEnabledTools(
+    sessionID: string,
+    tenantId: string = STDIO_TENANT,
+  ): Promise<Set<string>> {
+    return sessionStore.getEnabled(tenantId, sessionID)
   }
 
   /**
-   * Clear enabled tools for a session
+   * Clear enabled tools for a (tenant, session).
    */
-  export async function clearSession(sessionID: string): Promise<void> {
-    enabledToolsCache.delete(sessionID)
-
-    // Remove persisted file
-    try {
-      const filePath = getSessionFilePath(sessionID)
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath)
-        mcpDebug(`[ToolSearch] Cleared session ${sessionID}`)
-      }
-    } catch (e: any) {
-      mcpDebug(`[ToolSearch] Failed to clear session file: ${e.message}`)
-    }
+  export async function clearSession(sessionID: string, tenantId: string = STDIO_TENANT): Promise<void> {
+    await sessionStore.clear(tenantId, sessionID)
+    mcpDebug(`[ToolSearch] Cleared ${tenantId}/${sessionID}`)
   }
 
   /**
@@ -396,12 +327,13 @@ export namespace ToolSearch {
   export async function getToolStatus(
     sessionID: string | undefined,
     toolID: string,
+    tenantId: string = STDIO_TENANT,
   ): Promise<"[AVAILABLE]" | "[ENABLED]" | "[DEFERRED]"> {
     const tool = getToolFromIndex(toolID)
     if (!tool) {
       // Unknown tool - treat as deferred (must be enabled via tool_search first)
       if (sessionID) {
-        const enabled = await isToolEnabled(sessionID, toolID)
+        const enabled = await isToolEnabled(sessionID, toolID, tenantId)
         if (enabled) {
           return "[ENABLED]"
         }
@@ -415,7 +347,7 @@ export namespace ToolSearch {
 
     // Tool is deferred - check if enabled for this session
     if (sessionID) {
-      const enabled = await isToolEnabled(sessionID, toolID)
+      const enabled = await isToolEnabled(sessionID, toolID, tenantId)
       if (enabled) {
         return "[ENABLED]"
       }
@@ -427,13 +359,16 @@ export namespace ToolSearch {
   /**
    * Check if a tool can be executed (not deferred OR enabled)
    */
-  export async function canExecuteTool(sessionID: string | undefined, toolID: string): Promise<boolean> {
+  export async function canExecuteTool(
+    sessionID: string | undefined,
+    toolID: string,
+    tenantId: string = STDIO_TENANT,
+  ): Promise<boolean> {
     const tool = getToolFromIndex(toolID)
     if (!tool) {
       // Unknown tool - treat as deferred (must be enabled via tool_search first)
-      // This ensures lazy loading works even if tool index is incomplete
       if (sessionID) {
-        return await isToolEnabled(sessionID, toolID)
+        return await isToolEnabled(sessionID, toolID, tenantId)
       }
       return false
     }
@@ -444,7 +379,7 @@ export namespace ToolSearch {
 
     // Tool is deferred - check if enabled for this session
     if (sessionID) {
-      return await isToolEnabled(sessionID, toolID)
+      return await isToolEnabled(sessionID, toolID, tenantId)
     }
 
     return false // Deferred and no session = cannot execute

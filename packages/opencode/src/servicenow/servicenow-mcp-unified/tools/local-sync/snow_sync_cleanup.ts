@@ -11,6 +11,9 @@ import * as path from "path"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_sync_cleanup",
+  // Stdio-only: deletes a hard-coded `/tmp/snow-flow-artifacts` directory.
+  // In HTTP multi-tenant context that would wipe artifacts of every tenant.
+  transports: ["stdio"],
   description: "Clean up local artifact files after sync with retention policies",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",

@@ -53,7 +53,7 @@ export async function execute(args: Record<string, unknown>, context: ServiceNow
 
   try {
     const client = await getAuthenticatedClient(context)
-    resetEndpointCache(context.instanceUrl)
+    resetEndpointCache(context)
     diagnostics.push("in-memory endpoint cache cleared")
 
     if (hardReset) {

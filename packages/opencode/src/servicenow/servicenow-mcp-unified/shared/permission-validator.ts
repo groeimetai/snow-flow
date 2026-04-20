@@ -2,7 +2,15 @@
  * Permission Validation for Stakeholder Read-Only Enforcement
  *
  * Validates that users have permission to execute tools based on their role.
- * Permission enforcement
+ *
+ * Multi-tenant safety note (PR-6a):
+ *   - `extractJWTPayload` reads process env vars and the stdio-local
+ *     auth.json. It is SAFE TO CALL ONLY from stdio transport context.
+ *     HTTP transport callers MUST populate `RequestContext.jwtPayload`
+ *     via their own signed-JWT verifier (PR-6b) and NEVER call this helper.
+ *   - The earlier module-level `cachedAuthRole` (60s TTL) has been removed
+ *     because it could leak a role value across stdio sessions of different
+ *     users (audit finding 1.3). Every call now reads `auth.json` fresh.
  */
 
 import { MCPToolDefinition, JWTPayload, UserRole, ToolPermission } from "./types.js"
@@ -12,20 +20,12 @@ import * as path from "path"
 import * as os from "os"
 import { mcpDebug } from "../../shared/mcp-debug.js"
 
-// Cache for auth.json role to avoid repeated file reads
-let cachedAuthRole: UserRole | null = null
-let cacheTimestamp: number = 0
-const CACHE_TTL_MS = 60000 // 1 minute cache
-
 /**
- * Load user role from auth.json enterprise section
+ * STDIO-ONLY: Load user role from auth.json enterprise section.
+ * Reads disk on every call (no memoization) because any role caching at
+ * process scope is a cross-session leak in multi-tenant contexts.
  */
 function loadRoleFromAuthJson(): UserRole | null {
-  // Check cache first
-  if (cachedAuthRole && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
-    return cachedAuthRole
-  }
-
   const authPaths = [
     path.join(os.homedir(), ".local", "share", "snow-code", "auth.json"),
     path.join(os.homedir(), ".snow-flow", "auth.json"),
@@ -42,9 +42,7 @@ function loadRoleFromAuthJson(): UserRole | null {
         const role = authData.enterprise.role
         if (["developer", "stakeholder", "admin"].includes(role)) {
           mcpDebug(`[Permission] 🔑 Loaded role '${role}' from ${authPath}`)
-          cachedAuthRole = role as UserRole
-          cacheTimestamp = Date.now()
-          return cachedAuthRole
+          return role as UserRole
         }
       }
     } catch (error) {
@@ -56,10 +54,22 @@ function loadRoleFromAuthJson(): UserRole | null {
 }
 
 /**
- * Extract JWT payload from MCP connection headers
- * Priority: 1. Env var, 2. Headers, 3. auth.json, 4. Default developer
+ * STDIO-ONLY: Extract a JWT payload from machine-local sources.
+ * Priority: 1. `SNOW_FLOW_USER_ROLE` env var, 2. auth.json enterprise role,
+ * 3. Default "developer".
+ *
+ * Never call this from an HTTP request handler — the env var and auth.json
+ * are machine-wide state and would leak across tenants.
+ *
+ * The pre-PR-6a `x-snow-flow-auth` base64 header path was removed: it parsed
+ * an unverified JSON payload and was a spoof vector if it ever reached the
+ * HTTP code path. HTTP callers MUST populate `RequestContext.jwtPayload`
+ * via a real signed-JWT verifier (PR-6b `shared/context-resolver.ts`).
+ *
+ * The `headers` parameter is retained as a reserved slot for a future
+ * signed-token parser but is currently ignored.
  */
-export function extractJWTPayload(headers?: Record<string, string>): JWTPayload | null {
+export function extractJWTPayload(_headers?: Record<string, string>): JWTPayload | null {
   // Priority 1: Check environment variable (explicit override)
   const devRole = process.env.SNOW_FLOW_USER_ROLE as UserRole | undefined
 
@@ -76,18 +86,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
     }
   }
 
-  // Priority 2: Extract from headers (enterprise MCP proxy)
-  if (headers && headers["x-snow-flow-auth"]) {
-    try {
-      const payload = JSON.parse(Buffer.from(headers["x-snow-flow-auth"], "base64").toString())
-      mcpDebug(`[Permission] Using role from header: ${payload.role}`)
-      return payload as JWTPayload
-    } catch (error) {
-      mcpDebug("[Permission] Failed to parse JWT from headers:", error)
-    }
-  }
-
-  // Priority 3: Load from auth.json (snow-code stored role)
+  // Priority 2: Load from auth.json (snow-code stored role)
   const authJsonRole = loadRoleFromAuthJson()
   if (authJsonRole) {
     return {
@@ -101,7 +100,7 @@ export function extractJWTPayload(headers?: Record<string, string>): JWTPayload 
     }
   }
 
-  // Priority 4: Default to developer for backward compatibility
+  // Priority 3: Default to developer for backward compatibility
   mcpDebug("[Permission] No role found, defaulting to developer")
   return {
     customerId: 0,
