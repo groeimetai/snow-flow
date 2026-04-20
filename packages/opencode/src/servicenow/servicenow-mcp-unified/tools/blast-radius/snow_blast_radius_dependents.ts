@@ -1,17 +1,18 @@
 /**
- * snow_blast_radius_reverse_dependencies - Find what depends on an artifact
+ * snow_blast_radius_dependents - Find every artifact that uses a given one
  *
- * Reverse dependency analysis using a 3-phase deep search:
+ * The go-to "what will break if I touch this?" tool. Uses a 3-phase deep
+ * search so it never silently misses a caller:
  *   1. Curated catalog (25+ artifact types from ARTIFACT_SPECS)
  *   2. sys_dictionary discovery (every table with script-type fields)
  *   3. Long-tail batch search (concurrency-limited)
  *
- * Covers the common-case tool-use: "I'm about to refactor / remove this
- * script_include — what else will break?" Looks in business rules, client
- * scripts, UI actions + policies, script includes, workflows, flow actions,
- * email notifications, catalog client scripts, scheduled jobs, transform
- * scripts, processors, ACLs, assessment metrics, and any custom script-
- * bearing table the customer added (discovered dynamically).
+ * Looks in business rules, client scripts, UI actions + policies, script
+ * includes, workflows, flow actions, email notifications, inbound email
+ * actions, catalog client scripts / UI policies, scheduled jobs, fix
+ * scripts, transform scripts, processors, ACLs, metric definitions, ATF
+ * steps, and any custom script-bearing table the customer has added
+ * (discovered dynamically via sys_dictionary).
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
@@ -21,35 +22,58 @@ import { ARTIFACT_TABLE_MAP } from "./shared/metadata-tables.js"
 import { searchDependents, type SearchPattern } from "./shared/deep-search.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_blast_radius_reverse_dependencies",
-  description: `Find what depends on a given artifact (reverse dependency analysis).
+  name: "snow_blast_radius_dependents",
+  description: `Find every artifact on the instance that USES / CALLS / DEPENDS ON a given artifact. Answers: "what breaks if I change or delete this?"
 
-📋 USE THIS TO:
-- Find all artifacts that call a script include
-- See what references a specific business rule, UI action, or widget
-- Assess the blast radius of changing or removing an artifact
-- Identify cross-scope dependencies
+🛑 CALL THIS BEFORE:
+- Deleting a script include, business rule, client script, UI action, UI policy, or widget
+- Refactoring the name / api_name / signature of any script include
+- Removing a table
+- Promoting a breaking change to another instance
+- Telling the user "it's safe to remove X"
 
-🔍 EXAMPLE: "What calls the IncidentUtils script include?"
+The output is the impact list — every caller, every referrer, in every
+scope. Do not rely on reading 5 tables by hand; this tool scans 100+
+tables including workflows, notifications, email actions, catalog
+scripts, scheduled jobs, and custom scripted tables.
+
+🔍 TRIGGER PHRASES (agent should invoke this):
+- "what uses X" / "what calls X" / "what references X"
+- "wat gebruikt X" / "wat roept X aan" / "wat heeft X nodig"
+- "can I delete X" / "is it safe to remove X" / "kan ik X verwijderen"
+- "impact analysis" / "blast radius" / "dependency audit"
+- User asks to refactor, rename, or remove a named artifact
+
+🔍 EXAMPLES:
+- "What calls the IncidentUtils script include?"
+- "Is it safe to delete this business rule?"
+- "Show me everything referencing the incident table"
 
 📊 RETURNS:
-- List of dependents with type, name, scope, and — importantly — the
-  source table + field where the reference was found (so you can
-  distinguish a business-rule hit from a workflow hit or a custom
-  scripted table hit).
-- Search stats showing how many tables were scanned across three phases.
+- dependents[]: each with type, name, scope, source_table, source_field,
+  cross_scope flag. source_table/source_field let you distinguish a
+  workflow-condition hit from a business-rule hit — critical for triage.
+- summary: by_type + by_table counts + cross_scope count + truncation flag.
+- search_stats: per-phase timing + tables scanned + cache hit, so you
+  know the scan was thorough (expect 100+ tables on a typical instance).
 
-🔎 HOW IT SEARCHES:
-- Phase 1: 25+ curated artifact types (business rules, workflows,
-  email notifications, catalog scripts, transform scripts, processors,
-  ACLs, metric definitions, inbound email actions, …)
-- Phase 2: sys_dictionary discovery → every table with script-type fields
+🔎 HOW IT SEARCHES (why you can trust the "none found"):
+- Phase 1: 25+ curated artifact types (human-attributed labels)
+- Phase 2: sys_dictionary discovery — every table with script-type fields
 - Phase 3: concurrency-limited batch query over the long tail
-
-This is deep-only by design. A typical run covers 100+ tables.`,
+Deep-only by design. Takes 2-10s depending on instance size.`,
   category: "blast-radius",
   subcategory: "dependency-analysis",
-  use_cases: ["impact-analysis", "dependency-audit", "refactoring"],
+  use_cases: [
+    "impact-analysis",
+    "dependency-audit",
+    "refactoring",
+    "safe-delete-check",
+    "find-callers",
+    "find-references",
+    "breaking-change-review",
+    "blast-radius",
+  ],
   complexity: "advanced",
   frequency: "medium",
   permission: "read",

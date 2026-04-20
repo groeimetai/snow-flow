@@ -12,7 +12,7 @@ tools:
   - snow_blast_radius_table_configs
   - snow_blast_radius_artifact_dependencies
   - snow_blast_radius_field_references
-  - snow_blast_radius_reverse_dependencies
+  - snow_blast_radius_dependents
   - snow_code_search
 ---
 
@@ -28,7 +28,7 @@ Blast Radius provides configuration dependency analysis across a ServiceNow inst
 | `snow_blast_radius_table_configs` | All configs on a table | "What runs on the incident table?" |
 | `snow_blast_radius_field_references` | Reverse field lookup | "What touches incident.assignment_group?" |
 | `snow_blast_radius_artifact_dependencies` | Forward dependency analysis | "What does this business rule read/write?" |
-| `snow_blast_radius_reverse_dependencies` | Reverse artifact lookup | "What calls the IncidentUtils script include?" |
+| `snow_blast_radius_dependents` | Find what uses / calls an artifact (deep 3-phase scan, 100+ tables) | "What calls IncidentUtils?" / "Can I safely delete this business rule?" |
 | `snow_code_search` | Substring search across every script-bearing table (business rules, script includes, client scripts, widgets, scripted REST ops, UI actions, ACLs, notifications, UX scripts, …) | "Where is `IncidentUtils.resolve` referenced anywhere?" — use when reverse-dependency tools don't index what you need |
 
 ## Coverage
@@ -138,7 +138,7 @@ Returns fields read/written, tables queried, script includes called, and a compl
 Find what depends on a specific artifact (e.g., a script include):
 
 ```
-→ snow_blast_radius_reverse_dependencies(artifact_type: "script_include", artifact_identifier: "IncidentUtils")
+→ snow_blast_radius_dependents(artifact_type: "script_include", artifact_identifier: "IncidentUtils")
 ```
 
 ## Common Questions and Which Tool to Use
@@ -149,10 +149,10 @@ Find what depends on a specific artifact (e.g., a script include):
 | "What business rules run on incident?" | `snow_blast_radius_table_configs` |
 | "What touches the state field on change_request?" | `snow_blast_radius_field_references` |
 | "What does this business rule do?" | `snow_blast_radius_artifact_dependencies` |
-| "What uses the TaskUtils script include?" | `snow_blast_radius_reverse_dependencies` |
+| "What uses the TaskUtils script include?" | `snow_blast_radius_dependents` |
 | "Is it safe to remove this field?" | `snow_blast_radius_field_references` |
 | "How complex is this business rule?" | `snow_blast_radius_artifact_dependencies` |
-| "What's the blast radius of changing this script include?" | `snow_blast_radius_reverse_dependencies` |
+| "What's the blast radius of changing this script include?" | `snow_blast_radius_dependents` |
 
 ## Script Analysis Patterns
 

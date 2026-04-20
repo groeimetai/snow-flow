@@ -15,6 +15,6 @@ export {
   execute as snow_blast_radius_field_references_exec,
 } from "./snow_blast_radius_field_references.js"
 export {
-  toolDefinition as snow_blast_radius_reverse_dependencies_def,
-  execute as snow_blast_radius_reverse_dependencies_exec,
-} from "./snow_blast_radius_reverse_dependencies.js"
+  toolDefinition as snow_blast_radius_dependents_def,
+  execute as snow_blast_radius_dependents_exec,
+} from "./snow_blast_radius_dependents.js"

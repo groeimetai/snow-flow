@@ -180,6 +180,10 @@ Users want production-ready code. Real ServiceNow queries, real error handling, 
 
 Never assume a table doesn't exist because it isn't "standard". Never declare a configuration broken without testing. Never claim an API isn't available without checking. Verify, then act.
 
+### 5. Deleting / refactoring without a blast-radius check
+
+Before you delete, rename, or change the signature of a script include, business rule, client script, UI action, UI policy, widget, or table, run `snow_blast_radius_dependents` on it first. The tool scans 100+ tables — workflows, email notifications, catalog scripts, scheduled jobs, custom scripted tables — and returns everything that calls/references the artifact with source table + field. Never tell the user "it's safe to remove X" without that scan.
+
 ---
 
 ## 🎓 FINAL CHECKLIST
