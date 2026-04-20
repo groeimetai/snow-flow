@@ -53,10 +53,10 @@ tool_search({ query: "...", enable: true })
 
 You do **NOT** call `activity_start`, `activity_update`, `activity_add_artifact`, or `activity_complete` manually. The harness watches tool calls and reports them for you:
 
-- Pick up a Jira/Azure DevOps issue (`jira_get_next_todo`, `jira_get_issue`, `azure_get_work_item`, …) → story is buffered.
-- Create or switch an Update Set via `snow_update_set_manage` → activity starts automatically, linked to that story if one was buffered.
-- Any `snow_create_*`, `snow_deploy_*`, `snow_update_*`, or `snow_edit_*` that returns a `sys_id` → artifact is attached automatically.
-- `snow_update_set_manage action=complete` → activity is completed automatically.
+- Pick up an issue from Jira / Azure DevOps via the relevant integration tool → story is buffered.
+- Create or switch an Update Set → activity starts automatically, linked to the buffered story if any.
+- Any successful create / deploy / update / edit of a ServiceNow artifact that returns a `sys_id` → artifact is attached automatically.
+- Complete an Update Set → activity is completed automatically.
 
 If the user wants an ad-hoc activity without a ticket, just create the Update Set and start working — the activity starts with `source: "manual"`.
 
@@ -135,7 +135,7 @@ ServiceNow server-side JavaScript runs on Mozilla Rhino, which only supports ES5
 ### Standard development (widgets, business rules, scoped apps, etc.)
 
 1. Decide application scope (scoped app `x_vendor_appname` or global) — see `Skill({ skill: "scoped-apps" })`
-2. Create Update Set via `snow_update_set_manage` (activity tracking starts automatically)
+2. Create an Update Set (activity tracking starts automatically)
 3. Develop the artifact(s) — load the relevant skill (`widget-coherence`, `business-rule-patterns`, `flow-designer`, etc.)
 4. Test and verify
 5. Complete the Update Set (activity is closed automatically)
@@ -180,9 +180,9 @@ Users want production-ready code. Real ServiceNow queries, real error handling, 
 
 Never assume a table doesn't exist because it isn't "standard". Never declare a configuration broken without testing. Never claim an API isn't available without checking. Verify, then act.
 
-### 5. Deleting / refactoring without a blast-radius check
+### 5. Deleting / refactoring without an impact scan
 
-Before you delete, rename, or change the signature of a script include, business rule, client script, UI action, UI policy, widget, or table, run `snow_blast_radius_dependents` on it first. The tool scans 100+ tables — workflows, email notifications, catalog scripts, scheduled jobs, custom scripted tables — and returns everything that calls/references the artifact with source table + field. Never tell the user "it's safe to remove X" without that scan.
+Before you delete, rename, or change the signature of an artifact (script include, business rule, client script, UI action, UI policy, widget, table, etc.), run a dependency / blast-radius scan on it. The instance has dozens of places where references can hide — workflows, email notifications, catalog scripts, scheduled jobs, custom scripted tables — and reading five tables by hand will silently miss most of them. Discover the right tool via `tool_search`; never tell the user "it's safe to remove X" without seeing the full impact list.
 
 ---
 
