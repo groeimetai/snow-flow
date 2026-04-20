@@ -49,12 +49,22 @@ export interface HttpResolverOptions {
  * Build a `ContextResolver` that forwards each inbound request to
  * `opts.url`. The returned function is the exact type `createHttpApp`
  * expects for its `resolveContext` dependency.
+ *
+ * HTTP headers live on `extra.requestInfo.headers` — the MCP SDK's
+ * web-standard streamable HTTP transport copies them off the Fetch API
+ * Request there before invoking the handler. The JSON-RPC `request`
+ * param carries only the protocol message body and never HTTP metadata,
+ * so we have to consult `extra` (and only fall back to `request.headers`
+ * to stay compatible with older call sites that pass headers inline).
  */
 export const createHttpResolver = (opts: HttpResolverOptions): ContextResolver => {
   const timeoutMs = opts.timeoutMs ?? 5000
 
-  return async (request: any) => {
-    const headers = (request as any)?.headers ?? {}
+  return async (request: any, extra?: any) => {
+    // Headers are always lowercased by the SDK (Fetch API Headers iterator),
+    // but keep the Authorization/AUTHORIZATION fallbacks to tolerate callers
+    // that build `extra` by hand in tests.
+    const headers = extra?.requestInfo?.headers ?? (request as any)?.headers ?? {}
     // Forward the caller's Bearer token verbatim — the resolver endpoint
     // is the thing that knows how to verify it.
     const authorization =

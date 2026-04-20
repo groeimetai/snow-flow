@@ -48,7 +48,10 @@ export const startStdio = async (): Promise<StdioHandle> => {
   // after the server is already created.
   let context: ServiceNowContext = loadContext()
 
-  const resolveContext = async (request: any): Promise<RequestContext> => {
+  const resolveContext = async (request: any, _extra?: any): Promise<RequestContext> => {
+    // stdio has no HTTP headers; `request.headers` is undefined here. We keep
+    // the lookup for symmetry with the HTTP resolver and because some test
+    // harnesses pass a hand-crafted request with inline headers.
     const headers = (request as any)?.headers
     const jwtPayload = extractJWTPayload(headers)
     const sessionId =

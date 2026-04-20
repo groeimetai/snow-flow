@@ -17,7 +17,7 @@ import { mcpDebug } from "../../shared/mcp-debug.js"
 import { formatArgsForLogging, isRetryableOperation } from "../shared/handler-helpers.js"
 import { HandlerDeps } from "./types.js"
 
-export const callTool = (deps: HandlerDeps) => async (request: any) => {
+export const callTool = (deps: HandlerDeps) => async (request: any, extra?: any) => {
   const { name, arguments: args } = request.params
 
   // Enhanced logging: show tool name AND key parameters
@@ -27,7 +27,7 @@ export const callTool = (deps: HandlerDeps) => async (request: any) => {
     mcpDebug(`[Server]   Parameters: ${logArgs}`)
   }
 
-  const ctx = await deps.resolveContext(request)
+  const ctx = await deps.resolveContext(request, extra)
   // Fail fast if an HTTP resolver forgets to set tenantId — see list-tools.ts.
   if (ctx.origin === "http" && !ctx.serviceNow.tenantId) {
     throw new Error(
