@@ -1,14 +1,24 @@
 /**
  * snow_blast_radius_reverse_dependencies - Find what depends on an artifact
  *
- * Reverse dependency analysis: for a given artifact (e.g., a script include),
- * find all other artifacts that call or reference it.
+ * Reverse dependency analysis using a 3-phase deep search:
+ *   1. Curated catalog (25+ artifact types from ARTIFACT_SPECS)
+ *   2. sys_dictionary discovery (every table with script-type fields)
+ *   3. Long-tail batch search (concurrency-limited)
+ *
+ * Covers the common-case tool-use: "I'm about to refactor / remove this
+ * script_include — what else will break?" Looks in business rules, client
+ * scripts, UI actions + policies, script includes, workflows, flow actions,
+ * email notifications, catalog client scripts, scheduled jobs, transform
+ * scripts, processors, ACLs, assessment metrics, and any custom script-
+ * bearing table the customer added (discovered dynamically).
  */
 
 import { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 import { ARTIFACT_TABLE_MAP } from "./shared/metadata-tables.js"
+import { searchDependents, type SearchPattern } from "./shared/deep-search.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_blast_radius_reverse_dependencies",
@@ -16,16 +26,27 @@ export const toolDefinition: MCPToolDefinition = {
 
 📋 USE THIS TO:
 - Find all artifacts that call a script include
-- See what references a specific business rule or UI action
+- See what references a specific business rule, UI action, or widget
 - Assess the blast radius of changing or removing an artifact
 - Identify cross-scope dependencies
 
 🔍 EXAMPLE: "What calls the IncidentUtils script include?"
 
 📊 RETURNS:
-- List of dependent artifacts with type, table, and scope
-- Cross-scope dependency detection
-- Impact warning for widely-used artifacts`,
+- List of dependents with type, name, scope, and — importantly — the
+  source table + field where the reference was found (so you can
+  distinguish a business-rule hit from a workflow hit or a custom
+  scripted table hit).
+- Search stats showing how many tables were scanned across three phases.
+
+🔎 HOW IT SEARCHES:
+- Phase 1: 25+ curated artifact types (business rules, workflows,
+  email notifications, catalog scripts, transform scripts, processors,
+  ACLs, metric definitions, inbound email actions, …)
+- Phase 2: sys_dictionary discovery → every table with script-type fields
+- Phase 3: concurrency-limited batch query over the long tail
+
+This is deep-only by design. A typical run covers 100+ tables.`,
   category: "blast-radius",
   subcategory: "dependency-analysis",
   use_cases: ["impact-analysis", "dependency-audit", "refactoring"],
@@ -53,60 +74,27 @@ export const toolDefinition: MCPToolDefinition = {
       },
       limit: {
         type: "number",
-        description: "Maximum number of dependents to return (default: 50)",
-        default: 50,
+        description: "Maximum number of dependents to return (default: 100)",
+        default: 100,
+      },
+      phase3_concurrency: {
+        type: "number",
+        description:
+          "Parallel REST requests during Phase-3 long-tail search. Default 10. Raise on beefy instances.",
+        default: 10,
       },
     },
     required: ["artifact_type", "artifact_identifier"],
   },
 }
 
-interface SearchTarget {
-  type: string
-  table: string
-  scriptField: string
-  fields: string
-}
-
-const SEARCH_TARGETS: SearchTarget[] = [
-  {
-    type: "business_rule",
-    table: "sys_script",
-    scriptField: "script",
-    fields: "sys_id,name,collection,active,sys_scope",
-  },
-  {
-    type: "client_script",
-    table: "sys_script_client",
-    scriptField: "script",
-    fields: "sys_id,name,table,active,sys_scope",
-  },
-  {
-    type: "ui_action",
-    table: "sys_ui_action",
-    scriptField: "script",
-    fields: "sys_id,name,table,active,sys_scope",
-  },
-  {
-    type: "script_include",
-    table: "sys_script_include",
-    scriptField: "script",
-    fields: "sys_id,name,api_name,active,sys_scope",
-  },
-  {
-    type: "ui_policy",
-    table: "sys_ui_policy",
-    scriptField: "script_true",
-    fields: "sys_id,short_description,table,active,sys_scope",
-  },
-]
-
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
     artifact_type,
     artifact_identifier,
     search_scope = "all",
-    limit = 50,
+    limit = 100,
+    phase3_concurrency = 10,
   } = args
 
   if (!artifact_type || !artifact_identifier) {
@@ -116,22 +104,21 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   try {
     const client = await getAuthenticatedClient(context)
 
-    // Step 1: Resolve the artifact to get its identifiers
+    // Step 1: Resolve the artifact to get canonical name + scope + patterns.
     let artifactName: string = artifact_identifier
     let artifactScope: string | null = null
-    let searchPatterns: string[] = []
+    let artifactSysId: string | undefined
+    let patterns: SearchPattern[] = []
 
     if (artifact_type === "table") {
-      // For tables, search for GlideRecord references
-      searchPatterns = [
-        `GlideRecord('${artifact_identifier}')`,
-        `GlideRecord("${artifact_identifier}")`,
-        `GlideAggregate('${artifact_identifier}')`,
-        `GlideAggregate("${artifact_identifier}")`,
+      patterns = [
+        { like: `GlideRecord('${artifact_identifier}')` },
+        { like: `GlideRecord("${artifact_identifier}")` },
+        { like: `GlideAggregate('${artifact_identifier}')` },
+        { like: `GlideAggregate("${artifact_identifier}")` },
       ]
       artifactName = artifact_identifier
     } else if (artifact_type === "script_include") {
-      // Try to resolve script include by name or sys_id
       try {
         const isGuid = /^[a-f0-9]{32}$/.test(artifact_identifier)
         const siQuery = isGuid
@@ -149,22 +136,34 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         const si = siResponse.data.result?.[0]
         if (si) {
           artifactName = si.name
-          artifactScope = si.sys_scope?.value || si.sys_scope
-          searchPatterns = [
-            `new ${si.name}(`,
-            si.name,
-          ]
+          artifactScope = si.sys_scope?.value || si.sys_scope || null
+          artifactSysId = si.sys_id
+          patterns.push({ like: `new ${si.name}(` })
+          // Bare name match needs a word-boundary confirm to avoid hits
+          // inside unrelated identifiers ("ScooterUtilities" containing "Util").
+          patterns.push({
+            like: si.name,
+            confirm: new RegExp(`\\b${escapeRegex(si.name)}\\b`),
+          })
           if (si.api_name && si.api_name !== si.name) {
-            searchPatterns.push(si.api_name)
+            patterns.push({
+              like: si.api_name,
+              confirm: new RegExp(`\\b${escapeRegex(si.api_name)}\\b`),
+            })
           }
         } else {
-          searchPatterns = [`new ${artifact_identifier}(`, artifact_identifier]
+          patterns.push({ like: `new ${artifact_identifier}(` })
+          patterns.push({
+            like: artifact_identifier,
+            confirm: new RegExp(`\\b${escapeRegex(artifact_identifier)}\\b`),
+          })
         }
       } catch {
-        searchPatterns = [`new ${artifact_identifier}(`, artifact_identifier]
+        patterns.push({ like: `new ${artifact_identifier}(` })
+        patterns.push({ like: artifact_identifier })
       }
     } else {
-      // For other artifact types, resolve by sys_id
+      // business_rule | client_script | ui_action | widget — resolve by sys_id
       const mapping = ARTIFACT_TABLE_MAP[artifact_type]
       if (mapping) {
         try {
@@ -172,103 +171,54 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           const art = artResponse.data.result
           if (art) {
             artifactName = art.name || art.short_description || artifact_identifier
-            artifactScope = art.sys_scope?.value || art.sys_scope
-            searchPatterns = [artifactName]
+            artifactScope = art.sys_scope?.value || art.sys_scope || null
+            artifactSysId = art.sys_id
+            patterns.push({
+              like: artifactName,
+              confirm: new RegExp(`\\b${escapeRegex(artifactName)}\\b`),
+            })
           }
         } catch {
-          searchPatterns = [artifact_identifier]
+          patterns.push({ like: artifact_identifier })
         }
       } else {
-        searchPatterns = [artifact_identifier]
+        patterns.push({ like: artifact_identifier })
       }
     }
 
-    if (searchPatterns.length === 0) {
+    if (patterns.length === 0) {
       return createErrorResult("Could not determine search patterns for the artifact")
     }
 
-    // Step 2: Search across all metadata tables for references
-    const perTypeLimit = Math.ceil(limit / SEARCH_TARGETS.length)
-
-    const searchPromises = SEARCH_TARGETS.map(async (target) => {
-      // Build LIKE query for all patterns
-      const likeConditions = searchPatterns
-        .map((p) => `${target.scriptField}LIKE${p}`)
-        .join("^OR")
-
-      const queryParts = [likeConditions]
-
-      // Scope filter
-      if (search_scope === "same_app" && artifactScope) {
-        queryParts.push(`sys_scope=${artifactScope}`)
-      }
-
-      try {
-        const response = await client.get(`/api/now/table/${target.table}`, {
-          params: {
-            sysparm_query: queryParts.join("^"),
-            sysparm_fields: target.fields,
-            sysparm_limit: perTypeLimit,
-            sysparm_count: "true",
-          },
-        })
-
-        const records = response.data.result || []
-        const totalCount = parseInt(response.headers["x-total-count"] || String(records.length), 10)
-
-        // Map to dependent format
-        const dependents = records.map((record: any) => {
-          const recordScope = record.sys_scope?.value || record.sys_scope
-          return {
-            sys_id: record.sys_id,
-            name: record.name || record.short_description || "Unknown",
-            type: target.type,
-            table: record.collection || record.table || null,
-            scope: recordScope,
-            cross_scope: artifactScope ? recordScope !== artifactScope : false,
-          }
-        })
-
-        // Filter out self-references
-        return {
-          type: target.type,
-          dependents: dependents.filter((d: any) => d.sys_id !== artifact_identifier),
-          total_count: totalCount,
-        }
-      } catch (error: any) {
-        return {
-          type: target.type,
-          dependents: [],
-          total_count: 0,
-          error: error.message,
-        }
-      }
+    // Step 2: Deep search via 3-phase engine.
+    const cacheKey = context.sessionId || context.instanceUrl || "default"
+    const { dependents, stats } = await searchDependents(client, cacheKey, {
+      patterns,
+      limit,
+      scopeFilterSysId: search_scope === "same_app" && artifactScope ? artifactScope : undefined,
+      selfSysId: artifactSysId,
+      phase3Concurrency: Math.max(1, Math.min(phase3_concurrency, 25)),
     })
 
-    const results = await Promise.allSettled(searchPromises)
-
-    // Step 3: Aggregate results
-    const allDependents: any[] = []
+    // Step 3: Aggregate summary.
     const byType: Record<string, number> = {}
+    const byTable: Record<string, number> = {}
     let crossScopeCount = 0
-
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        const { type, dependents } = result.value
-        allDependents.push(...dependents)
-        byType[type] = dependents.length
-
-        for (const dep of dependents) {
-          if (dep.cross_scope) crossScopeCount++
-        }
-      }
+    for (const dep of dependents) {
+      byType[dep.type] = (byType[dep.type] || 0) + 1
+      byTable[dep.source_table] = (byTable[dep.source_table] || 0) + 1
+      if (dep.cross_scope) crossScopeCount += 1
     }
 
-    const impactWarning = allDependents.length > 20
-      ? `This artifact has ${allDependents.length} dependents. Modifying it requires careful testing across ${crossScopeCount > 0 ? `${crossScopeCount} cross-scope references and ` : ""}all dependent artifacts.`
-      : crossScopeCount > 0
-        ? `This artifact has ${crossScopeCount} cross-scope dependent${crossScopeCount === 1 ? "" : "s"}. Changes may affect other application scopes.`
-        : null
+    const impactWarning =
+      dependents.length > 20
+        ? `This artifact has ${dependents.length}${stats.truncated ? "+" : ""} dependents. Modifying it requires careful testing${crossScopeCount > 0 ? ` across ${crossScopeCount} cross-scope references and ` : ", "}all dependent artifacts.`
+        : crossScopeCount > 0
+          ? `This artifact has ${crossScopeCount} cross-scope dependent${crossScopeCount === 1 ? "" : "s"}. Changes may affect other application scopes.`
+          : null
+
+    const totalTablesScanned =
+      stats.phase_1.tables + stats.phase_3.tables
 
     const resultData = {
       artifact: {
@@ -277,22 +227,43 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         identifier: artifact_identifier,
         scope: artifactScope,
       },
-      dependents: allDependents,
+      dependents,
       summary: {
-        total_dependents: allDependents.length,
+        total_dependents: dependents.length,
         by_type: byType,
+        by_table: byTable,
         cross_scope_count: crossScopeCount,
+        tables_scanned: totalTablesScanned,
+        truncated: stats.truncated,
       },
+      search_stats: stats,
       impact_warning: impactWarning,
     }
 
-    const summary = `"${artifactName}" (${artifact_type}) has ${allDependents.length} dependent${allDependents.length === 1 ? "" : "s"}${crossScopeCount > 0 ? ` (${crossScopeCount} cross-scope)` : ""}.${impactWarning ? " ⚠️" : ""}`
+    const humanSummary = [
+      `"${artifactName}" (${artifact_type}) has ${dependents.length}${stats.truncated ? "+" : ""} dependent${dependents.length === 1 ? "" : "s"}`,
+      crossScopeCount > 0 ? ` (${crossScopeCount} cross-scope)` : "",
+      `. Searched ${totalTablesScanned} table${totalTablesScanned === 1 ? "" : "s"} in ${(stats.total_duration_ms / 1000).toFixed(1)}s`,
+      impactWarning ? ". ⚠️" : "",
+    ].join("")
 
-    return createSuccessResult(resultData, { apiCalls: SEARCH_TARGETS.length + 1 }, summary)
+    return createSuccessResult(
+      resultData,
+      {
+        apiCalls:
+          stats.phase_1.tables + stats.phase_3.tables + (stats.phase_2.cached ? 0 : 1) + 1,
+        durationMs: stats.total_duration_ms,
+      },
+      humanSummary,
+    )
   } catch (error: any) {
     return createErrorResult(error.message)
   }
 }
 
-export const version = "1.0.0"
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
+
+export const version = "2.0.0"
 export const author = "Snow-Flow Blast Radius"
