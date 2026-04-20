@@ -15,7 +15,7 @@
  *   SERVICENOW_REFRESH_TOKEN - OAuth refresh token (optional, will be cached)
  */
 
-import { ServiceNowUnifiedServer } from "./server.js"
+import { startStdio } from "./transports/stdio.js"
 import * as dotenv from "dotenv"
 import * as path from "path"
 import { mcpDebug } from "../shared/mcp-debug.js"
@@ -75,25 +75,19 @@ async function main() {
       mcpDebug(`[Main] SNOW_TOOL_DOMAINS=${process.env.SNOW_TOOL_DOMAINS}`)
     }
 
-    // Create server instance
-    const server = new ServiceNowUnifiedServer()
-
-    // Initialize (discover tools, validate auth)
-    await server.initialize()
-
-    // Start server with stdio transport
-    await server.start()
+    // Bootstrap + connect stdio transport
+    const { stop } = await startStdio()
 
     // Graceful shutdown handlers
     process.on("SIGINT", async () => {
       mcpDebug("\n[Main] Received SIGINT, shutting down gracefully...")
-      await server.stop()
+      await stop()
       process.exit(0)
     })
 
     process.on("SIGTERM", async () => {
       mcpDebug("\n[Main] Received SIGTERM, shutting down gracefully...")
-      await server.stop()
+      await stop()
       process.exit(0)
     })
   } catch (error: any) {

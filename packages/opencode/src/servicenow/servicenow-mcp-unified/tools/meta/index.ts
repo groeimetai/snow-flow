@@ -80,6 +80,9 @@ export async function tool_search_exec(
   const limit = args.limit || 10
   const enableTools = args.enable !== false // Default to true
   const sessionId = context.sessionId
+  // Tenant-scope every ToolSearch call so two HTTP tenants with the same
+  // session ID cannot enable each other's tools. Stdio fallback is "stdio".
+  const tenantId = context.tenantId ?? "stdio"
 
   // Use ToolSearch.search() for consistent behavior with snow-flow
   // This searches the tool index populated at server startup
@@ -135,7 +138,7 @@ export async function tool_search_exec(
     // Enable and format fallback results
     if (enableTools && sessionId) {
       const toolNames = fallbackResults.map((r) => r.tool.name)
-      await ToolSearch.enableTools(sessionId, toolNames)
+      await ToolSearch.enableTools(sessionId, toolNames, tenantId)
       console.error(`[tool_search] Enabled ${toolNames.length} tools for session ${sessionId}`)
     }
 
@@ -179,7 +182,7 @@ export async function tool_search_exec(
   // Enable found tools for this session if requested and sessionId is available
   if (enableTools && sessionId) {
     const toolIDs = searchResults.map((t) => t.id)
-    await ToolSearch.enableTools(sessionId, toolIDs)
+    await ToolSearch.enableTools(sessionId, toolIDs, tenantId)
     console.error(`[tool_search] Enabled ${toolIDs.length} tools for session ${sessionId}`)
   }
 
@@ -272,6 +275,8 @@ export async function tool_execute_exec(
   const toolName = args.tool
   const toolArgs = args.args || {}
   const sessionId = context.sessionId
+  // See tool_search_exec — tenantId scopes every ToolSessionStore lookup.
+  const tenantId = context.tenantId ?? "stdio"
 
   // Get tool from registry
   const tool = toolRegistry.getTool(toolName)
@@ -296,9 +301,9 @@ export async function tool_execute_exec(
   }
 
   // Check if tool is deferred and needs to be enabled first
-  const canExecute = await ToolSearch.canExecuteTool(sessionId, toolName)
+  const canExecute = await ToolSearch.canExecuteTool(sessionId, toolName, tenantId)
   if (!canExecute) {
-    const toolStatus = await ToolSearch.getToolStatus(sessionId, toolName)
+    const toolStatus = await ToolSearch.getToolStatus(sessionId, toolName, tenantId)
     const queryHint = toolName.replace("snow_", "").replace(/_/g, " ")
     return {
       success: false,

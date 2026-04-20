@@ -11,6 +11,10 @@ import { join } from "path"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_memory_search",
+  // Stdio-only: reads `process.cwd()/.snow-flow/memory` which is a
+  // server-wide path in HTTP context and would expose one tenant's cache
+  // to others.
+  transports: ["stdio"],
   description: "Searches cached ServiceNow artifacts in local memory for instant results without API calls.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",

@@ -24,36 +24,18 @@ describe("Permission Validator", () => {
       delete process.env.SNOW_FLOW_USER_ROLE
     })
 
-    test("should extract JWT from headers in production mode", () => {
-      var mockPayload = {
-        customerId: 1,
-        tier: "enterprise" as const,
-        features: [],
-        role: "developer" as UserRole,
-        sessionId: "test-session",
-        iat: Date.now(),
-        exp: Date.now() + 86400000,
-      }
-      var headers = {
-        "x-snow-flow-auth": Buffer.from(JSON.stringify(mockPayload)).toString("base64"),
-      }
-      var jwt = extractJWTPayload(headers)
-      expect(jwt).not.toBeNull()
-      expect(jwt?.role).toBe("developer")
-      expect(jwt?.customerId).toBe(1)
-    })
-
     test("should default to developer role when no JWT found (or use auth.json)", () => {
       var jwt = extractJWTPayload()
       // Falls back to auth.json role if present, otherwise developer
       expect(["developer", "stakeholder", "admin"]).toContain(jwt?.role)
     })
 
-    test("should handle invalid base64 in headers gracefully", () => {
-      var headers = { "x-snow-flow-auth": "invalid-base64!!!" }
+    test("should ignore headers (post-PR-6a: no unverified header parsing)", () => {
+      // The former `x-snow-flow-auth` base64 path has been removed to prevent
+      // role-spoofing if the helper is ever called from HTTP context.
+      // Headers are accepted as a reserved parameter but never trusted here.
+      var headers = { "x-snow-flow-auth": "anything" }
       var jwt = extractJWTPayload(headers)
-      // Falls back to auth.json role or developer default
-      // The actual role depends on what's in auth.json on the test machine
       expect(["developer", "stakeholder", "admin"]).toContain(jwt?.role)
     })
   })

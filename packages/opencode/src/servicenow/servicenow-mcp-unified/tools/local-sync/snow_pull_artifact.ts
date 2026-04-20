@@ -14,6 +14,10 @@ import * as os from "os"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_pull_artifact",
+  // Stdio-only: writes to local fs (`os.tmpdir()` default) which is a
+  // shared path in HTTP multi-tenant context. Revisit once a virtual
+  // tenant-scoped filesystem abstraction exists.
+  transports: ["stdio"],
   description: "Pull ServiceNow artifact to local files for editing with native tools",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",

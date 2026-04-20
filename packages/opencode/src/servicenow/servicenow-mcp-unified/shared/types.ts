@@ -38,6 +38,15 @@ export interface ServiceNowContext {
   enterprise?: EnterpriseLicense
   // Session-based tool enabling
   sessionId?: string
+  /**
+   * Tenant identifier used to scope every cache and persistence lookup
+   * (OAuth tokens, connection pool, session-enabled tools, scripted-exec
+   * endpoints). In HTTP mode this is the tenant's `customerId` (or
+   * `organizationId` for portal users) as a string. In stdio mode it is the
+   * sentinel `"stdio"`. Always populated by the transport's context resolver
+   * — handlers and tools should treat an absent value as a programming error.
+   */
+  tenantId?: string
 }
 
 /**
@@ -49,6 +58,20 @@ export type UserRole = "developer" | "stakeholder" | "admin"
  * Tool permission level
  */
 export type ToolPermission = "read" | "write" | "admin"
+
+/**
+ * Transports on which a tool is permitted to run.
+ *
+ * Tools that read or write machine-local filesystem paths (`os.tmpdir()`,
+ * `os.homedir()`, `process.cwd()`-based paths) are unsafe in HTTP
+ * multi-tenant context because every tenant's request lands in the same
+ * process with the same file-visibility. Mark such tools as `["stdio"]`
+ * so the HTTP transport refuses them.
+ *
+ * If this field is omitted, the tool is considered available on every
+ * transport (`["stdio", "http"]` default).
+ */
+export type ToolTransport = "stdio" | "http"
 
 /**
  * MCP Tool Definition (compliant with Model Context Protocol)
@@ -67,6 +90,9 @@ export interface MCPToolDefinition {
   // Optional for backward compatibility during migration
   permission?: ToolPermission // 'read', 'write', or 'admin' - defaults to 'write' (most restrictive)
   allowedRoles?: UserRole[] // Roles permitted to execute this tool - defaults to ['developer', 'admin']
+
+  // 🆕 Transport-level allowlist. If omitted, tool runs on every transport.
+  transports?: ToolTransport[]
 
   inputSchema: {
     type: "object"
@@ -191,6 +217,29 @@ export interface JWTPayload {
   instanceId?: string // Machine fingerprint
   iat: number // Issued at
   exp: number // Expires at
+}
+
+/**
+ * Per-request context that MCP handlers receive.
+ *
+ * Transport-agnostic: each transport (stdio, HTTP, ...) is responsible for
+ * producing a `RequestContext` from its own inputs. Handlers never read
+ * headers, files, or env vars directly — they work with whatever the
+ * transport's resolver hands them.
+ */
+export interface RequestContext {
+  // Tenant identity (HTTP transport sets these; stdio leaves them undefined)
+  customerId?: number
+  organizationId?: number
+  portalUserId?: number
+  // Session ID used for session-based tool enabling
+  sessionId?: string
+  // JWT payload parsed from request headers (HTTP) or from auth.json (stdio)
+  jwtPayload?: JWTPayload
+  // Resolved ServiceNow credentials (plaintext)
+  serviceNow: ServiceNowContext
+  // Which transport produced this context
+  origin: "stdio" | "http"
 }
 
 /**
