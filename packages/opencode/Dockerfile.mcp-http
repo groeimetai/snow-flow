@@ -26,10 +26,11 @@ COPY package.json ./
 COPY bunfig.toml ./bunfig.toml
 COPY tsconfig.json ./
 
-# Install only what the MCP server + its tool catalog needs. Bun resolves
-# workspace-style `catalog:` specifiers; if any show up we'll regenerate
-# them in the published package. For now we rely on a straight install.
-RUN bun install --frozen-lockfile --production || bun install --production
+# Install only what the MCP server + its tool catalog needs.
+# `--ignore-scripts` skips snow-flow's own postinstall (which sets up the
+# CLI bin shim — not needed for the MCP-server runtime and the script file
+# isn't copied into this build stage).
+RUN bun install --production --ignore-scripts
 
 COPY src/ ./src/
 
