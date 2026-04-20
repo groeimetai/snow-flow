@@ -80,15 +80,26 @@ export const callTool = (deps: HandlerDeps) => async (request: any, extra?: any)
     // Check if tool is deferred and needs to be enabled first.
     // Pass tenantId so the ToolSessionStore scopes its lookup correctly
     // (stdio uses "stdio"; HTTP uses the tenant's customerId).
+    //
+    // HTTP callers (the portal chat) manage their own tool-enablement
+    // state on the client side — they decide which tools to expose to
+    // the LLM and trust the LLM's choice. The server-side deferred
+    // check is a token-optimization for stdio (smaller catalog = fewer
+    // tokens per request) and would otherwise require the caller to
+    // duplicate enablement state over HTTP, which they currently don't.
+    // So we skip the check on HTTP and let permission/feature gates
+    // below do the real access control.
     const tenantId = context.tenantId ?? "stdio"
-    const canExecute = await ToolSearch.canExecuteTool(sessionId, name, tenantId)
-    if (!canExecute) {
-      const toolStatus = await ToolSearch.getToolStatus(sessionId, name, tenantId)
-      throw new McpError(
-        ErrorCode.InvalidRequest,
-        `Tool "${name}" is ${toolStatus} and must be enabled first. ` +
-          `Use tool_search({query: "${name.replace("snow_", "")}"}) to enable it.`,
-      )
+    if (ctx.origin !== "http") {
+      const canExecute = await ToolSearch.canExecuteTool(sessionId, name, tenantId)
+      if (!canExecute) {
+        const toolStatus = await ToolSearch.getToolStatus(sessionId, name, tenantId)
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          `Tool "${name}" is ${toolStatus} and must be enabled first. ` +
+            `Use tool_search({query: "${name.replace("snow_", "")}"}) to enable it.`,
+        )
+      }
     }
 
     // Phase 2: Permission validation before execution
