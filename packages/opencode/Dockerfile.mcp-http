@@ -46,7 +46,8 @@ ENV MCP_HTTP_PORT=8082
 EXPOSE 8082
 
 # Health endpoint lives on /health — docker-compose healthcheck probes it.
+# bun is already in the image; wget is not, so we use bun's built-in fetch.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget --quiet -O /dev/null http://localhost:${MCP_HTTP_PORT}/health || exit 1
+  CMD bun -e "fetch('http://localhost:' + (process.env.MCP_HTTP_PORT || '8082') + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" || exit 1
 
 CMD ["bun", "run", "src/servicenow/servicenow-mcp-unified/transports/http-entry.ts"]
