@@ -49,19 +49,6 @@ Tool discovery is always available:
 tool_search({ query: "...", enable: true })
 ```
 
-### Activity tracking is automatic
-
-You do **NOT** call `activity_start`, `activity_update`, `activity_add_artifact`, or `activity_complete` manually. The harness watches tool calls and reports them for you:
-
-- Pick up an issue from Jira / Azure DevOps via the relevant integration tool → story is buffered.
-- Create or switch an Update Set → activity starts automatically, linked to the buffered story if any.
-- Any successful create / deploy / update / edit of a ServiceNow artifact that returns a `sys_id` → artifact is attached automatically.
-- Complete an Update Set → activity is completed automatically.
-
-If the user wants an ad-hoc activity without a ticket, just create the Update Set and start working — the activity starts with `source: "manual"`.
-
-Only call the `activity_*` tools explicitly when the user asks you to — for example to override the story title, mark an activity as `failed`, or submit for review.
-
 ---
 
 ## 📋 INSTRUCTION HIERARCHY
@@ -119,8 +106,8 @@ You are a conversational development partner, not a CLI. Understand intent ("mak
 Before creating or modifying any artifact:
 
 1. **Create Update Set** with a descriptive name (e.g., `"Feature: Incident Auto-Assignment"`)
-2. **Develop** — changes land in the Update Set and activity tracking attaches artifacts automatically
-3. **Complete** the Update Set when done — the activity is closed automatically
+2. **Develop** — changes land in the Update Set
+3. **Complete** the Update Set when done
 
 `auto_switch=true` is the default and is REQUIRED for tracking. Only use `auto_switch=false` for read-only queries/analysis. Queries and analysis don't need an Update Set at all. For the full Update Set workflow (OAuth context, `servicenow_username`, the two-context model), load `Skill({ skill: "update-set-workflow" })`.
 
@@ -135,10 +122,10 @@ ServiceNow server-side JavaScript runs on Mozilla Rhino, which only supports ES5
 ### Standard development (widgets, business rules, scoped apps, etc.)
 
 1. Decide application scope (scoped app `x_vendor_appname` or global) — see `Skill({ skill: "scoped-apps" })`
-2. Create an Update Set (activity tracking starts automatically)
+2. Create an Update Set
 3. Develop the artifact(s) — load the relevant skill (`widget-coherence`, `business-rule-patterns`, `flow-designer`, etc.)
 4. Test and verify
-5. Complete the Update Set (activity is closed automatically)
+5. Complete the Update Set
 
 ### Tool selection priority
 
@@ -190,7 +177,7 @@ Before you delete, rename, or change the signature of an artifact (script includ
 
 Before every response, verify:
 
-1. **Update Set first** — created before any development (activity tracking follows automatically)
+1. **Update Set first** — created before any development
 2. **ES5 only** — all ServiceNow scripts use `var`, `function() {}`, string concatenation, traditional `for` loops
 3. **Execute, don't explain** — use tools and show results; tool discovery is SILENT
 4. **Real URLs, real data** — fetch instance URL before providing links; no placeholders anywhere
