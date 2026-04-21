@@ -58,9 +58,10 @@ You MUST follow instructions in this precedence order:
 1. **User's direct instructions** (highest — always comply)
 2. **This AGENTS.md file** (mandatory behavioral rules)
 3. **INSTANCE.md** (instance-specific knowledge — read and update as needed)
-4. **SKILLS.md** (index of available skills — load specific skills via `Skill({ skill: "..." })` when relevant)
-5. **Project-specific `.claude/` files** (if present)
-6. **Default AI behavior** (lowest)
+4. **REVIEWER.md** (code review protocol — load before emitting any code artifact)
+5. **SKILLS.md** (index of available skills — load specific skills via `Skill({ skill: "..." })` when relevant)
+6. **Project-specific `.claude/` files** (if present)
+7. **Default AI behavior** (lowest)
 
 ### INSTANCE.md — instance knowledge base
 
@@ -72,6 +73,10 @@ INSTANCE.md is your persistent memory for this instance. It is automatically loa
 ### SKILLS.md — domain knowledge index
 
 SKILLS.md lists all available skills with one-line descriptions. When a task touches a domain (ES5 syntax, widget development, Update Sets, Flow Designer, ACLs, scoped apps, debugging mutations, etc.), load the matching skill via `Skill({ skill: "name" })` instead of guessing. Skills are lazy-loaded too — only load what the current task needs.
+
+### REVIEWER.md — self-review before code emit
+
+REVIEWER.md is the five-lens review protocol you run on yourself before emitting any code artifact (Business Rule, Client Script, Script Include, Widget, UI Action or Policy with a script, Scheduled Job, Fix Script, Flow Designer script action, Transform Map script, Scripted REST API, ACL condition, Data Lookup, ATF step script). Load it when the work moves from "plan / discuss" to "emit code". Run the lenses (line-by-line, logic/regression, standards, performance, blast radius), fix BLOCKER and MAJOR findings in place, and attach the reviewer verdict inline with the artifact. REVIEWER.md also defines escalation rules — there are cases where you must stop and ask the user rather than emit. The file lists the exact skip boundary; only read-only queries and pure configuration are exempt.
 
 ### @file references
 
@@ -124,8 +129,9 @@ ServiceNow server-side JavaScript runs on Mozilla Rhino, which only supports ES5
 1. Decide application scope (scoped app `x_vendor_appname` or global) — see `Skill({ skill: "scoped-apps" })`
 2. Create an Update Set
 3. Develop the artifact(s) — load the relevant skill (`widget-coherence`, `business-rule-patterns`, `flow-designer`, etc.)
-4. Test and verify
-5. Complete the Update Set
+4. **Self-review via REVIEWER.md** before emit — run the five lenses, fix BLOCKER and MAJOR findings, escalate if criteria are hit
+5. Test and verify
+6. Complete the Update Set
 
 ### Tool selection priority
 
@@ -182,3 +188,4 @@ Before every response, verify:
 3. **Execute, don't explain** — use tools and show results; tool discovery is SILENT
 4. **Real URLs, real data** — fetch instance URL before providing links; no placeholders anywhere
 5. **Lazy load tools and skills** — discover via `tool_search`, load skills via `Skill({ skill: "..." })` only when needed
+6. **Review before emit** — for every code artifact, run REVIEWER.md's five lenses (line-by-line, logic/regression, standards, performance, blast radius); fix BLOCKER and MAJOR findings before output

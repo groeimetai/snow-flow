@@ -1,0 +1,345 @@
+# REVIEWER.md — Code Review Protocol for ServiceNow Artifacts
+
+## Purpose
+
+You are your own first reviewer. ServiceNow's platform catches syntax errors,
+not logic errors, race conditions, ACL bypasses, or performance cliffs — and
+those are where real defects live. Run this protocol on every code artifact
+BEFORE you emit it.
+
+**Scope**: Business Rules, Client Scripts, Script Includes, Widgets (HTML /
+client / server / CSS), UI Actions, UI Policies with scripts, Scheduled Jobs,
+Fix Scripts, Flow Designer script actions, Transform Map scripts, Scripted
+REST APIs, ACL condition scripts, Data Lookup scripts, ATF step scripts.
+See "When to skip" for exceptions.
+
+---
+
+## TL;DR — the emit protocol
+
+1. Load the context you need (table dictionary, related BRs / Flows, INSTANCE.md)
+2. Run Lens 1 → Lens 5 in order
+3. Classify every finding by severity (BLOCKER / MAJOR / MINOR / NIT)
+4. Fix BLOCKERs and MAJORs in-place; keep MINORs / NITs in the report
+5. If any escalation criterion hits, STOP and ask — do not emit
+6. Emit the artifact + reviewer report
+7. Post-emit: verify the artifact landed in the active Update Set
+
+---
+
+## Pre-review: context to load
+
+A review in isolation misses most of what matters. Before running the lenses,
+confirm you have loaded:
+
+- **INSTANCE.md** — naming, scope, known constraints, team conventions
+- **Target table's dictionary** — field types, required flags, references, audit
+- **Existing BRs / Flows on the same table** — for ordering, recursion, conflict
+- **Any upstream / downstream artifacts** this one references
+
+If any is missing, load it first. Don't review blind.
+
+---
+
+## Lens 1 — Line-by-line contextual review
+
+Walk the diff, not the final artifact. For each non-trivial line, ask: is there
+a safer or more idiomatic option? Attach an inline comment:
+
+`[SEVERITY] line N: <finding> — <recommended change>`
+
+Severity:
+- **BLOCKER** — violates a hard rule (ES5, Update Set, injection, ACL bypass)
+  or will fail in production. Fix before emit.
+- **MAJOR** — correctness risk (race, recursion, wrong BR timing, missing
+  error branch). Fix before emit unless user explicitly accepts the tradeoff.
+- **MINOR** — maintainability (inconsistent naming, wrong log severity,
+  redundant query).
+- **NIT** — cosmetic.
+
+Only surface real findings. No decorative ✅ lines.
+
+**Quick smell scan** — any of these in the diff triggers a slower look:
+- `eval(` / `new Function(`
+- `gs.sql(`
+- `new GlideRecord` inside a widget template
+- `window.` / `document.` / `$(` in a Client Script
+- `setTimeout` / `setInterval` in server script
+- `.setWorkflow(false)` without a comment explaining why
+- Hardcoded 32-char hex string
+- `try {` with empty `catch`
+- `//` TODO / FIXME / XXX in emitted code
+
+---
+
+## Lens 2 — Logic & regression detection
+
+The point of this lens is to catch subtle bugs that automated checks miss.
+Walk every applicable bullet — do not cherry-pick.
+
+**Memory & lifetime**
+- `while (gr.next())` with an early `return` / `break` — is the cursor safe to drop?
+- `setLimit()` on any GlideRecord that could return > 1000 rows
+- Background / scheduled / fix scripts: `setWorkflow(false)` paired with
+  `setWorkflow(true)`; `GlideAggregate` properly terminated
+- Widget server script: `data` / `$sp` are per-request — never cache state on them
+
+**Race conditions**
+- Before BR reads a field, then writes based on that read — another BR / UI
+  Policy in the same transaction could have changed it. Re-read or use `previous`
+- Two async BRs on the same table without an `order` value → ordering undefined
+- `display` BR mutating `current` → forbidden (user sees stale; value gets written on submit)
+- `current.update()` inside a BR without `setWorkflow(false)` → recursion loop
+
+**Injection & untrusted input**
+- `addEncodedQuery(userInput)` without sanitization → `^OR` injection opens the filter
+- `GlideRecord.setValue('sys_id', x)` without validating 32-char hex
+- Scripted REST: `request.queryParams` / `request.body.data` interpolated into
+  encoded queries or passed to dynamic script
+- `eval(...)` / `Function(...)` over any user-influenced string → never
+
+**ACL / data security**
+- `GlideRecordSecure` replaced by `GlideRecord` "because it was blocking" —
+  the block was probably correct
+- `current.setWorkflow(false)` used to skip Data Policies, not just BRs —
+  document intent, confirm bypass is deliberate
+- `gs.getUser()` / `gs.hasRole()` in a scoped app — verify cross-scope intent
+
+**Flow & recursion**
+- Flow triggers on `update` and writes back to the same record → infinite loop.
+  Add a condition that excludes the self-triggered update
+- Nested Flow / BR / subflow chains on the same artifact
+
+**Error handling & observability**
+- `try` without rethrow AND without `gs.error` → silent failure
+- `gs.info` used for actual errors → wrong severity, filtered in prod log search
+- `JSON.parse` on external input without a guard
+
+**Single source of truth**
+- Logic duplicated between client and server — which wins when they drift?
+- BR + Flow doing the same thing — pick one
+- UI Policy + Data Policy + BR all validating the same field — collapse
+
+**Red-team prompts** — run each on non-trivial artifacts:
+- What happens with `null` / empty / malformed input?
+- What happens during a clone-back when referenced data is gone?
+- What happens if the caller lacks role X, or is an unauthenticated REST client?
+- What happens if triggered twice within 100ms (double-click, race)?
+- What happens inside a Fix Script vs interactively (`gs.getSession()` differs)?
+- What happens when `gs.getUser()` returns `system`?
+- What happens when the table has 10M rows instead of 10?
+
+---
+
+## Lens 3 — Standards enforcement
+
+Apply conventions uniformly, regardless of who wrote the code. INSTANCE.md is
+the source of truth for instance-specific rules — if it disagrees with this
+file, INSTANCE.md wins.
+
+- **ES5 only** in server-side scripts: no `let`, `const`, arrows, template
+  literals, `for...of`, default params, destructuring, spread
+- **Update Set active** — artifact must land in the current feature's Update
+  Set, not Default
+- **Scope prefix** — scoped artifacts named `x_<vendor>_<app>_…`; no symbols
+  leaking into `global`
+- **No hardcoded sys_ids** — use `gs.getProperty()` or Data Lookup. sys_ids
+  don't survive clone-back
+- **Naming** — match INSTANCE.md. If silent, match the table's existing convention
+- **Logging severity** — `gs.info` (normal) / `gs.warn` (recoverable) /
+  `gs.error` (needs attention). Avoid `gs.log` in scoped apps
+- **Comments** — WHY only, never WHAT. No author banners, no TODO in emitted code
+- **API boundary** — no undocumented platform APIs (private `sn_*` namespaces)
+
+---
+
+## Lens 4 — Performance & platform cost
+
+ServiceNow has real performance cliffs. The instance will run your code against
+tables with millions of rows, inside transactions, under concurrent load.
+
+**Query cost**
+- `setLimit()` on every GlideRecord that could return > 1000 rows
+- Dot-walk in `addQuery` — one hop is fine; chains (`caller_id.dept.manager.…`)
+  force joins that don't hit indexes well
+- Query inside a `while (gr.next())` loop → N+1 pattern. Pre-fetch into a map
+- `GlideAggregate` preferred over counting rows in a loop
+
+**Transaction cost**
+- Long-running BR on a frequently-updated table → profile impact on save latency
+- Sync BR making a REST call → blocks the transaction. Use async or scheduled job
+- Multiple sync BRs in sequence on the same table → each one re-triggers the others
+
+**Index awareness**
+- Filter columns that aren't indexed (`sys_id`, `number`, `state` usually are;
+  custom fields often are not)
+- `CONTAINS` / `STARTSWITH` queries on large tables → table scan
+
+**Batch sizing**
+- Scheduled jobs processing > 10k rows per run → chunk into windows
+- Fix scripts processing a whole table → use `chooseWindow()` + resume mode
+
+---
+
+## Lens 5 — Blast radius & reversibility
+
+Before emit, answer each:
+
+**Reach**
+- Which other artifacts reference this one? (Run a dependency scan if unsure.)
+- Does this change a dictionary entry, field type, or label? Do existing data /
+  reports / filters still work?
+- Does this modify an OOB artifact? → customize via skinny table or separate
+  script include; flag as platform customization
+- Does this touch `sys_user`, `sys_user_role`, ACLs on core tables, encrypted
+  fields, or OAuth tokens? → **ESCALATE**, do not emit silently
+
+**Rollback path**
+- Can this be reverted by rolling back the Update Set, or is manual cleanup needed?
+- If data migration is involved — is there an undo script?
+- Does the artifact create persistent state (properties, records) that survives a revert?
+
+**Clone-safety**
+- Does the code depend on instance-specific sys_ids? (→ bad. Use properties /
+  Data Lookup)
+- Will it survive clone-from-prod? Data gets replaced, config stays — is that
+  the intent here?
+
+---
+
+## Artifact-specific checklists
+
+### Business Rule
+- [ ] Timing deliberate (before / after / async / display) with a one-line reason
+- [ ] Condition field set (not just script condition) — short-circuits first
+- [ ] `current.update()` present? → `setWorkflow(false)` must also be present
+- [ ] `previous` used correctly (undefined on insert; prior values on update)
+- [ ] After BR writing to `current`? → almost always should be before BR
+- [ ] Async BR reading volatile data — post-transaction state intended?
+
+### Client Script
+- [ ] `g_form` / `g_user`, never DOM manipulation
+- [ ] `isLoading` guard on onChange
+- [ ] `GlideAjax` to a Script Include, not direct REST from the client
+- [ ] No blocking `getXMLWait` — callback only
+- [ ] Field access via `g_form.getValue()`, not jQuery
+
+### Script Include
+- [ ] `client_callable=true` only if actually called from the client
+- [ ] Public API documented; private helpers prefixed with `_`
+- [ ] Scoped app uses `Class.create()` prototype pattern
+- [ ] No singleton state — per-request execution leaks
+
+### Widget
+- [ ] Server script populates `data` once, no side effects on read
+- [ ] Client controller uses `c.server.update()` for mutations; promise errors handled
+- [ ] Template: no `{{ }}` on untrusted HTML without `ng-bind-html` + sanitizer
+- [ ] CSS scoped to `.widget-<name>` to avoid bleed
+
+### UI Action / UI Policy
+- [ ] Condition script server-side-safe (no client globals)
+- [ ] Correct target (form button / list button / related link)
+- [ ] Heavy logic belongs in Data Policy or BR, not UI Policy
+
+### Flow Designer (script step)
+- [ ] Script step justified — declarative step not possible?
+- [ ] Inputs and outputs typed; no implicit stringification
+
+### Scripted REST
+- [ ] ACL on the resource, not just auth scheme
+- [ ] Response omits internal sys_ids / emails unless requested
+- [ ] Query params and body validated before use
+- [ ] Status codes correct (201 create, 204 delete, 4xx client, 5xx server)
+
+### ACL condition script
+- [ ] Returns boolean via `answer = …` (not `return`, not logged)
+- [ ] No mutation — read-only
+- [ ] Script condition is last resort; prefer role / condition builder
+
+---
+
+## Escalation rules
+
+STOP and ask the user before emit if any of the following is true:
+
+- You hit a BLOCKER you can't fix without changing the user's original request
+- Artifact touches `sys_user`, `sys_user_role`, ACLs on core tables, OAuth /
+  encrypted data
+- Modifies an OOB platform record (not a customer-owned copy)
+- Blast radius > 5 downstream references across different scopes
+- Rollback requires manual data cleanup
+- You are uncertain whether a finding is MAJOR or BLOCKER
+
+Asking is not weakness — it's the difference between shipping and shipping a regression.
+
+---
+
+## Output format
+
+Emit the report inline with the artifact, in this shape:
+
+```
+REVIEWER REPORT — <artifact type> "<name>"
+
+Lens 1 (line-by-line):
+  [MAJOR] line 14: current.update() without setWorkflow(false) → recursion risk.
+  [MINOR] line 23: gs.log → should be gs.info in scoped apps.
+
+Lens 2 (logic/regression):
+  - Race: none.
+  - Injection: addEncodedQuery uses only constants — OK.
+  - Recursion: see MAJOR above.
+  - Red-team: null caller handled; double-trigger guarded.
+
+Lens 3 (standards):
+  - ES5: OK.
+  - Update Set: captured in "Feature: Auto-assign Incidents" (active).
+  - Naming: matches x_gm_ops_* from INSTANCE.md.
+
+Lens 4 (performance):
+  - Queries bounded (setLimit 1000). No N+1. No dot-walk > 1 hop.
+
+Lens 5 (blast radius):
+  - 2 downstream references (BR "Notify Assignee", UI Action "Reassign"). Compatible.
+  - Rollback: Update Set revert is clean — no manual cleanup.
+
+Verdict: 1 MAJOR, 1 MINOR. Fixing, then re-emitting.
+```
+
+If all five lenses pass cleanly, emit the artifact followed by:
+
+`Reviewer: clean (ES5, Update Set active, no logic / perf / blast-radius flags).`
+
+---
+
+## Post-emit verification
+
+After emit, run a 20-second sanity check:
+
+- Artifact captured in the active Update Set? (query `sys_update_xml` by the
+  artifact's sys_id)
+- Artifact shows up correctly when queried back? (no script truncation, no
+  encoding issues)
+- If BR / Flow trigger — fire it once against a test record and check logs
+
+Not part of the lenses; a quick post-check. Skip only in a read-heavy loop.
+
+---
+
+## When to skip the whole protocol
+
+Skip for:
+- Read-only queries (`snow_query_table` with no mutation)
+- Update Set operations themselves (create / complete / preview)
+- Pure configuration (form layouts, list views, dictionary changes) with no
+  embedded script
+
+Never skip for any artifact with a script field, condition script, or code body.
+
+---
+
+## Instance-specific review rules
+
+Rules the user teaches you, one per bullet, with the reason:
+
+- _(empty — populate as the instance teaches you)_

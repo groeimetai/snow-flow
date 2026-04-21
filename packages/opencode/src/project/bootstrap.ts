@@ -17,6 +17,7 @@ import path from "path"
 import AGENTS_TEMPLATE from "./agents-template.txt"
 import INSTANCE_TEMPLATE from "./instance-template.txt"
 import SKILLS_INDEX from "./skills-index.txt"
+import REVIEWER_TEMPLATE from "./reviewer-template.txt"
 
 /**
  * Ensures AGENTS.md exists in the project directory.
@@ -83,6 +84,30 @@ async function ensureSkillsMd() {
   }
 }
 
+/**
+ * Ensures REVIEWER.md exists in the project directory.
+ * Creates it from template if it doesn't exist.
+ * REVIEWER.md is the code review protocol the agent runs on itself before
+ * emitting any ServiceNow code artifact. It is intentionally lazy-loaded
+ * (not auto-injected into every session) — AGENTS.md references it so the
+ * agent loads it when the work moves from planning to emitting code.
+ */
+async function ensureReviewerMd() {
+  const reviewerMdPath = path.join(Instance.directory, "REVIEWER.md")
+
+  try {
+    const exists = await Bun.file(reviewerMdPath).exists()
+    if (!exists) {
+      await Bun.write(reviewerMdPath, REVIEWER_TEMPLATE)
+      Log.Default.info("created REVIEWER.md", { path: reviewerMdPath })
+    }
+  } catch (error) {
+    Log.Default.warn("failed to create REVIEWER.md", {
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })
   await Plugin.init()
@@ -96,10 +121,11 @@ export async function InstanceBootstrap() {
   Snapshot.init()
   Truncate.init()
 
-  // Create AGENTS.md, INSTANCE.md, and SKILLS.md if they don't exist
+  // Create AGENTS.md, INSTANCE.md, SKILLS.md, and REVIEWER.md if they don't exist
   await ensureAgentsMd()
   await ensureInstanceMd()
   await ensureSkillsMd()
+  await ensureReviewerMd()
 
   bootstrapUnsub?.()
   bootstrapUnsub = Bus.subscribe(Command.Event.Executed, async (payload) => {
