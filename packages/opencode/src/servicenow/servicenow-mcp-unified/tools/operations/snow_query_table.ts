@@ -130,13 +130,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
   const {
     table,
     query = "",
-    fields = [],
     limit = 100,
     offset = 0,
-    order_by,
-    display_value = false,
     truncate_output = true,
   } = args
+
+  // Be permissive: LLMs routinely send snake_case OR camelCase, and `fields`
+  // as array OR comma-separated string. Normalize before use — a wrongly-typed
+  // string would otherwise spread character-by-character into params.
+  const rawFields = args.fields ?? []
+  const fields: string[] = Array.isArray(rawFields)
+    ? rawFields
+    : typeof rawFields === "string"
+    ? rawFields.split(",").map((s) => s.trim()).filter(Boolean)
+    : []
+  const order_by: string | undefined = args.order_by ?? args.orderBy
+  const display_value: boolean = args.display_value ?? args.displayValue ?? false
 
   try {
     const client = await getAuthenticatedClient(context)
