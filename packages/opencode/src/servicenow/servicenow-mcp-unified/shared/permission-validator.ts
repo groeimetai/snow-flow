@@ -192,13 +192,20 @@ export function getPermissionSummary(tool: MCPToolDefinition): string {
 }
 
 /**
- * Validate JWT is not expired
+ * Validate JWT is not expired.
+ *
+ * `jwtPayload.exp` may arrive in either unit depending on the producer:
+ *   - Standard `jsonwebtoken.sign({ expiresIn })` stores exp in **seconds** (JWT RFC).
+ *   - `extractJWTPayload()` above synthesizes exp as `Date.now() + 86_400_000` (**ms**).
+ * Anything above ~1e12 is ms (year 33658+ in seconds), anything below is seconds.
+ * Normalize to ms before comparing so HTTP-signed tokens don't read as "always expired".
  */
 export function validateJWTExpiry(jwtPayload: JWTPayload | null): void {
   if (!jwtPayload) return // Skip validation if no JWT
+  if (!jwtPayload.exp) return
 
-  const now = Date.now()
-  if (jwtPayload.exp && jwtPayload.exp < now) {
+  const expMs = jwtPayload.exp < 1e12 ? jwtPayload.exp * 1000 : jwtPayload.exp
+  if (expMs < Date.now()) {
     throw new McpError(
       ErrorCode.InvalidRequest,
       "🚫 Session Expired: Your authentication token has expired. Please re-authenticate.\n\n" +
