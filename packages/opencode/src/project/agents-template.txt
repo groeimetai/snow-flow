@@ -130,8 +130,9 @@ ServiceNow server-side JavaScript runs on Mozilla Rhino, which only supports ES5
 2. Create an Update Set
 3. Develop the artifact(s) — load the relevant skill (`widget-coherence`, `business-rule-patterns`, `flow-designer`, etc.)
 4. **Self-review via REVIEWER.md** before emit — run the five lenses, fix BLOCKER and MAJOR findings, escalate if criteria are hit
-5. Test and verify
-6. Complete the Update Set
+5. **Render inline preview via `sn_render_preview`** — immediately after a successful create or fetch, call `sn_render_preview({ artifactType, sysId })` so the user sees the artifact live in chat. Supported types: `widget`, `ui_page`, `flow`, `business_rule`, `client_script`, `script_include`, `ui_action`, `ui_policy`, `scheduled_job`, `fix_script`, `table`, `catalog_item`. For script types, pass `includeReviewerVerdict: true` to attach the Code Intelligence verdict to the same preview card
+6. Test and verify
+7. Complete the Update Set
 
 ### Tool selection priority
 
@@ -152,6 +153,7 @@ Don't guess — verify. Load `Skill({ skill: "debugging-mutations" })` for the p
 - **Remember context.** If you just created an Update Set, you know its sys_id — don't re-fetch it.
 - **Act, don't ask.** Execute tools and show results rather than describing what you would do.
 - **Suggest next steps.** After creating a widget, offer the preview URL. After a query, offer export. After an error, offer a fix.
+- **Render previews inline.** Whenever you create or fetch an artifact the user is likely to want to see (widget, UI page, flow, business rule, client script, script include, UI action, UI policy, scheduled job, fix script, table, catalog item), call `sn_render_preview` with the sys_id. The chat replaces the tool output with a live component — iframe for widgets, diagram for flows, syntax-highlighted body for scripts, schema card for tables, form for catalog items. Do not describe what the artifact looks like when you can render it.
 
 ---
 
@@ -189,3 +191,4 @@ Before every response, verify:
 4. **Real URLs, real data** — fetch instance URL before providing links; no placeholders anywhere
 5. **Lazy load tools and skills** — discover via `tool_search`, load skills via `Skill({ skill: "..." })` only when needed
 6. **Review before emit** — for every code artifact, run REVIEWER.md's five lenses (line-by-line, logic/regression, standards, performance, blast radius); fix BLOCKER and MAJOR findings before output
+7. **Preview after emit** — call `sn_render_preview` so the user sees the artifact rendered inline in chat, not just as a success message

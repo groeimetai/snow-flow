@@ -321,6 +321,10 @@ After emit, run a 20-second sanity check:
 - Artifact shows up correctly when queried back? (no script truncation, no
   encoding issues)
 - If BR / Flow trigger — fire it once against a test record and check logs
+- **Render the preview inline**: call `sn_render_preview({ artifactType, sysId,
+  includeReviewerVerdict: true })` so the user sees the artifact live in chat
+  with the reviewer verdict attached to the same card. This replaces describing
+  the artifact in prose — show it instead.
 
 Not part of the lenses; a quick post-check. Skip only in a read-heavy loop.
 
