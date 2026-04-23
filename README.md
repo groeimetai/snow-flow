@@ -145,9 +145,35 @@ bun dev .
 
 # Option B — build a standalone executable for your platform
 bun run packages/opencode/script/build.ts --single
-# then move the binary onto your PATH, e.g.
+```
+
+Then move the built binary onto your `PATH`.
+
+**macOS / Linux:**
+
+```bash
 sudo mv packages/opencode/dist/snow-flow-*/bin/snow-code /usr/local/bin/snow-flow
 ```
+
+**Windows (PowerShell):**
+
+On Windows the build produces `snow-code.exe` in `packages\opencode\dist\snow-flow-windows-x64\bin\`. Install it into a user-owned folder and add that folder to `PATH`:
+
+```powershell
+$dest = "$env:LOCALAPPDATA\Programs\snow-flow"
+New-Item -ItemType Directory -Force -Path $dest | Out-Null
+Move-Item packages\opencode\dist\snow-flow-windows-*\bin\snow-code.exe "$dest\snow-flow.exe"
+[Environment]::SetEnvironmentVariable(
+  "Path",
+  [Environment]::GetEnvironmentVariable("Path", "User") + ";$dest",
+  "User"
+)
+# open a new terminal so the updated PATH takes effect, then:
+snow-flow
+```
+
+> [!NOTE]
+> If you'd rather not manage a native Windows build, WSL (Ubuntu) works well — follow the macOS/Linux path inside WSL.
 
 > [!TIP]
 > When new changes land upstream, pull them with `git pull` and re-run `bun install` before starting Snow-Flow again.
