@@ -104,33 +104,53 @@ Snow-Flow is an AI-powered, multi-agent development framework built specifically
 
 ### Install
 
+This is the UTA fork of Snow-Flow. It is not published to npm or any package manager — install it from source.
+
+#### Prerequisites
+
+Snow-Flow requires **[Bun](https://bun.sh) 1.3 or newer**. Install it with whichever method matches your platform:
+
 ```bash
-curl -fsSL https://snow-flow.dev/install | bash
+# macOS / Linux / WSL
+curl -fsSL https://bun.sh/install | bash
+
+# macOS (Homebrew)
+brew install oven-sh/bun/bun
+
+# Windows (PowerShell)
+powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-<details>
-<summary><b>More installation methods</b></summary>
-<br>
+Verify the install:
 
 ```bash
-# npm / bun / pnpm / yarn
-npm i -g snow-flow@latest
+bun --version   # should report 1.3.x or newer
+```
 
-# Homebrew (macOS & Linux — recommended, always up to date)
-brew install groeimetai/tap/snow-flow
+#### Clone and install
 
-# Windows
-scoop install snow-flow
-choco install snow-flow
+```bash
+git clone https://github.com/united-talent-agency/snow-flow.git
+cd snow-flow
+bun install
+```
 
-# Arch Linux
-paru -S snow-flow-bin
+#### Run it
+
+You can either run directly from the repo in dev mode, or build a standalone binary.
+
+```bash
+# Option A — run in dev mode (no build step)
+bun dev .
+
+# Option B — build a standalone executable for your platform
+bun run packages/opencode/script/build.ts --single
+# then move the binary onto your PATH, e.g.
+sudo mv packages/opencode/dist/snow-flow-*/bin/snow-code /usr/local/bin/snow-flow
 ```
 
 > [!TIP]
-> Remove versions older than 0.1.x before installing.
-
-</details>
+> When new changes land upstream, pull them with `git pull` and re-run `bun install` before starting Snow-Flow again.
 
 ### Quick Start
 
