@@ -15,6 +15,7 @@ import { tool_search_exec, tool_execute_exec } from "../tools/meta/index.js"
 import { ToolSearch } from "../shared/tool-search.js"
 import { mcpDebug } from "../../shared/mcp-debug.js"
 import { formatArgsForLogging, isRetryableOperation } from "../shared/handler-helpers.js"
+import { reportArtifactToInstanceMap } from "../shared/instance-map-hook.js"
 import { HandlerDeps } from "./types.js"
 
 export const callTool = (deps: HandlerDeps) => async (request: any, extra?: any) => {
@@ -120,6 +121,14 @@ export const callTool = (deps: HandlerDeps) => async (request: any, extra?: any)
         },
       },
     )
+
+    // Post-hook: report created/updated artifacts to the enterprise portal's
+    // instance-map so the per-tenant graph stays in sync without relying on
+    // the agent prompt. Fire-and-forget; never blocks the response.
+    reportArtifactToInstanceMap(name, args, result, context, tool.definition, {
+      customerId: ctx.customerId,
+      organizationId: ctx.organizationId,
+    })
 
     // Return result in MCP format
     return {
