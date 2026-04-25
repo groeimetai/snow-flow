@@ -478,6 +478,45 @@ async function computeNestedOrder(
   return { order: insertAt, reorder }
 }
 
+/**
+ * Patch the sys_hub_flow_safe_edit row for a flow so its `user` field
+ * matches a specific sys_id. Used by the auto-recovery in
+ * executeFlowPatchMutation when ServiceNow's GraphQL engine reports a
+ * different user than the one our acquireFlowEditingLock wrote.
+ *
+ * Returns true if the row was successfully patched (or freshly created),
+ * false on any failure — callers should not let a failed recovery
+ * mask the original GraphQL error.
+ */
+async function patchSafeEditUser(client: any, flowId: string, userSysId: string): Promise<boolean> {
+  try {
+    const checkResp = await client.get("/api/now/table/sys_hub_flow_safe_edit", {
+      params: {
+        sysparm_query: "document_id=" + flowId,
+        sysparm_fields: "sys_id,user",
+        sysparm_limit: 1,
+      },
+    })
+    const existing = checkResp.data?.result?.[0]
+    if (existing?.sys_id) {
+      await client.patch("/api/now/table/sys_hub_flow_safe_edit/" + existing.sys_id, {
+        user: userSysId,
+        flow: flowId,
+      })
+      return true
+    }
+    // No record yet — create one bound to the requested user.
+    await client.post("/api/now/table/sys_hub_flow_safe_edit", {
+      document_id: flowId,
+      user: userSysId,
+      flow: flowId,
+    })
+    return true
+  } catch (_) {
+    return false
+  }
+}
+
 async function executeFlowPatchMutation(client: any, flowPatch: any, responseFields: string): Promise<any> {
   const start = Date.now()
   const mutation =
@@ -486,9 +525,43 @@ async function executeFlowPatchMutation(client: any, flowPatch: any, responseFie
     ") { id " +
     responseFields +
     " __typename } __typename } __typename } }"
-  const resp = await client.post("/api/now/graphql", { variables: {}, query: mutation })
-  const errors = resp.data?.errors
+  let resp = await client.post("/api/now/graphql", { variables: {}, query: mutation })
+  let errors = resp.data?.errors
+
   if (errors && errors.length > 0) {
+    const firstMsg = String(errors[0].message || JSON.stringify(errors[0]))
+
+    // Auto-recovery for safe-edit user mismatch. ServiceNow surfaces the
+    // user it expects in the error message itself ("User with ID X does
+    // not have safe edit record for flow with ID Y"); we patch the
+    // sys_hub_flow_safe_edit row to that user and retry the mutation
+    // once. Handles OAuth setups where the gs.getUserID() session and
+    // the GraphQL session resolve to different users — issue #105.
+    const safeEditMatch = /User with ID ([0-9a-fA-F]+) does not have safe edit record for flow with ID ([0-9a-fA-F]+)/.exec(
+      firstMsg,
+    )
+    if (safeEditMatch && flowPatch?.flowId) {
+      const requiredUser = safeEditMatch[1]
+      const errorFlowId = safeEditMatch[2]
+      // Only recover when the error and the patch agree on which flow
+      // is being edited; never silently retarget another flow's lock.
+      if (errorFlowId === flowPatch.flowId) {
+        const patched = await patchSafeEditUser(client, errorFlowId, requiredUser)
+        if (patched) {
+          resp = await client.post("/api/now/graphql", { variables: {}, query: mutation })
+          errors = resp.data?.errors
+          if (!errors || errors.length === 0) {
+            const recovered = resp.data?.data?.global?.snFlowDesigner?.flow || resp.data
+            if (recovered && typeof recovered === "object") {
+              recovered._mutationMs = Date.now() - start
+              recovered._recoveredFromSafeEditMismatch = { rebound_to: requiredUser }
+            }
+            return recovered
+          }
+        }
+      }
+    }
+
     throw new Error("GraphQL error: " + JSON.stringify(errors[0].message || errors[0]))
   }
   const result = resp.data?.data?.global?.snFlowDesigner?.flow || resp.data
