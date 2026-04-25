@@ -5687,11 +5687,14 @@ export const toolDefinition: MCPToolDefinition = {
         ],
         description:
           "Action to perform. " +
-          "CREATING: 'create' creates a flow AND its trigger if trigger_type is specified — do NOT call add_trigger separately after create if you already specified trigger_type. " +
+          "CREATE FLOW: 'create' builds the flow AND its trigger in one call when trigger_type is provided. " +
+          "Skip add_trigger afterwards — calling it on a flow that already has a trigger now returns a clear error pointing you at update_trigger or add_action. " +
+          "Only call add_trigger when you originally created the flow without a trigger_type. " +
           "The editing lock stays open after create, so you can immediately call add_action, add_flow_logic, etc. " +
-          "EDITING EXISTING FLOWS: call checkout (or open_flow) first to acquire the editing lock. Mutation actions (add_action, add_subflow, etc.) also auto-acquire the lock if not already held. " +
+          "EDIT EXISTING FLOWS: call checkout (or open_flow) first to acquire the editing lock. Mutation actions (add_action, add_subflow, etc.) also auto-acquire the lock if not already held. " +
           "ALWAYS call close_flow as the LAST step to release the lock. " +
           'LOCK RECOVERY: If open_flow fails with "locked by another user", use force_unlock first to clear ghost locks, then retry open_flow. ' +
+          "Validation errors like 'Missing required parameter' are NOT lock issues — they mean a parameter is missing, not that the flow is locked; do not chase them with force_unlock. " +
           "add_*/update_*/delete_* for triggers, actions, flow_logic, subflows, stages. update_trigger replaces the trigger type. delete_* removes elements by element_id. " +
           "add_stage/update_stage/delete_stage for stage management (visual progress grouping of actions). Stages use componentIndexes to map which actions belong to each stage. " +
           "Flow variable operations (set_flow_variable, append, get_output) are flow LOGIC — use add_flow_logic, not add_action. " +
@@ -5940,9 +5943,10 @@ export const toolDefinition: MCPToolDefinition = {
       annotation: {
         type: "string",
         description:
-          "REQUIRED for add_* element actions, optional for update_*. A human-readable comment describing what this element does and why. " +
-          "Sent as the 'comment' field in the Flow Designer GraphQL mutation. " +
-          "For IF/ELSEIF flow logic, also used as condition_name if no explicit condition_name is provided.",
+          "Optional human-readable comment describing what this element does and why. " +
+          "Sent as the 'comment' field in the Flow Designer GraphQL mutation; defaults to empty string when omitted. " +
+          "Special case: for add_flow_logic with logic_type IF or ELSEIF, ServiceNow needs a condition label — " +
+          "provide condition_name explicitly, or annotation will be used as a fallback.",
       },
       verify: {
         type: "boolean",
@@ -6015,16 +6019,23 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     publish: ["flow_id"],
     deactivate: ["flow_id"],
     delete: ["flow_id"],
-    add_trigger: ["flow_id", "annotation"],
+    // `annotation` was previously required on every add_* action, but
+    // the handlers all fall through to `annotation || ""` — it's a
+    // human-readable comment for the Flow Designer UI, not a functional
+    // input. Requiring it caused agents to fail mid-build and misread
+    // the validation error as a lock problem. add_flow_logic still has
+    // a narrower IF/ELSEIF check downstream (condition_name or
+    // annotation fallback); that one stays.
+    add_trigger: ["flow_id"],
     update_trigger: ["flow_id"],
     delete_trigger: ["flow_id", "element_id"],
-    add_action: ["flow_id", "annotation"],
+    add_action: ["flow_id"],
     update_action: ["flow_id", "element_id"],
     delete_action: ["flow_id", "element_id"],
-    add_flow_logic: ["flow_id", "logic_type", "annotation"],
+    add_flow_logic: ["flow_id", "logic_type"],
     update_flow_logic: ["flow_id", "element_id"],
     delete_flow_logic: ["flow_id", "element_id"],
-    add_subflow: ["flow_id", "subflow_id", "annotation"],
+    add_subflow: ["flow_id", "subflow_id"],
     update_subflow: ["flow_id", "element_id"],
     delete_subflow: ["flow_id", "element_id"],
     add_stage: ["flow_id", "stage_label", "stage_component_indexes"],
@@ -7215,6 +7226,42 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       // ────────────────────────────────────────────────────────────────
       case "add_trigger": {
         var addTrigFlowId = await resolveFlowId(client, args.flow_id)
+
+        // Pre-flight: most flows already have a trigger by the time the
+        // agent calls add_trigger — `create` sets one up when trigger_type
+        // is provided. Surface a clear, actionable error instead of letting
+        // the GraphQL mutation fail downstream, which agents tend to
+        // misread as a lock problem and chase with force_unlock loops.
+        try {
+          var existingTrigResp = await client.get("/api/now/table/sys_hub_trigger_instance", {
+            params: {
+              sysparm_query: "flow=" + addTrigFlowId,
+              sysparm_fields: "sys_id,trigger_type",
+              sysparm_limit: 1,
+            },
+          })
+          var existingTrig = existingTrigResp.data?.result?.[0]
+          if (existingTrig?.sys_id) {
+            var existingType =
+              typeof existingTrig.trigger_type === "object"
+                ? existingTrig.trigger_type.value || existingTrig.trigger_type.display_value
+                : existingTrig.trigger_type
+            return createErrorResult(
+              new SnowFlowError(
+                ErrorType.VALIDATION_ERROR,
+                "Flow already has a trigger" +
+                  (existingType ? " (type: " + existingType + ")" : "") +
+                  ". The trigger was set up at create time when trigger_type was provided. " +
+                  "Use 'update_trigger' to modify it, or skip this step and proceed with add_action / add_flow_logic.",
+              ),
+            )
+          }
+        } catch (_) {
+          // Lookup failed — fall through to the original logic so we
+          // don't block legitimate add_trigger calls on a transient
+          // table-API error.
+        }
+
         var addTrigLock = await ensureFlowEditingLock(client, addTrigFlowId)
         if (!addTrigLock.success)
           return createErrorResult("Flow is not open for editing. Call open_flow first. " + (addTrigLock.warning || ""))
