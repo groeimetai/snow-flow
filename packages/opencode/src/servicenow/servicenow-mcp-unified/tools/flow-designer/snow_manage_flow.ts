@@ -556,16 +556,50 @@ async function verifyFlowState(
  */
 async function getCurrentUserSysId(client: any): Promise<string> {
   if (client._cachedUserSysId) return client._cachedUserSysId
+  // Encoded `javascript:` queries are evaluated server-side against the
+  // current session, so this returns the *authenticated* caller's sys_id.
+  // The previous "limit 1, no filter" lookup grabbed whatever happened to
+  // be the first row in `sys_user` — usually a demo data user on dev
+  // instances — which is what broke the Flow Designer safe-edit lock
+  // chain in issue #101 (the lock was created for the wrong user, and
+  // every subsequent GraphQL trigger/action call was rejected). Same
+  // pattern as snow_session_context and snow_impersonate_user.
   try {
     var resp = await client.get("/api/now/table/sys_user", {
-      params: { sysparm_limit: 1, sysparm_fields: "sys_id" },
+      params: {
+        sysparm_query: "sys_id=javascript:gs.getUserID()",
+        sysparm_limit: 1,
+        sysparm_fields: "sys_id",
+      },
     })
     var id = resp.data?.result?.[0]?.sys_id || ""
-    if (id) client._cachedUserSysId = id
-    return id
+    if (id) {
+      client._cachedUserSysId = id
+      return id
+    }
+  } catch (_) {
+    // Fall through to the user_name fallback.
+  }
+  // Fallback for hardened instances that strip `sys_id=javascript:` from
+  // queries: the username variant tends to be left intact because it's
+  // the workhorse for permission filters across the platform.
+  try {
+    var resp = await client.get("/api/now/table/sys_user", {
+      params: {
+        sysparm_query: "user_name=javascript:gs.getUserName()",
+        sysparm_limit: 1,
+        sysparm_fields: "sys_id",
+      },
+    })
+    var id = resp.data?.result?.[0]?.sys_id || ""
+    if (id) {
+      client._cachedUserSysId = id
+      return id
+    }
   } catch (_) {
     return ""
   }
+  return ""
 }
 
 /**
