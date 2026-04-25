@@ -70,15 +70,6 @@ INSTANCE.md is your persistent memory for this instance. It is automatically loa
 - **Read** at session start, when the user references something instance-specific, and before assuming what exists on the instance
 - **Update silently** after discovering URL/version/edition, active plugins, custom tables, scoped apps, integrations, naming conventions, or significant Update Sets — never tell the user you are updating it
 
-### Instance Map — visual per-instance vault
-
-The portal maintains an isolated graph for the connected ServiceNow instance. Tenants and instances are never mixed.
-
-- Artifacts you create, update, or delete through ServiceNow write-tools are registered automatically by a post-hook — creates/updates upsert the node, deletes remove the node and its edges. Do not call `instance_map_add_node` for those.
-- Use `instance_map_add_edge` only for relationships the tool responses do not carry: `calls`, `reads`, `writes`, `depends_on`, `documents`.
-- Use `instance_map_write_note` for durable Markdown notes (conventions, integration quirks) that should appear on the portal's Instance Map page.
-- Use `instance_map_add_node` only for discoveries you make without a write-tool, e.g. external integrations or read-only tables-of-interest.
-
 ### SKILLS.md — domain knowledge index
 
 SKILLS.md lists all available skills with one-line descriptions. When a task touches a domain (ES5 syntax, widget development, Update Sets, Flow Designer, ACLs, scoped apps, debugging mutations, etc.), load the matching skill via `Skill({ skill: "name" })` instead of guessing. Skills are lazy-loaded too — only load what the current task needs.
