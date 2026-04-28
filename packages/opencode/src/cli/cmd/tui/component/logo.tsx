@@ -3,42 +3,32 @@ import { createMemo, For, Show } from "solid-js"
 import { useTerminalDimensions } from "@opentui/solid"
 import { useTheme } from "@tui/context/theme"
 
-const LOGO_SNOW = [
-  "███████╗███╗   ██╗ ██████╗ ██╗    ██╗",
-  "██╔════╝████╗  ██║██╔═══██╗██║    ██║",
-  "███████╗██╔██╗ ██║██║   ██║██║ █╗ ██║",
-  "╚════██║██║╚██╗██║██║   ██║██║███╗██║",
-  "███████║██║ ╚████║╚██████╔╝╚███╔███╔╝",
-  "╚══════╝╚═╝  ╚═══╝ ╚═════╝  ╚══╝╚══╝ ",
-]
-
-const LOGO_FLOW = [
-  "███████╗██╗      ██████╗ ██╗    ██╗",
-  "██╔════╝██║     ██╔═══██╗██║    ██║",
-  "█████╗  ██║     ██║   ██║██║ █╗ ██║",
-  "██╔══╝  ██║     ██║   ██║██║███╗██║",
-  "██║     ███████╗╚██████╔╝╚███╔███╔╝",
-  "╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ ",
+const LOGO_SERAC = [
+  "███████╗███████╗██████╗  █████╗  ██████╗",
+  "██╔════╝██╔════╝██╔══██╗██╔══██╗██╔════╝",
+  "███████╗█████╗  ██████╔╝███████║██║     ",
+  "╚════██║██╔══╝  ██╔══██╗██╔══██║██║     ",
+  "███████║███████╗██║  ██║██║  ██║╚██████╗",
+  "╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝",
 ]
 
 export function Logo() {
   const { theme } = useTheme()
   const dimensions = useTerminalDimensions()
-  const stacked = createMemo(() => dimensions().width < 76)
+  // Block logo is 40 chars wide. Below that we drop to a plain
+  // wordmark so the layout doesn't wrap mid-glyph on narrow terminals.
+  const compact = createMemo(() => dimensions().width < 40)
 
   return (
     <Show
-      when={stacked()}
+      when={compact()}
       fallback={
         <box>
-          <For each={LOGO_SNOW}>
-            {(line, index) => (
-              <box flexDirection="row">
-                <text fg={theme.textMuted} selectable={false}>
-                  {line}
-                </text>
+          <For each={LOGO_SERAC}>
+            {(line) => (
+              <box>
                 <text fg={theme.primary} attributes={TextAttributes.BOLD} selectable={false}>
-                  {LOGO_FLOW[index()]}
+                  {line}
                 </text>
               </box>
             )}
@@ -47,24 +37,9 @@ export function Logo() {
       }
     >
       <box>
-        <For each={LOGO_SNOW}>
-          {(line) => (
-            <box>
-              <text fg={theme.textMuted} selectable={false}>
-                {line}
-              </text>
-            </box>
-          )}
-        </For>
-        <For each={LOGO_FLOW}>
-          {(line) => (
-            <box>
-              <text fg={theme.primary} attributes={TextAttributes.BOLD} selectable={false}>
-                {line}
-              </text>
-            </box>
-          )}
-        </For>
+        <text fg={theme.primary} attributes={TextAttributes.BOLD} selectable={false}>
+          serac
+        </text>
       </box>
     </Show>
   )
