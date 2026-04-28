@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "11.0.19",
-  "name": "snow-flow",
-  "description": "Snow-Flow - ServiceNow Multi-Agent Development Framework powered by AI",
+  "version": "11.0.20",
+  "name": "@serac-labs/core",
+  "description": "Serac - agentic AI for ServiceNow developers. Bring your own keys, observable runs, deterministic traces.",
   "license": "Elastic-2.0",
   "private": false,
   "scripts": {
@@ -17,6 +17,8 @@
     "postinstall": "node scripts/postinstall.cjs"
   },
   "bin": {
+    "serac": "./bin/snow-code",
+    "serac-code": "./bin/snow-code",
     "snow-flow": "./bin/snow-code",
     "snow-code": "./bin/snow-code",
     "snowcode": "./bin/snow-code",
@@ -123,6 +125,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/groeimetai/snow-flow"
+    "url": "https://github.com/serac-labs/serac"
+  },
+  "homepage": "https://serac.build",
+  "bugs": {
+    "url": "https://github.com/serac-labs/serac/issues"
   }
 }
