@@ -31,7 +31,7 @@ permissions:
 jobs:
   publish:
     runs-on: blacksmith-4vcpu-ubuntu-2404
-    if: github.repository == 'groeimetai/snow-flow'
+    if: github.repository == 'serac-labs/serac'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,7 +65,7 @@ jobs:
 
       - name: Setup Git Identity
         run: |
-          git config --global user.email "bot@snow-flow.dev"
+          git config --global user.email "bot@serac.build"
           git config --global user.name "snow-code-agent[bot]"
           git remote set-url origin https://x-access-token:${{ secrets.SST_GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
@@ -226,7 +226,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.AUR_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          git config --global user.email "bot@snow-flow.dev"
+          git config --global user.email "bot@serac.build"
           git config --global user.name "snow-code-agent[bot]"
           ssh-keyscan -H aur.archlinux.org >> ~/.ssh/known_hosts || true
 

@@ -9,7 +9,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   stats:
-    if: github.repository == 'groeimetai/snow-flow'
+    if: github.repository == 'serac-labs/serac'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: write

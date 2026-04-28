@@ -206,7 +206,7 @@ jobs:
             // Set repository for OIDC provenance verification
             pkg.repository = {
               type: 'git',
-              url: 'https://github.com/groeimetai/snow-flow'
+              url: 'https://github.com/serac-labs/serac'
             };
 
             // Update bin commands - all aliases for maximum compatibility
@@ -338,8 +338,8 @@ jobs:
         if: steps.channel.outputs.channel == 'stable'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          git config user.email "bot@snow-flow.dev"
-          git config user.name "snow-flow-bot"
+          git config user.email "bot@serac.build"
+          git config user.name "serac-bot"
           git checkout ${{ github.ref_name }}
           # Update version in the source package.json
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" packages/opencode/package.json
@@ -350,4 +350,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Platform binaries are distributed via GitHub releases
-      # Users can download from: https://github.com/groeimetai/snow-flow/releases
+      # Users can download from: https://github.com/serac-labs/serac/releases

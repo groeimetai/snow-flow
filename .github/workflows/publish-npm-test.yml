@@ -154,7 +154,7 @@ jobs:
             // Set repository for OIDC provenance verification
             pkg.repository = {
               type: 'git',
-              url: 'https://github.com/groeimetai/snow-flow'
+              url: 'https://github.com/serac-labs/serac'
             };
 
             // Update bin commands - include snow-code for compatibility
@@ -270,4 +270,4 @@ jobs:
           npm publish --access public --tag test --provenance
 
       # Platform binaries are distributed via GitHub releases
-      # Users can download from: https://github.com/groeimetai/snow-flow/releases
+      # Users can download from: https://github.com/serac-labs/serac/releases
