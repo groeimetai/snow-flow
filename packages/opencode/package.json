@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "version": "1.0.0",
-  "name": "@serac-labs/serac",
+  "version": "11.0.21",
+  "name": "@serac-labs/core",
   "description": "Serac - agentic AI for ServiceNow developers. Bring your own keys, observable runs, deterministic traces.",
   "license": "Elastic-2.0",
   "private": false,
