@@ -409,7 +409,7 @@ Fine-grained control over what agents can do, with glob pattern matching and env
 
 The install script respects the following priority order:
 
-1. `$SNOW_FLOW_INSTALL_DIR` — Custom installation directory
+1. `$SERAC_INSTALL_DIR` — Custom installation directory
 2. `$XDG_BIN_DIR` — XDG Base Directory Specification compliant path
 3. `$HOME/bin` — Standard user binary directory
 4. `$HOME/.serac/bin` — Default fallback

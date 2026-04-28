@@ -14,8 +14,8 @@
 <p align="center">The autonomous ServiceNow development agent.</p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/groeimetai/snow-flow?style=for-the-badge&color=blue" /></a>
+  <a href="https://www.npmjs.com/package/@serac-labs/serac"><img alt="npm" src="https://img.shields.io/npm/v/@serac-labs/serac?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
+  <a href="https://github.com/serac-labs/serac/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/serac-labs/serac?style=for-the-badge&color=blue" /></a>
 </p>
 
 ---
@@ -23,7 +23,7 @@
 ## Install
 
 ```bash
-npm i -g snow-flow@latest
+npm i -g @serac-labs/serac@latest
 ```
 
 <details>
@@ -31,12 +31,12 @@ npm i -g snow-flow@latest
 <br>
 
 ```bash
-bun i -g snow-flow@latest                              # Bun
-pnpm i -g snow-flow@latest                             # pnpm
-yarn global add snow-flow@latest                       # Yarn
-curl -fsSL https://snow-flow.dev/install | bash            # Install script
-brew install groeimetai/tap/snow-flow                      # macOS / Linux
-scoop install snow-flow                                    # Windows
+bun i -g @serac-labs/serac@latest                              # Bun
+pnpm i -g @serac-labs/serac@latest                             # pnpm
+yarn global add @serac-labs/serac@latest                       # Yarn
+curl -fsSL https://serac.build/install | bash            # Install script
+brew install serac-labs/tap/serac                      # macOS / Linux
+scoop install serac                                    # Windows
 ```
 
 </details>
@@ -44,23 +44,23 @@ scoop install snow-flow                                    # Windows
 ## Quick Start
 
 ```bash
-snow-flow
+serac
 ```
 
-That's it. Snow-Flow will prompt you to configure an AI provider on first launch.
+That's it. Serac will prompt you to configure an AI provider on first launch.
 
-Or pre-configure in `snow-flow.jsonc`:
+Or pre-configure in `serac.jsonc`:
 
 ```jsonc
 {
-  "$schema": "https://snow-flow.dev/config.json",
+  "$schema": "https://serac.build/config.json",
   "provider": {
     "anthropic": {},
   },
 }
 ```
 
-## Why Snow-Flow?
+## Why Serac?
 
 <table>
 <tr>
@@ -160,7 +160,7 @@ Connect to your ServiceNow instance and access **200+ tools**:
   "mcp": {
     "servicenow": {
       "type": "local",
-      "command": ["snow-flow", "mcp", "start"],
+      "command": ["serac", "mcp", "start"],
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "...",
@@ -182,15 +182,15 @@ Connect to your ServiceNow instance and access **200+ tools**:
 ## CLI
 
 ```bash
-snow-flow                        # Start TUI
-snow-flow serve                  # Headless API server (port 4096)
-snow-flow web                    # Server + web interface
-snow-flow attach <url>           # Attach to remote server
-snow-flow auth                   # Configure authentication
-snow-flow models                 # List available models
-snow-flow stats                  # Usage statistics
-snow-flow export                 # Export session data
-snow-flow pr                     # Pull request automation
+serac                        # Start TUI
+serac serve                  # Headless API server (port 4096)
+serac web                    # Server + web interface
+serac attach <url>           # Attach to remote server
+serac auth                   # Configure authentication
+serac models                 # List available models
+serac stats                  # Usage statistics
+serac export                 # Export session data
+serac pr                     # Pull request automation
 ```
 
 ## Configuration
@@ -200,10 +200,10 @@ Config is loaded from (in priority order):
 | Priority | Source                                 |
 | :------- | :------------------------------------- |
 | 1        | Remote/well-known organization configs |
-| 2        | Global config (`~/.snow-flow/`)        |
-| 3        | `SNOW_FLOW_CONFIG` env variable        |
-| 4        | Project config (`snow-flow.jsonc`)     |
-| 5        | `SNOW_FLOW_CONFIG_CONTENT` inline      |
+| 2        | Global config (`~/.serac/`)        |
+| 3        | `SERAC_CONFIG` env variable        |
+| 4        | Project config (`serac.jsonc`)     |
+| 5        | `SERAC_CONFIG_CONTENT` inline      |
 
 <details>
 <summary><b>MCP servers</b></summary>
@@ -228,7 +228,7 @@ Supports stdio, SSE, and streamable HTTP with OAuth.
 
 ```jsonc
 {
-  "plugin": ["my-snow-flow-plugin", "file://./local-plugin"],
+  "plugin": ["my-serac-plugin", "file://./local-plugin"],
 }
 ```
 
@@ -255,10 +255,10 @@ Glob patterns, per-agent rulesets, and env file protection included.
 
 ## Links
 
-- [Documentation](https://snow-flow.dev/docs) — Full configuration reference and guides
-- [GitHub](https://github.com/groeimetai/snow-flow) — Source code and issues
-- [Contributing](https://github.com/groeimetai/snow-flow/blob/main/CONTRIBUTING.md) — How to contribute
+- [Documentation](https://serac.build/docs) — Full configuration reference and guides
+- [GitHub](https://github.com/serac-labs/serac) — Source code and issues
+- [Contributing](https://github.com/serac-labs/serac/blob/main/CONTRIBUTING.md) — How to contribute
 
 ## License
 
-MIT — see [LICENSE](https://github.com/groeimetai/snow-flow/blob/main/LICENSE).
+MIT — see [LICENSE](https://github.com/serac-labs/serac/blob/main/LICENSE).

@@ -10,8 +10,8 @@
 </p>
 <p align="center">L'agent de codage IA open source.</p>
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=flat-square" /></a>
-  <a href="https://github.com/groeimetai/snow-flow/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/groeimetai/snow-flow/publish.yml?style=flat-square&branch=dev" /></a>
+  <a href="https://www.npmjs.com/package/@serac-labs/serac"><img alt="npm" src="https://img.shields.io/npm/v/@serac-labs/serac?style=flat-square" /></a>
+  <a href="https://github.com/serac-labs/serac/actions/workflows/publish.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/serac-labs/serac/publish.yml?style=flat-square&branch=dev" /></a>
 </p>
 
 <p align="center">
@@ -32,7 +32,7 @@
   <a href="README.br.md">Português (Brasil)</a>
 </p>
 
-[![Snow-Flow Terminal UI](snow-flow-tui.png)](https://snow-flow.dev)
+[![Serac Terminal UI](serac-tui.png)](https://serac.build)
 
 ---
 
@@ -40,17 +40,17 @@
 
 ```bash
 # YOLO
-curl -fsSL https://snow-flow.dev/install | bash
+curl -fsSL https://serac.build/install | bash
 
 # Gestionnaires de paquets
-npm i -g snow-flow@latest        # ou bun/pnpm/yarn
-scoop install snow-flow             # Windows
-choco install snow-flow             # Windows
-brew install groeimetai/tap/snow-flow # macOS et Linux (recommandé, toujours à jour)
-brew install snow-flow              # macOS et Linux (formule officielle brew, mise à jour moins fréquente)
-paru -S snow-flow-bin               # Arch Linux
-mise use -g snow-flow               # n'importe quel OS
-nix run nixpkgs#snow-flow           # ou github:groeimetai/snow-flow pour la branche dev la plus récente
+npm i -g @serac-labs/serac@latest        # ou bun/pnpm/yarn
+scoop install serac             # Windows
+choco install serac             # Windows
+brew install serac-labs/tap/serac # macOS et Linux (recommandé, toujours à jour)
+brew install serac-labs/tap/serac              # macOS et Linux (formule officielle brew, mise à jour moins fréquente)
+paru -S serac-bin               # Arch Linux
+mise use -g serac               # n'importe quel OS
+nix run nixpkgs#serac           # ou github:serac-labs/serac pour la branche dev la plus récente
 ```
 
 > [!TIP]
@@ -60,20 +60,20 @@ nix run nixpkgs#snow-flow           # ou github:groeimetai/snow-flow pour la bra
 
 Le script d'installation respecte l'ordre de priorité suivant pour le chemin d'installation :
 
-1. `$SNOW_FLOW_INSTALL_DIR` - Répertoire d'installation personnalisé
+1. `$SERAC_INSTALL_DIR` - Répertoire d'installation personnalisé
 2. `$XDG_BIN_DIR` - Chemin conforme à la spécification XDG Base Directory
 3. `$HOME/bin` - Répertoire binaire utilisateur standard (s'il existe ou peut être créé)
-4. `$HOME/.snow-flow/bin` - Repli par défaut
+4. `$HOME/.serac/bin` - Repli par défaut
 
 ```bash
 # Exemples
-SNOW_FLOW_INSTALL_DIR=/usr/local/bin curl -fsSL https://snow-flow.dev/install | bash
-XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://snow-flow.dev/install | bash
+SERAC_INSTALL_DIR=/usr/local/bin curl -fsSL https://serac.build/install | bash
+XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://serac.build/install | bash
 ```
 
 ### Agents
 
-Snow-Flow inclut deux agents intégrés que vous pouvez basculer avec la touche `Tab`.
+Serac inclut deux agents intégrés que vous pouvez basculer avec la touche `Tab`.
 
 - **build** - Par défaut, agent avec accès complet pour le travail de développement
 - **plan** - Agent en lecture seule pour l'analyse et l'exploration du code
@@ -84,19 +84,19 @@ Snow-Flow inclut deux agents intégrés que vous pouvez basculer avec la touche 
 Un sous-agent **general** est aussi inclus pour les recherches complexes et les tâches en plusieurs étapes.
 Il est utilisé en interne et peut être invoqué via `@general` dans les messages.
 
-En savoir plus sur les [agents](https://snow-flow.dev/docs/agents).
+En savoir plus sur les [agents](https://serac.build/docs/agents).
 
 ### Documentation
 
-Pour plus d'informations sur la configuration d'Snow-Flow, [**consultez notre documentation**](https://snow-flow.dev/docs).
+Pour plus d'informations sur la configuration d'Serac, [**consultez notre documentation**](https://serac.build/docs).
 
 ### Contribuer
 
-Si vous souhaitez contribuer à Snow-Flow, lisez nos [docs de contribution](./CONTRIBUTING.md) avant de soumettre une pull request.
+Si vous souhaitez contribuer à Serac, lisez nos [docs de contribution](./CONTRIBUTING.md) avant de soumettre une pull request.
 
-### Construire avec Snow-Flow
+### Construire avec Serac
 
-Si vous travaillez sur un projet lié à Snow-Flow et que vous utilisez "snow-flow" dans le nom du projet (par exemple, "snow-flow-dashboard" ou "snow-flow-mobile"), ajoutez une note dans votre README pour préciser qu'il n'est pas construit par l'équipe Snow-Flow et qu'il n'est pas affilié à nous.
+Si vous travaillez sur un projet lié à Serac et que vous utilisez "serac" dans le nom du projet (par exemple, "serac-dashboard" ou "serac-mobile"), ajoutez une note dans votre README pour préciser qu'il n'est pas construit par l'équipe Serac et qu'il n'est pas affilié à nous.
 
 ### FAQ
 
@@ -105,9 +105,9 @@ Si vous travaillez sur un projet lié à Snow-Flow et que vous utilisez "snow-fl
 C'est très similaire à Claude Code en termes de capacités. Voici les principales différences :
 
 - 100% open source
-- Pas couplé à un fournisseur. Nous recommandons les modèles proposés via [Snow-Flow Zen](https://snow-flow.dev/zen) ; Snow-Flow peut être utilisé avec Claude, OpenAI, Google ou même des modèles locaux. Au fur et à mesure que les modèles évoluent, les écarts se réduiront et les prix baisseront, donc être agnostique au fournisseur est important.
+- Pas couplé à un fournisseur. Nous recommandons les modèles proposés via [Serac Zen](https://serac.build/zen) ; Serac peut être utilisé avec Claude, OpenAI, Google ou même des modèles locaux. Au fur et à mesure que les modèles évoluent, les écarts se réduiront et les prix baisseront, donc être agnostique au fournisseur est important.
 - Support LSP prêt à l'emploi
-- Un focus sur la TUI. Snow-Flow est construit par des utilisateurs de neovim et les créateurs de [terminal.shop](https://terminal.shop) ; nous allons repousser les limites de ce qui est possible dans le terminal.
-- Architecture client/serveur. Cela permet par exemple de faire tourner Snow-Flow sur votre ordinateur tout en le pilotant à distance depuis une application mobile. Cela signifie que la TUI n'est qu'un des clients possibles.
+- Un focus sur la TUI. Serac est construit par des utilisateurs de neovim et les créateurs de [terminal.shop](https://terminal.shop) ; nous allons repousser les limites de ce qui est possible dans le terminal.
+- Architecture client/serveur. Cela permet par exemple de faire tourner Serac sur votre ordinateur tout en le pilotant à distance depuis une application mobile. Cela signifie que la TUI n'est qu'un des clients possibles.
 
 ---

@@ -1,10 +1,10 @@
-# Snow-Flow VS Code Extension
+# Serac VS Code Extension
 
-A Visual Studio Code extension that integrates [Snow-Flow](https://snow-flow.dev) directly into your development workflow.
+A Visual Studio Code extension that integrates [Serac](https://serac.build) directly into your development workflow.
 
 ## Prerequisites
 
-This extension requires the [snow-code CLI](https://snow-flow.dev) to be installed on your system. Visit [snow-flow.dev](https://snow-flow.dev) for installation instructions.
+This extension requires the [snow-code CLI](https://serac.build) to be installed on your system. Visit [serac.build](https://serac.build) for installation instructions.
 
 ## Features
 
@@ -15,7 +15,7 @@ This extension requires the [snow-code CLI](https://snow-flow.dev) to be install
 
 ## Support
 
-This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/groeimetai/snow-flow/issues.
+This is an early release. If you encounter issues or have feedback, please create an issue at https://github.com/serac-labs/serac/issues.
 
 ## Development
 
