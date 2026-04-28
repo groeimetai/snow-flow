@@ -113,24 +113,17 @@ jobs:
           elif [[ "${{ steps.channel.outputs.channel }}" == "dev" ]]; then
             echo "version=${BASE_VERSION}-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
           else
-            # Stable release. The first publish of @serac-labs/serac uses
-            # BASE_VERSION verbatim (so the source 1.0.0 lands as 1.0.0,
-            # not 1.0.1). Subsequent runs auto-increment patch from the
-            # latest published version. The snow-flow legacy fallback was
-            # removed deliberately — Serac is its own semver line, not a
-            # continuation of snow-flow's 11.x.
-            LATEST=$(npm view @serac-labs/serac version 2>/dev/null || echo "")
-            if [ -z "$LATEST" ]; then
-              echo "version=${BASE_VERSION}" >> $GITHUB_OUTPUT
-              echo "First publish at ${BASE_VERSION}"
-            else
-              MAJOR=$(echo "$LATEST" | cut -d. -f1)
-              MINOR=$(echo "$LATEST" | cut -d. -f2)
-              PATCH=$(echo "$LATEST" | cut -d. -f3)
-              NEW_PATCH=$((PATCH + 1))
-              echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
-              echo "Auto-bumped: ${LATEST} -> ${MAJOR}.${MINOR}.${NEW_PATCH}"
-            fi
+            # Stable release. Use BASE_VERSION verbatim — `npm view` is
+            # unreliable right after a name has been unpublished (the
+            # GET endpoint returns "no versions" but the PUT endpoint
+            # still rejects the same version as a duplicate, because
+            # npm tracks unpublished versions internally for 24h).
+            # Doing the bump in the source pkg.json + relying on the
+            # post-publish "Update version in repo" step keeps the
+            # SOT in git rather than in npm's eventual-consistency
+            # registry index.
+            echo "version=${BASE_VERSION}" >> $GITHUB_OUTPUT
+            echo "Publishing at ${BASE_VERSION} (source-driven version)"
           fi
 
       - name: Install dependencies
@@ -358,17 +351,27 @@ jobs:
             npm publish --access public --tag "$NPM_TAG" --provenance
           fi
 
-      - name: Update version in repo
+      - name: Bump source pkg.json for next publish
+        # The "Get version" step publishes source verbatim. To make the
+        # *next* push publish a new version (and not 403 with "version
+        # already exists"), bump the patch component in source here.
+        # Example: published 1.0.1 → write 1.0.2 back so the next merge
+        # to main publishes 1.0.2.
         if: steps.channel.outputs.channel == 'stable'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+
           git config user.email "bot@serac.build"
           git config user.name "serac-bot"
           git checkout ${{ github.ref_name }}
-          # Update version in the source package.json
-          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" packages/opencode/package.json
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$NEXT_VERSION\"/" packages/opencode/package.json
           git add packages/opencode/package.json
-          git diff --cached --quiet || git commit -m "chore: bump version to ${VERSION} [skip ci]"
+          git diff --cached --quiet || git commit -m "chore: bump source to ${NEXT_VERSION} for next publish [skip ci]"
           git push origin ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
