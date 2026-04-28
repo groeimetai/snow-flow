@@ -35,7 +35,7 @@ jobs:
         run: bun install
 
       - name: Install serac CLI
-        run: npm i -g @serac-labs/core@latest
+        run: npm i -g @serac-labs/serac@latest
 
       - name: Build prompt
         env:
