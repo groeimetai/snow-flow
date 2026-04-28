@@ -39,6 +39,12 @@ packages/
 
 Most contributions land in `packages/opencode/`. See `.claude/playbook.md` for the exact sub-paths per contribution type.
 
+## Auto-generated artifacts (do not hand-edit)
+
+- **`packages/opencode/tools.json`** — manifest of every public ServiceNow MCP tool (name, description, subcategory, permission, deprecated flag). Consumed by `docs.serac.build` to render the Complete Tool Reference table. Regenerated automatically by `.github/workflows/generate-tools-json.yml` on every push to `main` whenever `packages/opencode/src/servicenow/servicenow-mcp-unified/tools/**` changes; the workflow runs `bun packages/opencode/script/generate-tools-json.ts` and commits the result with `[skip ci]`. Run locally with the same command if you want to preview before pushing.
+
+  When you add/edit/remove a tool: change only the `.ts` file in `tools/`. Don't edit `tools.json` directly — your edit will be overwritten on the next workflow run, and the description there is authoritative-by-source-of-truth, not authoritative-by-edit.
+
 ## Things not to do
 
 - Don't read `packages/opencode/src/project/agents-template.txt` for style guidance — that's a product template for the end-user agent, not for you as a contributor.
@@ -46,3 +52,4 @@ Most contributions land in `packages/opencode/`. See `.claude/playbook.md` for t
 - Don't add dependencies without justification in the PR body.
 - Don't `git push --force` to any shared branch.
 - Don't include `Co-Authored-By: Claude` or similar AI-attribution footers in commits or PR bodies — maintainers don't want them.
+- Don't hand-edit `packages/opencode/tools.json` — see "Auto-generated artifacts" above.
