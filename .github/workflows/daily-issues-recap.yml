@@ -21,7 +21,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Install serac CLI
-        run: npm i -g @serac-labs/serac@latest
+        run: npm i -g @serac-labs/core@latest
 
       - name: Generate daily issues recap
         id: recap
