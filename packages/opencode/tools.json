@@ -1,0 +1,2357 @@
+{
+  "generatedAt": "2026-04-28T11:54:17.513Z",
+  "count": 396,
+  "groups": [
+    {
+      "name": "access-control",
+      "displayName": "Access Control",
+      "tools": [
+        {
+          "name": "snow_create_access_control",
+          "description": "Createaccesscontrol"
+        },
+        {
+          "name": "snow_create_acl",
+          "description": "Create Access Control List rule"
+        },
+        {
+          "name": "snow_create_acl_role",
+          "description": "Create ACL role association"
+        },
+        {
+          "name": "snow_test_acl",
+          "description": "Test ACL access for user"
+        }
+      ]
+    },
+    {
+      "name": "administration",
+      "displayName": "Administration",
+      "tools": [
+        {
+          "name": "snow_backup_instance",
+          "description": "Create instance backup"
+        },
+        {
+          "name": "snow_clone_instance",
+          "description": "Clone ServiceNow instance"
+        },
+        {
+          "name": "snow_plugin_manage",
+          "description": "Manage ServiceNow plugins: list, check status, activate, or deactivate.\n\nActions:\n• list — Search and list plugins. Filter by name/ID, show only active.\n• check — Get detailed info on a specific plugin (status, version, dependencies).\n• activate — Activate a plugin (admin only). Uses CICD API with table fallback.\n• deactivate — Deactivate a plugin (admin only). Uses CICD API with table fallback.\n\nExamples:\n• { action: \"list\", search: \"incident\" }\n• { action: \"check\", plugin_id: \"com.snc.incident\" }\n• { action: \"activate\", plugin_id: \"com.snc.incident\" }"
+        }
+      ]
+    },
+    {
+      "name": "agile",
+      "displayName": "Agile",
+      "tools": [
+        {
+          "name": "snow_agile_backlog_groom",
+          "description": "Backlog grooming operations: reprioritize stories, bulk-update story points, move stories between epics, and assign stories to sprints in batch."
+        },
+        {
+          "name": "snow_agile_backlog_query",
+          "description": "Query the product backlog: list stories sorted by priority/rank, filter by epic, theme, state, or assignee. Shows unassigned and upcoming work."
+        },
+        {
+          "name": "snow_agile_capacity_plan",
+          "description": "Capacity planning: compare team availability against sprint commitment. Shows member allocation, average velocity, and recommended story point capacity."
+        },
+        {
+          "name": "snow_agile_epic_manage",
+          "description": "Manage Agile epics: create/update epics, link stories, view progress breakdown. Works with ServiceNow rm_epic table."
+        },
+        {
+          "name": "snow_agile_release_manage",
+          "description": "Manage Agile releases: create/update releases, link sprints and epics, check release readiness with story completion status."
+        },
+        {
+          "name": "snow_agile_retrospective",
+          "description": "Generate sprint retrospective data: planned vs completed story points, defect rate, velocity trend, carry-over stories, and team performance metrics across sprints."
+        },
+        {
+          "name": "snow_agile_sprint_board",
+          "description": "Get a sprint board view: stories and tasks grouped by state columns (Draft, Ready, Work In Progress, Testing, Closed Complete, Closed Incomplete). Includes task breakdown per story."
+        },
+        {
+          "name": "snow_agile_sprint_burndown",
+          "description": "Generate burndown and burnup chart data for a sprint. Shows ideal vs actual progress, remaining story points per day, and scope changes."
+        },
+        {
+          "name": "snow_agile_sprint_manage",
+          "description": "Manage Agile sprints: create new sprints, start/close sprints, update sprint details. Works with ServiceNow Agile 2.0 (rm_sprint table)."
+        },
+        {
+          "name": "snow_agile_sprint_query",
+          "description": "Query sprints with burndown data, filter by team/state/date range. Optionally includes story breakdown per sprint."
+        },
+        {
+          "name": "snow_agile_standup_report",
+          "description": "Generate a daily standup report: what each team member worked on recently, what they are working on now, and any blockers. Based on story/task state changes."
+        },
+        {
+          "name": "snow_agile_story_manage",
+          "description": "Create and update user stories in ServiceNow Agile 2.0. Assign story points, link to sprints/epics, manage acceptance criteria, and update state."
+        },
+        {
+          "name": "snow_agile_team_manage",
+          "description": "Manage Scrum teams: create teams, add/remove members with roles (Scrum Master, Product Owner, Developer), list team composition."
+        },
+        {
+          "name": "snow_agile_velocity_report",
+          "description": "Generate velocity report: story points committed vs completed per sprint for a team. Shows trends across multiple sprints for capacity planning."
+        }
+      ]
+    },
+    {
+      "name": "analysis",
+      "displayName": "Analysis",
+      "tools": [
+        {
+          "name": "snow_analyze_form",
+          "description": "Analyze everything that affects a ServiceNow form for a given table: active UI policies, client scripts, data policies, record + field ACLs, and UI actions. Useful when debugging 'why does this form behave this way?' — consolidates 5+ queries into one structured report."
+        },
+        {
+          "name": "snow_analyze_requirements",
+          "description": "Analyzes development requirements to identify dependencies, suggest reusable components, and create implementation roadmaps."
+        }
+      ]
+    },
+    {
+      "name": "analytics",
+      "displayName": "Analytics",
+      "tools": [
+        {
+          "name": "snow_aggregate_metrics",
+          "description": "Aggregate table metrics"
+        },
+        {
+          "name": "snow_analyze_uib_page_performance",
+          "description": "Analyze UI Builder page performance and get optimization recommendations"
+        },
+        {
+          "name": "snow_anomaly_detection",
+          "description": "Detect anomalies in data"
+        },
+        {
+          "name": "snow_get_mobile_analytics",
+          "description": "Retrieves mobile application usage analytics including active users, sessions, and feature usage."
+        },
+        {
+          "name": "snow_pattern_analysis",
+          "description": "Analyzes patterns across incidents, requests, and problems to identify trends, common issues, and improvement opportunities"
+        },
+        {
+          "name": "snow_sentiment_analysis",
+          "description": "Analyze text sentiment"
+        }
+      ]
+    },
+    {
+      "name": "api",
+      "displayName": "Api",
+      "tools": [
+        {
+          "name": "snow_custom_api",
+          "description": "Call custom API endpoint"
+        }
+      ]
+    },
+    {
+      "name": "applications",
+      "displayName": "Applications",
+      "tools": [
+        {
+          "name": "snow_create_application",
+          "description": "Create a scoped application in ServiceNow with optional automatic Update Set and scope switching.\n\n📦 WHEN TO CREATE AN APPLICATION:\n\n✅ CREATE APPLICATION when:\n- Building a complete feature set (e.g., HR Portal, Customer Onboarding)\n- Creating functionality that needs to be deployed as a single unit\n- Building integrations with external systems\n- Developing for multiple ServiceNow instances\n- Need clear ownership, versioning, and dependency management\n\n❌ USE GLOBAL SCOPE when:\n- Making small fixes or patches\n- Creating shared utilities used across applications\n- Quick prototypes or POCs\n- Cross-application functionality\n\n🔄 WORKFLOW INTEGRATION:\n- auto_create_update_set=true (default): Creates Update Set in new app scope\n- auto_switch_scope=true (default): Switches to new app scope for development\n- All subsequent artifacts will be tracked in the new application scope"
+        },
+        {
+          "name": "snow_get_current_scope",
+          "description": "Get the current application scope and active Update Set.\n\n🔍 USE THIS TO:\n- Verify which scope you're currently working in before creating artifacts\n- Check if you have an active Update Set in the current scope\n- Understand the development context before starting work\n\n📋 RETURNS:\n- Current application scope (name, sys_id, scope prefix)\n- Whether it's global or a scoped application\n- Current active Update Set (if any)\n- Recommendations for next steps"
+        },
+        {
+          "name": "snow_install_application",
+          "description": "Install application from store"
+        },
+        {
+          "name": "snow_list_applications",
+          "description": "List all scoped applications in the ServiceNow instance.\n\n📋 USE THIS TO:\n- Find available application scopes before switching\n- Search for applications by name or scope prefix\n- See which applications are active/inactive\n- Decide which scope to use for development\n\n🔍 SEARCH OPTIONS:\n- Filter by name (partial match)\n- Filter by scope prefix (e.g., \"x_myco\")\n- Filter by vendor\n- Show only active or include inactive\n\n📊 RETURNS:\n- List of applications with name, scope, version, vendor\n- Count of artifacts in each application (optional)\n- Indicates which scope is currently active"
+        },
+        {
+          "name": "snow_switch_application_scope",
+          "description": "Switch the current application scope for development.\n\n🔄 APPLICATION SCOPE SWITCHING:\n\nWhen you switch scope, all NEW artifacts you create will belong to that scope.\nThis is essential for proper application organization and deployment.\n\n📌 SCOPE OPTIONS:\n- \"global\" - Global scope for cross-application utilities and system-wide changes\n- Application sys_id - Switch to a specific application by its sys_id\n- Scope name - Switch by scope prefix (e.g., \"x_myco_hr_portal\")\n- Application name - Switch by application name\n\n🎯 USE CASES:\n- Switching to a scoped app to add new features\n- Switching to global for shared utilities\n- Switching between multiple applications during development\n\n⚠️ IMPORTANT:\n- Existing artifacts remain in their original scope\n- Active Update Set should match the target scope for proper tracking\n- Use create_update_set=true to ensure changes are tracked"
+        }
+      ]
+    },
+    {
+      "name": "approvals",
+      "displayName": "Approvals",
+      "tools": [
+        {
+          "name": "snow_approve_reject",
+          "description": "Approve or reject approval request"
+        },
+        {
+          "name": "snow_get_pending_approvals",
+          "description": "Get pending approvals for user"
+        },
+        {
+          "name": "snow_request_approval",
+          "description": "Request approval for record"
+        }
+      ]
+    },
+    {
+      "name": "artifact-analysis",
+      "displayName": "Artifact Analysis",
+      "tools": [
+        {
+          "name": "snow_blast_radius_artifact_dependencies",
+          "description": "Analyze what a specific artifact reads, writes, and depends on.\n\n📋 USE THIS TO:\n- Understand what fields a business rule reads and writes\n- See what tables a script include queries\n- Find which script includes an artifact calls\n- Assess the complexity and risk of an artifact\n\n🔍 EXAMPLE: \"What does this business rule touch?\"\n\n📊 RETURNS:\n- Fields read and written (with line numbers)\n- Tables queried via GlideRecord\n- Script includes called\n- Glide APIs used\n- Risk assessment (low/medium/high complexity)"
+        }
+      ]
+    },
+    {
+      "name": "asset-lifecycle",
+      "displayName": "Asset Lifecycle",
+      "tools": [
+        {
+          "name": "snow_create_asset",
+          "description": "Create hardware/software asset"
+        },
+        {
+          "name": "snow_retire_asset",
+          "description": "Retire/dispose asset"
+        },
+        {
+          "name": "snow_track_asset_lifecycle",
+          "description": "Track complete asset lifecycle from procurement to disposal"
+        },
+        {
+          "name": "snow_transfer_asset",
+          "description": "Transfer asset to user/location"
+        }
+      ]
+    },
+    {
+      "name": "attachments",
+      "displayName": "Attachments",
+      "tools": [
+        {
+          "name": "snow_attach_file",
+          "description": "Attach files to ServiceNow records with validation and content type detection"
+        },
+        {
+          "name": "snow_delete_attachment",
+          "description": "Delete attachment"
+        },
+        {
+          "name": "snow_file_download",
+          "description": "Download file from ServiceNow"
+        },
+        {
+          "name": "snow_file_upload",
+          "description": "Upload file to ServiceNow"
+        },
+        {
+          "name": "snow_get_attachments",
+          "description": "Get attachments for record"
+        },
+        {
+          "name": "snow_upload_attachment",
+          "description": "Upload attachment to record"
+        }
+      ]
+    },
+    {
+      "name": "audit",
+      "displayName": "Audit",
+      "tools": [
+        {
+          "name": "snow_get_ci_history",
+          "description": "Get Configuration Item change history"
+        }
+      ]
+    },
+    {
+      "name": "audit-rules",
+      "displayName": "Audit Rules",
+      "tools": [
+        {
+          "name": "snow_create_audit_rule",
+          "description": "Createauditrule"
+        }
+      ]
+    },
+    {
+      "name": "audit-trail",
+      "displayName": "Audit Trail",
+      "tools": [
+        {
+          "name": "snow_audit_trail_analysis",
+          "description": "Audittrailanalysis"
+        }
+      ]
+    },
+    {
+      "name": "bulk-operations",
+      "displayName": "Bulk Operations",
+      "tools": [
+        {
+          "name": "snow_bulk_update",
+          "description": "Bulk update multiple records"
+        }
+      ]
+    },
+    {
+      "name": "callbacks",
+      "displayName": "Callbacks",
+      "tools": [
+        {
+          "name": "snow_callback_handler",
+          "description": "Create callback handler for async operations"
+        }
+      ]
+    },
+    {
+      "name": "catalog",
+      "displayName": "Catalog",
+      "tools": [
+        {
+          "name": "snow_blast_radius_apps",
+          "description": "List all applications/scopes in the instance with configuration summary counts.\n\n📋 USE THIS TO:\n- Get an overview of all apps and their configuration footprint\n- Find which apps have the most business rules, client scripts, etc.\n- Identify apps by name or scope prefix\n- Start a Blast Radius analysis session\n\n📊 RETURNS:\n- List of applications with name, scope, vendor\n- Per-app counts of business rules, client scripts, UI actions, UI policies, script includes, ACLs\n- Instance-level summary totals"
+        },
+        {
+          "name": "snow_catalog_item_manager",
+          "description": "Create, update, or manage service catalog items"
+        },
+        {
+          "name": "snow_catalog_item_search",
+          "description": "Search service catalog items with filtering options"
+        },
+        {
+          "name": "snow_create_variable",
+          "description": "Create catalog variable"
+        },
+        {
+          "name": "snow_create_variable_set",
+          "description": "Create reusable variable set"
+        }
+      ]
+    },
+    {
+      "name": "change",
+      "displayName": "Change",
+      "tools": [
+        {
+          "name": "snow_change_manage",
+          "description": "Unified change management (create, update_state, approve, create_task, schedule_cab)"
+        },
+        {
+          "name": "snow_change_query",
+          "description": "Unified change query (get, search, assess_risk)"
+        }
+      ]
+    },
+    {
+      "name": "code-analysis",
+      "displayName": "Code Analysis",
+      "tools": [
+        {
+          "name": "snow_detect_code_patterns",
+          "description": "Detect code patterns, anti-patterns, and best practices in ServiceNow scripts"
+        }
+      ]
+    },
+    {
+      "name": "comments",
+      "displayName": "Comments",
+      "tools": [
+        {
+          "name": "snow_add_comment",
+          "description": "Add comment/work note to record"
+        },
+        {
+          "name": "snow_get_journal_entries",
+          "description": "Get journal entries for record"
+        }
+      ]
+    },
+    {
+      "name": "compliance",
+      "displayName": "Compliance",
+      "tools": [
+        {
+          "name": "snow_create_compliance_rule",
+          "description": "Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels."
+        },
+        {
+          "name": "snow_run_compliance_scan",
+          "description": "Run compliance scans against security frameworks (SOX, GDPR, HIPAA, PCI-DSS)"
+        }
+      ]
+    },
+    {
+      "name": "configuration",
+      "displayName": "Configuration",
+      "tools": [
+        {
+          "name": "snow_property_manager",
+          "description": "Enhanced property management with get, set, and validation in one tool"
+        }
+      ]
+    },
+    {
+      "name": "connectors",
+      "displayName": "Connectors",
+      "tools": [
+        {
+          "name": "snow_batch_request",
+          "description": "Execute batch REST requests"
+        },
+        {
+          "name": "snow_configure_connection",
+          "description": "Configure ServiceNow connection alias"
+        },
+        {
+          "name": "snow_test_connection",
+          "description": "Test ServiceNow connection"
+        }
+      ]
+    },
+    {
+      "name": "creation",
+      "displayName": "Creation",
+      "tools": [
+        {
+          "name": "snow_create_workspace",
+          "description": "Create complete Agent Workspace with experience, config, routes, and lists via Builder Toolkit API"
+        },
+        {
+          "name": "snow_pa_create",
+          "description": "Unified PA creation (indicator, breakdown, threshold, widget, visualization, scheduled_report)"
+        }
+      ]
+    },
+    {
+      "name": "credentials",
+      "displayName": "Credentials",
+      "tools": [
+        {
+          "name": "snow_create_connection_alias",
+          "description": "Create connection alias for IntegrationHub/Flow Designer to reference external credentials"
+        },
+        {
+          "name": "snow_create_credential_alias",
+          "description": "Create credential alias for secure storage of API keys, passwords, and OAuth tokens"
+        }
+      ]
+    },
+    {
+      "name": "crud",
+      "displayName": "Crud",
+      "tools": [
+        {
+          "name": "snow_apply_template",
+          "description": "Apply template to create record"
+        },
+        {
+          "name": "snow_create_ci",
+          "description": "Create Configuration Item in CMDB"
+        },
+        {
+          "name": "snow_get_by_sysid",
+          "description": "Get any ServiceNow record by sys_id with optional field selection"
+        },
+        {
+          "name": "snow_query_table",
+          "description": "Query any ServiceNow table with filtering, pagination, and field selection. Always returns sys_id for each record."
+        },
+        {
+          "name": "snow_record_manage",
+          "description": "🔥 PRIMARY TOOL for ALL ServiceNow record operations. USE THIS for: create incident, update incident, get incident, delete incident, query incidents, create change, update change, create problem, update problem, create user, update user, create asset, update asset, create CI, and ANY other record operation.\n\n⚡ ACTIONS: create | get | update | delete | query\n\n📋 SUPPORTED TABLES (use friendly names):\n• ITSM: incident, problem, change, change_request, change_task, request, task\n• CMDB: ci, server, computer, ci_relationship\n• Users: user, group, group_member\n• Assets: asset, hardware_asset, software_license\n• HR/CSM: hr_case, hr_task, customer_case, customer_account\n• Projects: project, project_task\n• Other: purchase_order, knowledge_article\n\n💡 EXAMPLES:\n• Update incident: { action: 'update', table: 'incident', sys_id: '...', state: 6 }\n• Create incident: { action: 'create', table: 'incident', short_description: '...', urgency: 2 }\n• Query incidents: { action: 'query', table: 'incident', query: 'state=1' }\n• Get by number: { action: 'get', table: 'incident', number: 'INC0010001' }"
+        },
+        {
+          "name": "snow_update_ci",
+          "description": "Update Configuration Item attributes"
+        }
+      ]
+    },
+    {
+      "name": "csm",
+      "displayName": "Csm",
+      "tools": [
+        {
+          "name": "snow_create_customer_case",
+          "description": "Create CSM customer case"
+        }
+      ]
+    },
+    {
+      "name": "customer-service",
+      "displayName": "Customer Service",
+      "tools": [
+        {
+          "name": "snow_create_customer_account",
+          "description": "Create customer account for tracking relationships and entitlements"
+        },
+        {
+          "name": "snow_create_entitlement",
+          "description": "Create service entitlement for customer"
+        },
+        {
+          "name": "snow_get_customer_history",
+          "description": "Retrieve complete customer interaction history"
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "displayName": "Dashboard",
+      "tools": [
+        {
+          "name": "snow_security_dashboard",
+          "description": "Generate real-time security operations dashboard with key metrics"
+        }
+      ]
+    },
+    {
+      "name": "dashboards",
+      "displayName": "Dashboards",
+      "tools": [
+        {
+          "name": "snow_add_dashboard_widget",
+          "description": "Add widget to dashboard"
+        },
+        {
+          "name": "snow_create_dashboard",
+          "description": "Create dashboard"
+        },
+        {
+          "name": "snow_create_pa_dashboard",
+          "description": "Create a Performance Analytics dashboard with widgets (pa_dashboards table). For Service Portal / classic dashboards use snow_create_dashboard."
+        }
+      ]
+    },
+    {
+      "name": "data-integration",
+      "displayName": "Data Integration",
+      "tools": [
+        {
+          "name": "snow_configure_uib_data_broker",
+          "description": "Update data broker configuration including queries, caching, and refresh settings"
+        },
+        {
+          "name": "snow_create_uib_data_broker",
+          "description": "Create data broker to connect UI Builder pages to ServiceNow data sources"
+        }
+      ]
+    },
+    {
+      "name": "data-quality",
+      "displayName": "Data Quality",
+      "tools": [
+        {
+          "name": "snow_analyze_data_quality",
+          "description": "Analyze data quality including completeness, consistency, and accuracy metrics"
+        },
+        {
+          "name": "snow_duplicate_detection",
+          "description": "Detect duplicate records"
+        }
+      ]
+    },
+    {
+      "name": "data-transformation",
+      "displayName": "Data Transformation",
+      "tools": [
+        {
+          "name": "snow_create_field_map",
+          "description": "Create field mapping within transform map for data transformation"
+        }
+      ]
+    },
+    {
+      "name": "data-utilities",
+      "displayName": "Data Utilities",
+      "tools": [
+        {
+          "name": "snow_data_convert",
+          "description": "Unified data conversion (csv_to_json, json_to_csv, json_to_xml, xml_to_json)"
+        },
+        {
+          "name": "snow_data_export",
+          "description": "Export table data to CSV/XML/JSON format. Always includes sys_id. Returns records array with full data."
+        },
+        {
+          "name": "snow_data_mapper",
+          "description": "Advanced data mapping with transformations"
+        },
+        {
+          "name": "snow_date_filter",
+          "description": "Build date-based query filter"
+        },
+        {
+          "name": "snow_diff_objects",
+          "description": "Compare two objects and get differences"
+        },
+        {
+          "name": "snow_field_filter",
+          "description": "Create field-based filter"
+        },
+        {
+          "name": "snow_field_mapper",
+          "description": "Map fields between schemas"
+        },
+        {
+          "name": "snow_paginate",
+          "description": "Calculate pagination parameters"
+        },
+        {
+          "name": "snow_parse_json",
+          "description": "Parse and validate JSON"
+        },
+        {
+          "name": "snow_query_filter",
+          "description": "Build ServiceNow encoded query filter"
+        },
+        {
+          "name": "snow_transform_data",
+          "description": "Transform data using field mappings"
+        }
+      ]
+    },
+    {
+      "name": "debugging",
+      "displayName": "Debugging",
+      "tools": [
+        {
+          "name": "snow_debug_widget_fetch",
+          "description": "Debug widget data fetching and server communication issues"
+        },
+        {
+          "name": "snow_inspect_mutations",
+          "description": "Inspect what mutations (INSERT/UPDATE/DELETE) occurred on the ServiceNow instance in a time window. Queries sys_audit for successful changes, syslog for errors, and optionally syslog_transaction for HTTP requests including failures. Essential for debugging tool behavior after execution."
+        }
+      ]
+    },
+    {
+      "name": "dependency-analysis",
+      "displayName": "Dependency Analysis",
+      "tools": [
+        {
+          "name": "snow_blast_radius_dependents",
+          "description": "Find every artifact on the instance that USES / CALLS / DEPENDS ON a given artifact. Answers: \"what breaks if I change or delete this?\"\n\n🛑 CALL THIS BEFORE:\n- Deleting a script include, business rule, client script, UI action, UI policy, or widget\n- Refactoring the name / api_name / signature of any script include\n- Removing a table\n- Promoting a breaking change to another instance\n- Telling the user \"it's safe to remove X\"\n\nThe output is the impact list — every caller, every referrer, in every\nscope. Do not rely on reading 5 tables by hand; this tool scans 100+\ntables including workflows, notifications, email actions, catalog\nscripts, scheduled jobs, and custom scripted tables.\n\n🔍 TRIGGER PHRASES (agent should invoke this):\n- \"what uses X\" / \"what calls X\" / \"what references X\"\n- \"wat gebruikt X\" / \"wat roept X aan\" / \"wat heeft X nodig\"\n- \"can I delete X\" / \"is it safe to remove X\" / \"kan ik X verwijderen\"\n- \"impact analysis\" / \"blast radius\" / \"dependency audit\"\n- User asks to refactor, rename, or remove a named artifact\n\n🔍 EXAMPLES:\n- \"What calls the IncidentUtils script include?\"\n- \"Is it safe to delete this business rule?\"\n- \"Show me everything referencing the incident table\"\n\n📊 RETURNS:\n- dependents[]: each with type, name, scope, source_table, source_field,\n  cross_scope flag. source_table/source_field let you distinguish a\n  workflow-condition hit from a business-rule hit — critical for triage.\n- summary: by_type + by_table counts + cross_scope count + truncation flag.\n- search_stats: per-phase timing + tables scanned + cache hit, so you\n  know the scan was thorough (expect 100+ tables on a typical instance).\n\n🔎 HOW IT SEARCHES (why you can trust the \"none found\"):\n- Phase 1: 25+ curated artifact types (human-attributed labels)\n- Phase 2: sys_dictionary discovery — every table with script-type fields\n- Phase 3: concurrency-limited batch query over the long tail\nDeep-only by design. Takes 2-10s depending on instance size."
+        }
+      ]
+    },
+    {
+      "name": "deployment",
+      "displayName": "Deployment",
+      "tools": [
+        {
+          "name": "snow_artifact_manage",
+          "description": "Unified tool for ServiceNow artifact management (create, get, update, delete, find, list, analyze, export, import)\n\n⚡ ACTIONS:\n- create: Create new artifact (widget, page, script, table, field, etc.)\n- get: Retrieve artifact by sys_id or identifier\n- update: Update existing artifact fields (supports _file parameters for file-based updates)\n- delete: Delete artifact (supports soft delete)\n- find: Search artifacts by query\n- list: List all artifacts of a type\n- analyze: Analyze artifact dependencies\n- export: Export artifact to JSON/XML\n- import: Import artifact from JSON/XML file\n- verify: Compare local files against deployed artifact content\n\n🗃️ SUPPORTED ARTIFACT TYPES:\n- sp_widget / widget: Service Portal widgets\n- sp_page / page: Service Portal pages\n- sys_ux_page / uib_page: UI Builder pages\n- script_include: Script Includes\n- business_rule: Business Rules\n- client_script: Client Scripts\n- ui_policy: UI Policies\n- ui_action: UI Actions\n- rest_message: REST Messages\n- scheduled_job: Scheduled Jobs\n- transform_map: Transform Maps\n- fix_script: Fix Scripts\n- table: Custom tables (sys_db_object)\n- field: Custom fields (sys_dictionary)\n- flow: Flows (sys_hub_flow)\n- application: Applications (sys_app)\n\n⚠️ ES5 REQUIREMENT: Server-side scripts must use ES5 syntax (var, function, string concatenation)\n\n📦 APPLICATION SCOPE:\n- Use application_scope parameter to specify scope\n- Use \"global\" for global scope artifacts"
+        },
+        {
+          "name": "snow_auth_diagnostics",
+          "description": "Performs comprehensive authentication and permission diagnostics. Tests OAuth tokens, API access, table permissions, and provides specific remediation steps."
+        },
+        {
+          "name": "snow_clone_instance_artifact",
+          "description": "Clones artifacts directly between ServiceNow instances (dev→test→prod). Handles authentication, dependency resolution, and data migration."
+        },
+        {
+          "name": "snow_create_solution_package",
+          "description": "Creates a MULTI-ARTIFACT solution package with Update Set tracking.\n\n⚠️ WHEN TO USE THIS TOOL:\n- Creating 3+ related artifacts that form a complete solution\n- Need automatic Update Set creation for the entire package\n- Deploying a \"feature bundle\" (e.g., widget + script includes + business rules)\n\n❌ DO NOT USE FOR:\n- Creating a SINGLE widget → use snow_artifact_manage instead\n- Creating a SINGLE script include → use snow_artifact_manage instead\n- Creating individual artifacts → use snow_artifact_manage instead\n\n✅ GOOD USE CASE:\n\"Create HR Portal solution with: widget, 2 script includes, 1 business rule\"\n\n❌ BAD USE CASE:\n\"Create a widget for displaying incidents\" → Use snow_artifact_manage!"
+        },
+        {
+          "name": "snow_deployment_debug",
+          "description": "Provides detailed debugging information including authentication status, permissions, active sessions, and recent deployment logs for troubleshooting."
+        },
+        {
+          "name": "snow_deployment_status",
+          "description": "Retrieves comprehensive deployment status including active deployments, recent history, success rates, and performance metrics."
+        },
+        {
+          "name": "snow_github_deploy",
+          "description": "Deploy files directly from GitHub to ServiceNow — content never passes through LLM context.\n\nThree modes:\n1. Single file: source_path → one artifact field\n2. Directory → Widget: source_directory auto-maps files (template.html→template, server.js→script, etc.)\n3. Bulk: source_directory + bulk=true → each file becomes a separate artifact\n\nRequires: Enterprise license with 'github' feature. GitHub PAT is managed server-side.\n\nSupported target types: widget, script_include, business_rule, client_script, ui_action, scheduled_job, fix_script, etc."
+        },
+        {
+          "name": "snow_github_tree",
+          "description": "Browse GitHub repository structure via enterprise proxy. Returns metadata only (paths, types, sizes) — no file content in LLM context.\n\nUse this to explore a repo before deploying files with snow_github_deploy.\n\nRequires: Enterprise license with 'github' feature. GitHub PAT is managed server-side."
+        },
+        {
+          "name": "snow_rollback_deployment",
+          "description": "Rollback failed deployment by reverting to previous version or deleting artifact"
+        },
+        {
+          "name": "snow_validate_deployment",
+          "description": "Validate artifact before deployment (ES5, coherence, dependencies, security)"
+        }
+      ]
+    },
+    {
+      "name": "devops",
+      "displayName": "Devops",
+      "tools": [
+        {
+          "name": "snow_cicd_deploy",
+          "description": "Trigger CI/CD deployment pipeline"
+        },
+        {
+          "name": "snow_create_devops_change",
+          "description": "Create automated DevOps change request for deployments"
+        },
+        {
+          "name": "snow_get_devops_insights",
+          "description": "Retrieve DevOps metrics and insights"
+        },
+        {
+          "name": "snow_track_deployment",
+          "description": "Track application deployment through DevOps pipeline"
+        },
+        {
+          "name": "snow_velocity_tracking",
+          "description": "Track team velocity and delivery metrics"
+        }
+      ]
+    },
+    {
+      "name": "diagnostics",
+      "displayName": "Diagnostics",
+      "tools": [
+        {
+          "name": "snow_validate_live_connection",
+          "description": "Validates ServiceNow connection status, authentication tokens, and user permissions. Returns detailed diagnostics with response times."
+        }
+      ]
+    },
+    {
+      "name": "discovery",
+      "displayName": "Discovery",
+      "tools": [
+        {
+          "name": "snow_asset_discovery",
+          "description": "Discover and normalize assets from multiple sources"
+        },
+        {
+          "name": "snow_cmdb_search",
+          "description": "Searches Configuration Management Database (CMDB) for configuration items with relationship mapping"
+        },
+        {
+          "name": "snow_discover_automation_jobs",
+          "description": "Discovers automation jobs (scheduled scripts, executions) in the instance."
+        },
+        {
+          "name": "snow_discover_data_sources",
+          "description": "Discover available data sources for integration including import sets and REST endpoints"
+        },
+        {
+          "name": "snow_discover_events",
+          "description": "Discovers system events registered in the instance."
+        },
+        {
+          "name": "snow_discover_integration_endpoints",
+          "description": "Discover existing integration endpoints (REST, SOAP, LDAP, EMAIL)"
+        },
+        {
+          "name": "snow_discover_mobile_configs",
+          "description": "Discovers mobile application configurations including layouts, actions, and offline sync settings."
+        },
+        {
+          "name": "snow_discover_platform_tables",
+          "description": "Discover platform development tables by category (ui, script, policy, action, security, system). Optimized for fast parallel queries with timeout handling."
+        },
+        {
+          "name": "snow_discover_schedules",
+          "description": "Discovers schedules (business hours, maintenance windows) in the instance."
+        },
+        {
+          "name": "snow_get_instance_info",
+          "description": "Get ServiceNow instance information"
+        },
+        {
+          "name": "snow_pa_discover",
+          "description": "Unified PA discovery (indicators, report_fields, reporting_tables)"
+        },
+        {
+          "name": "snow_run_discovery",
+          "description": "Trigger CMDB discovery scan"
+        },
+        {
+          "name": "snow_table_schema_discovery",
+          "description": "Discover comprehensive table schema including fields, relationships, ACLs, and business rules"
+        }
+      ]
+    },
+    {
+      "name": "documentation",
+      "displayName": "Documentation",
+      "tools": [
+        {
+          "name": "snow_generate_docs",
+          "description": "Generate documentation for ServiceNow artifacts"
+        }
+      ]
+    },
+    {
+      "name": "editing",
+      "displayName": "Editing",
+      "tools": [
+        {
+          "name": "snow_edit_by_sysid",
+          "description": "Updates specific fields of an artifact using sys_id. Provides direct field-level modifications with validation."
+        }
+      ]
+    },
+    {
+      "name": "elevation",
+      "displayName": "Elevation",
+      "tools": [
+        {
+          "name": "snow_elevate_role",
+          "description": "Execute a server-side operation that requires elevated privileges (security_admin scope — ACL modifications, high-security properties, etc.). ALWAYS returns a confirmation prompt on the first call; executes only when re-called with user_confirmed=true. Agents cannot skip this confirmation."
+        }
+      ]
+    },
+    {
+      "name": "email",
+      "displayName": "Email",
+      "tools": [
+        {
+          "name": "snow_create_email_config",
+          "description": "Create email server configuration for SMTP, POP3, or IMAP"
+        },
+        {
+          "name": "snow_inbound_email_action",
+          "description": "Manage inbound email actions: list, get, create, update, delete, enable/disable"
+        }
+      ]
+    },
+    {
+      "name": "error-handling",
+      "displayName": "Error Handling",
+      "tools": [
+        {
+          "name": "snow_error_handler",
+          "description": "Create error handler"
+        },
+        {
+          "name": "snow_exception_handler",
+          "description": "Handle exceptions with logging"
+        }
+      ]
+    },
+    {
+      "name": "event-management",
+      "displayName": "Event Management",
+      "tools": [
+        {
+          "name": "snow_create_alert",
+          "description": "Create system alert for monitoring"
+        },
+        {
+          "name": "snow_create_alert_rule",
+          "description": "Create alert rules for automated monitoring and notifications"
+        },
+        {
+          "name": "snow_create_event",
+          "description": "Create system event for event management"
+        },
+        {
+          "name": "snow_event_handler",
+          "description": "Create event handler"
+        },
+        {
+          "name": "snow_get_event_correlation",
+          "description": "Get event correlation results showing how events are grouped into alerts"
+        },
+        {
+          "name": "snow_get_event_queue",
+          "description": "Get event queue status and pending events"
+        }
+      ]
+    },
+    {
+      "name": "events",
+      "displayName": "Events",
+      "tools": [
+        {
+          "name": "snow_create_uib_event",
+          "description": "Create custom events for UI Builder component communication"
+        }
+      ]
+    },
+    {
+      "name": "field-analysis",
+      "displayName": "Field Analysis",
+      "tools": [
+        {
+          "name": "snow_blast_radius_field_references",
+          "description": "Find every artifact that references a specific table field across the instance.\n\n📋 USE THIS TO:\n- Audit all references to a field before changing or removing it\n- Understand the full blast radius of a field rename or refactor\n- Find reads vs writes vs condition uses\n\n🔍 EXAMPLE: \"What touches incident.assignment_group?\"\n\n📊 COVERAGE (v2):\n- Business rules, client scripts, UI actions, UI policies (+ actions), ACLs\n- Data policies (+ rules), email notifications, metric definitions\n- Script includes, scheduled jobs, fix scripts, script actions, UI scripts\n- Scripted REST resources, processors, email scripts, inbound email actions\n- Service Portal widgets, catalog client scripts, catalog UI policies\n- Transform entries/scripts, ATF step inputs, dictionary dependent fields\n- Condition/filter columns (not just scripts) are searched where relevant\n- Parent tables are walked via sys_db_object.super_class (opt-out)\n\n⚠️ LIMITATIONS:\n- Reference dotwalks (current.assignment_group.manager) are not resolved\n- Dynamic field access (gr.setValue(someVar, value)) cannot be detected\n- Availability of scoped artifact tables depends on installed plugins"
+        }
+      ]
+    },
+    {
+      "name": "flow-designer",
+      "displayName": "Flow Designer",
+      "tools": [
+        {
+          "name": "snow_manage_flow",
+          "description": "Complete Flow Designer lifecycle: create flows/subflows, add/update triggers and actions, list, get details, update, activate, deactivate, delete and publish. Use update_trigger to change an existing trigger (e.g. switch from record_created to record_create_or_update) without deleting the flow. IMPORTANT: Flow elements (triggers, actions, flow logic, subflows) can ONLY be created/updated/deleted via this tool's GraphQL mutations. Direct Table API operations on sys_hub_action_instance, sys_hub_flow_logic, sys_hub_sub_flow_instance, sys_hub_trigger_instance will NOT work — these tables do not contain individual element records."
+        }
+      ]
+    },
+    {
+      "name": "forms",
+      "displayName": "Forms",
+      "tools": [
+        {
+          "name": "snow_add_form_field",
+          "description": "Add field to form section"
+        },
+        {
+          "name": "snow_create_form_layout",
+          "description": "Create custom form layout"
+        },
+        {
+          "name": "snow_create_form_section",
+          "description": "Create form section"
+        }
+      ]
+    },
+    {
+      "name": "frameworks",
+      "displayName": "Frameworks",
+      "tools": [
+        {
+          "name": "snow_discover_security_frameworks",
+          "description": "Discovers security and compliance frameworks available in the instance for policy creation and auditing."
+        }
+      ]
+    },
+    {
+      "name": "graphql",
+      "displayName": "Graphql",
+      "tools": [
+        {
+          "name": "snow_graphql_query",
+          "description": "Execute GraphQL query"
+        }
+      ]
+    },
+    {
+      "name": "hr",
+      "displayName": "Hr",
+      "tools": [
+        {
+          "name": "snow_create_hr_case",
+          "description": "Create HR service case"
+        },
+        {
+          "name": "snow_create_hr_task",
+          "description": "Create HR task for case fulfillment"
+        },
+        {
+          "name": "snow_employee_offboarding",
+          "description": "Initiate employee offboarding workflow"
+        },
+        {
+          "name": "snow_employee_onboarding",
+          "description": "Trigger employee onboarding workflow"
+        }
+      ]
+    },
+    {
+      "name": "impact-analysis",
+      "displayName": "Impact Analysis",
+      "tools": [
+        {
+          "name": "snow_get_ci_impact",
+          "description": "Calculate impact analysis for CI outage"
+        },
+        {
+          "name": "snow_impact_analysis",
+          "description": "Perform impact analysis to identify affected services when a CI changes"
+        }
+      ]
+    },
+    {
+      "name": "import-export",
+      "displayName": "Import Export",
+      "tools": [
+        {
+          "name": "snow_create_import_set",
+          "description": "Create import set for data import"
+        },
+        {
+          "name": "snow_create_transform_map",
+          "description": "Create transform map for import sets"
+        },
+        {
+          "name": "snow_execute_transform",
+          "description": "Execute transform map on import set"
+        },
+        {
+          "name": "snow_export_to_xml",
+          "description": "Export records to XML format"
+        }
+      ]
+    },
+    {
+      "name": "incidents",
+      "displayName": "Incidents",
+      "tools": [
+        {
+          "name": "snow_create_security_incident",
+          "description": "Create security incident with automated threat correlation and priority assignment"
+        }
+      ]
+    },
+    {
+      "name": "integrationhub",
+      "displayName": "Integrationhub",
+      "tools": [
+        {
+          "name": "snow_create_flow_action",
+          "description": "Create custom IntegrationHub action for Flow Designer"
+        },
+        {
+          "name": "snow_install_spoke",
+          "description": "Install and manage IntegrationHub Spokes (Jira, Slack, Azure DevOps, etc.)"
+        },
+        {
+          "name": "snow_manage_spoke_connection",
+          "description": "Manage IntegrationHub spoke connections: configure, test, and troubleshoot"
+        }
+      ]
+    },
+    {
+      "name": "knowledge",
+      "displayName": "Knowledge",
+      "tools": [
+        {
+          "name": "snow_create_knowledge_base",
+          "description": "Creates a new knowledge base for organizing articles by topic, department, or audience."
+        },
+        {
+          "name": "snow_discover_knowledge_bases",
+          "description": "Discovers available knowledge bases and their categories in the ServiceNow instance."
+        },
+        {
+          "name": "snow_knowledge_article_manage",
+          "description": "Unified knowledge article management (create, update, get, publish, retire, search)"
+        }
+      ]
+    },
+    {
+      "name": "kpi",
+      "displayName": "Kpi",
+      "tools": [
+        {
+          "name": "snow_define_kpi",
+          "description": "Define Key Performance Indicators for monitoring"
+        }
+      ]
+    },
+    {
+      "name": "license-management",
+      "displayName": "License Management",
+      "tools": [
+        {
+          "name": "snow_manage_software_license",
+          "description": "Manage software licenses with compliance tracking and optimization"
+        },
+        {
+          "name": "snow_optimize_licenses",
+          "description": "Analyze license usage and provide optimization recommendations"
+        }
+      ]
+    },
+    {
+      "name": "local-sync",
+      "displayName": "Local Sync",
+      "tools": [
+        {
+          "name": "snow_convert_to_es5",
+          "description": "Convert modern JavaScript (ES6+) to ES5 for ServiceNow Rhino engine"
+        },
+        {
+          "name": "snow_list_supported_artifacts",
+          "description": "List all ServiceNow artifact types supported by local sync"
+        },
+        {
+          "name": "snow_pull_artifact",
+          "description": "Pull ServiceNow artifact to local files for editing with native tools"
+        },
+        {
+          "name": "snow_push_artifact",
+          "description": "Push locally edited artifact files back to ServiceNow with validation"
+        },
+        {
+          "name": "snow_sync_cleanup",
+          "description": "Clean up local artifact files after sync with retention policies"
+        },
+        {
+          "name": "snow_sync_status",
+          "description": "Get status of locally synced artifacts including changes and validation"
+        }
+      ]
+    },
+    {
+      "name": "machine-learning",
+      "displayName": "Machine Learning",
+      "tools": [
+        {
+          "name": "snow_ai_classify",
+          "description": "Classify text using AI"
+        },
+        {
+          "name": "snow_ml_predict",
+          "description": "Make ML prediction using trained model"
+        },
+        {
+          "name": "snow_recommendation_engine",
+          "description": "Generate recommendations based on user behavior"
+        }
+      ]
+    },
+    {
+      "name": "metrics",
+      "displayName": "Metrics",
+      "tools": [
+        {
+          "name": "snow_create_metric",
+          "description": "Create system metric"
+        },
+        {
+          "name": "snow_operational_metrics",
+          "description": "Provides operational metrics and analytics including incident trends, resolution times, and performance indicators"
+        }
+      ]
+    },
+    {
+      "name": "mid-server",
+      "displayName": "Mid Server",
+      "tools": [
+        {
+          "name": "snow_configure_mid_server",
+          "description": "Configure MID Server settings for on-premise integrations and Discovery"
+        },
+        {
+          "name": "snow_manage_mid_capabilities",
+          "description": "Manage MID Server capabilities for Discovery, Orchestration, and integrations"
+        },
+        {
+          "name": "snow_test_mid_connectivity",
+          "description": "Test MID Server connectivity to external endpoints and diagnose network issues"
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "displayName": "Mobile",
+      "tools": [
+        {
+          "name": "snow_configure_mobile_app",
+          "description": "Configure ServiceNow mobile app"
+        },
+        {
+          "name": "snow_configure_offline_sync",
+          "description": "Configure offline synchronization settings for mobile applications. Controls which data is available offline."
+        },
+        {
+          "name": "snow_create_mobile_action",
+          "description": "Creates a mobile action that users can trigger from the mobile app. Actions can navigate, execute scripts, or open forms."
+        },
+        {
+          "name": "snow_create_mobile_layout",
+          "description": "Creates a custom mobile layout for forms and lists in the mobile app."
+        }
+      ]
+    },
+    {
+      "name": "monitoring",
+      "displayName": "Monitoring",
+      "tools": [
+        {
+          "name": "snow_check_health",
+          "description": "Check ServiceNow instance health"
+        },
+        {
+          "name": "snow_ci_health_check",
+          "description": "Check CI health and compliance status"
+        },
+        {
+          "name": "snow_collect_metric",
+          "description": "Collect metric data"
+        },
+        {
+          "name": "snow_get_email_logs",
+          "description": "Retrieve sent/received email logs from sys_email table for monitoring and debugging"
+        },
+        {
+          "name": "snow_get_flow_execution_logs",
+          "description": "Retrieve Flow Designer execution logs for monitoring flow runs, debugging failures, and analyzing performance"
+        },
+        {
+          "name": "snow_get_inbound_http_logs",
+          "description": "Retrieve inbound REST API transaction logs for monitoring API usage and debugging incoming requests"
+        },
+        {
+          "name": "snow_get_logs",
+          "description": "Retrieve ServiceNow platform logs with filtering by level, source, and time range. Supports four log tables: 'syslog' (default — system log), 'syslog_app_scope' (scoped-app log), 'syslog_transaction' (HTTP transactions), 'sys_script_execution_history' (background-script execution traces)."
+        },
+        {
+          "name": "snow_get_outbound_http_logs",
+          "description": "Retrieve outbound HTTP request logs for monitoring REST/SOAP integrations and external API calls"
+        },
+        {
+          "name": "snow_get_scheduled_job_logs",
+          "description": "Retrieve scheduled job execution history and logs for monitoring automation, identifying failures, and tracking performance"
+        },
+        {
+          "name": "snow_get_slow_queries",
+          "description": "Retrieve slow database query logs for identifying performance issues, optimizing GlideRecord queries, and improving system responsiveness"
+        },
+        {
+          "name": "snow_monitor_metrics",
+          "description": "Monitor system metrics and performance indicators"
+        },
+        {
+          "name": "snow_trace_execution",
+          "description": "Set up execution tracing configuration. Creates a trace session that scripts can write to. Use snow_get_script_output to retrieve trace data later."
+        }
+      ]
+    },
+    {
+      "name": "notifications",
+      "displayName": "Notifications",
+      "tools": [
+        {
+          "name": "snow_create_email_template",
+          "description": "Create email notification template with HTML/text content and optional SMS alternate"
+        },
+        {
+          "name": "snow_create_notification",
+          "description": "Create automated notification"
+        },
+        {
+          "name": "snow_create_notification_template",
+          "description": "Create reusable notification template with multi-channel support"
+        },
+        {
+          "name": "snow_email_notification_manage",
+          "description": "Manage email notifications (sysevent_email_action): list, get, create, update, delete, enable/disable. Supports all notification fields including triggers, recipients, content, and advanced options."
+        },
+        {
+          "name": "snow_emergency_broadcast",
+          "description": "Send emergency broadcast notification to all users or specific groups"
+        },
+        {
+          "name": "snow_notification_analytics",
+          "description": "Analyze notification delivery rates, engagement, and effectiveness"
+        },
+        {
+          "name": "snow_notification_preferences",
+          "description": "Manage user notification preferences and routing rules"
+        },
+        {
+          "name": "snow_schedule_notification",
+          "description": "Schedule future notification delivery with advanced scheduling options"
+        },
+        {
+          "name": "snow_send_email",
+          "description": "Send email notification via sys_email table (supports username, email, or sys_id)"
+        },
+        {
+          "name": "snow_send_notification",
+          "description": "Send email/SMS notification"
+        },
+        {
+          "name": "snow_send_push",
+          "description": "Send mobile push notification"
+        },
+        {
+          "name": "snow_send_push_notification",
+          "description": "Sends a push notification to mobile devices. Can target specific users, groups, or all users."
+        }
+      ]
+    },
+    {
+      "name": "oauth",
+      "displayName": "Oauth",
+      "tools": [
+        {
+          "name": "snow_create_oauth_profile",
+          "description": "Create OAuth 2.0 profile for external API authentication (Jira, Azure, Salesforce, etc.)"
+        },
+        {
+          "name": "snow_manage_oauth_tokens",
+          "description": "Manage OAuth tokens: view status, refresh tokens, troubleshoot authentication issues"
+        }
+      ]
+    },
+    {
+      "name": "operations",
+      "displayName": "Operations",
+      "tools": [
+        {
+          "name": "snow_analyze_incident",
+          "description": "Analyzes specific incidents with pattern recognition, similar incident matching, and automated resolution suggestions"
+        },
+        {
+          "name": "snow_auto_resolve_incident",
+          "description": "Attempts automated resolution of technical incidents based on known patterns and previous solutions. Includes dry-run mode for safety."
+        },
+        {
+          "name": "snow_pa_operate",
+          "description": "Unified PA operations (collect_data, export_report, generate_insights, get_scores)"
+        }
+      ]
+    },
+    {
+      "name": "optimization",
+      "displayName": "Optimization",
+      "tools": [
+        {
+          "name": "snow_analyze_query",
+          "description": "Analyze and optimize ServiceNow queries for performance"
+        }
+      ]
+    },
+    {
+      "name": "orchestration",
+      "displayName": "Orchestration",
+      "tools": [
+        {
+          "name": "snow_orchestrate_development",
+          "description": "Orchestrates complex development workflows with intelligent agent coordination, shared memory, and real-time progress tracking."
+        }
+      ]
+    },
+    {
+      "name": "pages",
+      "displayName": "Pages",
+      "tools": [
+        {
+          "name": "snow_uib_page_manage",
+          "description": "Unified UIB page management (create via Builder Toolkit, delete, add_element, remove_element)"
+        }
+      ]
+    },
+    {
+      "name": "performance",
+      "displayName": "Performance",
+      "tools": [
+        {
+          "name": "snow_cache_get",
+          "description": "Get value from cache"
+        },
+        {
+          "name": "snow_cache_set",
+          "description": "Set value in cache"
+        },
+        {
+          "name": "snow_rate_limit",
+          "description": "Apply rate limiting to operations"
+        }
+      ]
+    },
+    {
+      "name": "permissions",
+      "displayName": "Permissions",
+      "tools": [
+        {
+          "name": "snow_escalate_permissions",
+          "description": "Escalate user permissions with approval workflow and time-based access controls"
+        }
+      ]
+    },
+    {
+      "name": "platform",
+      "displayName": "Platform",
+      "tools": [
+        {
+          "name": "snow_create_business_rule",
+          "description": "Create server-side business rule with full configuration options (ES5 only for scripts!)"
+        },
+        {
+          "name": "snow_create_choice",
+          "description": "Create choice list value for field"
+        },
+        {
+          "name": "snow_create_client_script",
+          "description": "Create client-side script for form with type and field targeting"
+        },
+        {
+          "name": "snow_create_data_policy",
+          "description": "Create data policy"
+        },
+        {
+          "name": "snow_create_data_policy_rule",
+          "description": "Create data policy rule"
+        },
+        {
+          "name": "snow_create_field",
+          "description": "Create table field/column"
+        },
+        {
+          "name": "snow_create_processor",
+          "description": "Create script processor (ES5 only!)"
+        },
+        {
+          "name": "snow_create_script_include",
+          "description": "Create reusable Script Include with client-callable support"
+        },
+        {
+          "name": "snow_create_table",
+          "description": "Create new database table"
+        },
+        {
+          "name": "snow_create_ui_action",
+          "description": "Create UI Action (button, context menu, form link) with client/server scripts"
+        },
+        {
+          "name": "snow_create_ui_page",
+          "description": "Create custom UI Page with Jelly/HTML template and processing script"
+        },
+        {
+          "name": "snow_create_ui_policy",
+          "description": "Create UI Policy for form field control (visibility, mandatory, readonly)"
+        },
+        {
+          "name": "snow_disable_business_rule",
+          "description": "Disable business rule"
+        }
+      ]
+    },
+    {
+      "name": "playbooks",
+      "displayName": "Playbooks",
+      "tools": [
+        {
+          "name": "snow_execute_security_playbook",
+          "description": "Execute automated security response playbook with orchestrated actions"
+        }
+      ]
+    },
+    {
+      "name": "policies",
+      "displayName": "Policies",
+      "tools": [
+        {
+          "name": "snow_create_security_policy",
+          "description": "Creates security policies for access control and data protection. Configures enforcement levels, scope, and rule sets."
+        },
+        {
+          "name": "snow_discover_security_policies",
+          "description": "Lists existing security policies and rules with filtering by category and active status."
+        }
+      ]
+    },
+    {
+      "name": "prediction",
+      "displayName": "Prediction",
+      "tools": [
+        {
+          "name": "snow_predictive_analysis",
+          "description": "Provides predictive analysis for incident volumes, system failures, and resource issues based on historical patterns"
+        }
+      ]
+    },
+    {
+      "name": "predictive-intelligence",
+      "displayName": "Predictive Intelligence",
+      "tools": [
+        {
+          "name": "snow_activate_pi_solution",
+          "description": "✅ Activate trained ServiceNow Predictive Intelligence solution for production use. Enables predictions on records."
+        },
+        {
+          "name": "snow_create_pi_solution",
+          "description": "🤖 Create native ServiceNow Predictive Intelligence solution definition. Builds ML models that run INSIDE ServiceNow (requires PI license). Use for classification, regression, similarity, or clustering."
+        },
+        {
+          "name": "snow_list_pi_solutions",
+          "description": "📋 List all ServiceNow Predictive Intelligence solutions with status and metrics."
+        },
+        {
+          "name": "snow_monitor_pi_training",
+          "description": "📊 Monitor ServiceNow Predictive Intelligence training progress. Shows status, metrics, and completion estimate."
+        },
+        {
+          "name": "snow_train_pi_solution",
+          "description": "🎯 Train native ServiceNow Predictive Intelligence solution. Starts ML training INSIDE ServiceNow (requires PI license). Training typically takes 10-30 minutes."
+        }
+      ]
+    },
+    {
+      "name": "procurement",
+      "displayName": "Procurement",
+      "tools": [
+        {
+          "name": "snow_approve_procurement",
+          "description": "Approve procurement request"
+        },
+        {
+          "name": "snow_create_purchase_order",
+          "description": "Create purchase order"
+        }
+      ]
+    },
+    {
+      "name": "project-management",
+      "displayName": "Project Management",
+      "tools": [
+        {
+          "name": "snow_create_project",
+          "description": "Create project"
+        },
+        {
+          "name": "snow_create_project_task",
+          "description": "Create project task"
+        }
+      ]
+    },
+    {
+      "name": "properties",
+      "displayName": "Properties",
+      "tools": [
+        {
+          "name": "snow_property_bulk",
+          "description": "Bulk system property operations (get/set multiple)"
+        },
+        {
+          "name": "snow_property_io",
+          "description": "System property I/O operations (import, export, history)"
+        },
+        {
+          "name": "snow_property_manage",
+          "description": "Unified tool for system property management (get, set, delete, validate)"
+        },
+        {
+          "name": "snow_property_query",
+          "description": "Query system properties (list, search, categories)"
+        }
+      ]
+    },
+    {
+      "name": "query",
+      "displayName": "Query",
+      "tools": [
+        {
+          "name": "snow_get_ci_details",
+          "description": "Retrieve Configuration Item details including relationships and history"
+        },
+        {
+          "name": "snow_search_cmdb",
+          "description": "Search the CMDB for Configuration Items with various filters"
+        }
+      ]
+    },
+    {
+      "name": "queues",
+      "displayName": "Queues",
+      "tools": [
+        {
+          "name": "snow_create_queue",
+          "description": "Create assignment queue"
+        },
+        {
+          "name": "snow_get_queue_items",
+          "description": "Get items in queue"
+        }
+      ]
+    },
+    {
+      "name": "reconciliation",
+      "displayName": "Reconciliation",
+      "tools": [
+        {
+          "name": "snow_reconcile_ci",
+          "description": "Reconcile CI data from multiple sources"
+        }
+      ]
+    },
+    {
+      "name": "relationships",
+      "displayName": "Relationships",
+      "tools": [
+        {
+          "name": "snow_create_ci_relationship",
+          "description": "Create relationship between Configuration Items"
+        },
+        {
+          "name": "snow_get_ci_relationships",
+          "description": "Get all relationships for a Configuration Item"
+        }
+      ]
+    },
+    {
+      "name": "reporting",
+      "displayName": "Reporting",
+      "tools": [
+        {
+          "name": "snow_asset_compliance_report",
+          "description": "Generate comprehensive asset compliance reports for auditing"
+        }
+      ]
+    },
+    {
+      "name": "reports",
+      "displayName": "Reports",
+      "tools": [
+        {
+          "name": "snow_create_report",
+          "description": "Create ServiceNow report"
+        }
+      ]
+    },
+    {
+      "name": "rest",
+      "displayName": "Rest",
+      "tools": [
+        {
+          "name": "snow_create_rest_message",
+          "description": "Create REST message for external API integration"
+        },
+        {
+          "name": "snow_rest_message_manage",
+          "description": "Universal REST Message management tool. CRUD operations for:\n• REST Messages (list, get, create, update, delete)\n• HTTP Methods (list_methods, get_method, create_method, update_method, delete_method)\n• Message-level Headers - apply to ALL methods (list_message_headers, create_message_header, delete_message_header)\n• Method-level Headers - apply to specific method (list_method_headers, create_method_header, delete_method_header)\n• Query Parameters (list_parameters, create_parameter, delete_parameter)\n• Testing (test) - generates ES5-compatible test script for snow_execute_script"
+        },
+        {
+          "name": "snow_test_rest_connection",
+          "description": "Test REST API connection with timeout and response validation"
+        }
+      ]
+    },
+    {
+      "name": "rest-api",
+      "displayName": "Rest Api",
+      "tools": [
+        {
+          "name": "snow_scripted_rest_api",
+          "description": "Call scripted REST API"
+        }
+      ]
+    },
+    {
+      "name": "risk-assessment",
+      "displayName": "Risk Assessment",
+      "tools": [
+        {
+          "name": "snow_security_risk_assessment",
+          "description": "Perform comprehensive security risk assessment analyzing access controls, vulnerabilities, and security posture"
+        },
+        {
+          "name": "snow_vulnerability_risk_assessment",
+          "description": "Assess vulnerability risk with automated CVSS scoring and remediation planning"
+        }
+      ]
+    },
+    {
+      "name": "routing",
+      "displayName": "Routing",
+      "tools": [
+        {
+          "name": "snow_create_uib_page_registry",
+          "description": "Configure URL routing and access control for UI Builder pages"
+        }
+      ]
+    },
+    {
+      "name": "rules",
+      "displayName": "Rules",
+      "tools": [
+        {
+          "name": "snow_create_escalation_rule",
+          "description": "Creates escalation rules for time-based actions. Defines escalation timing, conditions, and automated responses."
+        },
+        {
+          "name": "snow_create_event_rule",
+          "description": "Creates event-driven automation rules. Triggers scripts based on system events with conditional logic."
+        }
+      ]
+    },
+    {
+      "name": "scheduled-jobs",
+      "displayName": "Scheduled Jobs",
+      "tools": [
+        {
+          "name": "snow_scheduled_job_manage",
+          "description": "Manage scheduled jobs: list, get details, create, update, delete, enable/disable, run now, get history"
+        }
+      ]
+    },
+    {
+      "name": "scheduling",
+      "displayName": "Scheduling",
+      "tools": [
+        {
+          "name": "snow_add_schedule_entry",
+          "description": "Add entry to schedule"
+        },
+        {
+          "name": "snow_create_schedule",
+          "description": "Create work schedule"
+        },
+        {
+          "name": "snow_schedule_job",
+          "description": "Create scheduled job with cron expression or repeat interval"
+        },
+        {
+          "name": "snow_schedule_report_delivery",
+          "description": "Schedule automated report delivery via email"
+        },
+        {
+          "name": "snow_trigger_scheduled_job",
+          "description": "⚠️ UNRELIABLE: Attempts to trigger a scheduled job via sys_trigger, but CANNOT guarantee execution. The job runs asynchronously when the ServiceNow scheduler picks it up — this frequently times out. Do NOT rely on this for verification or testing. Only use when you need to trigger a specific existing scheduled job and can accept that it may not run."
+        }
+      ]
+    },
+    {
+      "name": "schema",
+      "displayName": "Schema",
+      "tools": [
+        {
+          "name": "snow_discover_table_fields",
+          "description": "Discover table schema with fields, types, relationships, and metadata"
+        }
+      ]
+    },
+    {
+      "name": "script-execution",
+      "displayName": "Script Execution",
+      "tools": [
+        {
+          "name": "snow_confirm_script_execution",
+          "description": "⚡ Confirms and schedules script after user approval (use after snow_execute_script with requireConfirmation=true). Note: Uses same scheduled job approach."
+        },
+        {
+          "name": "snow_execute_script",
+          "description": "Execute server-side JavaScript on ServiceNow. Primary: synchronous execution via Scripted REST API (~1-3s). Fallback: scheduled job if endpoint unavailable. Auto-deploys the executor endpoint on first use. ES5 only (Rhino engine)!"
+        },
+        {
+          "name": "snow_get_script_output",
+          "description": "Retrieve output from previously executed script using execution ID"
+        },
+        {
+          "name": "snow_redeploy_script_endpoint",
+          "description": "Force-redeploy the Snow-Flow scripted REST executor endpoint (/api/snow_flow_exec/execute). Use when snow_execute_script / UI policy tools fail with 'Requested URI does not represent any resource'. Clears the in-memory cache and runs the auto-deploy with full diagnostics. Set hard_reset=true to delete and recreate the existing definition + operation records."
+        }
+      ]
+    },
+    {
+      "name": "scripting",
+      "displayName": "Scripting",
+      "tools": [
+        {
+          "name": "snow_create_uib_client_script",
+          "description": "Create client-side JavaScript for UI Builder pages"
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "displayName": "Search",
+      "tools": [
+        {
+          "name": "snow_code_search",
+          "description": "Search for a term across every ServiceNow table that stores scripts (business rules, script includes, client scripts, UI scripts, widgets, scripted REST operations, UI actions, ACLs, scheduled jobs, transform maps, notifications, record producers, UX/UI-Builder scripts, etc.). Returns grouped matches per table with a short context snippet. Use when you need to find where a function, table name, or pattern is referenced across the instance."
+        },
+        {
+          "name": "snow_fuzzy_search",
+          "description": "Perform fuzzy search across tables with relevance scoring. Returns sys_id + name + relevance_score for each match. Uses LIKE/CONTAINS queries and ranks by similarity."
+        },
+        {
+          "name": "snow_memory_search",
+          "description": "Searches cached ServiceNow artifacts in local memory for instant results without API calls."
+        },
+        {
+          "name": "snow_search_artifacts",
+          "description": "Search ServiceNow development artifacts (widgets, pages, scripts, flows, UI actions, client scripts). For data/table searches, use snow_query_table or snow_fuzzy_search instead."
+        }
+      ]
+    },
+    {
+      "name": "security",
+      "displayName": "Security",
+      "tools": [
+        {
+          "name": "snow_impersonate_user",
+          "description": "Generate a ServiceNow impersonation deep-link for ACL / role debugging. Verifies the caller has the 'admin' role, resolves the target user (by sys_id or username), appends an audit entry to ~/.snow-flow/audit/impersonations.jsonl, and returns an /impersonate.do URL the admin opens in the browser to actually switch session. Does NOT modify the OAuth session itself — ServiceNow's impersonation endpoint is cookie-based."
+        },
+        {
+          "name": "snow_jwt_decode",
+          "description": "Decode JWT token"
+        }
+      ]
+    },
+    {
+      "name": "service-catalog",
+      "displayName": "Service Catalog",
+      "tools": [
+        {
+          "name": "snow_create_catalog_client_script",
+          "description": "Creates client scripts for catalog items to add custom JavaScript behavior to forms."
+        },
+        {
+          "name": "snow_create_catalog_item",
+          "description": "Create service catalog item"
+        },
+        {
+          "name": "snow_create_catalog_ui_policy",
+          "description": "Creates comprehensive UI policies for catalog items with conditions and actions to control form behavior dynamically."
+        },
+        {
+          "name": "snow_create_catalog_variable",
+          "description": "Create catalog item variable"
+        },
+        {
+          "name": "snow_discover_catalogs",
+          "description": "Discovers available service catalogs and their categories in the ServiceNow instance."
+        },
+        {
+          "name": "snow_get_catalog_item_details",
+          "description": "Gets detailed information about a catalog item including variables, pricing, and availability."
+        },
+        {
+          "name": "snow_order_catalog_item",
+          "description": "Orders a catalog item programmatically, creating a request (RITM) with specified variable values."
+        },
+        {
+          "name": "snow_search_catalog",
+          "description": "Searches service catalog for items, categories, or catalogs. Returns available items for ordering."
+        }
+      ]
+    },
+    {
+      "name": "service-portal",
+      "displayName": "Service Portal",
+      "tools": [
+        {
+          "name": "snow_create_sp_page",
+          "description": "Create Service Portal page"
+        },
+        {
+          "name": "snow_create_sp_widget",
+          "description": "Create Service Portal widget"
+        }
+      ]
+    },
+    {
+      "name": "session",
+      "displayName": "Session",
+      "tools": [
+        {
+          "name": "snow_session_context",
+          "description": "Dump the current ServiceNow session context for the authenticated user: sys_id, username, email, roles (with inherited flag), current update set, domain, timezone, locale. One call instead of 3-4 scattered queries. Use this to ground ACL / role-based reasoning before running a script or diagnosing permissions."
+        }
+      ]
+    },
+    {
+      "name": "sla",
+      "displayName": "Sla",
+      "tools": [
+        {
+          "name": "snow_calculate_sla_duration",
+          "description": "Calculate SLA duration with schedule"
+        },
+        {
+          "name": "snow_create_sla",
+          "description": "Create Service Level Agreement"
+        },
+        {
+          "name": "snow_create_sla_definition",
+          "description": "Creates Service Level Agreement definitions. Sets duration targets, business schedules, and breach conditions."
+        },
+        {
+          "name": "snow_get_sla_status",
+          "description": "Get SLA status for record"
+        }
+      ]
+    },
+    {
+      "name": "soap",
+      "displayName": "Soap",
+      "tools": [
+        {
+          "name": "snow_create_web_service",
+          "description": "Create SOAP web service integration from WSDL definition"
+        }
+      ]
+    },
+    {
+      "name": "specialized",
+      "displayName": "Specialized",
+      "tools": [
+        {
+          "name": "snow_create_devops_pipeline",
+          "description": "Create DevOps pipeline for CI/CD automation"
+        }
+      ]
+    },
+    {
+      "name": "state-management",
+      "displayName": "State Management",
+      "tools": [
+        {
+          "name": "snow_create_uib_client_state",
+          "description": "Create client state for UI Builder pages via Builder Toolkit API. Client state is managed as state_properties on the page macroponent."
+        }
+      ]
+    },
+    {
+      "name": "synchronization",
+      "displayName": "Synchronization",
+      "tools": [
+        {
+          "name": "snow_sync_data_consistency",
+          "description": "Synchronizes cached data with ServiceNow, validates sys_id mappings, and repairs consistency issues. Includes automatic cache refresh and reindexing."
+        }
+      ]
+    },
+    {
+      "name": "table-analysis",
+      "displayName": "Table Analysis",
+      "tools": [
+        {
+          "name": "snow_blast_radius_table_configs",
+          "description": "Find ALL configurations running on a specific table.\n\n📋 USE THIS TO:\n- Get a complete inventory of artifacts scoped to a table\n- Understand the configuration landscape before making changes\n- Filter by config type, scope, or active status\n\n🔍 EXAMPLE: \"What configs run on the incident table?\"\n\n📊 COVERAGE (v2):\nSearches 25+ artifact types — not just business rules/client scripts/etc.\nAlso returns data policies, email notifications, metric definitions,\ninbound email actions, UI policy actions, transform entries, plus\nglobal-but-table-mentioning script includes."
+        }
+      ]
+    },
+    {
+      "name": "task-management",
+      "displayName": "Task Management",
+      "tools": [
+        {
+          "name": "snow_assign_task",
+          "description": "Assign task to user or group with workload balancing and skill matching"
+        }
+      ]
+    },
+    {
+      "name": "templates",
+      "displayName": "Templates",
+      "tools": [
+        {
+          "name": "snow_create_template",
+          "description": "Create record template"
+        }
+      ]
+    },
+    {
+      "name": "testing",
+      "displayName": "Testing",
+      "tools": [
+        {
+          "name": "snow_cleanup_test_artifacts",
+          "description": "Safely cleanup test artifacts from ServiceNow (dry-run enabled by default for safety)"
+        },
+        {
+          "name": "snow_create_atf_test",
+          "description": "Create Automated Test Framework (ATF) test for automated testing"
+        },
+        {
+          "name": "snow_create_atf_test_step",
+          "description": "Adds a test step to an existing ATF test. Steps define the actions and assertions for testing using the sys_atf_step table."
+        },
+        {
+          "name": "snow_create_atf_test_suite",
+          "description": "Creates an ATF test suite to group and run multiple tests together using sys_atf_test_suite table."
+        },
+        {
+          "name": "snow_discover_atf_tests",
+          "description": "Discovers ATF tests in the instance with filtering and search capabilities."
+        },
+        {
+          "name": "snow_execute_atf_test",
+          "description": "Executes an ATF test or test suite and returns the results. Tests run asynchronously in ServiceNow using sys_atf_test_result table."
+        },
+        {
+          "name": "snow_generate_records",
+          "description": "Generate multiple test records"
+        },
+        {
+          "name": "snow_get_atf_results",
+          "description": "Retrieves ATF test execution results including pass/fail status, error details, and execution time from sys_atf_test_result table."
+        },
+        {
+          "name": "snow_rest_message_test_suite",
+          "description": "Comprehensive testing suite for REST messages including authentication, endpoints, headers, and response validation."
+        },
+        {
+          "name": "snow_test_integration",
+          "description": "Test REST/SOAP integrations and external connections with validation"
+        }
+      ]
+    },
+    {
+      "name": "threat-intelligence",
+      "displayName": "Threat Intelligence",
+      "tools": [
+        {
+          "name": "snow_analyze_threat_intelligence",
+          "description": "Analyzethreatintelligence"
+        }
+      ]
+    },
+    {
+      "name": "threat-response",
+      "displayName": "Threat Response",
+      "tools": [
+        {
+          "name": "snow_automate_threat_response",
+          "description": "Automatethreatresponse"
+        }
+      ]
+    },
+    {
+      "name": "ui",
+      "displayName": "Ui",
+      "tools": [
+        {
+          "name": "snow_add_list_column",
+          "description": "Add column to list view"
+        },
+        {
+          "name": "snow_create_list_layout",
+          "description": "Create a complete list layout with multiple columns for any ServiceNow table"
+        },
+        {
+          "name": "snow_create_list_view",
+          "description": "Create custom list view"
+        },
+        {
+          "name": "snow_create_menu",
+          "description": "Create application menu"
+        },
+        {
+          "name": "snow_create_menu_item",
+          "description": "Create menu item"
+        },
+        {
+          "name": "snow_create_related_list",
+          "description": "Create related list on form"
+        },
+        {
+          "name": "snow_create_saved_filter",
+          "description": "Create a saved filter for any ServiceNow table that appears in the filter dropdown"
+        }
+      ]
+    },
+    {
+      "name": "ui-builder",
+      "displayName": "Ui Builder",
+      "tools": [
+        {
+          "name": "snow_uib_component_manage",
+          "description": "Unified UIB component management (create, clone)"
+        },
+        {
+          "name": "snow_uib_discover",
+          "description": "Unified UI Builder discovery (pages, components, routes, page_usage)"
+        }
+      ]
+    },
+    {
+      "name": "ui-policies",
+      "displayName": "Ui Policies",
+      "tools": [
+        {
+          "name": "snow_create_ui_policy_action",
+          "description": "Create a UI policy action to control field behavior (visible/mandatory/readonly) when a UI policy condition is met. Requires the parent UI policy sys_id and the target table name."
+        }
+      ]
+    },
+    {
+      "name": "update-sets",
+      "displayName": "Update Sets",
+      "tools": [
+        {
+          "name": "snow_ensure_active_update_set",
+          "description": "Ensure Update Set is active and optionally set as current for user"
+        },
+        {
+          "name": "snow_update_set_manage",
+          "description": "Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact)\n\n⚠️ CRITICAL: Update Set Tracking & OAuth Context\n\nHOW TRACKING WORKS:\n- Update Sets MUST be \"current\" for the user making changes (via API = OAuth service account)\n- snow-flow uses OAuth service account → Update Set must be current for SERVICE ACCOUNT\n- auto_switch=true (DEFAULT) → Changes ARE tracked automatically ✅\n- auto_switch=false → Changes are NOT tracked ❌\n\nAPPLICATION SCOPE:\n- Use application_scope parameter to create Update Sets within a scoped application\n- Default is \"global\" for global scope development\n- Provide application sys_id or scope name for scoped application development\n- Update Sets in scoped apps only track changes to artifacts in that scope\n\nUI VISIBILITY:\n- Update Set current for service account ≠ visible in YOUR UI\n- To see it as current in YOUR ServiceNow UI, provide servicenow_username parameter\n- This is OPTIONAL and only affects UI visibility, NOT tracking\n\nRECOMMENDED USAGE:\n- Always use auto_switch=true (default) for development work\n- Add servicenow_username if you want to see it in your UI\n- Use application_scope for scoped application development\n- Only use auto_switch=false for non-development operations"
+        },
+        {
+          "name": "snow_update_set_query",
+          "description": "Query Update Sets (get current or list multiple)"
+        }
+      ]
+    },
+    {
+      "name": "user-admin",
+      "displayName": "User Admin",
+      "tools": [
+        {
+          "name": "snow_get_user_roles",
+          "description": "Get all roles assigned to user"
+        },
+        {
+          "name": "snow_role_group_manage",
+          "description": "Unified role and group management (create_role, assign_role, create_group)"
+        },
+        {
+          "name": "snow_user_manage",
+          "description": "Unified user management (create, deactivate)"
+        }
+      ]
+    },
+    {
+      "name": "user-management",
+      "displayName": "User Management",
+      "tools": [
+        {
+          "name": "snow_manage_group_membership",
+          "description": "Manage group memberships: add/remove users, list members"
+        }
+      ]
+    },
+    {
+      "name": "utilities",
+      "displayName": "Utilities",
+      "tools": [
+        {
+          "name": "snow_autocomplete",
+          "description": "Get autocomplete suggestions"
+        },
+        {
+          "name": "snow_convert_es6_to_es5",
+          "description": "Convert ES6+ JavaScript to ES5 for ServiceNow compatibility. Use this when debugging SyntaxErrors."
+        },
+        {
+          "name": "snow_decode_base64",
+          "description": "Decode Base64 to string"
+        },
+        {
+          "name": "snow_decode_url",
+          "description": "URL decode string"
+        },
+        {
+          "name": "snow_encode_base64",
+          "description": "Encode string to Base64"
+        },
+        {
+          "name": "snow_encode_url",
+          "description": "URL encode string"
+        },
+        {
+          "name": "snow_format_date",
+          "description": "Format date for ServiceNow"
+        },
+        {
+          "name": "snow_format_number",
+          "description": "Format number with locale"
+        },
+        {
+          "name": "snow_format_text",
+          "description": "Format text with various transformations"
+        },
+        {
+          "name": "snow_generate_guid",
+          "description": "Generate GUID/UUID"
+        },
+        {
+          "name": "snow_hash_string",
+          "description": "Hash string using various algorithms"
+        },
+        {
+          "name": "snow_merge_objects",
+          "description": "Deep merge multiple objects"
+        },
+        {
+          "name": "snow_random_string",
+          "description": "Generate random string"
+        },
+        {
+          "name": "snow_retry_operation",
+          "description": "Retry failed operation with backoff"
+        },
+        {
+          "name": "snow_sanitize_input",
+          "description": "Sanitize input for security"
+        },
+        {
+          "name": "snow_sleep",
+          "description": "Sleep for specified milliseconds"
+        },
+        {
+          "name": "snow_timestamp",
+          "description": "Get current timestamp in various formats"
+        },
+        {
+          "name": "snow_url_doctor",
+          "description": "Decode or construct ServiceNow URLs. Mode 'decode' parses an existing URL (nav_to.do, TABLE.do, workspace URLs) and extracts table, sys_id, view, and every sysparm_* parameter. Mode 'build' constructs a canonical form or list URL from table + sys_id/filter/view. Handy when agents need to hand the user a deep-link or reason about URL parameters."
+        }
+      ]
+    },
+    {
+      "name": "validation",
+      "displayName": "Validation",
+      "tools": [
+        {
+          "name": "snow_validate_field",
+          "description": "Validate field value"
+        },
+        {
+          "name": "snow_validate_record",
+          "description": "Validate record against business rules"
+        },
+        {
+          "name": "snow_validate_sysid",
+          "description": "Validates sys_id existence and consistency across tables. Maintains artifact tracking for deployment integrity and rollback capabilities."
+        },
+        {
+          "name": "snow_validate_widget_coherence",
+          "description": "Validates widget coherence by analyzing server/client/HTML component communication. Checks data bindings, action handlers, and method implementations to ensure all parts work together correctly."
+        },
+        {
+          "name": "snow_widget_test",
+          "description": "Executes comprehensive widget testing with multiple data scenarios. Validates client/server scripts, API calls, dependencies, and generates coverage reports."
+        }
+      ]
+    },
+    {
+      "name": "virtual-agent",
+      "displayName": "Virtual Agent",
+      "tools": [
+        {
+          "name": "snow_create_va_topic",
+          "description": "Create Virtual Agent conversation topic"
+        },
+        {
+          "name": "snow_create_va_topic_block",
+          "description": "Creates a conversation block within a Virtual Agent topic. Blocks define conversation steps and responses."
+        },
+        {
+          "name": "snow_discover_va_topics",
+          "description": "Discovers available Virtual Agent topics and their configurations."
+        },
+        {
+          "name": "snow_get_va_conversation",
+          "description": "Retrieves Virtual Agent conversation history and context for a specific session."
+        },
+        {
+          "name": "snow_handoff_to_agent",
+          "description": "Initiates handoff from Virtual Agent to a live agent when automated assistance is insufficient."
+        },
+        {
+          "name": "snow_send_va_message",
+          "description": "Sends a message to Virtual Agent and gets the response. Simulates user interaction with the chatbot."
+        },
+        {
+          "name": "snow_train_va_nlu",
+          "description": "Train Virtual Agent NLU model"
+        }
+      ]
+    },
+    {
+      "name": "vulnerability-management",
+      "displayName": "Vulnerability Management",
+      "tools": [
+        {
+          "name": "snow_scan_vulnerabilities",
+          "description": "Scan for security vulnerabilities"
+        }
+      ]
+    },
+    {
+      "name": "vulnerability-scanning",
+      "displayName": "Vulnerability Scanning",
+      "tools": [
+        {
+          "name": "snow_create_vulnerability_scan",
+          "description": "Creates vulnerability scanning configurations. Schedules scans, sets severity thresholds, and enables auto-remediation."
+        }
+      ]
+    },
+    {
+      "name": "workflow",
+      "displayName": "Workflow",
+      "tools": [
+        {
+          "name": "snow_create_workflow",
+          "description": "⚠️ LEGACY: Create workflow definition (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer and ask Snow-Flow to generate a specification document.",
+          "deprecated": true
+        },
+        {
+          "name": "snow_create_workflow_activity",
+          "description": "⚠️ LEGACY: Create workflow activity (deprecated - ServiceNow recommends Flow Designer). Configures activity types, conditions, and execution order.",
+          "deprecated": true
+        },
+        {
+          "name": "snow_start_workflow",
+          "description": "⚠️ LEGACY: Start a workflow on a record (deprecated - ServiceNow recommends Flow Designer). Workflows run asynchronously.",
+          "deprecated": true
+        },
+        {
+          "name": "snow_workflow_analyze",
+          "description": "Analyze workflow executions for performance and errors"
+        },
+        {
+          "name": "snow_workflow_manage",
+          "description": "⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable",
+          "deprecated": true
+        },
+        {
+          "name": "snow_workflow_transition",
+          "description": "⚠️ LEGACY: Manage workflow transitions (deprecated - ServiceNow recommends Flow Designer). Actions: create, update, delete, list",
+          "deprecated": true
+        }
+      ]
+    },
+    {
+      "name": "workspace",
+      "displayName": "Workspace",
+      "tools": [
+        {
+          "name": "snow_create_complete_workspace",
+          "description": "Create Complete UX Workspace - Executes all steps automatically: Experience (Builder Toolkit) → App Config → Page → List Configuration → Route. Creates a fully functional workspace."
+        },
+        {
+          "name": "snow_create_configurable_agent_workspace",
+          "description": "Create Configurable Agent Workspace using UX App architecture (sys_ux_app_route, sys_ux_screen_type). Creates workspace with screen collections for multiple tables."
+        },
+        {
+          "name": "snow_create_ux_app_config",
+          "description": "STEP 2: Create UX App Configuration Record (sys_ux_app_config) - Contains workspace settings and links to the experience from Step 1."
+        },
+        {
+          "name": "snow_create_ux_app_route",
+          "description": "STEP 5: Create Route Record (sys_ux_app_route) - Defines the URL slug that leads to the page."
+        },
+        {
+          "name": "snow_create_ux_experience",
+          "description": "Create UX Experience via Builder Toolkit API - The top-level container for a workspace. Returns experienceID used by all subsequent workspace steps."
+        },
+        {
+          "name": "snow_create_ux_page_macroponent",
+          "description": "STEP 3: Create Page Macroponent Record (sys_ux_macroponent) - Defines the actual page content that will be displayed."
+        },
+        {
+          "name": "snow_create_ux_page_registry",
+          "description": "STEP 4: Create Page Registry Record (sys_ux_page_registry) - Registers the page for use within the workspace configuration."
+        },
+        {
+          "name": "snow_discover_all_workspaces",
+          "description": "Discover all workspaces (UX Experiences via Builder Toolkit, Agent Workspaces, UI Builder pages) with comprehensive details."
+        },
+        {
+          "name": "snow_update_ux_app_config_landing_page",
+          "description": "Update App Configuration with Landing Page Route - Sets the default landing page for the workspace."
+        },
+        {
+          "name": "snow_validate_workspace_configuration",
+          "description": "Validate workspace configuration for completeness, best practices, and potential issues across all workspace types."
+        }
+      ]
+    }
+  ]
+}

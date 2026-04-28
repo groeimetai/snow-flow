@@ -1,0 +1,50 @@
+name: generate-tools-json
+
+# Auto-regenerates packages/opencode/tools.json whenever the
+# ServiceNow MCP tool definitions change. The JSON is consumed by
+# docs.serac.build, which fetches it via raw.githubusercontent.com
+# and renders the Complete Tool Reference table client-side — so the
+# docs always show the canonical, up-to-date tool list with no
+# hand-editing.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/opencode/src/servicenow/servicenow-mcp-unified/tools/**"
+      - "packages/opencode/script/generate-tools-json.ts"
+      - ".github/workflows/generate-tools-json.yml"
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate tools.json
+        run: bun packages/opencode/script/generate-tools-json.ts
+
+      - name: Commit and push if changed
+        run: |
+          if [ -z "$(git status --porcelain packages/opencode/tools.json)" ]; then
+            echo "tools.json unchanged"
+            exit 0
+          fi
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add packages/opencode/tools.json
+          git commit -m "chore: regenerate tools.json [skip ci]"
+          git push origin HEAD:${{ github.ref_name }} --no-verify
