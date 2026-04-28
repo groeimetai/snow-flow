@@ -109,14 +109,20 @@ jobs:
           elif [[ "${{ steps.channel.outputs.channel }}" == "dev" ]]; then
             echo "version=${BASE_VERSION}-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
           else
-            # Stable release: auto-increment patch from latest published npm version
-            LATEST=$(npm view snow-flow version 2>/dev/null || echo "$BASE_VERSION")
+            # Stable release: auto-increment patch from the latest published
+            # version. Read @serac-labs/core first; fall back to the legacy
+            # snow-flow line for the very first cross-over publish so the new
+            # scoped package picks up where snow-flow left off (e.g. 11.0.20)
+            # instead of resetting to BASE_VERSION.
+            LATEST=$(npm view @serac-labs/core version 2>/dev/null \
+                  || npm view snow-flow version 2>/dev/null \
+                  || echo "$BASE_VERSION")
             MAJOR=$(echo "$LATEST" | cut -d. -f1)
             MINOR=$(echo "$LATEST" | cut -d. -f2)
             PATCH=$(echo "$LATEST" | cut -d. -f3)
             NEW_PATCH=$((PATCH + 1))
             echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
-            echo "📦 Auto-bumped: ${LATEST} → ${MAJOR}.${MINOR}.${NEW_PATCH}"
+            echo "Auto-bumped: ${LATEST} -> ${MAJOR}.${MINOR}.${NEW_PATCH}"
           fi
 
       - name: Install dependencies
@@ -197,9 +203,9 @@ jobs:
             const catalog = (rootPkg.workspaces && rootPkg.workspaces.catalog) || {};
 
             // Change name and version, remove private flag and type
-            pkg.name = 'snow-flow';
+            pkg.name = '@serac-labs/core';
             pkg.version = '$VERSION';
-            pkg.description = 'Snow-Flow - ServiceNow Multi-Agent Development Framework powered by AI';
+            pkg.description = 'Serac - agentic AI for ServiceNow developers. Bring your own keys, observable runs, deterministic traces.';
             pkg.private = false;
             delete pkg.type; // Remove 'module' type so bin scripts can use CommonJS
 
@@ -208,14 +214,20 @@ jobs:
               type: 'git',
               url: 'https://github.com/serac-labs/serac'
             };
+            pkg.homepage = 'https://serac.build';
+            pkg.bugs = { url: 'https://github.com/serac-labs/serac/issues' };
 
-            // Update bin commands - all aliases for maximum compatibility
-            // This ensures 'snow-code' and 'snow-flow' work immediately after install
+            // Bin commands - 'serac' is the primary CLI entry; the
+            // legacy snow-flow / snow-code / snowflow / snowcode names
+            // are kept so existing scripts keep working through the
+            // package rename. All names point at the same launcher.
             pkg.bin = {
-              'snow-flow': './bin/snow-code',
-              'snow-code': './bin/snow-code',
-              'snowcode': './bin/snow-code',
-              'snowflow': './bin/snow-code'
+              'serac':      './bin/snow-code',
+              'serac-code': './bin/snow-code',
+              'snow-flow':  './bin/snow-code',
+              'snow-code':  './bin/snow-code',
+              'snowcode':   './bin/snow-code',
+              'snowflow':   './bin/snow-code'
             };
 
             // Helper to resolve workspace/catalog dependencies
@@ -275,7 +287,7 @@ jobs:
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           tag_name: v${{ steps.version.outputs.version }}
-          name: Snow-Flow v${{ steps.version.outputs.version }}
+          name: Serac v${{ steps.version.outputs.version }}
           prerelease: ${{ steps.channel.outputs.prerelease == 'true' }}
           generate_release_notes: ${{ steps.channel.outputs.channel == 'stable' }}
           files: |
@@ -284,16 +296,20 @@ jobs:
             ## Installation
 
             ```bash
-            npm install -g snow-flow@${{ steps.version.outputs.version }}
+            npm install -g @serac-labs/core@${{ steps.version.outputs.version }}
             ```
 
             ## Run
 
             ```bash
+            serac
+            # or, if upgrading from snow-flow:
             snow-flow
-            # or
-            snow-code
             ```
+
+            > Coming from `snow-flow`? The package is now `@serac-labs/core`.
+            > The `snow-flow` and `snow-code` commands keep working as
+            > aliases so existing scripts don't break.
 
             ## What's New
 
@@ -326,7 +342,7 @@ jobs:
         run: |
           cd packages/opencode
           NPM_TAG="${{ steps.channel.outputs.npm_tag }}"
-          echo "Publishing snow-flow with tag: $NPM_TAG"
+          echo "Publishing @serac-labs/core with tag: $NPM_TAG"
 
           if [ "$NPM_TAG" = "latest" ]; then
             npm publish --access public --provenance

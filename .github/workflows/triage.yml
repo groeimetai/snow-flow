@@ -19,8 +19,8 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
-      - name: Install snow-code
-        run: curl -fsSL https://snow-flow.dev/install | bash
+      - name: Install serac CLI
+        run: npm i -g @serac-labs/core@latest
 
       - name: Fetch issue data
         env:

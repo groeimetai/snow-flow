@@ -34,8 +34,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Install snow-code
-        run: curl -fsSL https://snow-flow.dev/install | bash
+      - name: Install serac CLI
+        run: npm i -g @serac-labs/core@latest
 
       - name: Build prompt
         env:
