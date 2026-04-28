@@ -70,7 +70,7 @@ jobs:
         run: npm install -g npm@latest
 
       - name: Configure npm for OIDC publishing
-        # Trusted Publisher is wired up on @serac-labs/serac, so OIDC
+        # Trusted Publisher is wired up on @serac-labs/core, so OIDC
         # is the only auth path. The empty _authToken line is required
         # for npm to recognise OIDC mode — without it, the CLI falls
         # back to anonymous and 401s.
@@ -204,7 +204,7 @@ jobs:
             const catalog = (rootPkg.workspaces && rootPkg.workspaces.catalog) || {};
 
             // Change name and version, remove private flag and type
-            pkg.name = '@serac-labs/serac';
+            pkg.name = '@serac-labs/core';
             pkg.version = '$VERSION';
             pkg.description = 'Serac - agentic AI for ServiceNow developers. Bring your own keys, observable runs, deterministic traces.';
             pkg.private = false;
@@ -297,7 +297,7 @@ jobs:
             ## Installation
 
             ```bash
-            npm install -g @serac-labs/serac@${{ steps.version.outputs.version }}
+            npm install -g @serac-labs/core@${{ steps.version.outputs.version }}
             ```
 
             ## Run
@@ -308,7 +308,7 @@ jobs:
             snow-flow
             ```
 
-            > Coming from `snow-flow`? The package is now `@serac-labs/serac`.
+            > Coming from `snow-flow`? The package is now `@serac-labs/core`.
             > The `snow-flow` and `snow-code` commands keep working as
             > aliases so existing scripts don't break.
 
@@ -343,7 +343,7 @@ jobs:
         run: |
           cd packages/opencode
           NPM_TAG="${{ steps.channel.outputs.npm_tag }}"
-          echo "Publishing @serac-labs/serac with tag: $NPM_TAG (OIDC, signed provenance)"
+          echo "Publishing @serac-labs/core with tag: $NPM_TAG (OIDC, signed provenance)"
 
           if [ "$NPM_TAG" = "latest" ]; then
             npm publish --access public --provenance
