@@ -123,20 +123,24 @@ jobs:
           elif [[ "${{ steps.channel.outputs.channel }}" == "dev" ]]; then
             echo "version=${BASE_VERSION}-dev.${{ github.run_number }}" >> $GITHUB_OUTPUT
           else
-            # Stable release: auto-increment patch from the latest published
-            # version. Read @serac-labs/core first; fall back to the legacy
-            # snow-flow line for the very first cross-over publish so the new
-            # scoped package picks up where snow-flow left off (e.g. 11.0.20)
-            # instead of resetting to BASE_VERSION.
-            LATEST=$(npm view @serac-labs/core version 2>/dev/null \
-                  || npm view snow-flow version 2>/dev/null \
-                  || echo "$BASE_VERSION")
-            MAJOR=$(echo "$LATEST" | cut -d. -f1)
-            MINOR=$(echo "$LATEST" | cut -d. -f2)
-            PATCH=$(echo "$LATEST" | cut -d. -f3)
-            NEW_PATCH=$((PATCH + 1))
-            echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
-            echo "Auto-bumped: ${LATEST} -> ${MAJOR}.${MINOR}.${NEW_PATCH}"
+            # Stable release. The first publish of @serac-labs/serac uses
+            # BASE_VERSION verbatim (so the source 1.0.0 lands as 1.0.0,
+            # not 1.0.1). Subsequent runs auto-increment patch from the
+            # latest published version. The snow-flow legacy fallback was
+            # removed deliberately — Serac is its own semver line, not a
+            # continuation of snow-flow's 11.x.
+            LATEST=$(npm view @serac-labs/serac version 2>/dev/null || echo "")
+            if [ -z "$LATEST" ]; then
+              echo "version=${BASE_VERSION}" >> $GITHUB_OUTPUT
+              echo "First publish at ${BASE_VERSION}"
+            else
+              MAJOR=$(echo "$LATEST" | cut -d. -f1)
+              MINOR=$(echo "$LATEST" | cut -d. -f2)
+              PATCH=$(echo "$LATEST" | cut -d. -f3)
+              NEW_PATCH=$((PATCH + 1))
+              echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
+              echo "Auto-bumped: ${LATEST} -> ${MAJOR}.${MINOR}.${NEW_PATCH}"
+            fi
           fi
 
       - name: Install dependencies
