@@ -144,10 +144,10 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     if (run_write_test) {
       try {
         const testWidget = {
-          name: "snow_flow_connectivity_test",
-          title: "Snow-Flow Connectivity Test",
+          name: "serac_connectivity_test",
+          title: "Serac Connectivity Test",
           template: "<div>Test widget - safe to delete</div>",
-          description: "Temporary test widget created by Snow-Flow MCP diagnostics",
+          description: "Temporary test widget created by Serac MCP diagnostics",
         }
 
         const createResponse = await client.post("/api/now/table/sp_widget", testWidget)

@@ -7,8 +7,8 @@ import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
 
 export const toolDefinition: MCPToolDefinition = {
-  name: "snow_create_dashboard",
-  description: "Create interactive dashboards with multiple widgets",
+  name: "snow_create_pa_dashboard",
+  description: "Create a Performance Analytics dashboard with widgets (pa_dashboards table). For Service Portal / classic dashboards use snow_create_dashboard.",
   // Metadata for tool discovery (not sent to LLM)
   category: "reporting",
   subcategory: "dashboards",

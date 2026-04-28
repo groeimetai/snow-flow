@@ -2,10 +2,8 @@ export {
   toolDefinition as snow_create_workflow_def,
   execute as snow_create_workflow_exec,
 } from "./snow_create_workflow.js"
-export {
-  toolDefinition as snow_create_workflow_activity_def,
-  execute as snow_create_workflow_activity_exec,
-} from "./snow_create_workflow_activity.js"
+// snow_create_workflow_activity is now exclusively in tools/automation/
+// (the variant exported here was a thinner duplicate).
 export {
   toolDefinition as snow_start_workflow_def,
   execute as snow_start_workflow_exec,
