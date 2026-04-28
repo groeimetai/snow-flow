@@ -71,7 +71,7 @@ jobs:
 
       - name: Configure npm auth (NPM_TOKEN fallback to OIDC)
         # Bootstrap mode: when NPM_TOKEN is present we authenticate via
-        # the token. This exists *only* to create @serac-labs/core on
+        # the token. This exists *only* to create @serac-labs/serac on
         # the registry the very first time, because Trusted Publishers
         # cannot be configured for a package that doesn't exist yet.
         # Once that one publish lands and the publisher is wired up on
@@ -221,7 +221,7 @@ jobs:
             const catalog = (rootPkg.workspaces && rootPkg.workspaces.catalog) || {};
 
             // Change name and version, remove private flag and type
-            pkg.name = '@serac-labs/core';
+            pkg.name = '@serac-labs/serac';
             pkg.version = '$VERSION';
             pkg.description = 'Serac - agentic AI for ServiceNow developers. Bring your own keys, observable runs, deterministic traces.';
             pkg.private = false;
@@ -314,7 +314,7 @@ jobs:
             ## Installation
 
             ```bash
-            npm install -g @serac-labs/core@${{ steps.version.outputs.version }}
+            npm install -g @serac-labs/serac@${{ steps.version.outputs.version }}
             ```
 
             ## Run
@@ -325,7 +325,7 @@ jobs:
             snow-flow
             ```
 
-            > Coming from `snow-flow`? The package is now `@serac-labs/core`.
+            > Coming from `snow-flow`? The package is now `@serac-labs/serac`.
             > The `snow-flow` and `snow-code` commands keep working as
             > aliases so existing scripts don't break.
 
@@ -366,10 +366,10 @@ jobs:
           NPM_TAG="${{ steps.channel.outputs.npm_tag }}"
           if [ -n "${NPM_TOKEN:-}" ]; then
             PROVENANCE=""
-            echo "Publishing @serac-labs/core with tag: $NPM_TAG (NPM_TOKEN, no provenance)"
+            echo "Publishing @serac-labs/serac with tag: $NPM_TAG (NPM_TOKEN, no provenance)"
           else
             PROVENANCE="--provenance"
-            echo "Publishing @serac-labs/core with tag: $NPM_TAG (OIDC, provenance signed)"
+            echo "Publishing @serac-labs/serac with tag: $NPM_TAG (OIDC, provenance signed)"
           fi
 
           if [ "$NPM_TAG" = "latest" ]; then
