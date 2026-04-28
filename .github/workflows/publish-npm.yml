@@ -69,14 +69,28 @@ jobs:
       - name: Upgrade npm (required for OIDC)
         run: npm install -g npm@latest
 
-      - name: Configure npm for OIDC publishing
+      - name: Configure npm auth (NPM_TOKEN fallback to OIDC)
+        # Bootstrap mode: when NPM_TOKEN is present we authenticate via
+        # the token. This exists *only* to create @serac-labs/core on
+        # the registry the very first time, because Trusted Publishers
+        # cannot be configured for a package that doesn't exist yet.
+        # Once that one publish lands and the publisher is wired up on
+        # npmjs.com, delete the NPM_TOKEN secret and this step falls
+        # back to OIDC (empty _authToken, registry only).
         run: |
           rm -f ~/.npmrc
           rm -f .npmrc
           rm -f /home/runner/work/_temp/.npmrc 2>/dev/null || true
           echo "registry=https://registry.npmjs.org/" > ~/.npmrc
-          echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
-          echo "✅ npm configured for OIDC"
+          if [ -n "${NPM_TOKEN}" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+            echo "npm configured with NPM_TOKEN (bootstrap mode)"
+          else
+            echo "//registry.npmjs.org/:_authToken=" >> ~/.npmrc
+            echo "npm configured for OIDC"
+          fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Debug OIDC setup
         run: |
@@ -338,17 +352,29 @@ jobs:
           echo "Restored launcher script:"
           wc -c bin/snow-code
 
-      - name: Publish main package to npm (OIDC)
+      - name: Publish main package to npm
+        # --provenance requires OIDC; skip it when we're publishing via
+        # NPM_TOKEN (bootstrap mode). The next publish, after Trusted
+        # Publishers is wired up on the package, will be OIDC again
+        # and signed with provenance.
         run: |
           cd packages/opencode
           NPM_TAG="${{ steps.channel.outputs.npm_tag }}"
-          echo "Publishing @serac-labs/core with tag: $NPM_TAG"
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            PROVENANCE=""
+            echo "Publishing @serac-labs/core with tag: $NPM_TAG (NPM_TOKEN, no provenance)"
+          else
+            PROVENANCE="--provenance"
+            echo "Publishing @serac-labs/core with tag: $NPM_TAG (OIDC, provenance signed)"
+          fi
 
           if [ "$NPM_TAG" = "latest" ]; then
-            npm publish --access public --provenance
+            npm publish --access public $PROVENANCE
           else
-            npm publish --access public --tag "$NPM_TAG" --provenance
+            npm publish --access public --tag "$NPM_TAG" $PROVENANCE
           fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Update version in repo
         if: steps.channel.outputs.channel == 'stable'
