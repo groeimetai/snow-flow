@@ -29,7 +29,9 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.repository == 'groeimetai/snow-flow'
+    # Build on the canonical Serac repo only — forks should not push to the
+    # serac-labs GHCR namespace.
+    if: github.repository == 'serac-labs/serac'
 
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +53,7 @@ jobs:
           file: packages/opencode/Dockerfile.mcp-http
           push: true
           tags: |
-            ghcr.io/groeimetai/snow-flow-mcp-http:${{ github.event.inputs.tag || 'latest' }}
-            ghcr.io/groeimetai/snow-flow-mcp-http:${{ github.sha }}
+            ghcr.io/serac-labs/serac-mcp-http:${{ github.event.inputs.tag || 'latest' }}
+            ghcr.io/serac-labs/serac-mcp-http:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
