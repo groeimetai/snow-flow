@@ -16,11 +16,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/snow-flow"><img alt="npm" src="https://img.shields.io/npm/v/snow-flow?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
-  <a href="https://www.npmjs.com/package/snow-flow"><img alt="Downloads" src="https://img.shields.io/npm/dw/snow-flow?style=for-the-badge&logo=npm&logoColor=white&label=downloads&color=CB3837" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/groeimetai/snow-flow?style=for-the-badge&logo=github&color=yellow" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" /></a>&nbsp;
-  <a href="https://github.com/groeimetai/snow-flow/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Elastic--2.0-blue?style=for-the-badge" /></a>
+  <a href="https://www.npmjs.com/package/@serac-labs/core"><img alt="npm" src="https://img.shields.io/npm/v/@serac-labs/core?style=for-the-badge&logo=npm&logoColor=white&color=CB3837" /></a>&nbsp;
+  <a href="https://www.npmjs.com/package/@serac-labs/core"><img alt="Downloads" src="https://img.shields.io/npm/dw/@serac-labs/core?style=for-the-badge&logo=npm&logoColor=white&label=downloads&color=CB3837" /></a>&nbsp;
+  <a href="https://github.com/serac-labs/serac/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/serac-labs/serac?style=for-the-badge&logo=github&color=yellow" /></a>&nbsp;
+  <a href="https://github.com/serac-labs/serac"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" /></a>&nbsp;
+  <a href="https://github.com/serac-labs/serac/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Elastic--2.0-blue?style=for-the-badge" /></a>
 </p>
 
 <p align="center">
@@ -43,15 +43,7 @@
 
 <br>
 
-<p align="center">
-  <a href="https://snow-flow.dev">
-    <img src="snow-flow-tui.png" alt="Snow-Flow Terminal UI" width="800">
-  </a>
-</p>
-
-<br>
-
-Snow-Flow is an AI-powered, multi-agent development framework built specifically for **ServiceNow**. It combines a powerful terminal UI with 200+ ServiceNow MCP tools, 54 bundled domain skills, and support for 20+ AI providers to give you an autonomous coding agent that understands your ServiceNow instance.
+Serac is an AI-powered, multi-agent development framework built specifically for **ServiceNow**. It combines a powerful terminal UI with 200+ ServiceNow MCP tools, 54 bundled domain skills, and support for 20+ AI providers to give you an autonomous coding agent that understands your ServiceNow instance.
 
 <br>
 
@@ -105,7 +97,7 @@ Snow-Flow is an AI-powered, multi-agent development framework built specifically
 ### Install
 
 ```bash
-curl -fsSL https://snow-flow.dev/install | bash
+curl -fsSL https://serac.build/install | bash
 ```
 
 <details>
@@ -114,17 +106,17 @@ curl -fsSL https://snow-flow.dev/install | bash
 
 ```bash
 # npm / bun / pnpm / yarn
-npm i -g snow-flow@latest
+npm i -g @serac-labs/core@latest
 
 # Homebrew (macOS & Linux — recommended, always up to date)
-brew install groeimetai/tap/snow-flow
+brew install serac-labs/tap/serac
 
 # Windows
-scoop install snow-flow
-choco install snow-flow
+scoop install serac
+choco install serac
 
 # Arch Linux
-paru -S snow-flow-bin
+paru -S serac-bin
 ```
 
 > [!TIP]
@@ -135,14 +127,14 @@ paru -S snow-flow-bin
 ### Quick Start
 
 ```bash
-snow-flow
+serac
 ```
 
-On first launch, Snow-Flow prompts you to configure an AI provider. You can also pre-configure in `snow-flow.jsonc`:
+On first launch, Serac prompts you to configure an AI provider. You can also pre-configure in `serac.jsonc`:
 
 ```jsonc
 {
-  "$schema": "https://snow-flow.dev/config.json",
+  "$schema": "https://serac.build/config.json",
   "provider": {
     "anthropic": {},
     "openai": {},
@@ -154,7 +146,7 @@ On first launch, Snow-Flow prompts you to configure an AI provider. You can also
 
 ## Supported AI Providers
 
-Snow-Flow is not coupled to any single AI provider. Use whichever model works best for you.
+Serac is not coupled to any single AI provider. Use whichever model works best for you.
 
 <table>
 <tr>
@@ -209,7 +201,7 @@ Switch between agents with `Tab`:
 | **plan**    | Read-only agent for analysis and exploration — denies edits, asks before bash |
 | **general** | Subagent for complex multi-step tasks — invoke with `@general`                |
 
-Custom agents can be configured in `snow-flow.jsonc` with per-agent model selection, permissions, and temperature controls. Learn more about [agents](https://snow-flow.dev/docs/agents).
+Custom agents can be configured in `serac.jsonc` with per-agent model selection, permissions, and temperature controls. Learn more about [agents](https://serac.build/docs/agents).
 
 <br>
 
@@ -233,7 +225,7 @@ Custom agents can be configured in `snow-flow.jsonc` with per-agent model select
 
 ## ServiceNow MCP Integration
 
-The core of Snow-Flow — **200+ MCP tools** purpose-built for ServiceNow.
+The core of Serac — **200+ MCP tools** purpose-built for ServiceNow.
 
 <table>
 <tr>
@@ -309,7 +301,7 @@ Connect to your instance:
   "mcp": {
     "servicenow": {
       "type": "local",
-      "command": ["snow-flow", "mcp", "start"],
+      "command": ["serac", "mcp", "start"],
       "environment": {
         "SERVICENOW_INSTANCE_URL": "https://your-instance.service-now.com",
         "SERVICENOW_CLIENT_ID": "...",
@@ -373,7 +365,7 @@ Extend with npm packages or local plugins that add tools, auth providers, event 
 
 ```jsonc
 {
-  "plugin": ["my-snow-flow-plugin", "file://./local-plugin"],
+  "plugin": ["my-serac-plugin", "file://./local-plugin"],
 }
 ```
 
@@ -385,13 +377,13 @@ Extend with npm packages or local plugins that add tools, auth providers, event 
 
 ## Headless / Server Mode
 
-Run Snow-Flow as a headless API server for CI/CD pipelines, remote control, or web UI access:
+Run Serac as a headless API server for CI/CD pipelines, remote control, or web UI access:
 
 ```bash
-snow-flow serve              # Start API server on port 4096
-snow-flow serve --port 8080  # Custom port
-snow-flow web                # Start server + open web interface
-snow-flow attach http://host:4096  # Attach TUI to remote server
+serac serve              # Start API server on port 4096
+serac serve --port 8080  # Custom port
+serac web                # Start server + open web interface
+serac attach http://host:4096  # Attach TUI to remote server
 ```
 
 <br>
@@ -420,7 +412,7 @@ The install script respects the following priority order:
 1. `$SNOW_FLOW_INSTALL_DIR` — Custom installation directory
 2. `$XDG_BIN_DIR` — XDG Base Directory Specification compliant path
 3. `$HOME/bin` — Standard user binary directory
-4. `$HOME/.snow-flow/bin` — Default fallback
+4. `$HOME/.serac/bin` — Default fallback
 
 </details>
 
@@ -430,7 +422,7 @@ The install script respects the following priority order:
 
 For full configuration reference, provider setup guides, and advanced usage:
 
-**[snow-flow.dev/docs](https://snow-flow.dev/docs)**
+**[serac.build/docs](https://serac.build/docs)**
 
 <br>
 
@@ -443,10 +435,10 @@ We welcome bug fixes, new provider support, LSP/formatter additions, and documen
 ## FAQ
 
 <details>
-<summary><b>What is Snow-Flow?</b></summary>
+<summary><b>What is Serac?</b></summary>
 <br>
 
-Snow-Flow is an autonomous ServiceNow development agent. It connects AI models to your ServiceNow instance through MCP tools, giving you an intelligent assistant that can develop widgets, query tables, deploy artifacts, manage update sets, and automate tasks — all from your terminal.
+Serac is an autonomous ServiceNow development agent. It connects AI models to your ServiceNow instance through MCP tools, giving you an intelligent assistant that can develop widgets, query tables, deploy artifacts, manage update sets, and automate tasks — all from your terminal.
 
 </details>
 
@@ -454,7 +446,7 @@ Snow-Flow is an autonomous ServiceNow development agent. It connects AI models t
 <summary><b>How is this different from other coding agents?</b></summary>
 <br>
 
-Snow-Flow is purpose-built for ServiceNow:
+Serac is purpose-built for ServiceNow:
 
 - **Open source** — Elastic License 2.0, fully transparent
 - **ServiceNow-native** — 200+ MCP tools and 54 domain skills (including Blast Radius impact analysis) designed for ServiceNow
@@ -470,7 +462,7 @@ Snow-Flow is purpose-built for ServiceNow:
 <summary><b>Can I use my own AI provider / API key?</b></summary>
 <br>
 
-Yes. Snow-Flow supports 20+ providers out of the box. Configure your preferred provider in `snow-flow.jsonc` or through the interactive setup on first launch. You can even switch providers mid-session.
+Yes. Serac supports 20+ providers out of the box. Configure your preferred provider in `serac.jsonc` or through the interactive setup on first launch. You can even switch providers mid-session.
 
 </details>
 
@@ -478,7 +470,7 @@ Yes. Snow-Flow supports 20+ providers out of the box. Configure your preferred p
 <summary><b>Does this work with my existing ServiceNow instance?</b></summary>
 <br>
 
-Yes. Snow-Flow connects to any ServiceNow instance via OAuth2 or basic authentication. Configure your instance URL and credentials in the MCP server configuration, and Snow-Flow will have access to all 200+ ServiceNow tools.
+Yes. Serac connects to any ServiceNow instance via OAuth2 or basic authentication. Configure your instance URL and credentials in the MCP server configuration, and Serac will have access to all 200+ ServiceNow tools.
 
 </details>
 
@@ -488,7 +480,7 @@ Yes. Snow-Flow connects to any ServiceNow instance via OAuth2 or basic authentic
 
 ## Disclaimer
 
-Snow-Flow is an independent, open-source project and is **not affiliated with, endorsed by, or sponsored by ServiceNow, Inc.** ServiceNow is a registered trademark of ServiceNow, Inc.
+Serac is an independent, open-source project and is **not affiliated with, endorsed by, or sponsored by ServiceNow, Inc.** ServiceNow is a registered trademark of ServiceNow, Inc.
 
 This tool requires a valid ServiceNow subscription and uses your own credentials to interact with your ServiceNow instance. Some features (including Flow Designer automation) use undocumented ServiceNow APIs that may change without notice.
 
@@ -498,9 +490,9 @@ Licensed under [Elastic License 2.0](LICENSE).
 
 <p align="center">
   <b>Join our community</b><br><br>
-  <a href="https://snow-flow.dev"><img alt="Website" src="https://img.shields.io/badge/Website-snow--flow.dev-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" /></a>
+  <a href="https://serac.build"><img alt="Website" src="https://img.shields.io/badge/Website-snow--flow.dev-0ea5e9?style=for-the-badge&logo=safari&logoColor=white" /></a>
 </p>
 
 <p align="center">
-  If you are building a project that uses "snow-flow" or "snow-code" in its name, please note in your README that it is not built by or affiliated with the Snow-Flow team.
+  If you are building a project that uses "serac" in its name, please note in your README that it is not built by or affiliated with the Serac team.
 </p>
