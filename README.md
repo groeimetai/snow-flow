@@ -43,7 +43,7 @@
 
 <br>
 
-Serac is an AI-powered, multi-agent development framework built specifically for **ServiceNow**. It combines a powerful terminal UI with 200+ ServiceNow MCP tools, 54 bundled domain skills, and support for 20+ AI providers to give you an autonomous coding agent that understands your ServiceNow instance.
+Serac is an AI-powered, multi-agent development framework built specifically for **ServiceNow**. It combines a powerful terminal UI with 200+ ServiceNow MCP tools, 55 bundled domain skills, and support for 20+ AI providers to give you an autonomous coding agent that understands your ServiceNow instance.
 
 <br>
 
@@ -52,7 +52,7 @@ Serac is an AI-powered, multi-agent development framework built specifically for
 <td width="33%" valign="top">
 
 **ServiceNow-Native**<br>
-<sub>200+ MCP tools and 54 domain skills (including Blast Radius impact analysis) purpose-built for ServiceNow development, deployment, and automation.</sub>
+<sub>200+ MCP tools and 55 domain skills (including Blast Radius impact analysis) purpose-built for ServiceNow development, deployment, and automation.</sub>
 
 </td>
 <td width="33%" valign="top">
@@ -449,7 +449,7 @@ Serac is an autonomous ServiceNow development agent. It connects AI models to yo
 Serac is purpose-built for ServiceNow:
 
 - **Open source** — Elastic License 2.0, fully transparent
-- **ServiceNow-native** — 200+ MCP tools and 54 domain skills (including Blast Radius impact analysis) designed for ServiceNow
+- **ServiceNow-native** — 200+ MCP tools and 55 domain skills (including Blast Radius impact analysis) designed for ServiceNow
 - **Provider-agnostic** — Works with 20+ AI providers, not locked to one vendor
 - **Built-in LSP** — Language server support for intelligent code assistance
 - **Terminal-first** — A TUI built by terminal enthusiasts with SolidJS + opentui
