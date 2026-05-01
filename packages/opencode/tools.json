@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-30T09:34:42.716Z",
+  "generatedAt": "2026-05-01T07:44:59.608Z",
   "count": 396,
   "groups": [
     {
@@ -10448,7 +10448,7 @@
         },
         {
           "name": "snow_pull_artifact",
-          "description": "Pull ServiceNow artifact to local files for editing with native tools",
+          "description": "Pull a ServiceNow artifact and return its body fields as files. On stdio also writes them to disk under output_dir; on HTTP returns them inline so the caller can drop them into the portal sandbox via the native `write` tool.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -10480,7 +10480,7 @@
               },
               "output_dir": {
                 "type": "string",
-                "description": "Local directory to save files (default: /tmp/snow-flow-artifacts)"
+                "description": "[stdio only] Local directory to also write the files into. Default: /tmp/snow-flow-artifacts. Ignored on HTTP transport — use the returned `files` map and the `write` tool to land them in the sandbox."
               }
             },
             "required": [
