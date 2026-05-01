@@ -52,11 +52,11 @@ function conventionalType(subject: string) {
 }
 
 async function fetchUpstream() {
-  await $`git fetch upstream dev --no-tags --quiet`.quiet().nothrow()
+  await $`git fetch upstream main --no-tags --quiet`.quiet().nothrow()
 }
 
 async function unresolved(state: State) {
-  const log = await $`git log --no-merges --format=%H%x1f%s ${state.cursor}..upstream/dev`.text()
+  const log = await $`git log --no-merges --format=%H%x1f%s ${state.cursor}..upstream/main`.text()
   return log
     .trim()
     .split("\n")
@@ -149,7 +149,7 @@ function defer(sha: string, reason: string) {
 
 async function advance() {
   const state = readState()
-  const log = (await $`git log --format=%H --reverse ${state.cursor}..upstream/dev`.text())
+  const log = (await $`git log --format=%H --reverse ${state.cursor}..upstream/main`.text())
     .trim()
     .split("\n")
     .filter(Boolean)

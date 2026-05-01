@@ -1,20 +1,19 @@
-name: Sync Upstream (OpenCode)
+name: Sync Upstream (Serac)
 
-# Weekly triage of new commits on https://github.com/anomalyco/opencode (dev branch).
+# Weekly triage of new commits on https://github.com/serac-labs/serac (main branch).
+#
+# Two phases each run:
+#   1. report  — fetch upstream, post/update the open upstream-sync issue with unresolved commits
+#   2. triage  — Claude Code reads the state file, cherry-picks appropriate commits, and opens a PR
 #
 # Source of truth is `.github/upstream-sync-state.json`:
-#   cursor                  — oldest upstream SHA we still track. Commits before
-#                             this are considered history. Only the local triage
-#                             script advances it (when a contiguous range is
-#                             fully decided); the workflow never moves it.
+#   cursor                  — oldest upstream SHA we still track. Only `script/upstream-triage.ts
+#                             advance` or Claude moves it forward.
 #   last_synced_upstream    — latest upstream HEAD this workflow saw. Informational.
 #   last_synced_at          — date of last workflow run. Informational.
 #   decisions               — map of upstream SHA → { status, reason, our_commit?, date }.
 #                             status is "picked" | "skipped" | "deferred".
 #                             Commits with a decision do not appear in the issue.
-#
-# Each run: fetch upstream, compute (cursor..upstream/dev) minus decided commits,
-# classify by scope, and post/update the open upstream-sync issue.
 
 on:
   workflow_dispatch:
@@ -29,6 +28,7 @@ on:
 permissions:
   contents: write
   issues: write
+  pull-requests: write
 
 jobs:
   sync-upstream:
@@ -40,12 +40,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Add upstream remote and fetch
         run: |
-          git remote add upstream https://github.com/anomalyco/opencode.git || true
-          git fetch upstream dev --no-tags
+          git remote add upstream https://github.com/serac-labs/serac.git || true
+          git fetch upstream main --no-tags
 
-      - name: Triage and report
+      - name: Report unresolved commits to issue
         uses: actions/github-script@v7
         with:
           script: |
@@ -66,9 +69,9 @@ jobs:
               return
             }
 
-            const upstreamHead = execSync("git rev-parse upstream/dev").toString().trim()
+            const upstreamHead = execSync("git rev-parse upstream/main").toString().trim()
             const log = execSync(
-              `git log --no-merges --format=%H%x1f%s ${cursor}..upstream/dev`,
+              `git log --no-merges --format=%H%x1f%s ${cursor}..upstream/main`,
             ).toString().trim()
 
             if (!log) {
@@ -87,10 +90,6 @@ jobs:
             const unresolved = all.filter((c) => !decisions[c.sha])
             const decidedCount = all.length - unresolved.length
 
-            // CORE = packages we actually build against (strict allowlist).
-            //   core            — at least one file under packages/{opencode,plugin,sdk,ui,util}
-            //   skip-candidate  — nothing core
-            //   mixed           — core + non-core
             const CORE = /^packages\/(opencode|plugin|sdk|ui|util)\//
 
             function classify(sha) {
@@ -113,7 +112,6 @@ jobs:
               "skip-candidate": unresolved.filter((c) => c.scope === "skip-candidate"),
             }
 
-            // Close existing sync issues if the caller asked for a fresh one.
             const existing = await github.rest.issues.listForRepo({
               owner, repo, state: "open", labels: "upstream-sync", per_page: 10,
             })
@@ -137,14 +135,14 @@ jobs:
               return arr.length > n ? `${shown}\n… and ${arr.length - n} more` : shown
             }
 
-            let body = `## Upstream Sync from anomalyco/opencode\n\n`
-            body += `**${unresolved.length} unresolved commit(s)** on upstream \`dev\`.`
+            let body = `## Upstream Sync from serac-labs/serac\n\n`
+            body += `**${unresolved.length} unresolved commit(s)** on upstream \`main\`.`
             if (decidedCount > 0) body += ` (${decidedCount} already decided in state file.)`
             body += `\n\n`
             body += `| Scope | Count | What |\n|---|---|---|\n`
             body += `| **core** | ${byScope.core.length} | touches \`packages/{opencode,plugin,sdk,ui,util}\` |\n`
             body += `| **mixed** | ${byScope.mixed.length} | core + non-core |\n`
-            body += `| skip-candidate | ${byScope["skip-candidate"].length} | only app/desktop-electron/containers/docs/storybook/… or root config |\n\n`
+            body += `| skip-candidate | ${byScope["skip-candidate"].length} | only app/desktop/docs/… or root config |\n\n`
 
             function appendGrouped(title, commits) {
               if (commits.length === 0) return
@@ -168,14 +166,10 @@ jobs:
 
             if (byScope["skip-candidate"].length > 0) {
               body += `### Skip-candidate (${byScope["skip-candidate"].length})\n`
-              body += `_First 30 shown — rarely need picking._\n\`\`\`\n${listN(byScope["skip-candidate"], 30)}\n\`\`\`\n\n`
+              body += `_First 30 shown._\n\`\`\`\n${listN(byScope["skip-candidate"], 30)}\n\`\`\`\n\n`
             }
 
-            body += `### Triage\n`
-            body += `Run locally:\n\`\`\`bash\nbun run script/upstream-triage.ts\n\`\`\`\n`
-            body += `Cherry-picks, typechecks, and updates \`.github/upstream-sync-state.json\`. Decided commits disappear from this issue on the next run.\n\n`
-            body += `### When to close\n`
-            body += `Close when \`core\` + \`mixed\` hit zero. Next Monday's run opens a fresh issue for that week's commits.\n`
+            body += `_Claude Code will triage this automatically and open a PR. Review the PR to see what was picked, skipped, or deferred._\n`
 
             if (openIssue) {
               await github.rest.issues.createComment({
@@ -189,7 +183,7 @@ jobs:
               } catch {
                 await github.rest.issues.createLabel({
                   owner, repo, name: "upstream-sync", color: "0e8a16",
-                  description: "Upstream sync from anomalyco/opencode",
+                  description: "Upstream sync from serac-labs/serac",
                 })
               }
               const { data: created } = await github.rest.issues.create({
@@ -205,14 +199,29 @@ jobs:
             state.last_synced_at = new Date().toISOString().split("T")[0]
             fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2) + "\n")
 
-      - name: Commit state update
+      - name: Configure git
         run: |
-          if git diff --quiet .github/upstream-sync-state.json; then
-            echo "No state changes."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/upstream-sync-state.json
-          git commit -m "chore: update upstream sync state [skip ci]"
-          git push
+
+      - name: Validate ANTHROPIC_API_KEY
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is not set. Add it to repository secrets."
+            exit 1
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Triage and open PR
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HUSKY: "0"
+        run: |
+          claude -p "/sync-upstream" \
+            --allowedTools "Bash(git*),Bash(bun*),Bash(gh*),Read,Write,Edit,Glob,Grep"
+        timeout-minutes: 30
