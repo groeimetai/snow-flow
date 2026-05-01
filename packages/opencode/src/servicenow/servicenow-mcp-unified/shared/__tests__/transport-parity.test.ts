@@ -32,11 +32,13 @@ const TOOLS_DIR = path.resolve(__dirname, "..", "..", "tools")
  * individual tool files. Adding or removing an entry requires touching both.
  */
 const EXPECTED_STDIO_ONLY = new Set<string>([
-  "snow_pull_artifact",
   "snow_sync_cleanup",
-  "snow_artifact_manage",
   "snow_memory_search",
   "snow_sync_data_consistency",
+  // snow_artifact_manage and snow_pull_artifact were stdio-only until they
+  // grew per-arg HTTP-safety guards (`httpForbiddenArgs`). They now run on
+  // both transports — the unsafe filesystem args are rejected centrally
+  // by call-tool.ts on HTTP, the rest of the surface stays available.
 ])
 
 const walk = (dir: string, out: string[] = []): string[] => {

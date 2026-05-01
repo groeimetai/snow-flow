@@ -48,6 +48,11 @@ const ALLOWLIST: AllowedPattern[] = [
     pattern: /^const ARTIFACT_SKIP_KEYS = new Set\(/,
     reason: "Static metadata — list of JSON keys to skip when scanning tool results",
   },
+  {
+    file: "instance-map-hook.ts",
+    pattern: /^export const SKIP_ACTIONS = new Set\(/,
+    reason: "Static metadata — list of read-only/skip actions for the instance-map post-hook",
+  },
 ]
 
 describe("Multi-tenant invariants in shared/", () => {

@@ -24,10 +24,24 @@ import {
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_artifact_manage",
-  // Stdio-only: the `export` + `format: "files"` branch trusts a caller-
-  // supplied absolute path for `fs.mkdir`/`fs.writeFile`. Unsafe on HTTP
-  // until export writes go through a tenant-scoped filesystem sandbox.
-  transports: ["stdio"],
+  // Most actions are HTTP-safe — pure ServiceNow REST calls with inline
+  // content (template / script / server_script / client_script / css /
+  // option_schema / data). The unsafe args below all touch the local
+  // filesystem (caller-supplied absolute paths) and are blocked by
+  // call-tool.ts on HTTP. Agents on portal chat use the inline-content
+  // path instead and write outputs to the portal sandbox via `write`.
+  httpForbiddenArgs: [
+    "artifact_directory",
+    "template_file",
+    "server_script_file",
+    "client_script_file",
+    "css_file",
+    "option_schema_file",
+    "script_file",
+    "condition_file",
+    "file_path",
+    "export_path",
+  ],
   description: `Unified tool for ServiceNow artifact management (create, get, update, delete, find, list, analyze, export, import)
 
 ⚡ ACTIONS:

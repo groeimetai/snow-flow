@@ -47,6 +47,13 @@ export interface ServiceNowContext {
    * — handlers and tools should treat an absent value as a programming error.
    */
   tenantId?: string
+  /**
+   * Which transport produced this context. Tools that do conditional
+   * filesystem work (`snow_pull_artifact` writes its output to disk on
+   * stdio, returns it inline on HTTP) read this; everything else can
+   * ignore it. Populated by call-tool.ts before the executor runs.
+   */
+  origin?: "stdio" | "http"
 }
 
 /**
@@ -93,6 +100,19 @@ export interface MCPToolDefinition {
 
   // 🆕 Transport-level allowlist. If omitted, tool runs on every transport.
   transports?: ToolTransport[]
+
+  /**
+   * Args that are forbidden on the HTTP transport, validated centrally
+   * by call-tool.ts before the tool's executor runs. Use this to surgically
+   * restrict caller-supplied filesystem paths (`*_file`, `file_path`,
+   * `export_path`, `artifact_directory`, `output_dir`, ...) on a tool
+   * that's otherwise HTTP-safe — instead of marking the entire tool
+   * `transports: ["stdio"]`.
+   *
+   * The error message includes the arg name, so the agent learns to
+   * use the corresponding inline-content alternative on the next call.
+   */
+  httpForbiddenArgs?: string[]
 
   inputSchema: {
     type: "object"

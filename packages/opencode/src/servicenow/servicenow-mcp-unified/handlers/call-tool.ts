@@ -78,6 +78,27 @@ export const callTool = (deps: HandlerDeps) => async (request: any, extra?: any)
       )
     }
 
+    // Per-arg HTTP-safety check. Tools that are mostly HTTP-safe but
+    // accept a few caller-supplied filesystem paths (snow_artifact_manage's
+    // `*_file` / `export_path` / `artifact_directory`, snow_pull_artifact's
+    // `output_dir`) declare those args in `httpForbiddenArgs`. The rest of
+    // the tool surface stays available on HTTP — only the unsafe args reject.
+    const forbidden = tool.definition.httpForbiddenArgs
+    if (ctx.origin === "http" && forbidden && args && typeof args === "object") {
+      for (const arg of forbidden) {
+        if ((args as Record<string, unknown>)[arg] !== undefined) {
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Tool "${name}" cannot accept the "${arg}" argument over HTTP transport ` +
+              `(it would touch the shared filesystem). Use the inline-content ` +
+              `equivalent (e.g. \`script\`, \`template\`, \`server_script\`, \`client_script\`, ` +
+              `\`css\`, \`option_schema\`, or \`data\`) instead, and write outputs to the ` +
+              `portal sandbox via the native \`write\` tool.`,
+          )
+        }
+      }
+    }
+
     // Check if tool is deferred and needs to be enabled first.
     // Pass tenantId so the ToolSessionStore scopes its lookup correctly
     // (stdio uses "stdio"; HTTP uses the tenant's customerId).
@@ -107,11 +128,15 @@ export const callTool = (deps: HandlerDeps) => async (request: any, extra?: any)
     validateJWTExpiry(ctx.jwtPayload)
     validatePermission(tool.definition, ctx.jwtPayload)
 
-    // Execute tool with error handling (permission check passed!)
+    // Execute tool with error handling (permission check passed!).
+    // Spread `origin` onto the context so tools that branch on transport
+    // (snow_pull_artifact: write-to-disk on stdio, return-inline on http)
+    // can read it without us threading another parameter everywhere.
+    const contextWithOrigin = { ...context, origin: ctx.origin }
     const result = await executeWithErrorHandling(
       name,
       async () => {
-        return await tool.executor(args, context)
+        return await tool.executor(args, contextWithOrigin)
       },
       {
         retry: isRetryableOperation(name),
