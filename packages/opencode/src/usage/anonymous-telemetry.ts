@@ -12,7 +12,13 @@ import path from "path"
 
 const log = Log.create({ service: "usage.anonymous-telemetry" })
 
-const PORTAL_URL = process.env.SNOW_FLOW_PORTAL_URL || "https://portal.snow-flow.dev"
+// Default points at the rebranded host. The legacy portal.snow-flow.dev
+// origin redirects 301 to dashboard.serac.build, which Bun fetch follows
+// by downgrading POST→GET (per WHATWG fetch spec for 301), silently
+// dropping the body. Hitting the new host directly avoids the downgrade.
+// Old installs still pinned at the legacy URL only land in telemetry once
+// the nginx redirect is bumped to 308 (Permanent Redirect, method-preserving).
+const PORTAL_URL = process.env.SNOW_FLOW_PORTAL_URL || "https://dashboard.serac.build"
 const PENDING_END_PING_PATH = path.join(Global.Path.state, "anonymous-telemetry-pending-end.json")
 
 interface TelemetryPingPayload {
