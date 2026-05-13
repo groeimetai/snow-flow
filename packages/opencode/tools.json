@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T11:18:14.691Z",
-  "count": 396,
+  "generatedAt": "2026-05-13T15:00:41.604Z",
+  "count": 404,
   "groups": [
     {
       "name": "access-control",
@@ -1791,6 +1791,98 @@
       "name": "approvals",
       "displayName": "Approvals",
       "tools": [
+        {
+          "name": "snow_approval_chain_manage",
+          "description": "Unified tool for ServiceNow approval chains across the sysapproval_approver, sysapproval_group, and sysapproval_action tables. Use this when a record needs an ordered, multi-step approval flow rather than a single ad-hoc approver.\n\nActions:\n- define_chain — write an ordered chain of approval steps for a source record. Each step may target a user (sysapproval_approver) or a group (sysapproval_group). Steps after the first start in 'not_yet_requested' state and are activated as earlier steps complete.\n- preview_chain — resolve who would be asked at each step (expanding group memberships) without inserting any rows. Useful for showing the caller the chain before firing it.\n- get_approvals — list all pending and historical approval rows for a given source record across both sysapproval_approver and sysapproval_group, plus the recent sysapproval_action verbs applied.\n- cancel — end an active chain. Marks every still-open approver/group row as 'cancelled' and records a sysapproval_action 'cancelled' verb on each.\n\nUse when: an agent needs to wire up a multi-step approval (e.g. peer → manager → director), preview the chain before committing, audit pending approvals on a record, or stop an in-flight chain. For a single ad-hoc approval use snow_request_approval; to act on an individual approval use snow_approve_reject.\n\nReturns: define_chain returns the inserted approval rows in order. preview_chain returns the resolved approver list per step without writing. get_approvals returns pending and complete rows plus the recent action verbs. cancel returns the rows it closed.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "approvals",
+            "workflow",
+            "chain",
+            "multi-step"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Approval chain action to perform",
+                "enum": [
+                  "define_chain",
+                  "preview_chain",
+                  "get_approvals",
+                  "cancel"
+                ]
+              },
+              "source_table": {
+                "type": "string",
+                "description": "[define_chain/preview_chain/get_approvals/cancel] Source table (e.g. change_request, sc_request, problem)"
+              },
+              "source_sys_id": {
+                "type": "string",
+                "description": "[define_chain/preview_chain/get_approvals/cancel] Source record sys_id the chain attaches to"
+              },
+              "steps": {
+                "type": "array",
+                "description": "[define_chain/preview_chain] Ordered chain steps. Each step has approver (user sys_id) OR group (sys_user_group sys_id), optional order (defaults to array index * 100), and optional comments.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "approver": {
+                      "type": "string",
+                      "description": "User sys_id (use for individual approver step)"
+                    },
+                    "group": {
+                      "type": "string",
+                      "description": "Group sys_id (use for group approval step)"
+                    },
+                    "order": {
+                      "type": "number",
+                      "description": "Explicit order/sequence; defaults to (index + 1) * 100"
+                    },
+                    "comments": {
+                      "type": "string",
+                      "description": "Optional comments stored on the approval row"
+                    }
+                  }
+                }
+              },
+              "activate_first": {
+                "type": "boolean",
+                "description": "[define_chain] Whether the first step is created in state 'requested' (active) or 'not_yet_requested' (queued). Defaults to true.",
+                "default": true
+              },
+              "cancel_comment": {
+                "type": "string",
+                "description": "[cancel] Comment recorded on each closed approval row and on the matching sysapproval_action verb"
+              },
+              "include_complete": {
+                "type": "boolean",
+                "description": "[get_approvals] Include approver/group rows that are already approved/rejected/cancelled",
+                "default": false
+              },
+              "include_actions": {
+                "type": "boolean",
+                "description": "[get_approvals] Include recent sysapproval_action verb history for the source record",
+                "default": true
+              },
+              "limit": {
+                "type": "number",
+                "description": "[get_approvals] Maximum rows to return per table",
+                "default": 50
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
         {
           "name": "snow_approve_reject",
           "description": "Approve or reject approval request",
@@ -7037,6 +7129,105 @@
                 "default": true
               }
             }
+          }
+        },
+        {
+          "name": "snow_source_control",
+          "description": "Unified tool for the ServiceNow Studio Source Control plugin. Bridges git-style operations against an application's linked repository (status, push, pull, branch, commit, diff, stash) through the platform's Source Control REST endpoints under /api/sn_source_control.\n\nActions:\n- status — show working-copy status (changed/added/deleted records) for an application\n- push — push local commits to the remote tracking branch\n- pull — pull and apply remote changes onto the working copy\n- branch — list, create, switch, or delete branches on the application's repository\n- commit — commit the working copy with a message\n- diff — show the diff for a specific record or for the whole working copy\n- stash — list, create, apply, or drop stashes against the working copy\n\nUse when: the agent needs to interact with a scoped application that is linked to a git repository (Studio Source Control) and the user wants git-equivalent operations from within the platform. Prefer update sets for environments that do not use source control.\n\nReturns: action-specific result envelopes. For status/diff: per-record change rows. For push/pull/commit: operation summary. For branch/stash: the resulting branch or stash record. All paths are best-effort against published Source Control plugin docs and require live-instance verification before relying on them in production.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "devops",
+            "source-control",
+            "git",
+            "branching",
+            "studio"
+          ],
+          "complexity": "advanced",
+          "frequency": "low",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Source-control action to perform",
+                "enum": [
+                  "status",
+                  "push",
+                  "pull",
+                  "branch",
+                  "commit",
+                  "diff",
+                  "stash"
+                ]
+              },
+              "app_sys_id": {
+                "type": "string",
+                "description": "sys_id of the scoped application (sys_app) whose repository is targeted"
+              },
+              "app_scope": {
+                "type": "string",
+                "description": "Alternative to app_sys_id: scope name (e.g. x_company_module). The tool will resolve it to a sys_app sys_id."
+              },
+              "branch_action": {
+                "type": "string",
+                "description": "[branch] Sub-action",
+                "enum": [
+                  "list",
+                  "create",
+                  "switch",
+                  "delete"
+                ]
+              },
+              "branch_name": {
+                "type": "string",
+                "description": "[branch] Branch name (required for create/switch/delete)"
+              },
+              "from_branch": {
+                "type": "string",
+                "description": "[branch action=create] Source branch to branch off (defaults to current)"
+              },
+              "commit_message": {
+                "type": "string",
+                "description": "[commit] Commit message"
+              },
+              "remote_branch": {
+                "type": "string",
+                "description": "[push/pull] Remote branch to push to / pull from (defaults to tracking branch)"
+              },
+              "record_sys_id": {
+                "type": "string",
+                "description": "[diff] Specific record sys_id to diff (omit for working-copy-wide diff)"
+              },
+              "stash_action": {
+                "type": "string",
+                "description": "[stash] Sub-action",
+                "enum": [
+                  "list",
+                  "create",
+                  "apply",
+                  "drop"
+                ]
+              },
+              "stash_name": {
+                "type": "string",
+                "description": "[stash] Stash name (required for create/apply/drop)"
+              },
+              "stash_message": {
+                "type": "string",
+                "description": "[stash action=create] Optional stash description"
+              },
+              "credentials_alias": {
+                "type": "string",
+                "description": "Alias for stored repository credentials (sys_repo_credential), if remote auth is required"
+              }
+            },
+            "required": [
+              "action"
+            ]
           }
         },
         {
@@ -13561,6 +13752,164 @@
       ]
     },
     {
+      "name": "performance-analytics",
+      "displayName": "Performance Analytics",
+      "tools": [
+        {
+          "name": "snow_pa_indicator_manage",
+          "description": "Unified tool for ServiceNow Performance Analytics indicator definitions and their dimensional breakdowns. Wraps the pa_indicators, pa_breakdowns, pa_widgets, and pa_scores tables on the platform.\n\nActions:\n- list — list indicators, optionally filtered by facts_table or active flag\n- get — retrieve a single indicator by sys_id or name (includes related widget and breakdown counts)\n- create — create a new indicator (name, facts_table, aggregate, field required)\n- update — patch indicator fields\n- delete — remove an indicator (and optionally its dependent breakdowns)\n- add_breakdown — attach a dimensional breakdown to an indicator (writes pa_breakdowns)\n- list_breakdowns — list breakdowns for a given indicator or globally\n\nUse when: the agent needs to manage KPI/indicator definitions, attach dimensional slicers (assignment_group, priority, location, etc.) to existing indicators, or audit which indicators a facts table feeds.\n\nReturns: indicator records with sys_id, name, facts_table, aggregate, field, frequency, unit, and active flag. For breakdowns, returns sys_id, name, table, field, and matrix_source. Companion tools: snow_pa_create for full PA artifact creation (widgets, thresholds, scheduled reports) and snow_pa_operate for collecting and querying PA scores.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "performance-analytics",
+            "kpi",
+            "indicators",
+            "breakdowns",
+            "reporting"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "create",
+                  "update",
+                  "delete",
+                  "add_breakdown",
+                  "list_breakdowns"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/update/delete/add_breakdown/list_breakdowns] Indicator sys_id"
+              },
+              "name": {
+                "type": "string",
+                "description": "[get/create/update] Indicator name (used as identifier when sys_id is absent)"
+              },
+              "label": {
+                "type": "string",
+                "description": "[create/update] Indicator display label (defaults to name on create)"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create/update] Indicator description"
+              },
+              "facts_table": {
+                "type": "string",
+                "description": "[create/update] Source/facts table the indicator measures (e.g. incident, sc_task)"
+              },
+              "aggregate": {
+                "type": "string",
+                "description": "[create/update] Aggregation function",
+                "enum": [
+                  "COUNT",
+                  "SUM",
+                  "AVG",
+                  "MIN",
+                  "MAX",
+                  "COUNT_DISTINCT"
+                ]
+              },
+              "field": {
+                "type": "string",
+                "description": "[create/update] Field on facts_table to aggregate (omit for COUNT)"
+              },
+              "conditions": {
+                "type": "string",
+                "description": "[create/update] Encoded query that filters the facts_table rows"
+              },
+              "unit": {
+                "type": "string",
+                "description": "[create/update] Unit of measurement (count, hours, percent, etc.)"
+              },
+              "frequency": {
+                "type": "string",
+                "description": "[create/update] Collection frequency",
+                "enum": [
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "quarterly",
+                  "yearly",
+                  "hourly"
+                ]
+              },
+              "direction": {
+                "type": "string",
+                "description": "[create/update] Whether higher or lower is better",
+                "enum": [
+                  "maximize",
+                  "minimize"
+                ]
+              },
+              "precision": {
+                "type": "number",
+                "description": "[create/update] Decimal precision"
+              },
+              "active": {
+                "type": "boolean",
+                "description": "[create/update] Whether the indicator is active",
+                "default": true
+              },
+              "breakdown_name": {
+                "type": "string",
+                "description": "[add_breakdown] Breakdown name"
+              },
+              "breakdown_table": {
+                "type": "string",
+                "description": "[add_breakdown] Table on which the breakdown is evaluated"
+              },
+              "breakdown_field": {
+                "type": "string",
+                "description": "[add_breakdown] Field used to group the indicator (e.g. assignment_group, priority)"
+              },
+              "related_field": {
+                "type": "string",
+                "description": "[add_breakdown] Related field path for cross-table breakdowns"
+              },
+              "matrix_source": {
+                "type": "boolean",
+                "description": "[add_breakdown] Whether this is a matrix breakdown",
+                "default": false
+              },
+              "cascade": {
+                "type": "boolean",
+                "description": "[delete] Also remove dependent pa_breakdowns rows that reference this indicator",
+                "default": false
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list/list_breakdowns] Only return active records",
+                "default": false
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_breakdowns] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/list_breakdowns] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "permissions",
       "displayName": "Permissions",
       "tools": [
@@ -16383,6 +16732,76 @@
       "displayName": "Scheduled Jobs",
       "tools": [
         {
+          "name": "snow_job_status",
+          "description": "Unified read-only visibility into ServiceNow background work. Spans sys_trigger (scheduled-job triggers), sys_progress_worker (background workers for transforms, imports, large operations), and sys_execution_tracker (fix-script and async-operation trackers).\n\nActions:\n- list_active — list currently running/queued work across triggers, workers, and trackers\n- get_status — fetch the full record for a single job/worker/tracker by sys_id\n- get_history — historical runs for a specific scheduled job (sys_trigger), bounded by limit and time window\n- get_errors — surface recent failed/errored runs across the three sources\n\nUse when: the agent needs real-time situational awareness of what is running on the instance, debugging a slow transform, or auditing why a scheduled job did not fire. Companion to snow_trigger_scheduled_job for starting jobs and snow_scheduled_job_manage for defining them.\n\nReturns: per-source arrays of normalized records with sys_id, name, state, progress, started_at, completed_at, and source-specific fields. All operations are read-only Table API queries.",
+          "permission": "read",
+          "allowedRoles": [
+            "developer",
+            "admin",
+            "stakeholder"
+          ],
+          "useCases": [
+            "monitoring",
+            "scheduled-jobs",
+            "background-jobs",
+            "debugging",
+            "observability"
+          ],
+          "complexity": "intermediate",
+          "frequency": "high",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Status-query action to perform",
+                "enum": [
+                  "list_active",
+                  "get_status",
+                  "get_history",
+                  "get_errors"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "description": "[list_active/get_status/get_errors] Which source to query. Defaults to 'all' which queries trigger, worker, and tracker in parallel.",
+                "enum": [
+                  "all",
+                  "trigger",
+                  "worker",
+                  "tracker"
+                ],
+                "default": "all"
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get_status/get_history] Record sys_id to inspect"
+              },
+              "job_name": {
+                "type": "string",
+                "description": "[get_history] Scheduled job name (alternative to sys_id, queries sys_trigger by name)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_active/get_history/get_errors] Maximum records to return per source",
+                "default": 50
+              },
+              "since_hours": {
+                "type": "number",
+                "description": "[list_active/get_history/get_errors] Only include records updated within the last N hours",
+                "default": 24
+              },
+              "fields": {
+                "type": "string",
+                "description": "[get_status] Comma-separated list of fields to return for the specific record"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
           "name": "snow_scheduled_job_manage",
           "description": "Manage scheduled jobs: list, get details, create, update, delete, enable/disable, run now, get history",
           "permission": "write",
@@ -16482,6 +16901,94 @@
               "limit": {
                 "type": "number",
                 "description": "Max results for list/get_history",
+                "default": 50
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "schedules",
+      "displayName": "Schedules",
+      "tools": [
+        {
+          "name": "snow_oncall_manage",
+          "description": "Unified tool for ServiceNow On-Call Scheduling. Operates over cmn_rota (rotations), cmn_rota_member (members in a rotation), and cmn_rota_roster (shift assignments) to manage who covers which group at which time.\n\nActions:\n- list_rotations — list rotations, optionally filtered by assignment group\n- get_current_oncall — resolve who is on call right now for a given rotation (queries cmn_rota_roster against the current GlideDateTime via a server-side helper)\n- list_shifts — list upcoming shifts/rosters for a rotation within a time window\n- swap_shift — reassign a roster entry from one rotation member to another\n\nUse when: ITSM teams need visibility into on-call coverage, the agent must page the correct person, or a user requests a one-time shift swap. Companion to snow_create_schedule for the underlying schedule definitions.\n\nReturns: action-specific structures. list_rotations returns rotation records with assignment_group and schedule references. get_current_oncall returns the active rotation member (sys_user link) plus the roster row that grants coverage. list_shifts returns roster rows ordered by start time. swap_shift returns the updated roster record.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "on-call",
+            "scheduling",
+            "itsm",
+            "rosters",
+            "rotation"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "On-call action to perform",
+                "enum": [
+                  "list_rotations",
+                  "get_current_oncall",
+                  "list_shifts",
+                  "swap_shift"
+                ]
+              },
+              "rotation_sys_id": {
+                "type": "string",
+                "description": "[get_current_oncall/list_shifts/swap_shift] sys_id of the cmn_rota rotation"
+              },
+              "rotation_name": {
+                "type": "string",
+                "description": "[get_current_oncall/list_shifts] Rotation name (alternative to rotation_sys_id)"
+              },
+              "assignment_group": {
+                "type": "string",
+                "description": "[list_rotations] Filter rotations by assignment group sys_id or name"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_rotations] Only return active rotations",
+                "default": true
+              },
+              "start_time": {
+                "type": "string",
+                "description": "[list_shifts] Window start in ServiceNow datetime format (YYYY-MM-DD HH:MM:SS, UTC). Defaults to now."
+              },
+              "end_time": {
+                "type": "string",
+                "description": "[list_shifts] Window end in ServiceNow datetime format. Defaults to start_time + 7 days."
+              },
+              "roster_sys_id": {
+                "type": "string",
+                "description": "[swap_shift] sys_id of the cmn_rota_roster row to reassign"
+              },
+              "from_member_sys_id": {
+                "type": "string",
+                "description": "[swap_shift] sys_id of the cmn_rota_member currently assigned (used as a guard)"
+              },
+              "to_member_sys_id": {
+                "type": "string",
+                "description": "[swap_shift] sys_id of the cmn_rota_member taking the shift"
+              },
+              "reason": {
+                "type": "string",
+                "description": "[swap_shift] Optional reason recorded on the roster row"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_rotations/list_shifts] Maximum records to return",
                 "default": 50
               }
             },
@@ -17350,6 +17857,103 @@
               "token"
             ]
           }
+        },
+        {
+          "name": "snow_kms_manage",
+          "description": "Unified tool for the ServiceNow Key Management Framework. Covers KMF modules (sys_kmf_module), cryptographic modules (sys_kmf_crypto_module), and keys (sys_kmf_key) for use in PII/PCI encryption flows and Edge Encryption.\n\nActions:\n- list_modules — list KMF modules (sys_kmf_module) and their crypto modules\n- create_key — create a new key under a KMF module (writes sys_kmf_key)\n- encrypt — encrypt a plaintext payload using the named key\n- decrypt — decrypt a ciphertext payload using the named key\n- list_keys — list keys, optionally filtered by module\n- rotate_key — generate a new active version of a key and deactivate the previous one\n\nUse when: managing KMF modules and keys for sensitive data, rotating keys on schedule, or wrapping/unwrapping payloads through the platform. Encrypt and decrypt invoke a server-side helper Script Include rather than the Table API; falls back to a scripted-execution path if the dedicated endpoint is absent.\n\nReturns: action-specific data. List operations return arrays of KMF records (sys_id, name, module, type, active, key_format). Create/rotate return the new key record. Encrypt/decrypt return the wrapped/unwrapped payload as a string. Plaintext and ciphertext are never logged in error metadata.",
+          "permission": "write",
+          "allowedRoles": [
+            "admin"
+          ],
+          "useCases": [
+            "security",
+            "encryption",
+            "kms",
+            "key-management",
+            "pii",
+            "compliance"
+          ],
+          "complexity": "advanced",
+          "frequency": "low",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "KMS action to perform",
+                "enum": [
+                  "list_modules",
+                  "create_key",
+                  "encrypt",
+                  "decrypt",
+                  "list_keys",
+                  "rotate_key"
+                ]
+              },
+              "module_sys_id": {
+                "type": "string",
+                "description": "[create_key/list_keys/rotate_key] sys_id of the KMF module (sys_kmf_module)"
+              },
+              "key_sys_id": {
+                "type": "string",
+                "description": "[rotate_key/encrypt/decrypt] sys_id of the key (sys_kmf_key)"
+              },
+              "key_name": {
+                "type": "string",
+                "description": "[create_key/encrypt/decrypt/rotate_key] Logical name of the key (alternative to key_sys_id)"
+              },
+              "algorithm": {
+                "type": "string",
+                "description": "[create_key] Symmetric algorithm",
+                "enum": [
+                  "AES-128",
+                  "AES-256",
+                  "RSA-2048",
+                  "RSA-4096",
+                  "HMAC-SHA-256"
+                ]
+              },
+              "key_purpose": {
+                "type": "string",
+                "description": "[create_key] Intended purpose",
+                "enum": [
+                  "encryption",
+                  "signing",
+                  "wrapping"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "description": "[create_key] Display label"
+              },
+              "plaintext": {
+                "type": "string",
+                "description": "[encrypt] Plaintext payload to encrypt (never logged in error output)"
+              },
+              "ciphertext": {
+                "type": "string",
+                "description": "[decrypt] Base64-encoded ciphertext payload to decrypt (never logged in error output)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_modules/list_keys] Only return active records",
+                "default": true
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_modules/list_keys] Maximum records to return",
+                "default": 50
+              },
+              "retire_previous": {
+                "type": "boolean",
+                "description": "[rotate_key] Mark the previous active key as inactive after creating the new version",
+                "default": true
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
         }
       ]
     },
@@ -17357,6 +17961,112 @@
       "name": "service-catalog",
       "displayName": "Service Catalog",
       "tools": [
+        {
+          "name": "snow_catalog_manage",
+          "description": "Unified tool for ServiceNow Service Catalog structure: order guides, record producers, categories, and the item-to-category junction. Wraps the sc_cat_item_guide, sc_cat_item_producer, sc_category, and sc_cat_item_category tables.\n\nActions:\n- create_order_guide — create a new order guide (sc_cat_item_guide) that bundles related catalog items into a single guided flow\n- list_order_guides — list order guides, optionally filtered by catalog\n- create_record_producer — create a record producer (sc_cat_item_producer) that surfaces as a catalog item but writes to a non-request target table (incident, change_request, etc.)\n- list_record_producers — list record producers, optionally filtered by target table\n- list_categories — list catalog categories (sc_category), optionally filtered by catalog or parent\n- create_category — create a catalog category to organize items into a navigable tree\n- link_item_to_category — attach a catalog item to a category through the sc_cat_item_category junction (items can live in multiple categories)\n\nUse when: the agent needs to organize catalog items into guides or categories, or expose a record-creation form (record producer) outside the standard requested-item flow. For the catalog items themselves use snow_create_catalog_item; for ordering an existing item use snow_order_catalog_item.\n\nReturns: created or queried records with sys_id, name, and the relevant references (sc_catalogs, category, table_name). Junction inserts return the sc_cat_item_category link sys_id so it can be removed later.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "service-catalog",
+            "order-guides",
+            "record-producers",
+            "categories"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Catalog structure action to perform",
+                "enum": [
+                  "create_order_guide",
+                  "list_order_guides",
+                  "create_record_producer",
+                  "list_record_producers",
+                  "list_categories",
+                  "create_category",
+                  "link_item_to_category"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "[create_order_guide/create_record_producer/create_category] Display name"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[create_order_guide/create_record_producer/create_category] Short description shown on the catalog tile"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create_order_guide/create_record_producer/create_category] Long description / overview"
+              },
+              "sc_catalogs": {
+                "type": "string",
+                "description": "[create_order_guide/create_record_producer/create_category/list_*] Catalog sys_id (sc_catalog) to attach to or filter by"
+              },
+              "category": {
+                "type": "string",
+                "description": "[create_order_guide/create_record_producer] Initial sc_category sys_id (use link_item_to_category to add more later)"
+              },
+              "active": {
+                "type": "boolean",
+                "description": "[create_order_guide/create_record_producer/create_category] Whether the record is active",
+                "default": true
+              },
+              "include_items": {
+                "type": "boolean",
+                "description": "[create_order_guide] Whether items are pre-selected for the requester (sc_cat_item_guide.include_items)",
+                "default": true
+              },
+              "table_name": {
+                "type": "string",
+                "description": "[create_record_producer/list_record_producers] Target table the producer writes to (e.g. incident, change_request, problem)"
+              },
+              "script": {
+                "type": "string",
+                "description": "[create_record_producer] Server-side script that maps producer variables to the target record. ES5 only — use var, function(), and string concatenation; no const/let/arrow/template literals"
+              },
+              "parent": {
+                "type": "string",
+                "description": "[create_category/list_categories] Parent sc_category sys_id (for nested categories) or filter"
+              },
+              "title": {
+                "type": "string",
+                "description": "[create_category] Category display title (defaults to name)"
+              },
+              "cat_item": {
+                "type": "string",
+                "description": "[link_item_to_category] Catalog item sys_id (sc_cat_item) to link"
+              },
+              "category_sys_id": {
+                "type": "string",
+                "description": "[link_item_to_category] Category sys_id (sc_category) to link the item to"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_*] Only return active records",
+                "default": false
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_*] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_*] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
         {
           "name": "snow_create_catalog_client_script",
           "description": "Creates client scripts for catalog items to add custom JavaScript behavior to forms.",
@@ -17887,6 +18597,105 @@
             "required": [
               "id",
               "name"
+            ]
+          }
+        },
+        {
+          "name": "snow_sp_theme_manage",
+          "description": "Unified tool for ServiceNow Service Portal theming. Operates over sp_theme (theme definitions), sp_brand (per-portal branding records such as logo and favicon), sp_css (theme-scoped stylesheets), and sp_portal (the portal records that reference a theme).\n\nActions:\n- list_themes — list all sp_theme records with their name, header, footer, and CSS variable bundle\n- create_theme — create a new sp_theme with name, css_variables, header, and footer\n- update_branding — upsert an sp_brand row (logo, favicon, color tokens) for a given portal; existing brand rows are patched in place, otherwise a new row is inserted\n- clone_theme — duplicate an existing sp_theme (and its sp_css children) under a new name so a per-tenant variant can be edited independently of the source\n- apply_theme_to_portal — set sp_portal.theme to a given theme sys_id so the portal renders with the new look on the next page load\n\nUse when: rolling out white-labeled portals per tenant, building a base theme + per-customer overlays, or migrating an existing portal onto a redesigned theme without rewriting the underlying widgets. Companion tools: snow_create_sp_widget for content, snow_create_sp_page for page composition.\n\nReturns: action-specific structures. list_themes returns theme rows with related CSS counts. create_theme and clone_theme return the new sys_id plus the copied sp_css rows. update_branding indicates whether the row was inserted or patched. apply_theme_to_portal returns the updated sp_portal record.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "service-portal",
+            "theming",
+            "branding",
+            "white-label",
+            "multi-tenant"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Theme management action to perform",
+                "enum": [
+                  "list_themes",
+                  "create_theme",
+                  "update_branding",
+                  "clone_theme",
+                  "apply_theme_to_portal"
+                ]
+              },
+              "theme_sys_id": {
+                "type": "string",
+                "description": "[clone_theme/apply_theme_to_portal] sys_id of the source or target sp_theme"
+              },
+              "theme_name": {
+                "type": "string",
+                "description": "[clone_theme/apply_theme_to_portal] Theme name (used when theme_sys_id is not provided)"
+              },
+              "name": {
+                "type": "string",
+                "description": "[create_theme/clone_theme] Name for the new theme"
+              },
+              "css_variables": {
+                "type": "string",
+                "description": "[create_theme] CSS variables block (e.g. --brand-primary: #ff6600;) compiled into the theme"
+              },
+              "header": {
+                "type": "string",
+                "description": "[create_theme] Header widget id or HTML reference (defaults to OOB stock-header)"
+              },
+              "footer": {
+                "type": "string",
+                "description": "[create_theme] Footer widget id or HTML reference (defaults to OOB stock-footer)"
+              },
+              "copy_css": {
+                "type": "boolean",
+                "description": "[clone_theme] Also copy the source theme's sp_css children",
+                "default": true
+              },
+              "portal": {
+                "type": "string",
+                "description": "[update_branding/apply_theme_to_portal] sp_portal sys_id (or unique URL suffix) to brand or to apply the theme to"
+              },
+              "logo": {
+                "type": "string",
+                "description": "[update_branding] Logo image URL or sys_attachment sys_id"
+              },
+              "favicon": {
+                "type": "string",
+                "description": "[update_branding] Favicon URL or sys_attachment sys_id"
+              },
+              "primary_color": {
+                "type": "string",
+                "description": "[update_branding] Primary brand color (hex, e.g. #1f6feb)"
+              },
+              "secondary_color": {
+                "type": "string",
+                "description": "[update_branding] Secondary brand color (hex)"
+              },
+              "brand_name": {
+                "type": "string",
+                "description": "[update_branding] Display brand name shown in headers and tab titles"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_themes] Maximum themes to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_themes] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
