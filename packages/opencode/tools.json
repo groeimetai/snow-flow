@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T15:00:41.604Z",
-  "count": 404,
+  "generatedAt": "2026-05-13T15:02:07.144Z",
+  "count": 410,
   "groups": [
     {
       "name": "access-control",
@@ -3305,6 +3305,121 @@
       "displayName": "Compliance",
       "tools": [
         {
+          "name": "snow_compliance_manage",
+          "description": "Unified tool for ServiceNow compliance lifecycle beyond rule authoring and scanning: list_exceptions, exception_create, evidence_link, evidence_list, mark_compliant. Wraps the GRC tables sn_compliance_policy_exception, sn_compliance_control, and sn_compliance_evidence.\n\nActions:\n- list_exceptions — list policy exceptions, optionally filtered by control, state, or framework\n- exception_create — open a new policy exception against a control with justification and expiry\n- evidence_link — attach an existing evidence record (or arbitrary URL) to a control\n- evidence_list — list evidence rows linked to a given control\n- mark_compliant — set a control's compliance state to compliant with an attestation note\n\nUse when: the agent needs to manage the human side of compliance — granting time-bound exceptions to a control, attaching evidence collected outside ServiceNow to satisfy audit requirements, or attesting that a control is compliant. For authoring the rule itself, use snow_create_compliance_rule; for running a scan against a framework, use snow_run_compliance_scan.\n\nReturns: exception rows with sys_id, state, expiry; evidence rows with type and link reference; control state transitions with attestation work notes.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "compliance",
+            "grc",
+            "exceptions",
+            "evidence",
+            "controls"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list_exceptions",
+                  "exception_create",
+                  "evidence_link",
+                  "evidence_list",
+                  "mark_compliant"
+                ]
+              },
+              "control_sys_id": {
+                "type": "string",
+                "description": "[exception_create/evidence_link/evidence_list/mark_compliant] sn_compliance_control sys_id"
+              },
+              "exception_sys_id": {
+                "type": "string",
+                "description": "[list_exceptions] Filter to a specific exception by sys_id"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list_exceptions] Filter by exception state",
+                "enum": [
+                  "draft",
+                  "review",
+                  "approved",
+                  "rejected",
+                  "expired",
+                  "withdrawn"
+                ]
+              },
+              "framework": {
+                "type": "string",
+                "description": "[list_exceptions] Filter by compliance framework (SOX, GDPR, HIPAA, etc.)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_exceptions/evidence_list] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_exceptions/evidence_list] Comma-separated list of fields to return"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[exception_create] Short description of the exception"
+              },
+              "justification": {
+                "type": "string",
+                "description": "[exception_create] Business justification for the exception"
+              },
+              "expiry": {
+                "type": "string",
+                "description": "[exception_create] ISO date string (YYYY-MM-DD) when the exception expires"
+              },
+              "requestor": {
+                "type": "string",
+                "description": "[exception_create] sys_user sys_id of the requestor (defaults to the calling user)"
+              },
+              "evidence_sys_id": {
+                "type": "string",
+                "description": "[evidence_link] Existing sn_compliance_evidence sys_id to link"
+              },
+              "evidence_url": {
+                "type": "string",
+                "description": "[evidence_link] External evidence URL (used to create a new sn_compliance_evidence row when evidence_sys_id is absent)"
+              },
+              "evidence_type": {
+                "type": "string",
+                "description": "[evidence_link] Evidence type label",
+                "enum": [
+                  "document",
+                  "screenshot",
+                  "report",
+                  "attestation",
+                  "log",
+                  "other"
+                ],
+                "default": "document"
+              },
+              "evidence_description": {
+                "type": "string",
+                "description": "[evidence_link] Optional description for the evidence record"
+              },
+              "attestation_note": {
+                "type": "string",
+                "description": "[mark_compliant] Work note explaining why the control is being marked compliant"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
           "name": "snow_create_compliance_rule",
           "description": "Creates compliance rules for regulatory frameworks (SOX, GDPR, HIPAA). Defines validation, remediation, and severity levels.",
           "permission": "write",
@@ -5189,6 +5304,105 @@
             "required": [
               "name",
               "widgets"
+            ]
+          }
+        },
+        {
+          "name": "snow_dashboard_manage",
+          "description": "Unified tool for ServiceNow dashboard lifecycle beyond creation: list, get, share, embed, tab_create, tab_list. Wraps sys_dashboard, sys_dashboard_admin, and pa_tabs.\n\nActions:\n- list — list sys_dashboard rows, optionally filtered by owner or active flag\n- get — retrieve a dashboard by sys_id or title (includes tab and widget counts)\n- share — share a dashboard with a user or group through sys_dashboard_admin\n- embed — produce an embed URL and iframe snippet for a dashboard (no write to ServiceNow)\n- tab_create — create a pa_tabs row attached to a dashboard\n- tab_list — list pa_tabs rows attached to a dashboard\n\nUse when: the agent needs to manage dashboards after they exist — sharing them, embedding them in a portal page, or organising their tab layout. For authoring a new dashboard, use snow_create_dashboard; for attaching widgets to it, use snow_add_dashboard_widget.\n\nReturns: dashboard records with sys_id, title, columns, active; share rows with user_or_group references; tab rows with order and title.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "dashboards",
+            "reporting",
+            "sharing",
+            "embedding",
+            "tabs"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "share",
+                  "embed",
+                  "tab_create",
+                  "tab_list"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/share/embed/tab_create/tab_list] Dashboard sys_id"
+              },
+              "title": {
+                "type": "string",
+                "description": "[get/share/embed/tab_create/tab_list] Dashboard title (used as identifier when sys_id is absent)"
+              },
+              "owner": {
+                "type": "string",
+                "description": "[list] Filter by sys_user sys_id (dashboard owner)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list] Only return active dashboards",
+                "default": false
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/tab_list] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/tab_list] Comma-separated list of fields to return"
+              },
+              "user": {
+                "type": "string",
+                "description": "[share] sys_user sys_id to grant view/edit access"
+              },
+              "group": {
+                "type": "string",
+                "description": "[share] sys_user_group sys_id to grant view/edit access (alternative to user)"
+              },
+              "share_role": {
+                "type": "string",
+                "description": "[share] Access level granted",
+                "enum": [
+                  "read",
+                  "write"
+                ],
+                "default": "read"
+              },
+              "embed_height": {
+                "type": "number",
+                "description": "[embed] Iframe height in pixels",
+                "default": 800
+              },
+              "embed_width": {
+                "type": "string",
+                "description": "[embed] Iframe width (px or %)",
+                "default": "100%"
+              },
+              "tab_title": {
+                "type": "string",
+                "description": "[tab_create] Tab title shown on the dashboard"
+              },
+              "tab_order": {
+                "type": "number",
+                "description": "[tab_create] Tab display order (lower = first)"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
@@ -12599,6 +12813,90 @@
           }
         },
         {
+          "name": "snow_email_template_manage",
+          "description": "Unified tool for ServiceNow email template lifecycle beyond creation: list, preview, send_test, import, export, clone. Wraps sysevent_email_template.\n\nActions:\n- list — list templates, optionally filtered by table or active flag\n- preview — render the template against a sample record (subject, body, sms — no email sent)\n- send_test — send the rendered template as a real email to a specified address\n- import — create or upsert a template from a JSON payload\n- export — return the full template as a JSON payload suitable for re-import\n- clone — duplicate a template under a new name\n\nUse when: the agent needs to maintain templates after they exist — auditing them, testing rendering against a real record, sending a one-off test email, or moving a template between instances via JSON. For authoring a new template, use snow_create_email_template; for managing the event-to-template binding, use snow_email_notification_manage.\n\nReturns: template records with sys_id, name, subject, content_type, collection (table); preview/test results with rendered subject and body.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "email",
+            "templates",
+            "notifications",
+            "testing",
+            "import-export"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "preview",
+                  "send_test",
+                  "import",
+                  "export",
+                  "clone"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[preview/send_test/export/clone] Template sys_id"
+              },
+              "name": {
+                "type": "string",
+                "description": "[preview/send_test/export/clone] Template name (used as identifier when sys_id is absent)"
+              },
+              "table": {
+                "type": "string",
+                "description": "[list] Filter by collection (table the template targets)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list] Only return active templates",
+                "default": false
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list] Comma-separated list of fields to return"
+              },
+              "record_sys_id": {
+                "type": "string",
+                "description": "[preview/send_test] Sample record sys_id to render the template against (uses the template's collection table)"
+              },
+              "sample_record_table": {
+                "type": "string",
+                "description": "[preview/send_test] Override the table the sample record lives on (defaults to the template's collection)"
+              },
+              "test_recipient": {
+                "type": "string",
+                "description": "[send_test] Email address that should receive the rendered email"
+              },
+              "template_data": {
+                "type": "object",
+                "description": "[import] Full template payload (subject, message_html, message_text, content_type, collection, sms_alternate, name)"
+              },
+              "new_name": {
+                "type": "string",
+                "description": "[clone] Name for the cloned template (required)"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
           "name": "snow_emergency_broadcast",
           "description": "Send emergency broadcast notification to all users or specific groups",
           "permission": "read",
@@ -16057,6 +16355,130 @@
               "type"
             ]
           }
+        },
+        {
+          "name": "snow_report_manage",
+          "description": "Unified tool for ServiceNow report lifecycle beyond creation: list, get, run, schedule, share, and export. Wraps sys_report, sys_report_schedule, and sys_report_users_view.\n\nActions:\n- list — list sys_report definitions, optionally filtered by table or owner\n- get — retrieve a single report (sys_id or title)\n- run — execute the report ad-hoc and return rows from the configured table using the report filter\n- schedule — create or update a sys_report_schedule row (recurrence, time, recipients)\n- share — share a report with users or groups via sys_report_users_view\n- export — export the report's underlying rows as JSON or CSV (server-side rendered PDF/XLSX is out of scope; use schedule for delivery)\n\nUse when: the agent needs to manage reports after they exist — running them on demand, scheduling delivery, or controlling who can view them. For authoring a new sys_report row, use snow_create_report instead.\n\nReturns: report records with sys_id, title, table, type, filter; schedule rows with run_time and recipients; share rows with user_or_group references.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "reporting",
+            "reports",
+            "scheduling",
+            "sharing",
+            "exports"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "run",
+                  "schedule",
+                  "share",
+                  "export"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/run/schedule/share/export] Report sys_id"
+              },
+              "title": {
+                "type": "string",
+                "description": "[get/run/schedule/share/export] Report title (used as identifier when sys_id is absent)"
+              },
+              "table": {
+                "type": "string",
+                "description": "[list] Filter by source table (e.g. incident, change_request)"
+              },
+              "owner": {
+                "type": "string",
+                "description": "[list] Filter by sys_user sys_id (report owner/user field)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[run/list/export] Maximum rows to return",
+                "default": 100
+              },
+              "display_value": {
+                "type": "boolean",
+                "description": "[run/export] Return display values rather than raw references",
+                "default": true
+              },
+              "run_time": {
+                "type": "string",
+                "description": "[schedule] Local time of day to run, HH:MM:SS (ServiceNow stores as a glide_time)"
+              },
+              "run_dayofmonth": {
+                "type": "number",
+                "description": "[schedule] Day of month (1-31) for monthly recurrence"
+              },
+              "run_dayofweek": {
+                "type": "number",
+                "description": "[schedule] Day of week (1=Mon … 7=Sun) for weekly recurrence"
+              },
+              "run_type": {
+                "type": "string",
+                "description": "[schedule] Recurrence type",
+                "enum": [
+                  "daily",
+                  "weekly",
+                  "monthly",
+                  "periodically",
+                  "once"
+                ]
+              },
+              "recipients": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "[schedule] sys_user sys_ids or email addresses to receive the scheduled report"
+              },
+              "schedule_sys_id": {
+                "type": "string",
+                "description": "[schedule] Existing sys_report_schedule sys_id to update; omit to create a new row"
+              },
+              "schedule_active": {
+                "type": "boolean",
+                "description": "[schedule] Whether the schedule is active",
+                "default": true
+              },
+              "user": {
+                "type": "string",
+                "description": "[share] sys_user sys_id to grant view access"
+              },
+              "group": {
+                "type": "string",
+                "description": "[share] sys_user_group sys_id to grant view access (alternative to user)"
+              },
+              "format": {
+                "type": "string",
+                "description": "[export] Export format",
+                "enum": [
+                  "json",
+                  "csv"
+                ],
+                "default": "json"
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/run/export] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
         }
       ]
     },
@@ -18601,6 +19023,118 @@
           }
         },
         {
+          "name": "snow_sp_page_manage",
+          "description": "Unified tool for ServiceNow Service Portal page lifecycle beyond creation: list, update, delete, clone, add_widget_instance. Wraps sp_page and sp_widget_instance.\n\nActions:\n- list — list sp_page rows, optionally filtered by portal id, public flag, or title fragment\n- update — patch sp_page fields (title, public, draft, css, internal)\n- delete — delete an sp_page row (does not cascade widget instances)\n- clone — duplicate an sp_page with a new id and title (optionally copying widget instances)\n- add_widget_instance — place an sp_widget on the page by creating an sp_widget_instance row\n\nUse when: the agent needs to maintain Service Portal pages — renaming, retiring, duplicating layouts, or wiring widgets onto a page. For authoring a new sp_page, use snow_create_sp_page; for authoring a new sp_widget, use snow_create_sp_widget.\n\nReturns: sp_page rows with sys_id, id, title, public, draft; widget instance rows with sys_id, sp_widget reference, and column placement.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "service-portal",
+            "portal-pages",
+            "widget-instances",
+            "page-management"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "update",
+                  "delete",
+                  "clone",
+                  "add_widget_instance"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[update/delete/clone/add_widget_instance] Page sys_id"
+              },
+              "id": {
+                "type": "string",
+                "description": "[update/delete/clone/add_widget_instance] Page stable id (used as identifier when sys_id is absent)"
+              },
+              "title_like": {
+                "type": "string",
+                "description": "[list] Filter by title substring"
+              },
+              "public_only": {
+                "type": "boolean",
+                "description": "[list] Only return pages with public=true",
+                "default": false
+              },
+              "include_drafts": {
+                "type": "boolean",
+                "description": "[list] Include pages with draft=true",
+                "default": true
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list] Comma-separated list of fields to return"
+              },
+              "title": {
+                "type": "string",
+                "description": "[update/clone] Page display title"
+              },
+              "public": {
+                "type": "boolean",
+                "description": "[update] Whether the page is accessible without login"
+              },
+              "draft": {
+                "type": "boolean",
+                "description": "[update] Whether the page is a draft"
+              },
+              "css": {
+                "type": "string",
+                "description": "[update] Page-level CSS"
+              },
+              "internal": {
+                "type": "boolean",
+                "description": "[update] Whether the page is internal (not surfaced in the portal nav)"
+              },
+              "new_id": {
+                "type": "string",
+                "description": "[clone] Stable id for the cloned page (required)"
+              },
+              "copy_widget_instances": {
+                "type": "boolean",
+                "description": "[clone] Also copy sp_widget_instance rows attached to the source page",
+                "default": true
+              },
+              "widget_id": {
+                "type": "string",
+                "description": "[add_widget_instance] sp_widget sys_id or stable id to place on the page"
+              },
+              "column_sys_id": {
+                "type": "string",
+                "description": "[add_widget_instance] sp_column sys_id to attach the instance to (preferred). Omit to attach to the page directly."
+              },
+              "instance_title": {
+                "type": "string",
+                "description": "[add_widget_instance] Optional title override for the widget instance"
+              },
+              "order": {
+                "type": "number",
+                "description": "[add_widget_instance] Display order within the column"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
           "name": "snow_sp_theme_manage",
           "description": "Unified tool for ServiceNow Service Portal theming. Operates over sp_theme (theme definitions), sp_brand (per-portal branding records such as logo and favicon), sp_css (theme-scoped stylesheets), and sp_portal (the portal records that reference a theme).\n\nActions:\n- list_themes — list all sp_theme records with their name, header, footer, and CSS variable bundle\n- create_theme — create a new sp_theme with name, css_variables, header, and footer\n- update_branding — upsert an sp_brand row (logo, favicon, color tokens) for a given portal; existing brand rows are patched in place, otherwise a new row is inserted\n- clone_theme — duplicate an existing sp_theme (and its sp_css children) under a new name so a per-tenant variant can be edited independently of the source\n- apply_theme_to_portal — set sp_portal.theme to a given theme sys_id so the portal renders with the new look on the next page load\n\nUse when: rolling out white-labeled portals per tenant, building a base theme + per-customer overlays, or migrating an existing portal onto a redesigned theme without rewriting the underlying widgets. Companion tools: snow_create_sp_widget for content, snow_create_sp_page for page composition.\n\nReturns: action-specific structures. list_themes returns theme rows with related CSS counts. create_theme and clone_theme return the new sys_id plus the copied sp_css rows. update_branding indicates whether the row was inserted or patched. apply_theme_to_portal returns the updated sp_portal record.",
           "permission": "write",
@@ -18920,6 +19454,126 @@
             "required": [
               "table",
               "record_sys_id"
+            ]
+          }
+        },
+        {
+          "name": "snow_sla_manage",
+          "description": "Unified tool for ServiceNow SLA and OLA lifecycle beyond view-only status checks: list, update, breach_response, pause, resume, list_breaches. Wraps contract_sla (definitions, including OLAs) and task_sla (running instances).\n\nActions:\n- list — list contract_sla definitions, optionally filtered by table or SLA type (SLA or OLA)\n- update — patch contract_sla fields (duration, condition, schedule, active, retroactive flags)\n- breach_response — append a work note and optional escalation to a task_sla row that has breached\n- pause — pause a running task_sla row (sets stage to paused with a reason)\n- resume — resume a paused task_sla row\n- list_breaches — list task_sla rows where has_breached=true, optionally scoped to a table or assignment_group\n\nUse when: the agent needs to maintain SLA definitions, react to breaches, or pause/resume in-flight SLAs on individual records. For creating a new contract_sla, use snow_create_sla; for a read-only status of one task's SLAs, use snow_get_sla_status.\n\nReturns: contract_sla rows with sys_id, name, duration, collection, type; task_sla rows with stage, has_breached, business_percentage; breach lists scoped by table and group.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "sla-management",
+            "ola",
+            "service-level",
+            "breaches"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "update",
+                  "breach_response",
+                  "pause",
+                  "resume",
+                  "list_breaches"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[update] contract_sla sys_id"
+              },
+              "name": {
+                "type": "string",
+                "description": "[update] contract_sla name (used as identifier when sys_id is absent)"
+              },
+              "task_sla_sys_id": {
+                "type": "string",
+                "description": "[breach_response/pause/resume] task_sla sys_id"
+              },
+              "table": {
+                "type": "string",
+                "description": "[list/list_breaches] Filter by table (e.g. incident, change_request)"
+              },
+              "sla_type": {
+                "type": "string",
+                "description": "[list] Filter by SLA type",
+                "enum": [
+                  "SLA",
+                  "OLA"
+                ]
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list] Only return active SLA definitions",
+                "default": false
+              },
+              "assignment_group": {
+                "type": "string",
+                "description": "[list_breaches] Filter by sys_user_group sys_id"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_breaches] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/list_breaches] Comma-separated list of fields to return"
+              },
+              "duration": {
+                "type": "string",
+                "description": "[update] Duration in HH:MM:SS or human-readable form (e.g. \"4 Hours\")"
+              },
+              "condition": {
+                "type": "string",
+                "description": "[update] Encoded query for when the SLA applies"
+              },
+              "schedule": {
+                "type": "string",
+                "description": "[update] Schedule sys_id (cmn_schedule)"
+              },
+              "pause_condition": {
+                "type": "string",
+                "description": "[update] Encoded query that pauses the SLA when true"
+              },
+              "active": {
+                "type": "boolean",
+                "description": "[update] Whether the SLA definition is active"
+              },
+              "retroactive": {
+                "type": "boolean",
+                "description": "[update] Whether the SLA is retroactive (apply to existing tasks)"
+              },
+              "retroactive_pause": {
+                "type": "boolean",
+                "description": "[update] Whether retroactive pause is allowed"
+              },
+              "response_note": {
+                "type": "string",
+                "description": "[breach_response] Work note to append explaining the breach response"
+              },
+              "escalate": {
+                "type": "boolean",
+                "description": "[breach_response] Also raise the parent task's escalation level by 1",
+                "default": false
+              },
+              "pause_reason": {
+                "type": "string",
+                "description": "[pause] Reason for the pause (stored in the work_notes journal on the task_sla)"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
