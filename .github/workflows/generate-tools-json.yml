@@ -17,6 +17,12 @@ on:
       - ".github/workflows/generate-tools-json.yml"
   workflow_dispatch:
 
+# Serialise runs so back-to-back merges don't race on pushing the
+# regenerated tools.json — each run waits for the previous to finish.
+concurrency:
+  group: generate-tools-json
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
