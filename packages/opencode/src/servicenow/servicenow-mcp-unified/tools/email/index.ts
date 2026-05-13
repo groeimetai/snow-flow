@@ -15,3 +15,7 @@ export {
   toolDefinition as snow_inbound_email_action_def,
   execute as snow_inbound_email_action_exec,
 } from "./snow_inbound_email_action.js"
+export {
+  toolDefinition as snow_email_template_manage_def,
+  execute as snow_email_template_manage_exec,
+} from "./snow_email_template_manage.js"

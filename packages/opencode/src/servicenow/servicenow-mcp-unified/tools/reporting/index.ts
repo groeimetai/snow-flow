@@ -12,3 +12,7 @@ export {
   toolDefinition as snow_schedule_report_delivery_def,
   execute as snow_schedule_report_delivery_exec,
 } from "./snow_schedule_report_delivery.js"
+export {
+  toolDefinition as snow_report_manage_def,
+  execute as snow_report_manage_exec,
+} from "./snow_report_manage.js"
