@@ -83,3 +83,7 @@ export {
   toolDefinition as snow_vulnerability_risk_assessment_def,
   execute as snow_vulnerability_risk_assessment_exec,
 } from "./snow_vulnerability_risk_assessment.js"
+export {
+  toolDefinition as snow_compliance_manage_def,
+  execute as snow_compliance_manage_exec,
+} from "./snow_compliance_manage.js"
