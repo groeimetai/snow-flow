@@ -23,44 +23,29 @@ import { searchDependents, type SearchPattern } from "./shared/deep-search.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_blast_radius_dependents",
-  description: `Find every artifact on the instance that USES / CALLS / DEPENDS ON a given artifact. Answers: "what breaks if I change or delete this?"
+  description: `Find every artifact across the instance that uses, calls, or depends on a given artifact. Answers "what breaks if I change or delete this?"
 
-🛑 CALL THIS BEFORE:
-- Deleting a script include, business rule, client script, UI action, UI policy, or widget
-- Refactoring the name / api_name / signature of any script include
-- Removing a table
-- Promoting a breaking change to another instance
-- Telling the user "it's safe to remove X"
+Call this before: deleting a script include, business rule, client script, UI action, UI policy, or widget; refactoring the name / api_name / signature of a script include; removing a table; promoting a breaking change to another instance; or telling the user "it's safe to remove X".
 
-The output is the impact list — every caller, every referrer, in every
-scope. Do not rely on reading 5 tables by hand; this tool scans 100+
-tables including workflows, notifications, email actions, catalog
-scripts, scheduled jobs, and custom scripted tables.
+The output is the full impact list — every caller, every referrer, in every scope. Scans 100+ tables including workflows, notifications, email actions, catalog scripts, scheduled jobs, and custom scripted tables.
 
-🔍 TRIGGER PHRASES (agent should invoke this):
+Trigger phrases (agent should invoke this):
 - "what uses X" / "what calls X" / "what references X"
 - "wat gebruikt X" / "wat roept X aan" / "wat heeft X nodig"
 - "can I delete X" / "is it safe to remove X" / "kan ik X verwijderen"
 - "impact analysis" / "blast radius" / "dependency audit"
 - User asks to refactor, rename, or remove a named artifact
 
-🔍 EXAMPLES:
-- "What calls the IncidentUtils script include?"
-- "Is it safe to delete this business rule?"
-- "Show me everything referencing the incident table"
+Returns:
+- dependents[] — each with type, name, scope, source_table, source_field, cross_scope flag. source_table/source_field let you distinguish a workflow-condition hit from a business-rule hit (critical for triage).
+- summary — by_type + by_table counts + cross_scope count + truncation flag.
+- search_stats — per-phase timing + tables scanned + cache hit, so you know the scan was thorough.
 
-📊 RETURNS:
-- dependents[]: each with type, name, scope, source_table, source_field,
-  cross_scope flag. source_table/source_field let you distinguish a
-  workflow-condition hit from a business-rule hit — critical for triage.
-- summary: by_type + by_table counts + cross_scope count + truncation flag.
-- search_stats: per-phase timing + tables scanned + cache hit, so you
-  know the scan was thorough (expect 100+ tables on a typical instance).
-
-🔎 HOW IT SEARCHES (why you can trust the "none found"):
+How it searches (why you can trust a "none found"):
 - Phase 1: 25+ curated artifact types (human-attributed labels)
 - Phase 2: sys_dictionary discovery — every table with script-type fields
 - Phase 3: concurrency-limited batch query over the long tail
+
 Deep-only by design. Takes 2-10s depending on instance size.`,
   category: "blast-radius",
   subcategory: "dependency-analysis",

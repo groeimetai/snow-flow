@@ -14,22 +14,18 @@ import { analyzeScript } from "./shared/script-analyzer.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_blast_radius_artifact_dependencies",
-  description: `Analyze what a specific artifact reads, writes, and depends on.
+  description: `Forward dependency analysis for a single artifact: what does it read, write, and depend on?
 
-📋 USE THIS TO:
-- Understand what fields a business rule reads and writes
-- See what tables a script include queries
-- Find which script includes an artifact calls
-- Assess the complexity and risk of an artifact
+Use to understand what fields a business rule touches, what tables a script include queries, which script includes an artifact calls, and the artifact's complexity/risk profile.
 
-🔍 EXAMPLE: "What does this business rule touch?"
+Example: "What does this business rule touch?"
 
-📊 RETURNS:
+Returns:
 - Fields read and written (with line numbers)
 - Tables queried via GlideRecord
-- Script includes called
+- Script includes called (deep mode also resolves them to sys_id/scope/active)
 - Glide APIs used
-- Risk assessment (low/medium/high complexity)`,
+- Risk assessment: low / medium / high complexity`,
   category: "blast-radius",
   subcategory: "artifact-analysis",
   use_cases: ["impact-analysis", "code-review", "dependency-analysis"],

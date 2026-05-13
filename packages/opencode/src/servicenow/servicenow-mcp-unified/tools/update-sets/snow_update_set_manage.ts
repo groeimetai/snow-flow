@@ -15,32 +15,18 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_update_set_manage",
-  description: `Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact, current)
+  description: `Unified tool for Update Set management. Actions: create, switch, complete, ignore, export, preview, add_artifact, current.
 
-⚠️ CRITICAL: Update Set Tracking & OAuth Context
+How tracking works:
+Update Sets must be "current" for the user making changes — and via API the user is the OAuth service account. With auto_switch=true (default), the new Update Set is set as current for the service account so subsequent changes are tracked. auto_switch=false skips this and changes are NOT tracked.
 
-HOW TRACKING WORKS:
-- Update Sets MUST be "current" for the user making changes (via API = OAuth service account)
-- snow-flow uses OAuth service account → Update Set must be current for SERVICE ACCOUNT
-- auto_switch=true (DEFAULT) → Changes ARE tracked automatically ✅
-- auto_switch=false → Changes are NOT tracked ❌
+Application scope:
+Pass application_scope to create the Update Set within a scoped application — supply an application sys_id or scope name (e.g. "x_myco_hr_portal"). Default is "global". Update Sets in a scoped app only track changes to artifacts in that scope.
 
-APPLICATION SCOPE:
-- Use application_scope parameter to create Update Sets within a scoped application
-- Default is "global" for global scope development
-- Provide application sys_id or scope name for scoped application development
-- Update Sets in scoped apps only track changes to artifacts in that scope
+UI visibility:
+The Update Set being current for the service account does not make it appear current in your own ServiceNow UI. Pass the optional servicenow_username to also set it as current for that user — this only affects UI visibility, not tracking.
 
-UI VISIBILITY:
-- Update Set current for service account ≠ visible in YOUR UI
-- To see it as current in YOUR ServiceNow UI, provide servicenow_username parameter
-- This is OPTIONAL and only affects UI visibility, NOT tracking
-
-RECOMMENDED USAGE:
-- Always use auto_switch=true (default) for development work
-- Add servicenow_username if you want to see it in your UI
-- Use application_scope for scoped application development
-- Only use auto_switch=false for non-development operations`,
+Recommended: always use auto_switch=true for development; add servicenow_username when you want to see the Update Set as current in your own UI; use application_scope for scoped-app development; only set auto_switch=false for non-development read-only operations.`,
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "update-sets",

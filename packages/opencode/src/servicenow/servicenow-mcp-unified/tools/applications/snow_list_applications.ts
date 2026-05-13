@@ -11,24 +11,11 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_list_applications",
-  description: `List all scoped applications in the ServiceNow instance.
+  description: `List all scoped applications (sys_app) in the ServiceNow instance. Use to find available scopes before switching, see which applications are active/inactive, or decide which scope to use for development.
 
-📋 USE THIS TO:
-- Find available application scopes before switching
-- Search for applications by name or scope prefix
-- See which applications are active/inactive
-- Decide which scope to use for development
+Search options: filter by name (partial match), scope (partial match, e.g. "x_myco"), or vendor. Active-only by default; pass active_only=false to include inactive. include_global controls whether the Global scope appears in the list.
 
-🔍 SEARCH OPTIONS:
-- Filter by name (partial match)
-- Filter by scope (partial match, e.g., "x_myco")
-- Filter by vendor
-- Show only active or include inactive
-
-📊 RETURNS:
-- List of applications with name, scope, version, vendor
-- Count of artifacts in each application (optional)
-- Indicates which scope is currently active`,
+Returns each application with name, scope prefix, version, vendor, sys_id, and an is_current flag for the currently active scope. Optional include_artifact_count adds a per-application sys_metadata count (slower).`,
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "applications",

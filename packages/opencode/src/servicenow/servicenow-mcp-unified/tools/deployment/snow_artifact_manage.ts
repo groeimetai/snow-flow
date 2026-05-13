@@ -42,43 +42,25 @@ export const toolDefinition: MCPToolDefinition = {
     "file_path",
     "export_path",
   ],
-  description: `Unified tool for ServiceNow artifact management (create, get, update, delete, find, list, analyze, export, import)
+  description: `Unified tool for ServiceNow artifact lifecycle: create, get, update, delete, find, list, analyze, export, import, verify.
 
-⚡ ACTIONS:
-- create: Create new artifact (widget, page, script, table, field, etc.)
-- get: Retrieve artifact by sys_id or identifier
-- update: Update existing artifact fields (supports _file parameters for file-based updates)
-- delete: Delete artifact (supports soft delete)
-- find: Search artifacts by query
-- list: List all artifacts of a type
-- analyze: Analyze artifact dependencies
-- export: Export artifact to JSON/XML
-- import: Import artifact from JSON/XML file
-- verify: Compare local files against deployed artifact content
+Actions:
+- create — create a new artifact (widget, page, script, table, field, etc.)
+- get — retrieve by sys_id or identifier
+- update — update fields, including _file parameters for file-based updates
+- delete — delete (with soft-delete support)
+- find — search artifacts by query
+- list — list all artifacts of a type
+- analyze — analyze artifact dependencies
+- export — export to JSON/XML
+- import — import from JSON/XML file
+- verify — compare local files against deployed artifact content
 
-🗃️ SUPPORTED ARTIFACT TYPES:
-- sp_widget / widget: Service Portal widgets
-- sp_page / page: Service Portal pages
-- sys_ux_page / uib_page: UI Builder pages
-- script_include: Script Includes
-- business_rule: Business Rules
-- client_script: Client Scripts
-- ui_policy: UI Policies
-- ui_action: UI Actions
-- rest_message: REST Messages
-- scheduled_job: Scheduled Jobs
-- transform_map: Transform Maps
-- fix_script: Fix Scripts
-- table: Custom tables (sys_db_object)
-- field: Custom fields (sys_dictionary)
-- flow: Flows (sys_hub_flow)
-- application: Applications (sys_app)
+Supported artifact types: sp_widget/widget, sp_page/page, sys_ux_page/uib_page (UI Builder), script_include, business_rule, client_script, ui_policy, ui_action, rest_message, scheduled_job, transform_map, fix_script, table (sys_db_object), field (sys_dictionary), flow (sys_hub_flow), application (sys_app).
 
-⚠️ ES5 REQUIREMENT: Server-side scripts must use ES5 syntax (var, function, string concatenation)
+ES5 only: server-side scripts must use ES5 syntax (var, function, string concatenation — no arrow functions, const/let, template literals).
 
-📦 APPLICATION SCOPE:
-- Use application_scope parameter to specify scope
-- Use "global" for global scope artifacts`,
+Application scope: pass application_scope to target a specific scope, or "global" for global-scope artifacts.`,
   category: "development",
   subcategory: "deployment",
   use_cases: ["deployment", "artifacts", "widgets", "scripts", "tables", "crud"],

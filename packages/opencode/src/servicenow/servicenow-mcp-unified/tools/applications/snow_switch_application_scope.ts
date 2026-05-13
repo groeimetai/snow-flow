@@ -17,28 +17,11 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_switch_application_scope",
-  description: `Switch the current application scope for development.
+  description: `Switch the current application scope for the OAuth service account by writing to sys_user_preference (name=sys_scope). All NEW artifacts created after the switch belong to that scope; existing artifacts stay in their original scope.
 
-🔄 APPLICATION SCOPE SWITCHING:
+Resolves the target by trying, in order: sys_id, scope name (e.g. "x_myco_hr_portal"), application name. Pass "global" for the cross-application/system-wide scope.
 
-When you switch scope, all NEW artifacts you create will belong to that scope.
-This is essential for proper application organization and deployment.
-
-📌 SCOPE OPTIONS:
-- "global" - Global scope for cross-application utilities and system-wide changes
-- Application sys_id - Switch to a specific application by its sys_id
-- Scope name - Switch by scope prefix (e.g., "x_myco_hr_portal")
-- Application name - Switch by application name
-
-🎯 USE CASES:
-- Switching to a scoped app to add new features
-- Switching to global for shared utilities
-- Switching between multiple applications during development
-
-⚠️ IMPORTANT:
-- Existing artifacts remain in their original scope
-- Active Update Set should match the target scope for proper tracking
-- Use create_update_set=true to ensure changes are tracked`,
+Tracking: the active Update Set should match the target scope. Set create_update_set=true to bootstrap a matching one in the same call (named "Development: <app_name>" by default), otherwise switch the Update Set separately via snow_update_set_manage.`,
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "applications",

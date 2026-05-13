@@ -14,23 +14,11 @@ import { execute as executeArtifactManage } from "./snow_artifact_manage.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_solution_package",
-  description: `Creates a MULTI-ARTIFACT solution package with Update Set tracking.
+  description: `Bundle multiple related artifacts into a single deployment package, tracked by a freshly created Update Set switched as current.
 
-⚠️ WHEN TO USE THIS TOOL:
-- Creating 3+ related artifacts that form a complete solution
-- Need automatic Update Set creation for the entire package
-- Deploying a "feature bundle" (e.g., widget + script includes + business rules)
+Use when: building a feature bundle of 3+ related artifacts that ship as one unit (e.g. HR Portal: widget + script includes + business rule). For single artifacts use snow_artifact_manage directly — this tool delegates to it for each artifact and adds package-level Update Set wiring on top.
 
-❌ DO NOT USE FOR:
-- Creating a SINGLE widget → use snow_artifact_manage instead
-- Creating a SINGLE script include → use snow_artifact_manage instead
-- Creating individual artifacts → use snow_artifact_manage instead
-
-✅ GOOD USE CASE:
-"Create HR Portal solution with: widget, 2 script includes, 1 business rule"
-
-❌ BAD USE CASE:
-"Create a widget for displaying incidents" → Use snow_artifact_manage!`,
+Each artifact entry has a type and a create object that's passed through to snow_artifact_manage. Failures per artifact are collected (not fatal) so you can retry the failures individually.`,
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "deployment",

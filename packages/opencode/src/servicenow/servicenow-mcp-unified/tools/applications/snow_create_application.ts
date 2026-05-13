@@ -14,27 +14,15 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_application",
-  description: `Create a scoped application in ServiceNow with optional automatic Update Set and scope switching.
+  description: `Create a scoped application (sys_app), optionally bootstrapping an Update Set and switching the OAuth service account into the new scope so subsequent artifacts are tracked there.
 
-📦 WHEN TO CREATE AN APPLICATION:
+Use when: building a complete feature set (HR Portal, Customer Onboarding), bundling functionality for single-unit deployment, building external integrations, or developing for multiple instances. Prefer global scope for small fixes, shared utilities, quick POCs, or cross-application work.
 
-✅ CREATE APPLICATION when:
-- Building a complete feature set (e.g., HR Portal, Customer Onboarding)
-- Creating functionality that needs to be deployed as a single unit
-- Building integrations with external systems
-- Developing for multiple ServiceNow instances
-- Need clear ownership, versioning, and dependency management
+Defaults:
+- auto_create_update_set=true — creates a fresh Update Set in the new app scope
+- auto_switch_scope=true — switches the OAuth service account to the new scope so subsequent artifacts track there
 
-❌ USE GLOBAL SCOPE when:
-- Making small fixes or patches
-- Creating shared utilities used across applications
-- Quick prototypes or POCs
-- Cross-application functionality
-
-🔄 WORKFLOW INTEGRATION:
-- auto_create_update_set=true (default): Creates Update Set in new app scope
-- auto_switch_scope=true (default): Switches to new app scope for development
-- All subsequent artifacts will be tracked in the new application scope`,
+Set either to false for manual control.`,
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "applications",

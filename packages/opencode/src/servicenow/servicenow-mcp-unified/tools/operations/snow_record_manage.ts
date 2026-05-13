@@ -545,24 +545,26 @@ const HELPER_FIELDS: Record<string, string[]> = {
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_record_manage",
-  description: `🔥 PRIMARY TOOL for ALL ServiceNow record operations. USE THIS for: create incident, update incident, get incident, delete incident, query incidents, create change, update change, create problem, update problem, create user, update user, create asset, update asset, create CI, and ANY other record operation.
+  description: `Primary tool for CRUD+query on any ServiceNow record. Replaces the per-table create/update/get/delete tools (snow_create_incident, snow_update_change, snow_query_problems, etc.) — use this for any record operation.
 
-⚡ ACTIONS: create | get | update | delete | query
+Actions: create, get, update, delete, query.
 
-📋 SUPPORTED TABLES (use friendly names):
-• ITSM: incident, problem, change, change_request, change_task, request, task
-• CMDB: ci, server, computer, ci_relationship
-• Users: user, group, group_member
-• Assets: asset, hardware_asset, software_license
-• HR/CSM: hr_case, hr_task, customer_case, customer_account
-• Projects: project, project_task
-• Other: purchase_order, knowledge_article
+Supported table presets (friendly names map to platform tables, with sensible default field sets):
+- ITSM: incident, problem, change, change_request, change_task, request, task
+- CMDB: ci, server, computer, ci_relationship
+- Users: user, group, group_member
+- Assets: asset, hardware_asset, software_license
+- HR/CSM: hr_case, hr_task, customer_case, customer_account
+- Projects: project, project_task
+- Other: purchase_order, knowledge_article
 
-💡 EXAMPLES:
-• Update incident: { action: 'update', table: 'incident', sys_id: '...', state: 6 }
-• Create incident: { action: 'create', table: 'incident', short_description: '...', urgency: 2 }
-• Query incidents: { action: 'query', table: 'incident', query: 'state=1' }
-• Get by number: { action: 'get', table: 'incident', number: 'INC0010001' }`,
+Pass any other table name directly — presets are a convenience, not a restriction.
+
+Examples:
+- { action: "create", table: "incident", short_description: "...", urgency: 2 }
+- { action: "update", table: "incident", sys_id: "...", state: 6 }
+- { action: "query", table: "incident", query: "state=1" }
+- { action: "get", table: "incident", number: "INC0010001" }`,
   category: "core-operations",
   subcategory: "crud",
   use_cases: [

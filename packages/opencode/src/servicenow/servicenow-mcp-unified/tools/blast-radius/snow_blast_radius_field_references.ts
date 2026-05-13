@@ -29,26 +29,21 @@ import { ARTIFACT_SPECS, ArtifactSearchSpec, ARTIFACT_TYPE_NAMES } from "./share
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_blast_radius_field_references",
-  description: `Find every artifact that references a specific table field across the instance.
+  description: `Find every artifact that references a specific table.field across the instance. Use to audit references before changing or removing a field, understand the blast radius of a rename/refactor, or distinguish reads vs writes vs condition uses.
 
-📋 USE THIS TO:
-- Audit all references to a field before changing or removing it
-- Understand the full blast radius of a field rename or refactor
-- Find reads vs writes vs condition uses
+Example: "What touches incident.assignment_group?"
 
-🔍 EXAMPLE: "What touches incident.assignment_group?"
-
-📊 COVERAGE (v2):
+Coverage (26 artifact types):
 - Business rules, client scripts, UI actions, UI policies (+ actions), ACLs
 - Data policies (+ rules), email notifications, metric definitions
 - Script includes, scheduled jobs, fix scripts, script actions, UI scripts
 - Scripted REST resources, processors, email scripts, inbound email actions
 - Service Portal widgets, catalog client scripts, catalog UI policies
 - Transform entries/scripts, ATF step inputs, dictionary dependent fields
-- Condition/filter columns (not just scripts) are searched where relevant
-- Parent tables are walked via sys_db_object.super_class (opt-out)
+- Condition/filter columns (not just scripts) where relevant
+- Parent tables walked via sys_db_object.super_class (opt-out)
 
-⚠️ LIMITATIONS:
+Limitations:
 - Reference dotwalks (current.assignment_group.manager) are not resolved
 - Dynamic field access (gr.setValue(someVar, value)) cannot be detected
 - Availability of scoped artifact tables depends on installed plugins`,

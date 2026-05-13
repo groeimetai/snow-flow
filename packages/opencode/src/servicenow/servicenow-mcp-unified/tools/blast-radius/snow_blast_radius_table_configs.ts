@@ -19,22 +19,13 @@ import {
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_blast_radius_table_configs",
-  description: `Find ALL configurations running on a specific table.
+  description: `Find every configuration running on a specific table. Use to inventory artifacts scoped to a table, understand the configuration landscape before making changes, or filter by config type, scope, or active status.
 
-📋 USE THIS TO:
-- Get a complete inventory of artifacts scoped to a table
-- Understand the configuration landscape before making changes
-- Filter by config type, scope, or active status
+Example: "What configs run on the incident table?"
 
-🔍 EXAMPLE: "What configs run on the incident table?"
+Coverage: by default searches a curated set of 13 main config types — business rules, client scripts, UI actions, UI policies (+ actions), data policies (+ rules), ACLs, email notifications, metric definitions, inbound email actions, transform entries, plus global-but-table-mentioning script includes. Pass an explicit \`config_types\` array to query any of the 26 supported types from ARTIFACT_SPECS.
 
-📊 COVERAGE:
-By default searches a curated set of 13 main config types: business rules,
-client scripts, UI actions, UI policies, UI policy actions, data policies,
-data policy rules, ACLs, email notifications, metric definitions, inbound
-email actions, transform entries, plus global-but-table-mentioning script
-includes. Pass an explicit \`config_types\` array to query any of the 26
-supported types from ARTIFACT_SPECS.`,
+Parent tables are walked via sys_db_object.super_class (opt-out).`,
   category: "blast-radius",
   subcategory: "table-analysis",
   use_cases: ["impact-analysis", "table-audit", "governance"],
