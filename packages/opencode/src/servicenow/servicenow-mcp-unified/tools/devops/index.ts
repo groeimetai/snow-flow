@@ -18,3 +18,7 @@ export {
   toolDefinition as snow_velocity_tracking_def,
   execute as snow_velocity_tracking_exec,
 } from "./snow_velocity_tracking.js"
+export {
+  toolDefinition as snow_source_control_def,
+  execute as snow_source_control_exec,
+} from "./snow_source_control.js"

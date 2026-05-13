@@ -15,3 +15,9 @@ export { toolDefinition as snow_pa_discover_def, execute as snow_pa_discover_exe
 
 // Merged Tools (v8.2.0 Phase 3)
 export { toolDefinition as snow_pa_operate_def, execute as snow_pa_operate_exec } from "./snow_pa_operate.js"
+
+// Tier 1 foundation tools
+export {
+  toolDefinition as snow_pa_indicator_manage_def,
+  execute as snow_pa_indicator_manage_exec,
+} from "./snow_pa_indicator_manage.js"

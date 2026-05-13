@@ -48,6 +48,12 @@ export {
   execute as snow_security_risk_assessment_exec,
 } from "./snow_security_risk_assessment.js"
 
+// Key Management Framework
+export {
+  toolDefinition as snow_kms_manage_def,
+  execute as snow_kms_manage_exec,
+} from "./snow_kms_manage.js"
+
 // SecOps Tools
 export {
   toolDefinition as snow_analyze_threat_intelligence_def,
