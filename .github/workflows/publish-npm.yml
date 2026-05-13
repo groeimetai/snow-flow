@@ -371,8 +371,22 @@ jobs:
           git checkout ${{ github.ref_name }}
           sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$NEXT_VERSION\"/" packages/opencode/package.json
           git add packages/opencode/package.json
-          git diff --cached --quiet || git commit -m "chore: bump source to ${NEXT_VERSION} for next publish [skip ci]"
-          git push origin ${{ github.ref_name }}
+          git diff --cached --quiet && { echo "no bump needed"; exit 0; }
+          git commit -m "chore: bump source to ${NEXT_VERSION} for next publish [skip ci]"
+
+          # Push with retry — other workflows (e.g. generate-tools-json
+          # regenerating tools.json) may have pushed to main during our
+          # multi-minute build. Rebase against latest and retry up to 3x.
+          for attempt in 1 2 3; do
+            if git push origin ${{ github.ref_name }}; then
+              echo "auto-bump push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "auto-bump push rejected (attempt $attempt) — pulling latest and retrying"
+            git pull --rebase origin ${{ github.ref_name }}
+          done
+          echo "auto-bump push failed after 3 attempts" >&2
+          exit 1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
