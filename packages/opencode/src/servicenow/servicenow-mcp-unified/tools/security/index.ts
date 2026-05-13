@@ -109,3 +109,21 @@ export {
   toolDefinition as snow_grc_vendor_risk_manage_def,
   execute as snow_grc_vendor_risk_manage_exec,
 } from "./snow_grc_vendor_risk_manage.js"
+
+// Security Incident Response (SIR) Tools
+export {
+  toolDefinition as snow_sir_incident_manage_def,
+  execute as snow_sir_incident_manage_exec,
+} from "./snow_sir_incident_manage.js"
+export {
+  toolDefinition as snow_sir_playbook_orchestrate_def,
+  execute as snow_sir_playbook_orchestrate_exec,
+} from "./snow_sir_playbook_orchestrate.js"
+export {
+  toolDefinition as snow_sir_evidence_manage_def,
+  execute as snow_sir_evidence_manage_exec,
+} from "./snow_sir_evidence_manage.js"
+export {
+  toolDefinition as snow_sir_indicator_manage_def,
+  execute as snow_sir_indicator_manage_exec,
+} from "./snow_sir_indicator_manage.js"
