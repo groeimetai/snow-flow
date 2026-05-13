@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T15:02:07.144Z",
-  "count": 410,
+  "generatedAt": "2026-05-13T18:04:05.376Z",
+  "count": 426,
   "groups": [
     {
       "name": "access-control",
@@ -2497,6 +2497,182 @@
               "ci_sys_id"
             ]
           }
+        },
+        {
+          "name": "snow_grc_audit_manage",
+          "description": "Unified tool for ServiceNow GRC Audit Management: engagements, audits, findings, and evidence. Wraps the sn_audit_audit, sn_audit_finding, sn_audit_engagement, and sn_audit_evidence tables that ship with the GRC: Audit Management plugin.\n\nActions:\n- list — list audits, optionally filtered by engagement, state, or auditor\n- get — retrieve a single audit by sys_id\n- create_audit — open a new audit inside an existing engagement\n- update_audit — patch fields on an existing audit (state, scope, lead auditor, dates)\n- add_finding — log a finding against an audit with severity and recommendation\n- list_findings — list findings, optionally filtered by audit, severity, or state\n- attach_evidence — attach an evidence record (or external URL) to an audit or finding\n\nUse when: the agent needs to drive an audit engagement end to end — opening individual audits, logging the findings that come out of them, and attaching the evidence collected during fieldwork. For policy and control evidence outside an audit context, use snow_compliance_manage; for risk register operations, use snow_grc_risk_manage.\n\nReturns: audit rows with sys_id, engagement, state, lead auditor, planned and actual dates; finding rows with severity, recommendation, target remediation date; evidence rows with type and reference link. GRC plugin gating: the first call against the audit tables will surface a clear error if the GRC: Audit Management plugin is not active on the target instance.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "grc",
+            "audit",
+            "audit-management",
+            "findings",
+            "evidence"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "create_audit",
+                  "update_audit",
+                  "add_finding",
+                  "list_findings",
+                  "attach_evidence"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/update_audit/add_finding/attach_evidence] Audit sys_id"
+              },
+              "engagement_sys_id": {
+                "type": "string",
+                "description": "[create_audit/list] Audit engagement sys_id (sn_audit_engagement)"
+              },
+              "finding_sys_id": {
+                "type": "string",
+                "description": "[attach_evidence] Finding sys_id when attaching evidence to a specific finding"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list/list_findings] Filter by state (draft, scheduled, in_progress, completed, closed, cancelled)"
+              },
+              "auditor": {
+                "type": "string",
+                "description": "[list] Filter by lead auditor sys_user sys_id"
+              },
+              "severity": {
+                "type": "string",
+                "description": "[list_findings] Filter by finding severity",
+                "enum": [
+                  "critical",
+                  "high",
+                  "medium",
+                  "low",
+                  "informational"
+                ]
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_findings] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/list_findings] Comma-separated list of fields to return"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[create_audit] Short description of the audit"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create_audit/update_audit] Long description / scope narrative"
+              },
+              "scope": {
+                "type": "string",
+                "description": "[create_audit/update_audit] Audit scope (free text)"
+              },
+              "lead_auditor": {
+                "type": "string",
+                "description": "[create_audit/update_audit] Lead auditor sys_user sys_id"
+              },
+              "planned_start_date": {
+                "type": "string",
+                "description": "[create_audit/update_audit] ISO date string (YYYY-MM-DD) when the audit is planned to start"
+              },
+              "planned_end_date": {
+                "type": "string",
+                "description": "[create_audit/update_audit] ISO date string (YYYY-MM-DD) when the audit is planned to end"
+              },
+              "audit_type": {
+                "type": "string",
+                "description": "[create_audit] Audit type label (internal, external, regulatory, sox, soc, iso, custom)"
+              },
+              "audit_state": {
+                "type": "string",
+                "description": "[update_audit] New audit state",
+                "enum": [
+                  "draft",
+                  "scheduled",
+                  "in_progress",
+                  "completed",
+                  "closed",
+                  "cancelled"
+                ]
+              },
+              "finding_short_description": {
+                "type": "string",
+                "description": "[add_finding] Short description of the finding"
+              },
+              "finding_description": {
+                "type": "string",
+                "description": "[add_finding] Long description / observation detail"
+              },
+              "finding_severity": {
+                "type": "string",
+                "description": "[add_finding] Severity rating",
+                "enum": [
+                  "critical",
+                  "high",
+                  "medium",
+                  "low",
+                  "informational"
+                ]
+              },
+              "recommendation": {
+                "type": "string",
+                "description": "[add_finding] Recommended remediation action"
+              },
+              "target_remediation_date": {
+                "type": "string",
+                "description": "[add_finding] ISO date string (YYYY-MM-DD) for target remediation"
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "[add_finding] sys_user sys_id of the remediation owner"
+              },
+              "evidence_type": {
+                "type": "string",
+                "description": "[attach_evidence] Evidence type label",
+                "enum": [
+                  "document",
+                  "screenshot",
+                  "report",
+                  "attestation",
+                  "log",
+                  "interview",
+                  "other"
+                ],
+                "default": "document"
+              },
+              "evidence_url": {
+                "type": "string",
+                "description": "[attach_evidence] External URL pointing at the evidence (used when no existing sys_id is given)"
+              },
+              "evidence_sys_id": {
+                "type": "string",
+                "description": "[attach_evidence] Existing sn_audit_evidence sys_id to link instead of creating a new row"
+              },
+              "evidence_description": {
+                "type": "string",
+                "description": "[attach_evidence] Description for the evidence record"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
         }
       ]
     },
@@ -3527,6 +3703,138 @@
             },
             "required": [
               "framework"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "compliance-issues",
+      "displayName": "Compliance Issues",
+      "tools": [
+        {
+          "name": "snow_grc_issue_manage",
+          "description": "Unified tool for ServiceNow GRC compliance issues and exceptions beyond control-side authoring. Wraps the sn_compliance_issue, sn_compliance_policy_exception, sn_compliance_remediation, and sn_compliance_evidence tables that ship with the GRC: Policy and Compliance Management plugin.\n\nActions:\n- list_issues — list compliance issues, optionally filtered by control, state, or severity\n- list_exceptions — list policy exceptions raised against controls\n- exception_create — open a new policy exception with justification and expiry\n- link_evidence — attach an evidence record (or external URL) to a compliance issue\n- mark_remediated — close an issue by attaching a remediation record and transitioning state\n\nUse when: the agent needs to manage the issue side of GRC — listing issues raised by automated scans or auditors, granting time-bound exceptions, attaching evidence that supports the remediation, and closing the issue once remediated. For the control-side exception/evidence/attestation flow use snow_compliance_manage; for audit-driven findings use snow_grc_audit_manage.\n\nReturns: issue rows with sys_id, control reference, severity, state; exception rows with state, expiry, requestor; remediation rows with plan, target date, owner; evidence rows with type and reference link. GRC plugin gating: the first call against these tables will surface a clear error if the GRC: Policy and Compliance Management plugin is not active on the target instance.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "grc",
+            "compliance",
+            "issues",
+            "exceptions",
+            "remediation"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list_exceptions",
+                  "exception_create",
+                  "link_evidence",
+                  "mark_remediated",
+                  "list_issues"
+                ]
+              },
+              "issue_sys_id": {
+                "type": "string",
+                "description": "[link_evidence/mark_remediated] Compliance issue sys_id"
+              },
+              "control_sys_id": {
+                "type": "string",
+                "description": "[exception_create/list_issues/list_exceptions] Compliance control sys_id (sn_compliance_control)"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list_issues/list_exceptions] Filter by state"
+              },
+              "severity": {
+                "type": "string",
+                "description": "[list_issues] Filter by issue severity",
+                "enum": [
+                  "critical",
+                  "high",
+                  "medium",
+                  "low",
+                  "informational"
+                ]
+              },
+              "framework": {
+                "type": "string",
+                "description": "[list_issues/list_exceptions] Filter by compliance framework (SOX, GDPR, HIPAA, ISO27001, etc.)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_issues/list_exceptions] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_issues/list_exceptions] Comma-separated list of fields to return"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[exception_create] Short description of the exception"
+              },
+              "justification": {
+                "type": "string",
+                "description": "[exception_create] Business justification for the exception"
+              },
+              "expiry": {
+                "type": "string",
+                "description": "[exception_create] ISO date string (YYYY-MM-DD) when the exception expires"
+              },
+              "requestor": {
+                "type": "string",
+                "description": "[exception_create] sys_user sys_id of the requestor (defaults to the calling user)"
+              },
+              "evidence_sys_id": {
+                "type": "string",
+                "description": "[link_evidence] Existing sn_compliance_evidence sys_id to link"
+              },
+              "evidence_url": {
+                "type": "string",
+                "description": "[link_evidence] External evidence URL (used to create a new evidence row when evidence_sys_id is absent)"
+              },
+              "evidence_type": {
+                "type": "string",
+                "description": "[link_evidence] Evidence type label",
+                "enum": [
+                  "document",
+                  "screenshot",
+                  "report",
+                  "attestation",
+                  "log",
+                  "other"
+                ],
+                "default": "document"
+              },
+              "evidence_description": {
+                "type": "string",
+                "description": "[link_evidence] Optional description for the evidence record"
+              },
+              "remediation_summary": {
+                "type": "string",
+                "description": "[mark_remediated] Summary of the remediation action taken"
+              },
+              "remediation_owner": {
+                "type": "string",
+                "description": "[mark_remediated] sys_user sys_id of the person who remediated the issue"
+              },
+              "remediation_completed_at": {
+                "type": "string",
+                "description": "[mark_remediated] ISO date string (YYYY-MM-DD) when the remediation was completed (defaults to today)"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
@@ -4931,6 +5239,213 @@
             "required": [
               "subject",
               "account"
+            ]
+          }
+        },
+        {
+          "name": "snow_csm_communication_manage",
+          "description": "Unified tool for ServiceNow CSM customer interactions. Wraps the interaction table (emails, chats, calls), interaction_related_record (case links), and channel-specific records reachable through them.\n\nActions:\n- list — list interactions filtered by account, channel, state, or date\n- get — fetch a single interaction by sys_id with linked records\n- log_interaction — create a new interaction record (channel, direction, body, opened_for, account, contact)\n- link_to_case — attach an existing interaction to a CSM case via interaction_related_record\n- list_for_case — list every interaction linked to a given case\n- list_by_channel — list interactions for a channel (email, chat, phone) within an optional date range\n\nUse when: the agent needs to log or audit customer communications around a CSM case. Companion tools: snow_create_customer_case (opens the case), snow_csm_contract_manage (defines what the customer is entitled to). For internal IT communications use the platform's sys_email tools instead.\n\nRequires com.sn_customerservice. When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "customer-service",
+            "interactions",
+            "communications",
+            "csm"
+          ],
+          "complexity": "intermediate",
+          "frequency": "high",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "log_interaction",
+                  "link_to_case",
+                  "list_for_case",
+                  "list_by_channel"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/link_to_case] interaction sys_id"
+              },
+              "number": {
+                "type": "string",
+                "description": "[get] Interaction number (alternative to sys_id)"
+              },
+              "case_sys_id": {
+                "type": "string",
+                "description": "[link_to_case/list_for_case] sn_customerservice_case sys_id"
+              },
+              "account": {
+                "type": "string",
+                "description": "[list/log_interaction] Customer account sys_id"
+              },
+              "contact": {
+                "type": "string",
+                "description": "[list/log_interaction] Customer contact sys_id"
+              },
+              "channel": {
+                "type": "string",
+                "description": "[list/log_interaction/list_by_channel] Communication channel",
+                "enum": [
+                  "email",
+                  "chat",
+                  "phone",
+                  "sms",
+                  "social",
+                  "web",
+                  "walk-in"
+                ]
+              },
+              "state": {
+                "type": "string",
+                "description": "[list] Interaction state filter (new, work_in_progress, on_hold, closed_complete)"
+              },
+              "from_date": {
+                "type": "string",
+                "description": "[list/list_by_channel] Earliest opened_at date filter (YYYY-MM-DD)"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[log_interaction] Subject/short_description for the interaction"
+              },
+              "direction": {
+                "type": "string",
+                "description": "[log_interaction] Communication direction",
+                "enum": [
+                  "inbound",
+                  "outbound"
+                ]
+              },
+              "body": {
+                "type": "string",
+                "description": "[log_interaction] Free-text body or comment captured on the interaction"
+              },
+              "opened_for": {
+                "type": "string",
+                "description": "[log_interaction] sys_user the interaction was opened for"
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "[log_interaction] Agent (sys_user) handling the interaction"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_for_case/list_by_channel] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/list_for_case/list_by_channel] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
+          "name": "snow_csm_contract_manage",
+          "description": "Unified tool for ServiceNow CSM service contracts and the entitlements that hang off them. Wraps service_contract, entitlement, service_offering, and contract_sla.\n\nActions:\n- list — list service contracts filtered by account, state, or active flag\n- get — fetch a service contract with linked entitlements and SLAs\n- create_contract — create a new service_contract for an account\n- link_entitlement — attach an entitlement to a service contract (joins entitlement.service_contract)\n- list_entitlements — list entitlements for a contract, account, or globally\n- extend_contract — extend a service contract's end_date and optionally activate\n\nUse when: the agent needs to define what an account is entitled to across CSM cases. Companion tools: snow_create_customer_case (opens a CSM case that consumes the entitlements), snow_create_entitlement (creates a single entitlement record), snow_create_customer_account (creates the account that owns the contract).\n\nRequires com.sn_customerservice. When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "customer-service",
+            "contracts",
+            "entitlements",
+            "csm"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "create_contract",
+                  "link_entitlement",
+                  "list_entitlements",
+                  "extend_contract"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/link_entitlement/extend_contract/list_entitlements] service_contract sys_id"
+              },
+              "number": {
+                "type": "string",
+                "description": "[get] Contract number (alternative to sys_id)"
+              },
+              "account": {
+                "type": "string",
+                "description": "[list/list_entitlements/create_contract] Customer account sys_id"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list] State filter (e.g. draft, active, expired, cancelled)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list/list_entitlements] Only return active records",
+                "default": false
+              },
+              "name": {
+                "type": "string",
+                "description": "[create_contract] Contract name/short_description"
+              },
+              "start_date": {
+                "type": "string",
+                "description": "[create_contract] Start date (YYYY-MM-DD)"
+              },
+              "end_date": {
+                "type": "string",
+                "description": "[create_contract/extend_contract] End date (YYYY-MM-DD)"
+              },
+              "service_offering": {
+                "type": "string",
+                "description": "[create_contract] service_offering sys_id this contract sells"
+              },
+              "contract_type": {
+                "type": "string",
+                "description": "[create_contract] Contract type (e.g. service, support, maintenance)"
+              },
+              "entitlement": {
+                "type": "string",
+                "description": "[link_entitlement] Entitlement sys_id to attach to the contract"
+              },
+              "activate": {
+                "type": "boolean",
+                "description": "[extend_contract] Mark the contract active after extending",
+                "default": false
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_entitlements] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/list_entitlements] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
@@ -8999,6 +9514,333 @@
       ]
     },
     {
+      "name": "field-service",
+      "displayName": "Field Service",
+      "tools": [
+        {
+          "name": "snow_fsm_dispatch_manage",
+          "description": "Unified tool for ServiceNow Field Service Management dispatch operations. Wraps the wm_agent, wm_dispatch_group, wm_skill and wm_qualification tables installed by the Field Service Management plugin (com.snc.work_management).\n\nActions:\n- list_agents — list wm_agent rows (field technicians), optionally filtered by dispatch_group, skill, location or active flag\n- list_groups — list wm_dispatch_group rows\n- assign_agent — set a work order's assigned_to (and optionally assignment_group). Convenience wrapper for the same operation in snow_fsm_work_order_manage, scoped to dispatch workflows\n- suggest_agent — read-only smart query that returns candidate agents filtered by required skill, dispatch group, and an availability window. Does NOT call FSM's AI dispatch engine\n- check_availability — list agents whose schedule has no overlapping work orders during the given window\n\nUse when: the agent needs to discover technicians for a work order, audit dispatch group membership, or pre-filter candidates before opening the Dispatcher Workspace. Requires the Field Service Management plugin (com.snc.work_management) — every action surfaces a clear PLUGIN_MISSING error if wm_agent is absent.\n\nReturns: agent records with sys_id, name, user (sys_user reference), dispatch_group, location, active. Group records include sys_id, name, location and parent group. Suggestions include the matching skill, group membership flag, and a \"reasons\" array describing why the candidate matched.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "field-service",
+            "dispatch",
+            "scheduling",
+            "technician",
+            "fsm"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list_agents",
+                  "list_groups",
+                  "assign_agent",
+                  "suggest_agent",
+                  "check_availability"
+                ]
+              },
+              "dispatch_group": {
+                "type": "string",
+                "description": "[list_agents/suggest_agent/check_availability] Filter agents by wm_dispatch_group (sys_id or name)"
+              },
+              "skill": {
+                "type": "string",
+                "description": "[list_agents/suggest_agent] Filter agents by required skill (wm_skill sys_id or name) — joined through wm_qualification"
+              },
+              "location": {
+                "type": "string",
+                "description": "[list_agents/suggest_agent] Filter agents by location (cmn_location sys_id or name)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_agents/list_groups/suggest_agent/check_availability] Only return active rows",
+                "default": true
+              },
+              "work_order_sys_id": {
+                "type": "string",
+                "description": "[assign_agent] sys_id of the wm_order to assign"
+              },
+              "work_order_number": {
+                "type": "string",
+                "description": "[assign_agent] number of the wm_order (used when work_order_sys_id is absent)"
+              },
+              "agent": {
+                "type": "string",
+                "description": "[assign_agent] wm_agent sys_id or referenced sys_user sys_id/user_name to assign as assigned_to on the work order"
+              },
+              "assignment_group": {
+                "type": "string",
+                "description": "[assign_agent] Optional sys_user_group sys_id or name to set on the work order"
+              },
+              "window_start": {
+                "type": "string",
+                "description": "[suggest_agent/check_availability] Window start datetime (YYYY-MM-DD HH:MM:SS in instance TZ)"
+              },
+              "window_end": {
+                "type": "string",
+                "description": "[suggest_agent/check_availability] Window end datetime (YYYY-MM-DD HH:MM:SS in instance TZ)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_agents/list_groups/suggest_agent/check_availability] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_agents/list_groups] Comma-separated list of fields to return (defaults to a curated set)"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
+          "name": "snow_fsm_parts_manage",
+          "description": "Unified tool for ServiceNow Field Service Management parts operations. Wraps the pc_part (Parts Catalog), wm_part_requirement (parts required for a work order), pc_part_request (parts ordering) and pc_stock_level tables.\n\nActions:\n- list_parts — list pc_part rows from the catalog, optionally filtered by model, category or name\n- request_part — create a wm_part_requirement row that attaches a required part to a work order\n- list_requirements — list wm_part_requirement rows for a work order\n- fulfill_request — create a pc_part_request (purchase / transfer request) to source the part for a wm_part_requirement\n- check_stock — list pc_stock_level rows for a part, optionally filtered by stockroom, to see what is available\n\nUse when: the agent needs to plan parts for a work order, attach required parts, raise a purchase / stock-transfer request, or look up what stockroom has a part in stock. Requires the Field Service Management plugin (com.snc.work_management) — every action surfaces a clear PLUGIN_MISSING error if the primary tables are absent.\n\nReturns: catalog rows with sys_id, name, model, manufacturer. Requirements include sys_id, work_order, part, quantity, state. Requests include sys_id, part, quantity, stockroom, state. Stock levels include sys_id, part, stockroom, quantity.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "field-service",
+            "parts",
+            "inventory",
+            "stockroom",
+            "fsm"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list_parts",
+                  "request_part",
+                  "list_requirements",
+                  "fulfill_request",
+                  "check_stock"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "[list_parts] Filter parts by name (LIKE match)"
+              },
+              "model": {
+                "type": "string",
+                "description": "[list_parts] Filter parts by model (cmdb_model sys_id or name)"
+              },
+              "manufacturer": {
+                "type": "string",
+                "description": "[list_parts] Filter parts by manufacturer (core_company sys_id or name)"
+              },
+              "category": {
+                "type": "string",
+                "description": "[list_parts] Filter parts by category"
+              },
+              "part": {
+                "type": "string",
+                "description": "[request_part/fulfill_request/check_stock] pc_part sys_id of the part"
+              },
+              "work_order_sys_id": {
+                "type": "string",
+                "description": "[request_part/list_requirements] sys_id of the wm_order this requirement is attached to"
+              },
+              "work_order_number": {
+                "type": "string",
+                "description": "[request_part/list_requirements] number of the wm_order (used when work_order_sys_id is absent)"
+              },
+              "requirement_sys_id": {
+                "type": "string",
+                "description": "[fulfill_request] sys_id of the wm_part_requirement to fulfill"
+              },
+              "quantity": {
+                "type": "number",
+                "description": "[request_part/fulfill_request] Quantity of the part required / requested"
+              },
+              "stockroom": {
+                "type": "string",
+                "description": "[fulfill_request/check_stock] sys_id or name of the source stockroom (alm_stockroom)"
+              },
+              "requested_for": {
+                "type": "string",
+                "description": "[fulfill_request] sys_user sys_id of the requester (defaults to the assigned technician)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_parts/list_requirements/check_stock] Only return active rows",
+                "default": true
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_parts/list_requirements/check_stock] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_parts/list_requirements/check_stock] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
+          "name": "snow_fsm_work_order_manage",
+          "description": "Unified tool for ServiceNow Field Service Management work orders. Wraps the wm_order, wm_task and wm_order_history tables installed by the Field Service Management plugin (com.snc.work_management).\n\nActions:\n- list — list work orders, optionally filtered by state, assignment_group, assigned_to, or location\n- get — retrieve a single work order by sys_id or number (includes related task and history counts)\n- create — create a new work order with short_description, location, contact, priority, and optional scheduling window\n- assign — assign the work order to a technician (assigned_to) and/or dispatch group (assignment_group)\n- schedule — set the scheduled work_start and work_end on the work order\n- update_status — transition the state field by human-readable state name (Draft, Scheduled, En Route, Onsite, Closed Complete, ...)\n- list_tasks — list the wm_task rows linked to a parent work order\n\nUse when: the agent needs to create, dispatch, schedule, or report on field-service work orders. Requires the Field Service Management plugin (com.snc.work_management) on the target instance — every action surfaces a clear PLUGIN_MISSING error if wm_order is absent.\n\nReturns: work order records with sys_id, number, short_description, state, priority, assignment_group, assigned_to, location, contact, work_start, work_end. For list_tasks returns wm_task rows with sys_id, number, short_description and state.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "field-service",
+            "work-order",
+            "dispatch",
+            "scheduling",
+            "fsm"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "create",
+                  "assign",
+                  "schedule",
+                  "update_status",
+                  "list_tasks"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/assign/schedule/update_status/list_tasks] Work order sys_id"
+              },
+              "number": {
+                "type": "string",
+                "description": "[get/assign/schedule/update_status/list_tasks] Work order number (e.g. WO0001234) — used when sys_id is absent"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[create] One-line summary of the work to be performed"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create] Long description / instructions for the technician"
+              },
+              "priority": {
+                "type": "number",
+                "description": "[create] Priority (1 = Critical, 2 = High, 3 = Moderate, 4 = Low, 5 = Planning)",
+                "enum": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              },
+              "location": {
+                "type": "string",
+                "description": "[create] cmn_location sys_id or name where the work is performed"
+              },
+              "contact": {
+                "type": "string",
+                "description": "[create] sys_user sys_id of the on-site contact for the work order"
+              },
+              "company": {
+                "type": "string",
+                "description": "[create] core_company sys_id of the customer / account"
+              },
+              "assignment_group": {
+                "type": "string",
+                "description": "[create/assign] sys_user_group sys_id or name of the dispatch group"
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "[create/assign] sys_user sys_id or user_name of the technician"
+              },
+              "work_start": {
+                "type": "string",
+                "description": "[create/schedule] Scheduled start datetime (YYYY-MM-DD HH:MM:SS in instance TZ)"
+              },
+              "work_end": {
+                "type": "string",
+                "description": "[create/schedule] Scheduled end datetime (YYYY-MM-DD HH:MM:SS in instance TZ)"
+              },
+              "state": {
+                "type": "string",
+                "description": "[update_status] New state name. Resolved against the wm_order state choice list on the target instance.",
+                "enum": [
+                  "Draft",
+                  "Pending Dispatch",
+                  "Scheduled",
+                  "Dispatched",
+                  "En Route",
+                  "Onsite",
+                  "Work in Progress",
+                  "Closed Complete",
+                  "Closed Incomplete",
+                  "Cancelled"
+                ]
+              },
+              "close_notes": {
+                "type": "string",
+                "description": "[update_status] Close notes (recorded when state is set to Closed Complete or Closed Incomplete)"
+              },
+              "filter_state": {
+                "type": "string",
+                "description": "[list] Filter by state name (matches the same choice list as update_status)"
+              },
+              "filter_assigned_to": {
+                "type": "string",
+                "description": "[list] Filter by assigned_to (sys_user sys_id or user_name)"
+              },
+              "filter_assignment_group": {
+                "type": "string",
+                "description": "[list] Filter by assignment_group (sys_user_group sys_id or name)"
+              },
+              "filter_location": {
+                "type": "string",
+                "description": "[list] Filter by location (cmn_location sys_id or name)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_tasks] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/list_tasks] Comma-separated list of fields to return (defaults to a curated set)"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "flow-designer",
       "displayName": "Flow Designer",
       "tools": [
@@ -9744,6 +10586,202 @@
               "start_date"
             ]
           }
+        },
+        {
+          "name": "snow_hr_lifecycle_event",
+          "description": "Unified tool for ServiceNow HR Lifecycle Events (LEM): manage lifecycle-event cases (sn_hr_le_case), their activities (sn_hr_le_activity), and the journey templates that drive them (sn_hr_core_journey_template, sn_hr_core_journey_activity).\n\nActions:\n- create_event — open a new lifecycle-event case for an employee (onboarding, offboarding, transfer, role change). Optionally seeds activities from a journey template.\n- list_events — list lifecycle-event cases, filtered by employee, type, or state\n- complete_event — mark a lifecycle-event case as complete (closes the case and stops scheduled activities)\n- list_pending_for_employee — return open lifecycle-event activities assigned to an employee or owned by their case\n- trigger_journey — instantiate the activities defined on a journey template against an existing lifecycle-event case\n\nUse when: the agent needs to drive an end-to-end employee lifecycle event in HRSD. For a single ad-hoc HR ticket use snow_create_hr_case; for offboarding-only flows snow_employee_offboarding is a thinner wrapper around sn_hr_core_case.\n\nRequires the HR Lifecycle Events plugin (com.sn_hr_lifecycle_events). Tables may be absent on instances without the plugin, in which case the tool fails with a clear plugin-missing error.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "hr-service-delivery",
+            "lifecycle-events",
+            "onboarding",
+            "offboarding",
+            "journeys"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "create_event",
+                  "list_events",
+                  "complete_event",
+                  "list_pending_for_employee",
+                  "trigger_journey"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[complete_event/trigger_journey] sn_hr_le_case sys_id"
+              },
+              "employee": {
+                "type": "string",
+                "description": "[create_event/list_events/list_pending_for_employee] Employee sys_id (sn_hr_core_profile or sys_user, depending on instance)"
+              },
+              "event_type": {
+                "type": "string",
+                "description": "[create_event/list_events] Lifecycle-event type",
+                "enum": [
+                  "onboarding",
+                  "offboarding",
+                  "transfer",
+                  "role_change",
+                  "leave_of_absence",
+                  "return_from_leave"
+                ]
+              },
+              "subject": {
+                "type": "string",
+                "description": "[create_event] Case subject/short_description"
+              },
+              "effective_date": {
+                "type": "string",
+                "description": "[create_event] Effective date (YYYY-MM-DD). Maps to start_date or effective_date depending on instance configuration."
+              },
+              "hr_service": {
+                "type": "string",
+                "description": "[create_event] HR service sys_id used to categorize the case"
+              },
+              "journey_template": {
+                "type": "string",
+                "description": "[create_event/trigger_journey] Journey template sys_id (sn_hr_core_journey_template) used to seed activities"
+              },
+              "opened_for": {
+                "type": "string",
+                "description": "[create_event] sys_user sys_id of the employee the event is opened for. Defaults to `employee` when omitted."
+              },
+              "priority": {
+                "type": "number",
+                "description": "[create_event] ServiceNow priority (1-5)"
+              },
+              "close_notes": {
+                "type": "string",
+                "description": "[complete_event] Notes recorded on close"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list_events] State filter (open|in_progress|closed|cancelled)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_events/list_pending_for_employee] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_events/list_pending_for_employee] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
+          "name": "snow_hr_profile_manage",
+          "description": "Unified tool for ServiceNow HR employee profiles (sn_hr_core_profile) and the user relations that connect them (sn_hr_core_user_relation).\n\nActions:\n- get_profile — fetch a profile by sys_id, user sys_id, or employee_number\n- update_profile — patch profile fields (department, location, manager, employee_number, job_title)\n- list_relations — list relationships for a profile (manager, direct reports, dotted-line, etc.)\n- add_relation — create a relationship between two profiles (e.g. manager -> report)\n- search_employees — search profiles by name, email, department, or employee_number\n\nUse when: the agent needs to read or maintain the canonical employee record used across all HR cases. Companion tools: snow_create_hr_case (opens HR tickets against a profile), snow_create_hr_task (creates task work on a case), snow_hr_lifecycle_event (drives onboarding/offboarding flows).\n\nRequires the HR Core plugin (com.sn_hr_core). When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "hr-service-delivery",
+            "employee-profile",
+            "hr-relations",
+            "hr-core"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "get_profile",
+                  "update_profile",
+                  "list_relations",
+                  "add_relation",
+                  "search_employees"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get_profile/update_profile/list_relations/add_relation] Profile sys_id"
+              },
+              "user": {
+                "type": "string",
+                "description": "[get_profile] sys_user sys_id (alternative to sys_id)"
+              },
+              "employee_number": {
+                "type": "string",
+                "description": "[get_profile/search_employees/update_profile] Employee number (alternative to sys_id)"
+              },
+              "department": {
+                "type": "string",
+                "description": "[update_profile] cmn_department sys_id"
+              },
+              "location": {
+                "type": "string",
+                "description": "[update_profile] cmn_location sys_id"
+              },
+              "manager": {
+                "type": "string",
+                "description": "[update_profile] Manager profile sys_id"
+              },
+              "job_title": {
+                "type": "string",
+                "description": "[update_profile] Job title (free-text)"
+              },
+              "employment_status": {
+                "type": "string",
+                "description": "[update_profile] Employment status (e.g. active, leave_of_absence, terminated)"
+              },
+              "related_profile": {
+                "type": "string",
+                "description": "[add_relation] sys_id of the related sn_hr_core_profile"
+              },
+              "relation_type": {
+                "type": "string",
+                "description": "[add_relation/list_relations] Relation type label (manager, direct_report, dotted_line, etc.)"
+              },
+              "name": {
+                "type": "string",
+                "description": "[search_employees] Substring match against the profile's name/full_name"
+              },
+              "email": {
+                "type": "string",
+                "description": "[search_employees] Email substring match (joins through sys_user)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[search_employees/list_relations] Only return active records",
+                "default": true
+              },
+              "limit": {
+                "type": "number",
+                "description": "[search_employees/list_relations] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[get_profile/search_employees/list_relations] Comma-separated list of fields to return"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
         }
       ]
     },
@@ -10059,6 +11097,252 @@
               "title",
               "description",
               "threat_type"
+            ]
+          }
+        },
+        {
+          "name": "snow_sir_evidence_manage",
+          "description": "Unified tool for Security Incident Response (SIR) evidence and forensic artifact chain-of-custody on sn_si_evidence, sn_si_artifact, and sn_si_attachment. Critical for audit trails — every action records who attached/exported the evidence and when.\n\nActions:\n- attach — attach a new evidence record to a SIR incident with type, description, source, and an optional sys_attachment reference\n- list — list evidence rows linked to an incident\n- get — retrieve a single evidence row with related artifact and attachment metadata\n- hash_verify — recompute the SHA-256 hash of a stored artifact server-side (GlideDigest) and compare to the value recorded at attach time. Used to detect tampering or storage corruption\n- export — return a structured manifest of all evidence for an incident, suitable for handing off to legal/IR review\n\nUse when: the agent has produced or received forensic evidence (memory dumps, PCAPs, screenshots, exported logs) tied to a SIR incident and needs to track it under chain of custody. Companion tools: snow_sir_incident_manage (incident lifecycle), snow_sir_playbook_orchestrate (playbook steps that produce the evidence).\n\nPlugin gating: requires com.snc.security_incident. A 404 on sn_si_evidence is surfaced with the required plugin name. The hash_verify action uses GlideDigest via ES5-only server-side script execution.\n\nReturns: action-specific data. attach returns the created evidence row. list returns evidence summaries with hash and attached_by. get returns the row with related artifact records. hash_verify returns the recomputed hash, the stored hash, and a verified boolean. export returns the full evidence manifest for the incident.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "sir",
+            "forensics",
+            "evidence",
+            "chain-of-custody",
+            "security"
+          ],
+          "complexity": "advanced",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Evidence management action to perform",
+                "enum": [
+                  "attach",
+                  "list",
+                  "get",
+                  "hash_verify",
+                  "export"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/hash_verify] Evidence record sys_id on sn_si_evidence"
+              },
+              "incident_sys_id": {
+                "type": "string",
+                "description": "[attach/list/export] Parent SIR incident sys_id (sn_si_incident)"
+              },
+              "incident_number": {
+                "type": "string",
+                "description": "[attach/list/export] Parent SIR incident number (e.g. SIR0010001), alternative to incident_sys_id"
+              },
+              "attachment_sys_id": {
+                "type": "string",
+                "description": "[attach/hash_verify] sys_attachment sys_id pointing at the stored file (when evidence is file-based)"
+              },
+              "artifact_sys_id": {
+                "type": "string",
+                "description": "[attach] Existing sn_si_artifact sys_id to link to the evidence (alternative to attachment_sys_id)"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[attach] Short description of the evidence"
+              },
+              "description": {
+                "type": "string",
+                "description": "[attach] Detailed description / context of how the evidence was produced"
+              },
+              "evidence_type": {
+                "type": "string",
+                "description": "[attach] Evidence type",
+                "enum": [
+                  "memory_dump",
+                  "pcap",
+                  "log",
+                  "screenshot",
+                  "file",
+                  "registry_export",
+                  "process_list",
+                  "network_capture",
+                  "other"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "description": "[attach] Source system / collection method (EDR, SIEM, manual)"
+              },
+              "sha256": {
+                "type": "string",
+                "description": "[attach] SHA-256 hash of the evidence as captured at collection time (lowercase hex)"
+              },
+              "collected_by": {
+                "type": "string",
+                "description": "[attach] sys_user sys_id of the analyst who collected the evidence (defaults to caller)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/export] Comma-separated list of fields to return"
+              },
+              "include_artifacts": {
+                "type": "boolean",
+                "description": "[export] Include linked sn_si_artifact rows in the manifest",
+                "default": true
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
+        },
+        {
+          "name": "snow_sir_incident_manage",
+          "description": "Unified tool for ServiceNow Security Incident Response (SIR) incident lifecycle on sn_si_incident and sn_si_task. Walks an incident through the NIST IR phases: triage, contain, eradicate, recover, close.\n\nActions:\n- list — list SIR incidents, optionally filtered by state, priority, or assignment_group\n- get — retrieve a single SIR incident by sys_id or number, with its related task summary\n- create — open a new SIR incident (short_description and category required)\n- triage — move an incident into the triage phase, optionally assigning analyst\n- contain — move an incident into the contain phase with a containment note\n- eradicate — move an incident into the eradicate phase with an eradication note\n- recover — move an incident into the recover phase with a recovery note\n- close — close an incident with a close code and resolution notes\n- list_tasks — list sn_si_task rows linked to the incident\n\nUse when: the agent needs to drive a security incident through the SIR phase model rather than just record one. Companion tools: snow_create_security_incident (initial record only), snow_automate_threat_response (run automated actions), snow_sir_playbook_orchestrate (run a multi-step playbook), snow_sir_evidence_manage (attach forensic evidence).\n\nPlugin gating: requires com.snc.security_incident. A 404 on sn_si_incident is surfaced with the required plugin name so the caller can install it.\n\nReturns: SIR incident records with sys_id, number, state, phase, priority, category, assigned_to, and the configured workflow phase. Task listings include sys_id, number, short_description, state, and assigned_to.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "sir",
+            "security",
+            "incident-response",
+            "soar",
+            "nist-ir"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "create",
+                  "triage",
+                  "contain",
+                  "eradicate",
+                  "recover",
+                  "close",
+                  "list_tasks"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/triage/contain/eradicate/recover/close/list_tasks] SIR incident sys_id"
+              },
+              "number": {
+                "type": "string",
+                "description": "[get/triage/contain/eradicate/recover/close/list_tasks] SIR incident number (e.g. SIR0010001), alternative to sys_id"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list] Filter by state code (numeric) or display value"
+              },
+              "priority": {
+                "type": "string",
+                "description": "[list] Filter by priority (1-5)"
+              },
+              "assignment_group": {
+                "type": "string",
+                "description": "[list] Filter by assignment_group sys_id"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list/list_tasks] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get/list_tasks] Comma-separated list of fields to return"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[create] Short description of the incident"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create] Long description / initial observations"
+              },
+              "category": {
+                "type": "string",
+                "description": "[create] SIR category (malware, phishing, unauthorized_access, etc.)"
+              },
+              "subcategory": {
+                "type": "string",
+                "description": "[create] SIR subcategory"
+              },
+              "priority_value": {
+                "type": "string",
+                "description": "[create] Priority (1=Critical, 2=High, 3=Moderate, 4=Low, 5=Planning)",
+                "enum": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ]
+              },
+              "caller": {
+                "type": "string",
+                "description": "[create] sys_user sys_id of the caller / reporter"
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "[create/triage] sys_user sys_id of the analyst the incident is assigned to"
+              },
+              "assignment_group_sys_id": {
+                "type": "string",
+                "description": "[create/triage] assignment_group sys_id"
+              },
+              "triage_note": {
+                "type": "string",
+                "description": "[triage] Triage work note"
+              },
+              "contain_note": {
+                "type": "string",
+                "description": "[contain] Containment work note describing isolation / blocking actions taken"
+              },
+              "eradicate_note": {
+                "type": "string",
+                "description": "[eradicate] Eradication work note describing root-cause removal"
+              },
+              "recover_note": {
+                "type": "string",
+                "description": "[recover] Recovery work note describing service restoration"
+              },
+              "close_code": {
+                "type": "string",
+                "description": "[close] Close code",
+                "enum": [
+                  "resolved",
+                  "not_a_security_incident",
+                  "false_positive",
+                  "duplicate",
+                  "no_resolution"
+                ]
+              },
+              "close_notes": {
+                "type": "string",
+                "description": "[close] Resolution notes"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
@@ -15145,6 +16429,99 @@
               "incident_id"
             ]
           }
+        },
+        {
+          "name": "snow_sir_playbook_orchestrate",
+          "description": "Unified tool for orchestrating Security Incident Response (SIR) playbooks on sn_si_playbook and sn_si_playbook_task. Drives a playbook step-by-step against an incident, tracking task instance state from pending through complete.\n\nActions:\n- list_playbooks — list playbook definitions on sn_si_playbook (catalogue of available procedures)\n- start — start a playbook against an incident (creates the run-time task instances and marks the first step in_progress)\n- list_running — list currently running playbook task instances, optionally filtered by incident\n- get_status — get the full step list for a running playbook on an incident with each step's state\n- advance_step — mark the current step complete (optionally skip) and move the next pending step to in_progress\n- cancel — cancel all remaining pending/in-progress steps for a playbook on an incident\n\nUse when: the agent needs full step-by-step state management around a SOAR playbook rather than the fire-and-forget behaviour of snow_execute_security_playbook. Companion tools: snow_execute_security_playbook (trigger only), snow_sir_incident_manage (manage the parent incident), snow_sir_evidence_manage (attach evidence to the incident).\n\nPlugin gating: requires com.snc.security_incident. A 404 on sn_si_playbook is surfaced with the required plugin name.\n\nReturns: action-specific data. list_playbooks returns playbook definitions with sys_id, name, description, category. start returns the created task instances with their order. get_status returns each step's sys_id, name, state, assigned_to, started_at, completed_at. advance_step / cancel return the post-update state snapshot.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "sir",
+            "soar",
+            "playbooks",
+            "orchestration",
+            "incident-response"
+          ],
+          "complexity": "advanced",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Orchestration action to perform",
+                "enum": [
+                  "list_playbooks",
+                  "start",
+                  "list_running",
+                  "get_status",
+                  "advance_step",
+                  "cancel"
+                ]
+              },
+              "playbook_sys_id": {
+                "type": "string",
+                "description": "[start] sys_id of the playbook definition on sn_si_playbook"
+              },
+              "playbook_name": {
+                "type": "string",
+                "description": "[start] Name of the playbook (alternative to playbook_sys_id)"
+              },
+              "incident_sys_id": {
+                "type": "string",
+                "description": "[start/list_running/get_status/advance_step/cancel] sys_id of the parent SIR incident (sn_si_incident)"
+              },
+              "incident_number": {
+                "type": "string",
+                "description": "[start/get_status/advance_step/cancel] SIR incident number (e.g. SIR0010001), alternative to incident_sys_id"
+              },
+              "task_sys_id": {
+                "type": "string",
+                "description": "[advance_step] sys_id of the specific task instance to advance (optional — defaults to the current in-progress step)"
+              },
+              "category": {
+                "type": "string",
+                "description": "[list_playbooks] Filter playbooks by category"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_playbooks] Only return active playbooks",
+                "default": true
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_playbooks/list_running] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_playbooks/list_running/get_status] Comma-separated list of fields to return"
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "[start] sys_user sys_id assigned to drive the playbook (defaults to incident's assignee)"
+              },
+              "skip": {
+                "type": "boolean",
+                "description": "[advance_step] Skip the current step instead of marking it complete",
+                "default": false
+              },
+              "step_note": {
+                "type": "string",
+                "description": "[advance_step] Work note attached to the completed/skipped step"
+              },
+              "cancel_reason": {
+                "type": "string",
+                "description": "[cancel] Reason for cancelling the playbook run"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
         }
       ]
     },
@@ -15237,6 +16614,125 @@
                 "description": "Filter by active status"
               }
             }
+          }
+        },
+        {
+          "name": "snow_grc_policy_manage",
+          "description": "Unified tool for ServiceNow GRC policy authoring and linkage. Wraps the sn_compliance_policy, sn_compliance_policy_statement, sn_compliance_control_objective, and sn_compliance_control tables that ship with the GRC: Policy and Compliance Management plugin.\n\nActions:\n- list_policies — list policies, optionally filtered by state, type, or framework\n- get_policy — retrieve a single policy by sys_id (includes counts of linked statements)\n- create_policy — draft a new policy with owner, type, and effective date\n- create_statement — add a policy statement (clause / requirement) to an existing policy\n- link_to_control — link a policy statement to a control objective, attaching the policy intent to the control framework\n- list_controls — list controls, optionally filtered by objective or active flag\n\nUse when: the agent needs to draft a new GRC policy, break it into statements, and connect those statements to the control objectives that operationalise them. For the downstream exception / evidence / attestation flow on individual controls, use snow_compliance_manage; for the generic security policy record, use snow_create_security_policy.\n\nReturns: policy rows with sys_id, owner, type, state, effective_date; statement rows with sys_id, policy reference, statement_text; control objective and control rows with sys_id, name, and reference linkage. GRC plugin gating: the first call against these tables will surface a clear error if the GRC: Policy and Compliance Management plugin is not active on the target instance.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "grc",
+            "policy",
+            "compliance",
+            "controls",
+            "statements"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list_policies",
+                  "get_policy",
+                  "create_policy",
+                  "create_statement",
+                  "link_to_control",
+                  "list_controls"
+                ]
+              },
+              "policy_sys_id": {
+                "type": "string",
+                "description": "[get_policy/create_statement] Policy sys_id"
+              },
+              "statement_sys_id": {
+                "type": "string",
+                "description": "[link_to_control] Statement sys_id (sn_compliance_policy_statement)"
+              },
+              "objective_sys_id": {
+                "type": "string",
+                "description": "[link_to_control/list_controls] Control objective sys_id (sn_compliance_control_objective)"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list_policies] Filter by policy state",
+                "enum": [
+                  "draft",
+                  "review",
+                  "approved",
+                  "published",
+                  "retired"
+                ]
+              },
+              "policy_type": {
+                "type": "string",
+                "description": "[list_policies] Filter by policy type label"
+              },
+              "framework": {
+                "type": "string",
+                "description": "[list_policies] Filter by compliance framework (SOX, GDPR, HIPAA, ISO27001, etc.)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_policies/list_controls] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_policies/get_policy/list_controls] Comma-separated list of fields to return"
+              },
+              "name": {
+                "type": "string",
+                "description": "[create_policy] Policy name / title (required)"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create_policy] Policy description / scope"
+              },
+              "owner": {
+                "type": "string",
+                "description": "[create_policy] Policy owner sys_user sys_id"
+              },
+              "type": {
+                "type": "string",
+                "description": "[create_policy] Policy type label (information_security, privacy, operational, hr, financial, custom)"
+              },
+              "effective_date": {
+                "type": "string",
+                "description": "[create_policy] ISO date string (YYYY-MM-DD) when the policy takes effect"
+              },
+              "review_date": {
+                "type": "string",
+                "description": "[create_policy] ISO date string (YYYY-MM-DD) when the policy is next due for review"
+              },
+              "statement_text": {
+                "type": "string",
+                "description": "[create_statement] Statement / clause text"
+              },
+              "statement_short_description": {
+                "type": "string",
+                "description": "[create_statement] Short description for the statement"
+              },
+              "statement_number": {
+                "type": "string",
+                "description": "[create_statement] Optional clause number or identifier (e.g. 4.1.2)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_controls] Only return active controls",
+                "default": false
+              }
+            },
+            "required": [
+              "action"
+            ]
           }
         }
       ]
@@ -16963,6 +18459,141 @@
             },
             "required": [
               "cve_id"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "risk-management",
+      "displayName": "Risk Management",
+      "tools": [
+        {
+          "name": "snow_grc_risk_manage",
+          "description": "Unified tool for ServiceNow GRC Advanced Risk register lifecycle: registering risks, scoring them, attaching treatment plans, and assigning ownership. Wraps the sn_risk_advanced_risk, sn_risk_risk_treatment, and sn_risk_risk_owner tables that ship with the GRC: Advanced Risk plugin.\n\nActions:\n- list — list risks, optionally filtered by category, state, or owner\n- get — retrieve a single risk by sys_id (includes counts of treatments and owners)\n- create — register a new risk with category, inherent score, and owner\n- assess — update the risk's inherent or residual likelihood/impact scores\n- treat — attach a treatment plan (accept, mitigate, transfer, avoid) with target date\n- assign_owner — assign or transfer the risk owner (writes sn_risk_risk_owner)\n\nUse when: the agent needs to manage the risk register itself — registering newly identified risks, refreshing inherent/residual scoring after an assessment, choosing a treatment strategy, and naming an accountable owner. For security-specific scoring use snow_security_risk_assessment; for vendor third-party risk use snow_grc_vendor_risk_manage.\n\nReturns: risk rows with sys_id, number, name, category, inherent and residual scores, state; treatment rows with strategy, target date, and owner; ownership rows with sys_user reference and role. GRC plugin gating: the first call against the risk tables will surface a clear error if the GRC: Advanced Risk plugin is not active on the target instance.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "grc",
+            "risk",
+            "risk-register",
+            "treatment",
+            "ownership"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list",
+                  "get",
+                  "create",
+                  "assess",
+                  "treat",
+                  "assign_owner"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[get/assess/treat/assign_owner] Risk sys_id"
+              },
+              "category": {
+                "type": "string",
+                "description": "[list/create] Risk category (operational, financial, strategic, compliance, security, third_party)"
+              },
+              "state": {
+                "type": "string",
+                "description": "[list/create/assess] Risk state",
+                "enum": [
+                  "draft",
+                  "assessed",
+                  "in_treatment",
+                  "monitored",
+                  "closed"
+                ]
+              },
+              "owner": {
+                "type": "string",
+                "description": "[list] Filter by current owner sys_user sys_id"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list/get] Comma-separated list of fields to return"
+              },
+              "name": {
+                "type": "string",
+                "description": "[create] Risk name / title (required)"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create] Risk description / scenario detail"
+              },
+              "inherent_likelihood": {
+                "type": "number",
+                "description": "[create/assess] Inherent likelihood score (1-5 scale, instance-configurable)"
+              },
+              "inherent_impact": {
+                "type": "number",
+                "description": "[create/assess] Inherent impact score (1-5 scale, instance-configurable)"
+              },
+              "residual_likelihood": {
+                "type": "number",
+                "description": "[assess] Residual likelihood score after existing controls (1-5 scale)"
+              },
+              "residual_impact": {
+                "type": "number",
+                "description": "[assess] Residual impact score after existing controls (1-5 scale)"
+              },
+              "assessment_note": {
+                "type": "string",
+                "description": "[assess] Optional work note describing the assessment rationale"
+              },
+              "treatment_strategy": {
+                "type": "string",
+                "description": "[treat] Treatment strategy",
+                "enum": [
+                  "accept",
+                  "mitigate",
+                  "transfer",
+                  "avoid"
+                ]
+              },
+              "treatment_description": {
+                "type": "string",
+                "description": "[treat] Description of the treatment plan"
+              },
+              "treatment_target_date": {
+                "type": "string",
+                "description": "[treat] ISO date string (YYYY-MM-DD) for target completion"
+              },
+              "treatment_owner": {
+                "type": "string",
+                "description": "[treat] sys_user sys_id of the treatment owner"
+              },
+              "assigned_user": {
+                "type": "string",
+                "description": "[assign_owner] sys_user sys_id of the new owner (required)"
+              },
+              "owner_role": {
+                "type": "string",
+                "description": "[assign_owner] Owner role label (risk_owner, control_owner, accountable, responsible)",
+                "default": "risk_owner"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
@@ -20537,6 +22168,138 @@
               "ioc_type"
             ]
           }
+        },
+        {
+          "name": "snow_sir_indicator_manage",
+          "description": "Unified tool for the Indicator of Compromise (IOC) lifecycle on sn_ti_observable, sn_ti_indicator, and the SIR observable join table. Manages persistent IOC records — distinct from snow_analyze_threat_intelligence, which only correlates a single IOC against feeds without persisting state.\n\nActions:\n- create_ioc — create a new IOC record (value, type, finding required) on sn_ti_observable\n- list_iocs — list IOCs, optionally filtered by type, state, source, or seen-since\n- link_to_incident — link an existing IOC to a SIR incident via the observable-incident join table\n- mark_active — mark an IOC active (re-open after resolution)\n- mark_resolved — mark an IOC resolved (closed, no longer interesting)\n- search_by_value — find IOCs by exact or fragment match on value (IP, domain, hash, URL, email)\n\nUse when: the agent needs to manage persistent IOC records — open a new IOC after triage, attach existing IOCs to a new incident, search for prior sightings of a value, or close out an IOC after eradication. Companion tools: snow_analyze_threat_intelligence (one-shot feed correlation), snow_sir_incident_manage (parent incident lifecycle), snow_sir_evidence_manage (evidence chain of custody).\n\nTable-name volatility: the IOC table name varies by SN release (sn_ti_observable / sn_ti_indicator / sn_si_observable). This tool defaults to sn_ti_observable and falls back to sn_si_observable if the primary table is absent.\n\nPlugin gating: requires either Threat Intelligence or the Security Incident Response plugin (com.snc.security_incident). A 404 on both fallback tables is surfaced with the required plugin name.\n\nReturns: action-specific data. create_ioc returns the created record. list_iocs / search_by_value return arrays of IOCs with value, type, state, source, last_seen. link_to_incident returns the join-row sys_id. mark_active / mark_resolved return the updated record.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "sir",
+            "threat-intelligence",
+            "ioc",
+            "indicators",
+            "security"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Indicator management action to perform",
+                "enum": [
+                  "create_ioc",
+                  "list_iocs",
+                  "link_to_incident",
+                  "mark_active",
+                  "mark_resolved",
+                  "search_by_value"
+                ]
+              },
+              "sys_id": {
+                "type": "string",
+                "description": "[link_to_incident/mark_active/mark_resolved] sys_id of the IOC observable record"
+              },
+              "incident_sys_id": {
+                "type": "string",
+                "description": "[link_to_incident] sys_id of the SIR incident the IOC should be attached to"
+              },
+              "incident_number": {
+                "type": "string",
+                "description": "[link_to_incident] SIR incident number (e.g. SIR0010001), alternative to incident_sys_id"
+              },
+              "ioc_value": {
+                "type": "string",
+                "description": "[create_ioc/search_by_value] The IOC value (IP, domain, hash, URL, email, file path)"
+              },
+              "ioc_type": {
+                "type": "string",
+                "description": "[create_ioc/list_iocs/search_by_value] IOC type",
+                "enum": [
+                  "ip",
+                  "domain",
+                  "url",
+                  "email",
+                  "hash_md5",
+                  "hash_sha1",
+                  "hash_sha256",
+                  "file_path",
+                  "user_agent",
+                  "registry_key"
+                ]
+              },
+              "finding": {
+                "type": "string",
+                "description": "[create_ioc] Why this IOC is interesting (one-line finding / context)"
+              },
+              "source": {
+                "type": "string",
+                "description": "[create_ioc/list_iocs] Source of the IOC (SIEM, EDR, threat feed name, manual)"
+              },
+              "confidence": {
+                "type": "string",
+                "description": "[create_ioc] Confidence level",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "tlp": {
+                "type": "string",
+                "description": "[create_ioc] Traffic Light Protocol marking",
+                "enum": [
+                  "white",
+                  "green",
+                  "amber",
+                  "red"
+                ]
+              },
+              "state_filter": {
+                "type": "string",
+                "description": "[list_iocs] Filter by IOC state",
+                "enum": [
+                  "active",
+                  "resolved"
+                ]
+              },
+              "seen_since": {
+                "type": "string",
+                "description": "[list_iocs] Filter by last-seen date (encoded query date >= YYYY-MM-DD)"
+              },
+              "match_mode": {
+                "type": "string",
+                "description": "[search_by_value] How to match the value",
+                "enum": [
+                  "exact",
+                  "contains",
+                  "starts_with"
+                ],
+                "default": "exact"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_iocs/search_by_value] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_iocs/search_by_value] Comma-separated list of fields to return"
+              },
+              "note": {
+                "type": "string",
+                "description": "[mark_active/mark_resolved] Optional work note describing the state change"
+              }
+            },
+            "required": [
+              "action"
+            ]
+          }
         }
       ]
     },
@@ -22496,6 +24259,120 @@
             },
             "required": [
               "sys_id"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "vendor-risk",
+      "displayName": "Vendor Risk",
+      "tools": [
+        {
+          "name": "snow_grc_vendor_risk_manage",
+          "description": "Unified tool for ServiceNow GRC Vendor Risk Management: vendor inventory, assessment kick-off, and linkage back to the central risk register. Wraps the sn_vdr_vendor, sn_vdr_assessment, and sn_vdr_question_template tables that ship with the GRC: Vendor Risk Management plugin.\n\nActions:\n- list_vendors — list vendors in the third-party inventory, optionally filtered by tier or active flag\n- assess_vendor — kick off a vendor assessment using a question template (creates an sn_vdr_assessment row in draft state)\n- list_assessments — list assessments, optionally filtered by vendor, state, or framework\n- create_assessment — create an assessment record directly with explicit fields (low-level alternative to assess_vendor)\n- link_to_risk — link a vendor assessment back to an entry in the central risk register (sn_risk_advanced_risk)\n\nUse when: the agent needs to drive third-party / vendor risk — inventorying vendors, kicking off questionnaire-based assessments, and connecting the vendor risk outcome to the central risk register. For internal risk register operations use snow_grc_risk_manage; for compliance issues and exceptions use snow_grc_issue_manage.\n\nReturns: vendor rows with sys_id, name, tier, active flag; assessment rows with state, template, scheduled date; question template rows with sys_id and name. GRC plugin gating: the first call against the vendor tables will surface a clear error if the GRC: Vendor Risk Management plugin is not active on the target instance.",
+          "permission": "write",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "grc",
+            "vendor-risk",
+            "third-party",
+            "assessment",
+            "vrm"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Management action to perform",
+                "enum": [
+                  "list_vendors",
+                  "assess_vendor",
+                  "list_assessments",
+                  "create_assessment",
+                  "link_to_risk"
+                ]
+              },
+              "vendor_sys_id": {
+                "type": "string",
+                "description": "[assess_vendor/list_assessments/create_assessment] Vendor sys_id (sn_vdr_vendor)"
+              },
+              "assessment_sys_id": {
+                "type": "string",
+                "description": "[link_to_risk] Assessment sys_id (sn_vdr_assessment)"
+              },
+              "template_sys_id": {
+                "type": "string",
+                "description": "[assess_vendor/create_assessment] Question template sys_id (sn_vdr_question_template)"
+              },
+              "risk_sys_id": {
+                "type": "string",
+                "description": "[link_to_risk] Risk sys_id (sn_risk_advanced_risk) to link the assessment to"
+              },
+              "tier": {
+                "type": "string",
+                "description": "[list_vendors] Filter by vendor tier (tier_1, tier_2, tier_3, tier_4, critical, strategic)"
+              },
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_vendors] Only return active vendors",
+                "default": false
+              },
+              "state": {
+                "type": "string",
+                "description": "[list_assessments] Filter by assessment state",
+                "enum": [
+                  "draft",
+                  "scheduled",
+                  "in_progress",
+                  "submitted",
+                  "reviewed",
+                  "completed",
+                  "cancelled"
+                ]
+              },
+              "framework": {
+                "type": "string",
+                "description": "[list_assessments] Filter by compliance framework (SOC2, ISO27001, NIST, custom)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "[list_vendors/list_assessments] Maximum records to return",
+                "default": 50
+              },
+              "fields": {
+                "type": "string",
+                "description": "[list_vendors/list_assessments] Comma-separated list of fields to return"
+              },
+              "assessment_name": {
+                "type": "string",
+                "description": "[assess_vendor/create_assessment] Assessment name / short description"
+              },
+              "scheduled_start_date": {
+                "type": "string",
+                "description": "[assess_vendor/create_assessment] ISO date string (YYYY-MM-DD) for scheduled start"
+              },
+              "due_date": {
+                "type": "string",
+                "description": "[assess_vendor/create_assessment] ISO date string (YYYY-MM-DD) when the assessment is due"
+              },
+              "assigned_to": {
+                "type": "string",
+                "description": "[assess_vendor/create_assessment] sys_user sys_id of the vendor-side respondent"
+              },
+              "assessment_framework": {
+                "type": "string",
+                "description": "[create_assessment] Compliance framework label (SOC2, ISO27001, NIST, custom)"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         }
