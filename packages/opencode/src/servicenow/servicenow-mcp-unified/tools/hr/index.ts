@@ -10,3 +10,11 @@ export {
   toolDefinition as snow_employee_offboarding_def,
   execute as snow_employee_offboarding_exec,
 } from "./snow_employee_offboarding.js"
+export {
+  toolDefinition as snow_hr_lifecycle_event_def,
+  execute as snow_hr_lifecycle_event_exec,
+} from "./snow_hr_lifecycle_event.js"
+export {
+  toolDefinition as snow_hr_profile_manage_def,
+  execute as snow_hr_profile_manage_exec,
+} from "./snow_hr_profile_manage.js"
