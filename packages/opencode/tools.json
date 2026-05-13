@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T07:44:59.608Z",
+  "generatedAt": "2026-05-13T10:25:33.731Z",
   "count": 396,
   "groups": [
     {
@@ -8,7 +8,7 @@
       "tools": [
         {
           "name": "snow_create_access_control",
-          "description": "Createaccesscontrol",
+          "description": "Create an Access Control List (ACL) entry on a table: grants a role permission to perform an operation (read/write/create/delete) on records, optionally gated by a condition or advanced script. Writes to sys_security_acl.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -109,7 +109,7 @@
         },
         {
           "name": "snow_create_acl_role",
-          "description": "Create ACL role association",
+          "description": "Link a role (sys_user_role) to an existing ACL by creating a sys_security_acl_role record. After linking, anyone holding that role is granted access under the ACL's table/operation/condition.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -142,7 +142,7 @@
         },
         {
           "name": "snow_test_acl",
-          "description": "Test ACL access for user",
+          "description": "Simulate whether a user would be granted a given operation (read/write/create/delete) on a table or specific record under the current ACL configuration. Runs a server-side script using GlideRecord.canRead/canWrite/canCreate/canDelete.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -196,7 +196,7 @@
       "tools": [
         {
           "name": "snow_backup_instance",
-          "description": "Create instance backup",
+          "description": "Request a snapshot backup of the current ServiceNow instance under a chosen name, optionally including attachments. Returns the backup name and timestamp; the backup itself runs asynchronously.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -228,7 +228,7 @@
         },
         {
           "name": "snow_clone_instance",
-          "description": "Clone ServiceNow instance",
+          "description": "Request a sub-prod instance clone from source to target (e.g. prod → test). Optional data_preservers list keeps specified records intact across the clone; cloning runs asynchronously and typically takes hours.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -268,7 +268,7 @@
         },
         {
           "name": "snow_plugin_manage",
-          "description": "Manage ServiceNow plugins: list, check status, activate, or deactivate.\n\nActions:\n• list — Search and list plugins. Filter by name/ID, show only active.\n• check — Get detailed info on a specific plugin (status, version, dependencies).\n• activate — Activate a plugin (admin only). Uses CICD API with table fallback.\n• deactivate — Deactivate a plugin (admin only). Uses CICD API with table fallback.\n\nExamples:\n• { action: \"list\", search: \"incident\" }\n• { action: \"check\", plugin_id: \"com.snc.incident\" }\n• { action: \"activate\", plugin_id: \"com.snc.incident\" }",
+          "description": "Manage ServiceNow plugins: list, check status, activate, or deactivate.\n\nActions:\n• list — Search and list plugins. Filter by name/ID, show only active.\n• check — Get detailed info on a specific plugin (status, version, dependencies).\n• activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Requires plugin-activation privileges in ServiceNow.\n• deactivate — Deactivate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Requires plugin-activation privileges in ServiceNow.\n\nExamples:\n• { action: \"list\", search: \"incident\" }\n• { action: \"check\", plugin_id: \"com.snc.incident\" }\n• { action: \"activate\", plugin_id: \"com.snc.incident\" }",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -1231,7 +1231,7 @@
       "tools": [
         {
           "name": "snow_aggregate_metrics",
-          "description": "Aggregate table metrics",
+          "description": "Aggregate over a table via the /api/now/stats endpoint: COUNT, SUM, AVG, MIN, or MAX on a field, optionally grouped by another field. Returns the rolled-up result without fetching individual rows.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -1333,7 +1333,7 @@
         },
         {
           "name": "snow_anomaly_detection",
-          "description": "Detect anomalies in data",
+          "description": "Detect outliers in a numeric series using a standard-deviation threshold (default 2.0). Returns the points whose deviation from the mean exceeds the threshold.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -1454,7 +1454,7 @@
         },
         {
           "name": "snow_sentiment_analysis",
-          "description": "Analyze text sentiment",
+          "description": "Score the sentiment of a free-text string as positive/neutral/negative with a confidence value. Useful for triaging case comments, survey responses, or chat transcripts.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -1489,7 +1489,7 @@
       "tools": [
         {
           "name": "snow_custom_api",
-          "description": "Call custom API endpoint",
+          "description": "Make an arbitrary REST call to any ServiceNow endpoint with the chosen method (GET/POST/PUT/PATCH/DELETE), path, query params, and JSON body. Escape hatch for endpoints that don't have a first-class tool yet.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -1689,7 +1689,7 @@
         },
         {
           "name": "snow_list_applications",
-          "description": "List all scoped applications in the ServiceNow instance.\n\n📋 USE THIS TO:\n- Find available application scopes before switching\n- Search for applications by name or scope prefix\n- See which applications are active/inactive\n- Decide which scope to use for development\n\n🔍 SEARCH OPTIONS:\n- Filter by name (partial match)\n- Filter by scope prefix (e.g., \"x_myco\")\n- Filter by vendor\n- Show only active or include inactive\n\n📊 RETURNS:\n- List of applications with name, scope, version, vendor\n- Count of artifacts in each application (optional)\n- Indicates which scope is currently active",
+          "description": "List all scoped applications in the ServiceNow instance.\n\n📋 USE THIS TO:\n- Find available application scopes before switching\n- Search for applications by name or scope prefix\n- See which applications are active/inactive\n- Decide which scope to use for development\n\n🔍 SEARCH OPTIONS:\n- Filter by name (partial match)\n- Filter by scope (partial match, e.g., \"x_myco\")\n- Filter by vendor\n- Show only active or include inactive\n\n📊 RETURNS:\n- List of applications with name, scope, version, vendor\n- Count of artifacts in each application (optional)\n- Indicates which scope is currently active",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -1867,7 +1867,7 @@
         },
         {
           "name": "snow_request_approval",
-          "description": "Request approval for record",
+          "description": "Create a sysapproval_approver record asking a specific user to approve a record on a source table. Sets state to 'requested' and attaches optional comments. Used to kick off approval workflows outside of Flow Designer.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2010,7 +2010,7 @@
         },
         {
           "name": "snow_retire_asset",
-          "description": "Retire/dispose asset",
+          "description": "Mark an asset as retired (install_status=7) on alm_asset, optionally recording a retirement date and disposal reason. End-of-lifecycle counterpart to procurement/transfer flows.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2185,7 +2185,7 @@
         },
         {
           "name": "snow_delete_attachment",
-          "description": "Delete attachment",
+          "description": "Permanently delete a file attachment by its sys_id via the /api/now/attachment endpoint. Removes the file from its parent record.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2213,7 +2213,7 @@
         },
         {
           "name": "snow_file_download",
-          "description": "Download file from ServiceNow",
+          "description": "Download an attachment's file content by sys_id and return it as base64 along with its content-type. Use snow_get_attachments first to find the attachment_sys_id for a record.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -2242,7 +2242,7 @@
         },
         {
           "name": "snow_file_upload",
-          "description": "Upload file to ServiceNow",
+          "description": "Upload a base64-encoded file as an attachment on a specific record (table + sys_id), with file name and MIME type. Equivalent to snow_upload_attachment — pick whichever fits your naming.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2289,7 +2289,7 @@
         },
         {
           "name": "snow_get_attachments",
-          "description": "Get attachments for record",
+          "description": "List all attachments on a single record (table_name + table_sys_id). Returns each attachment's metadata (sys_id, file_name, size, content_type) — use snow_file_download to fetch a file's bytes.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -2323,7 +2323,7 @@
         },
         {
           "name": "snow_upload_attachment",
-          "description": "Upload attachment to record",
+          "description": "Attach a base64-encoded file to a specific record (table_name + table_sys_id) with file name and optional MIME type. Returns the new attachment metadata.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2414,7 +2414,7 @@
       "tools": [
         {
           "name": "snow_create_audit_rule",
-          "description": "Createauditrule",
+          "description": "Configure audit tracking on a table: which events (insert/update/delete) and which fields to log, retention period in days, and an optional filter. Writes to sys_audit.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2473,7 +2473,7 @@
       "tools": [
         {
           "name": "snow_audit_trail_analysis",
-          "description": "Audittrailanalysis",
+          "description": "Analyze the audit trail (sys_audit): aggregates events by user, table, and action, surfaces top activities, and optionally flags anomalies (users with 3x the average activity). Filter by timeframe, user, or table; export as json/csv/pdf.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -2521,7 +2521,7 @@
       "tools": [
         {
           "name": "snow_bulk_update",
-          "description": "Bulk update multiple records",
+          "description": "Apply the same field updates to every record on a table matching an encoded query, up to a row limit (default 100). Issues one PATCH per matched record. Use carefully — this fires business rules and workflows for each row.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2763,7 +2763,7 @@
         },
         {
           "name": "snow_create_variable",
-          "description": "Create catalog variable",
+          "description": "Add a question variable to a catalog item: name, question text, input type (string, multi_line_text, select_box, checkbox, reference), mandatory flag, and display order. Writes to item_option_new under the given cat_item.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -2820,7 +2820,7 @@
         },
         {
           "name": "snow_create_variable_set",
-          "description": "Create reusable variable set",
+          "description": "Create a reusable variable set (item_option_new_set) — a grouping of catalog variables that can be attached to multiple catalog items, e.g. a shared 'Approver / Department' block.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -3384,7 +3384,7 @@
       "tools": [
         {
           "name": "snow_batch_request",
-          "description": "Execute batch REST requests",
+          "description": "Send multiple REST calls in a single round-trip via /api/now/v1/batch. Each entry has method, url, and body — replies come back in order under a generated batch ID. Cuts overhead when issuing many small operations.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -3470,7 +3470,7 @@
         },
         {
           "name": "snow_test_connection",
-          "description": "Test ServiceNow connection",
+          "description": "Smoke-test the current ServiceNow connection: authenticates and fetches one sys_user row. Returns the resolved instance URL on success; use as a quick liveness/credentials check before running other tools.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -4692,7 +4692,7 @@
       "tools": [
         {
           "name": "snow_create_customer_case",
-          "description": "Create CSM customer case",
+          "description": "Open a Customer Service Management (CSM) case on sn_customerservice_case for a given account, with optional contact and priority. Use this for customer-facing tickets; for internal IT use snow_create_incident.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -4956,7 +4956,7 @@
       "tools": [
         {
           "name": "snow_add_dashboard_widget",
-          "description": "Add widget to dashboard",
+          "description": "Attach a widget to an existing dashboard (sys_dashboard) with a widget type and optional title and position. Writes to sys_dashboard_widget.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -4997,7 +4997,7 @@
         },
         {
           "name": "snow_create_dashboard",
-          "description": "Create dashboard",
+          "description": "Create a new sys_dashboard with a title, optional description, column count (default 2), and active flag. Widgets are added separately with snow_add_dashboard_widget.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -5276,7 +5276,7 @@
         },
         {
           "name": "snow_duplicate_detection",
-          "description": "Detect duplicate records",
+          "description": "Check whether a candidate record would duplicate existing rows on a table by matching on the given fields. Returns up to 10 existing matches; useful for de-dup checks before insert.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -5536,7 +5536,7 @@
         },
         {
           "name": "snow_date_filter",
-          "description": "Build date-based query filter",
+          "description": "Build an encoded-query fragment that filters a date field by either a relative window (today/yesterday/this-or-last-week/month) or an absolute start/end range. Returns the query string for use in sysparm_query.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -5619,7 +5619,7 @@
         },
         {
           "name": "snow_field_filter",
-          "description": "Create field-based filter",
+          "description": "Build an encoded-query fragment matching one field against a list of values, OR-joined. Match type is exact (=), contains (LIKE), startsWith, or endsWith. Returns the query string for use in sysparm_query.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -5666,7 +5666,7 @@
         },
         {
           "name": "snow_field_mapper",
-          "description": "Map fields between schemas",
+          "description": "Project a source object into a new shape using a target-field → source-field mapping. Useful for shaping data between systems (e.g. inbound integration payload → ServiceNow record fields).",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -5737,7 +5737,7 @@
         },
         {
           "name": "snow_parse_json",
-          "description": "Parse and validate JSON",
+          "description": "Parse a JSON string and validate it: returns the parsed object plus the top-level key count, or an error message if the JSON is malformed. Runs locally — no ServiceNow call.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -7639,7 +7639,7 @@
         },
         {
           "name": "snow_run_discovery",
-          "description": "Trigger CMDB discovery scan",
+          "description": "Queue a CMDB discovery scan against a discovery schedule, optionally narrowed to a target IP/range and a specific MID Server. Creates a discovery_schedule_item; the scan runs asynchronously.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -8091,7 +8091,7 @@
       "tools": [
         {
           "name": "snow_error_handler",
-          "description": "Create error handler",
+          "description": "Register a server-side error handler (sys_error_handler) bound to a specific error type. The handler_script runs when that error fires; must be ES5-compatible (no arrow functions, const/let, etc.).",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -8342,7 +8342,7 @@
         },
         {
           "name": "snow_event_handler",
-          "description": "Create event handler",
+          "description": "Register a script action (sysevent_script_action) that runs when a named platform event fires. Script must be ES5-compatible (no arrow functions, const/let, etc.).",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -8961,7 +8961,7 @@
       "tools": [
         {
           "name": "snow_add_form_field",
-          "description": "Add field to form section",
+          "description": "Add a field (element) to a form section by section sys_id, with optional field type and ordering position. Writes to sys_ui_element.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -9002,7 +9002,7 @@
         },
         {
           "name": "snow_create_form_layout",
-          "description": "Create custom form layout",
+          "description": "Create a form layout (sys_ui_form) for a table and view, with layout type standard / related_list / split. Container for form sections — add sections with snow_create_form_section.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -9048,7 +9048,7 @@
         },
         {
           "name": "snow_create_form_section",
-          "description": "Create form section",
+          "description": "Create a form section (sys_ui_section) on a table/view with an optional caption and ordering position. Sections group fields visually on a form — use snow_add_form_field to populate.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -9131,7 +9131,7 @@
       "tools": [
         {
           "name": "snow_graphql_query",
-          "description": "Execute GraphQL query",
+          "description": "Run a GraphQL query against /api/now/graphql with optional variables. Use when you need to fetch nested data across tables in one round-trip; for simple list/get on a single table, prefer the table API.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -9170,7 +9170,7 @@
       "tools": [
         {
           "name": "snow_create_hr_case",
-          "description": "Create HR service case",
+          "description": "Open an HR Service Delivery case on sn_hr_core_case for a given HR service, with subject, opened_for (employee), and optional priority. Use this for HR tickets; for IT incidents use snow_create_incident.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -9542,7 +9542,7 @@
         },
         {
           "name": "snow_export_to_xml",
-          "description": "Export records to XML format",
+          "description": "Export records from a table as XML, filtered by an encoded query and optionally a specific view. Returns the raw XML body — handy for record imports, backups, or update-set-style transfers.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -10619,7 +10619,7 @@
       "tools": [
         {
           "name": "snow_ai_classify",
-          "description": "Classify text using AI",
+          "description": "Classify a piece of text into one of a caller-supplied list of categories, with a confidence score. Use for routing incoming cases/incidents into queues or assignment groups by content.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -10733,7 +10733,7 @@
       "tools": [
         {
           "name": "snow_create_metric",
-          "description": "Create system metric",
+          "description": "Define a metric (metric_definition) over a table — count rows, or sum/avg/min/max a numeric field. Stored definition is later sampled by snow_collect_metric or platform schedulers.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -11349,7 +11349,7 @@
         },
         {
           "name": "snow_collect_metric",
-          "description": "Collect metric data",
+          "description": "Sample a defined metric on-demand: runs the platform MetricBaseCollector against a metric_definition sys_id to write a fresh measurement point. Companion to snow_create_metric.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -12029,7 +12029,7 @@
         },
         {
           "name": "snow_create_notification",
-          "description": "Create automated notification",
+          "description": "Configure an event-driven email notification (sysevent_email_action): fires when records on a table match a condition, with recipients, subject, inline message, or a sysevent_email_template (resolved by sys_id or template name).",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -12733,7 +12733,7 @@
         },
         {
           "name": "snow_send_notification",
-          "description": "Send email/SMS notification",
+          "description": "Send an ad-hoc email, SMS, or push notification to a list of user sys_ids with subject and message body. For scheduled/event-driven rules use snow_create_notification instead.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -12780,7 +12780,7 @@
         },
         {
           "name": "snow_send_push",
-          "description": "Send mobile push notification",
+          "description": "Push a notification (title + body) to one or more registered mobile device IDs via /api/now/v1/push/notification. Use snow_send_notification for the multi-channel email/sms/push wrapper.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -13464,7 +13464,7 @@
       "tools": [
         {
           "name": "snow_cache_get",
-          "description": "Get value from cache",
+          "description": "Look up a value from the in-memory tool cache by key. Returns null with cached=false on miss. Pairs with snow_cache_set for de-duplicating expensive calls within a session.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -13493,7 +13493,7 @@
         },
         {
           "name": "snow_cache_set",
-          "description": "Set value in cache",
+          "description": "Store a string value in the in-memory tool cache under a key, with a TTL in seconds (default 3600). Read back with snow_cache_get within the same session.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -13876,7 +13876,7 @@
         },
         {
           "name": "snow_create_data_policy",
-          "description": "Create data policy",
+          "description": "Create a Data Policy (sys_data_policy2) on a table — server-side equivalent of UI Policies, enforced for API/import writes. reverse_if_false re-applies the inverse when the condition turns false. Add field-level rules with snow_create_data_policy_rule.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -13921,7 +13921,7 @@
         },
         {
           "name": "snow_create_data_policy_rule",
-          "description": "Create data policy rule",
+          "description": "Add a field rule to an existing Data Policy: mark the field as mandatory and/or read-only when the parent policy's condition is true. Writes to sys_data_policy_rule.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -13962,7 +13962,7 @@
         },
         {
           "name": "snow_create_field",
-          "description": "Create table field/column",
+          "description": "Add a new column to a table by writing to sys_dictionary: column name, label, internal_type (string, integer, reference, etc.), and — for reference fields — the referenced table. Optional max_length and mandatory flag.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -14139,7 +14139,7 @@
         },
         {
           "name": "snow_create_table",
-          "description": "Create new database table",
+          "description": "Create a new table (sys_db_object) with a name and label. Optionally extends a parent table (super_class) for inheritance, and toggles is_extendable. Add columns with snow_create_field.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -14421,7 +14421,7 @@
         },
         {
           "name": "snow_disable_business_rule",
-          "description": "Disable business rule",
+          "description": "Flip a business rule's active flag to false by sys_id (patches sys_script). Disabling stops it from firing without deleting the rule — pair with the same patch toggling active=true to re-enable.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -14896,7 +14896,7 @@
       "tools": [
         {
           "name": "snow_approve_procurement",
-          "description": "Approve procurement request",
+          "description": "Mark a procurement request (proc_request) as approved, with optional comments. Use after the request has been reviewed — advances it toward purchase-order creation.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -14926,7 +14926,7 @@
         },
         {
           "name": "snow_create_purchase_order",
-          "description": "Create purchase order",
+          "description": "Open a purchase order (proc_po) against a vendor, with optional requested_by user and total_cost. Captures the buy-side step after a procurement request has been approved.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -14971,7 +14971,7 @@
       "tools": [
         {
           "name": "snow_create_project",
-          "description": "Create project",
+          "description": "Create a PPM project (pm_project) with name, description, planned start/end dates, and a project manager (sys_user). Container for project tasks created via snow_create_project_task.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -15010,7 +15010,7 @@
         },
         {
           "name": "snow_create_project_task",
-          "description": "Create project task",
+          "description": "Add a task to an existing PPM project (pm_project_task) with short description, optional assignee, and planned_hours. Use snow_create_project to make the parent project first.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -15401,7 +15401,7 @@
       "tools": [
         {
           "name": "snow_create_queue",
-          "description": "Create assignment queue",
+          "description": "Define an assignment queue (sys_queue) — a saved filter on a table, optionally tied to an assignment group. Work items matching the condition show up in the group's work list via snow_get_queue_items.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -15442,7 +15442,7 @@
         },
         {
           "name": "snow_get_queue_items",
-          "description": "Get items in queue",
+          "description": "List up to N records (default 50) currently in a queue by sys_id. Reads the queue's table and condition from sys_queue, then runs the matching query against the target table.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -15667,7 +15667,7 @@
       "tools": [
         {
           "name": "snow_create_report",
-          "description": "Create ServiceNow report",
+          "description": "Create a sys_report against a table with a chart type (bar / pie / line / list) and optional encoded-query filter. Defines the report definition only — runs/scheduling is handled separately.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -16031,7 +16031,7 @@
       "tools": [
         {
           "name": "snow_scripted_rest_api",
-          "description": "Call scripted REST API",
+          "description": "Invoke a Scripted REST API resource at /api/<namespace>/<path> with chosen method (GET/POST/PUT/PATCH/DELETE) and optional JSON body. Use for instance-defined REST endpoints; for stock table API use snow_custom_api.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -16498,7 +16498,7 @@
       "tools": [
         {
           "name": "snow_add_schedule_entry",
-          "description": "Add entry to schedule",
+          "description": "Add a span (cmn_schedule_span) to a schedule that either includes or excludes a window of time. Use to model holidays, blackout periods, or extra coverage hours on top of a base cmn_schedule.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -16547,7 +16547,7 @@
         },
         {
           "name": "snow_create_schedule",
-          "description": "Create work schedule",
+          "description": "Define a schedule (cmn_schedule) — weekly/monthly/custom recurrence and a time zone. Used downstream by SLAs, on-call shifts, and business-hours calculations. Add spans via snow_add_schedule_entry.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -17324,7 +17324,7 @@
         },
         {
           "name": "snow_jwt_decode",
-          "description": "Decode JWT token",
+          "description": "Decode a JWT into its header and payload (base64-URL → JSON). Does NOT verify the signature — useful for inspecting claims, not for trusting them. Local operation, no ServiceNow call.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -17415,7 +17415,7 @@
         },
         {
           "name": "snow_create_catalog_item",
-          "description": "Create service catalog item",
+          "description": "Publish a Service Catalog item (sc_cat_item) with name, short/long descriptions, category, and price. The item becomes orderable; attach question variables with snow_create_catalog_variable.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -17588,7 +17588,7 @@
         },
         {
           "name": "snow_create_catalog_variable",
-          "description": "Create catalog item variable",
+          "description": "Add an input variable to a catalog item (item_option_new) with name, question text, and input type (single/multi-line text, multiple_choice, select_box). Mostly equivalent to snow_create_variable but with a narrower type list.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -17814,7 +17814,7 @@
       "tools": [
         {
           "name": "snow_create_sp_page",
-          "description": "Create Service Portal page",
+          "description": "Create a Service Portal page (sp_page) with a stable id, display title, and public flag (anonymous access). Page becomes accessible at /sp?id=<id> once placed in a portal layout.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -17849,7 +17849,7 @@
         },
         {
           "name": "snow_create_sp_widget",
-          "description": "Create Service Portal widget",
+          "description": "Create a Service Portal widget (sp_widget) bundling AngularJS template, client_script, server_script, and CSS under a stable id. Widgets are placed on pages via the portal page editor.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -18082,7 +18082,7 @@
         },
         {
           "name": "snow_get_sla_status",
-          "description": "Get SLA status for record",
+          "description": "List all task_sla rows attached to a task record (incident, request, etc.) by record sys_id. Returns display values: SLA name, business %, breached flag, time-left — one row per applicable SLA.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -18348,7 +18348,7 @@
       "tools": [
         {
           "name": "snow_blast_radius_table_configs",
-          "description": "Find ALL configurations running on a specific table.\n\n📋 USE THIS TO:\n- Get a complete inventory of artifacts scoped to a table\n- Understand the configuration landscape before making changes\n- Filter by config type, scope, or active status\n\n🔍 EXAMPLE: \"What configs run on the incident table?\"\n\n📊 COVERAGE (v2):\nSearches 25+ artifact types — not just business rules/client scripts/etc.\nAlso returns data policies, email notifications, metric definitions,\ninbound email actions, UI policy actions, transform entries, plus\nglobal-but-table-mentioning script includes.",
+          "description": "Find ALL configurations running on a specific table.\n\n📋 USE THIS TO:\n- Get a complete inventory of artifacts scoped to a table\n- Understand the configuration landscape before making changes\n- Filter by config type, scope, or active status\n\n🔍 EXAMPLE: \"What configs run on the incident table?\"\n\n📊 COVERAGE:\nBy default searches a curated set of 13 main config types: business rules,\nclient scripts, UI actions, UI policies, UI policy actions, data policies,\ndata policy rules, ACLs, email notifications, metric definitions, inbound\nemail actions, transform entries, plus global-but-table-mentioning script\nincludes. Pass an explicit `config_types` array to query any of the 26\nsupported types from ARTIFACT_SPECS.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -18402,7 +18402,7 @@
                     "atf_steps"
                   ]
                 },
-                "description": "Filter to specific artifact types. Default: all non-global types."
+                "description": "Filter to specific artifact types. Default: a curated set of 13 main config types (TABLE_CONFIG_TYPES); pass an explicit list to access any of the 26 supported types."
               },
               "include_inactive": {
                 "type": "boolean",
@@ -18502,7 +18502,7 @@
       "tools": [
         {
           "name": "snow_create_template",
-          "description": "Create record template",
+          "description": "Save a record template (sys_template) — a named, reusable set of pre-filled field values for a given table that users can apply with one click when creating new records.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19021,7 +19021,7 @@
       "tools": [
         {
           "name": "snow_analyze_threat_intelligence",
-          "description": "Analyzethreatintelligence",
+          "description": "Correlate an indicator of compromise (IOC) — IP, domain, file hash, URL, or email — against threat intel feeds and the existing sn_si_threat_intel store. Returns risk level (LOW/MEDIUM/HIGH), per-feed match confidence, and recommended response posture.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -19083,7 +19083,7 @@
       "tools": [
         {
           "name": "snow_automate_threat_response",
-          "description": "Automatethreatresponse",
+          "description": "Execute a tiered incident response playbook (contain / isolate / eradicate / recover) for a known threat ID. Either runs the action set automatically and notifies the listed groups, or queues each action for security-team approval.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19135,7 +19135,7 @@
       "tools": [
         {
           "name": "snow_add_list_column",
-          "description": "Add column to list view",
+          "description": "Add a column (field) to the default list layout of a table by writing to sys_ui_list_element, with optional position and pixel width. Changes how the list shows up in the UI.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19245,7 +19245,7 @@
         },
         {
           "name": "snow_create_list_view",
-          "description": "Create custom list view",
+          "description": "Create a named list view (sys_ui_list) on a table with a comma-joined field list and an optional default filter. Lets users switch into a curated column set instead of the table default.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19289,7 +19289,7 @@
         },
         {
           "name": "snow_create_menu",
-          "description": "Create application menu",
+          "description": "Create a top-level application menu (sys_app_module) with title, owning application, and display order. Container for navigation items added via snow_create_menu_item.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19329,7 +19329,7 @@
         },
         {
           "name": "snow_create_menu_item",
-          "description": "Create menu item",
+          "description": "Add a navigation item (sys_app_module) under a parent menu, opening a list / new record / detail / home view on a target table. Order controls placement within the parent.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19379,7 +19379,7 @@
         },
         {
           "name": "snow_create_related_list",
-          "description": "Create related list on form",
+          "description": "Surface a related table under a parent table's form view (sys_ui_related_list) — e.g. show related Tasks below an Incident. Use relationship_field for non-standard joins.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -19762,7 +19762,7 @@
         },
         {
           "name": "snow_update_set_manage",
-          "description": "Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact)\n\n⚠️ CRITICAL: Update Set Tracking & OAuth Context\n\nHOW TRACKING WORKS:\n- Update Sets MUST be \"current\" for the user making changes (via API = OAuth service account)\n- snow-flow uses OAuth service account → Update Set must be current for SERVICE ACCOUNT\n- auto_switch=true (DEFAULT) → Changes ARE tracked automatically ✅\n- auto_switch=false → Changes are NOT tracked ❌\n\nAPPLICATION SCOPE:\n- Use application_scope parameter to create Update Sets within a scoped application\n- Default is \"global\" for global scope development\n- Provide application sys_id or scope name for scoped application development\n- Update Sets in scoped apps only track changes to artifacts in that scope\n\nUI VISIBILITY:\n- Update Set current for service account ≠ visible in YOUR UI\n- To see it as current in YOUR ServiceNow UI, provide servicenow_username parameter\n- This is OPTIONAL and only affects UI visibility, NOT tracking\n\nRECOMMENDED USAGE:\n- Always use auto_switch=true (default) for development work\n- Add servicenow_username if you want to see it in your UI\n- Use application_scope for scoped application development\n- Only use auto_switch=false for non-development operations",
+          "description": "Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact, current)\n\n⚠️ CRITICAL: Update Set Tracking & OAuth Context\n\nHOW TRACKING WORKS:\n- Update Sets MUST be \"current\" for the user making changes (via API = OAuth service account)\n- snow-flow uses OAuth service account → Update Set must be current for SERVICE ACCOUNT\n- auto_switch=true (DEFAULT) → Changes ARE tracked automatically ✅\n- auto_switch=false → Changes are NOT tracked ❌\n\nAPPLICATION SCOPE:\n- Use application_scope parameter to create Update Sets within a scoped application\n- Default is \"global\" for global scope development\n- Provide application sys_id or scope name for scoped application development\n- Update Sets in scoped apps only track changes to artifacts in that scope\n\nUI VISIBILITY:\n- Update Set current for service account ≠ visible in YOUR UI\n- To see it as current in YOUR ServiceNow UI, provide servicenow_username parameter\n- This is OPTIONAL and only affects UI visibility, NOT tracking\n\nRECOMMENDED USAGE:\n- Always use auto_switch=true (default) for development work\n- Add servicenow_username if you want to see it in your UI\n- Use application_scope for scoped application development\n- Only use auto_switch=false for non-development operations",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -20146,7 +20146,7 @@
       "tools": [
         {
           "name": "snow_autocomplete",
-          "description": "Get autocomplete suggestions",
+          "description": "Suggest values for an autocomplete UX: fetches the top N values of a field from a table where the field LIKE the query string. Useful for typeahead inputs without building a full reference field.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20229,7 +20229,7 @@
         },
         {
           "name": "snow_decode_base64",
-          "description": "Decode Base64 to string",
+          "description": "Decode a Base64-encoded string back to UTF-8 text. Local operation — no ServiceNow call. Pair with snow_encode_base64 for round-tripping.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20258,7 +20258,7 @@
         },
         {
           "name": "snow_decode_url",
-          "description": "URL decode string",
+          "description": "URL-decode a percent-encoded string (decodeURIComponent). Local operation — no ServiceNow call. Pair with snow_encode_url to round-trip query params.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20287,7 +20287,7 @@
         },
         {
           "name": "snow_encode_base64",
-          "description": "Encode string to Base64",
+          "description": "Encode a UTF-8 string as Base64. Local operation — no ServiceNow call. Handy for embedding binary-ish data in JSON payloads (e.g. attachment uploads).",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20316,7 +20316,7 @@
         },
         {
           "name": "snow_encode_url",
-          "description": "URL encode string",
+          "description": "URL-encode a string for safe use in query parameters (encodeURIComponent). Local operation — no ServiceNow call.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20345,7 +20345,7 @@
         },
         {
           "name": "snow_format_date",
-          "description": "Format date for ServiceNow",
+          "description": "Format a date string in one of four shapes: ISO date (YYYY-MM-DD), ISO datetime, ISO time, or human-readable relative (e.g. '5 minutes ago'). Local operation — no ServiceNow call.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20384,7 +20384,7 @@
         },
         {
           "name": "snow_format_number",
-          "description": "Format number with locale",
+          "description": "Format a number as a decimal, currency (with code prefix), or percent, with a configurable decimal precision (default 2). Local operation — no ServiceNow call.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20470,7 +20470,7 @@
         },
         {
           "name": "snow_generate_guid",
-          "description": "Generate GUID/UUID",
+          "description": "Generate a unique identifier in one of three shapes: ServiceNow sys_id (32-char hex, no dashes), uppercase GUID, or lowercase UUID. Uses crypto.randomUUID — safe for IDs but not for secrets.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20540,7 +20540,7 @@
         },
         {
           "name": "snow_merge_objects",
-          "description": "Deep merge multiple objects",
+          "description": "Merge an array of objects left-to-right via spread (later keys win). Note: this is a shallow merge despite the name — nested objects are overwritten, not merged recursively. Local operation.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20572,7 +20572,7 @@
         },
         {
           "name": "snow_random_string",
-          "description": "Generate random string",
+          "description": "Generate a cryptographically-secure random string of a given length (default 16) from an alphanumeric, alpha-only, numeric, or hex charset. Uses crypto.randomBytes with rejection sampling — safe for tokens.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20645,7 +20645,7 @@
         },
         {
           "name": "snow_sanitize_input",
-          "description": "Sanitize input for security",
+          "description": "Escape a user-supplied string against html, sql, or script-injection contexts. Note: prefer parameterized queries for SQL — sanitization is a fallback, not the primary defense.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -20803,7 +20803,7 @@
       "tools": [
         {
           "name": "snow_validate_field",
-          "description": "Validate field value",
+          "description": "Look up a field's dictionary definition (sys_dictionary) for a given table.field and verify the value fits its internal_type. Returns the resolved field_type along with a valid flag.",
           "permission": "read",
           "allowedRoles": [
             "developer",
@@ -21295,7 +21295,7 @@
         },
         {
           "name": "snow_train_va_nlu",
-          "description": "Train Virtual Agent NLU model",
+          "description": "Trigger training of a Virtual Agent NLU model by model_id via /api/now/v1/va/models/{id}/train. Training runs asynchronously on the platform; this call only starts the job.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -21615,7 +21615,7 @@
         },
         {
           "name": "snow_workflow_manage",
-          "description": "⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable",
+          "description": "⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable, delete, get_history",
           "permission": "write",
           "allowedRoles": [
             "developer",
