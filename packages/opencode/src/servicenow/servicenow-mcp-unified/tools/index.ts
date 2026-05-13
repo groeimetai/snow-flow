@@ -234,3 +234,6 @@ export * from "./blast-radius/index.js"
 
 // Agile Development 2.0 (14 tools)
 export * from "./agile/index.js"
+
+// Field Service Management (3 tools)
+export * from "./fsm/index.js"
