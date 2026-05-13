@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_error_handler",
-  description: "Create error handler",
+  description: "Register a server-side error handler (sys_error_handler) bound to a specific error type. The handler_script runs when that error fires; must be ES5-compatible (no arrow functions, const/let, etc.).",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "error-handling",

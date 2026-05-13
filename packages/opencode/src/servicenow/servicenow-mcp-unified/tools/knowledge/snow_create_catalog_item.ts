@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_catalog_item",
-  description: "Create service catalog item",
+  description: "Publish a Service Catalog item (sc_cat_item) with name, short/long descriptions, category, and price. The item becomes orderable; attach question variables with snow_create_catalog_variable.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "service-catalog",

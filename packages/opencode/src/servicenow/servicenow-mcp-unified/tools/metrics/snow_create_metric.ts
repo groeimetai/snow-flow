@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_metric",
-  description: "Create system metric",
+  description: "Define a metric (metric_definition) over a table — count rows, or sum/avg/min/max a numeric field. Stored definition is later sampled by snow_collect_metric or platform schedulers.",
   // Metadata for tool discovery (not sent to LLM)
   category: "reporting",
   subcategory: "metrics",

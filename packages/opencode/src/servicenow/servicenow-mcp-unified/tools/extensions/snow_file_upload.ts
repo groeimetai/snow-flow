@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_file_upload",
-  description: "Upload file to ServiceNow",
+  description: "Upload a base64-encoded file as an attachment on a specific record (table + sys_id), with file name and MIME type. Equivalent to snow_upload_attachment — pick whichever fits your naming.",
   // Metadata for tool discovery (not sent to LLM)
   category: "core-operations",
   subcategory: "attachments",

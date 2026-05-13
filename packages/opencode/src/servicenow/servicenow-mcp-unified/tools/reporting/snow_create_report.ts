@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_report",
-  description: "Create ServiceNow report",
+  description: "Create a sys_report against a table with a chart type (bar / pie / line / list) and optional encoded-query filter. Defines the report definition only — runs/scheduling is handled separately.",
   // Metadata for tool discovery (not sent to LLM)
   category: "reporting",
   subcategory: "reports",

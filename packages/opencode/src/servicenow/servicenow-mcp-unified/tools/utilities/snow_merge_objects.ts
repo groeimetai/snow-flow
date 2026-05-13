@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_merge_objects",
-  description: "Deep merge multiple objects",
+  description: "Merge an array of objects left-to-right via spread (later keys win). Note: this is a shallow merge despite the name — nested objects are overwritten, not merged recursively. Local operation.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

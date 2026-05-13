@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_custom_api",
-  description: "Call custom API endpoint",
+  description: "Make an arbitrary REST call to any ServiceNow endpoint with the chosen method (GET/POST/PUT/PATCH/DELETE), path, query params, and JSON body. Escape hatch for endpoints that don't have a first-class tool yet.",
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "api",

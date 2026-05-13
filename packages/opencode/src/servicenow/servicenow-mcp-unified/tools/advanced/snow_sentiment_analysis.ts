@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_sentiment_analysis",
-  description: "Analyze text sentiment",
+  description: "Score the sentiment of a free-text string as positive/neutral/negative with a confidence value. Useful for triaging case comments, survey responses, or chat transcripts.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "analytics",

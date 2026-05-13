@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_anomaly_detection",
-  description: "Detect anomalies in data",
+  description: "Detect outliers in a numeric series using a standard-deviation threshold (default 2.0). Returns the points whose deviation from the mean exceeds the threshold.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "analytics",

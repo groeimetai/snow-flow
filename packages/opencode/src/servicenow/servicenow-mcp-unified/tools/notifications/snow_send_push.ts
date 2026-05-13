@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_send_push",
-  description: "Send mobile push notification",
+  description: "Push a notification (title + body) to one or more registered mobile device IDs via /api/now/v1/push/notification. Use snow_send_notification for the multi-channel email/sms/push wrapper.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "notifications",

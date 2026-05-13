@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_data_policy",
-  description: "Create data policy",
+  description: "Create a Data Policy (sys_data_policy2) on a table — server-side equivalent of UI Policies, enforced for API/import writes. reverse_if_false re-applies the inverse when the condition turns false. Add field-level rules with snow_create_data_policy_rule.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "platform",

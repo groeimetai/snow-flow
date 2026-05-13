@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_acl_role",
-  description: "Create ACL role association",
+  description: "Link a role (sys_user_role) to an existing ACL by creating a sys_security_acl_role record. After linking, anyone holding that role is granted access under the ACL's table/operation/condition.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "access-control",

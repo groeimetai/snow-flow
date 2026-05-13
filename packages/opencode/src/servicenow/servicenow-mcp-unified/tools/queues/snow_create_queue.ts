@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_queue",
-  description: "Create assignment queue",
+  description: "Define an assignment queue (sys_queue) — a saved filter on a table, optionally tied to an assignment group. Work items matching the condition show up in the group's work list via snow_get_queue_items.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "queues",

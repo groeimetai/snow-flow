@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_run_discovery",
-  description: "Trigger CMDB discovery scan",
+  description: "Queue a CMDB discovery scan against a discovery schedule, optionally narrowed to a target IP/range and a specific MID Server. Creates a discovery_schedule_item; the scan runs asynchronously.",
   // Metadata for tool discovery (not sent to LLM)
   category: "cmdb",
   subcategory: "discovery",

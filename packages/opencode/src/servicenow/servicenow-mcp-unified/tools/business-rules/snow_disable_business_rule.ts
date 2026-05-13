@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_disable_business_rule",
-  description: "Disable business rule",
+  description: "Flip a business rule's active flag to false by sys_id (patches sys_script). Disabling stops it from firing without deleting the rule — pair with the same patch toggling active=true to re-enable.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "platform",

@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_form_section",
-  description: "Create form section",
+  description: "Create a form section (sys_ui_section) on a table/view with an optional caption and ordering position. Sections group fields visually on a form — use snow_add_form_field to populate.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "forms",

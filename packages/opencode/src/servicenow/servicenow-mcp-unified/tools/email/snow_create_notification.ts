@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_notification",
-  description: "Create automated notification",
+  description: "Configure an event-driven email notification (sysevent_email_action): fires when records on a table match a condition, with recipients, subject, inline message, or a sysevent_email_template (resolved by sys_id or template name).",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "notifications",

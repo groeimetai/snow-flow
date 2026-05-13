@@ -3,7 +3,7 @@ import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/t
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_audit_trail_analysis",
-  description: "Audittrailanalysis",
+  description: "Analyze the audit trail (sys_audit): aggregates events by user, table, and action, surfaces top activities, and optionally flags anomalies (users with 3x the average activity). Filter by timeframe, user, or table; export as json/csv/pdf.",
   category: "security",
   subcategory: "audit-trail",
   use_cases: ["analysis", "security", "compliance"],

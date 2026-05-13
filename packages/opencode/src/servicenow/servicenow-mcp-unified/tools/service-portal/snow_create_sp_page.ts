@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_sp_page",
-  description: "Create Service Portal page",
+  description: "Create a Service Portal page (sp_page) with a stable id, display title, and public flag (anonymous access). Page becomes accessible at /sp?id=<id> once placed in a portal layout.",
   // Metadata for tool discovery (not sent to LLM)
   category: "ui-frameworks",
   subcategory: "service-portal",

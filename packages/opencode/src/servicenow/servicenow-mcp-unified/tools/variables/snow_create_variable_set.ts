@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_variable_set",
-  description: "Create reusable variable set",
+  description: "Create a reusable variable set (item_option_new_set) — a grouping of catalog variables that can be attached to multiple catalog items, e.g. a shared 'Approver / Department' block.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "catalog",

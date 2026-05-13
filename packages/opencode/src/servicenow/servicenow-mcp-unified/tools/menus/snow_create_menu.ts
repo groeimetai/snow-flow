@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_menu",
-  description: "Create application menu",
+  description: "Create a top-level application menu (sys_app_module) with title, owning application, and display order. Container for navigation items added via snow_create_menu_item.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "ui",

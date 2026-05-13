@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_encode_base64",
-  description: "Encode string to Base64",
+  description: "Encode a UTF-8 string as Base64. Local operation — no ServiceNow call. Handy for embedding binary-ish data in JSON payloads (e.g. attachment uploads).",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

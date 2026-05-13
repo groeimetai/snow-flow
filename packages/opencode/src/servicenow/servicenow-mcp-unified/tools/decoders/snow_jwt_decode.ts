@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_jwt_decode",
-  description: "Decode JWT token",
+  description: "Decode a JWT into its header and payload (base64-URL → JSON). Does NOT verify the signature — useful for inspecting claims, not for trusting them. Local operation, no ServiceNow call.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "security",

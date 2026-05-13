@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_get_queue_items",
-  description: "Get items in queue",
+  description: "List up to N records (default 50) currently in a queue by sys_id. Reads the queue's table and condition from sys_queue, then runs the matching query against the target table.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "queues",

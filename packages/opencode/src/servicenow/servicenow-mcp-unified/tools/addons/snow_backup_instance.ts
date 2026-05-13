@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_backup_instance",
-  description: "Create instance backup",
+  description: "Request a snapshot backup of the current ServiceNow instance under a chosen name, optionally including attachments. Returns the backup name and timestamp; the backup itself runs asynchronously.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "administration",

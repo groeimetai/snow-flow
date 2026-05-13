@@ -3,7 +3,7 @@ import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/t
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_access_control",
-  description: "Createaccesscontrol",
+  description: "Create an Access Control List (ACL) entry on a table: grants a role permission to perform an operation (read/write/create/delete) on records, optionally gated by a condition or advanced script. Writes to sys_security_acl.",
   category: "security",
   subcategory: "access-control",
   use_cases: ["configuration", "security", "compliance"],

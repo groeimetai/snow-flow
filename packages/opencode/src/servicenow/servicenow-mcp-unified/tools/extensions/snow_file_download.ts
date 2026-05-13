@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_file_download",
-  description: "Download file from ServiceNow",
+  description: "Download an attachment's file content by sys_id and return it as base64 along with its content-type. Use snow_get_attachments first to find the attachment_sys_id for a record.",
   // Metadata for tool discovery (not sent to LLM)
   category: "core-operations",
   subcategory: "attachments",

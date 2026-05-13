@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_export_to_xml",
-  description: "Export records to XML format",
+  description: "Export records from a table as XML, filtered by an encoded query and optionally a specific view. Returns the raw XML body — handy for record imports, backups, or update-set-style transfers.",
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "import-export",

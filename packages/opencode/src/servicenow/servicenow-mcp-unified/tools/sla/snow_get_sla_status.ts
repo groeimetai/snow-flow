@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_get_sla_status",
-  description: "Get SLA status for record",
+  description: "List all task_sla rows attached to a task record (incident, request, etc.) by record sys_id. Returns display values: SLA name, business %, breached flag, time-left — one row per applicable SLA.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "sla",

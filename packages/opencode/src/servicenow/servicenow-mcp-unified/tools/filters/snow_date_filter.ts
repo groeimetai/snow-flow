@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_date_filter",
-  description: "Build date-based query filter",
+  description: "Build an encoded-query fragment that filters a date field by either a relative window (today/yesterday/this-or-last-week/month) or an absolute start/end range. Returns the query string for use in sysparm_query.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "data-utilities",

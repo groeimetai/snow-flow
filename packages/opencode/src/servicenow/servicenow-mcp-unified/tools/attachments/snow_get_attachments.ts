@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_get_attachments",
-  description: "Get attachments for record",
+  description: "List all attachments on a single record (table_name + table_sys_id). Returns each attachment's metadata (sys_id, file_name, size, content_type) — use snow_file_download to fetch a file's bytes.",
   // Metadata for tool discovery (not sent to LLM)
   category: "core-operations",
   subcategory: "attachments",

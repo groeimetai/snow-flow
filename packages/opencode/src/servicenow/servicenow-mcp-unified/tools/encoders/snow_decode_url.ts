@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_decode_url",
-  description: "URL decode string",
+  description: "URL-decode a percent-encoded string (decodeURIComponent). Local operation — no ServiceNow call. Pair with snow_encode_url to round-trip query params.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

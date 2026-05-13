@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_event_handler",
-  description: "Create event handler",
+  description: "Register a script action (sysevent_script_action) that runs when a named platform event fires. Script must be ES5-compatible (no arrow functions, const/let, etc.).",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "event-management",

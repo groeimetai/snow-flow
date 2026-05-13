@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_table",
-  description: "Create new database table",
+  description: "Create a new table (sys_db_object) with a name and label. Optionally extends a parent table (super_class) for inheritance, and toggles is_extendable. Add columns with snow_create_field.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "platform",

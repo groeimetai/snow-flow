@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_customer_case",
-  description: "Create CSM customer case",
+  description: "Open a Customer Service Management (CSM) case on sn_customerservice_case for a given account, with optional contact and priority. Use this for customer-facing tickets; for internal IT use snow_create_incident.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "csm",

@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_upload_attachment",
-  description: "Upload attachment to record",
+  description: "Attach a base64-encoded file to a specific record (table_name + table_sys_id) with file name and optional MIME type. Returns the new attachment metadata.",
   // Metadata for tool discovery (not sent to LLM)
   category: "core-operations",
   subcategory: "attachments",

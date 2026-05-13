@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_delete_attachment",
-  description: "Delete attachment",
+  description: "Permanently delete a file attachment by its sys_id via the /api/now/attachment endpoint. Removes the file from its parent record.",
   // Metadata for tool discovery (not sent to LLM)
   category: "core-operations",
   subcategory: "attachments",

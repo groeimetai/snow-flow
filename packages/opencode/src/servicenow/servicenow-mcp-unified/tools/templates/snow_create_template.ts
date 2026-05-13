@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_template",
-  description: "Create record template",
+  description: "Save a record template (sys_template) — a named, reusable set of pre-filled field values for a given table that users can apply with one click when creating new records.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "templates",

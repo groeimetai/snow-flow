@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_add_list_column",
-  description: "Add column to list view",
+  description: "Add a column (field) to the default list layout of a table by writing to sys_ui_list_element, with optional position and pixel width. Changes how the list shows up in the UI.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "ui",

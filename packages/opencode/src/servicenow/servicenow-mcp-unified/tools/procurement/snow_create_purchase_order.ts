@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_purchase_order",
-  description: "Create purchase order",
+  description: "Open a purchase order (proc_po) against a vendor, with optional requested_by user and total_cost. Captures the buy-side step after a procurement request has been approved.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "procurement",

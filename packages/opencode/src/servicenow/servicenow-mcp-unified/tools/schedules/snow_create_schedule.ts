@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_schedule",
-  description: "Create work schedule",
+  description: "Define a schedule (cmn_schedule) — weekly/monthly/custom recurrence and a time zone. Used downstream by SLAs, on-call shifts, and business-hours calculations. Add spans via snow_add_schedule_entry.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "scheduling",

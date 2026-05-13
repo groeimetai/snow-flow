@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_add_dashboard_widget",
-  description: "Add widget to dashboard",
+  description: "Attach a widget to an existing dashboard (sys_dashboard) with a widget type and optional title and position. Writes to sys_dashboard_widget.",
   // Metadata for tool discovery (not sent to LLM)
   category: "reporting",
   subcategory: "dashboards",

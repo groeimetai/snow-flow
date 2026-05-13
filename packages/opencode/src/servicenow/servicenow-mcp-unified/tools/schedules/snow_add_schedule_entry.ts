@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_add_schedule_entry",
-  description: "Add entry to schedule",
+  description: "Add a span (cmn_schedule_span) to a schedule that either includes or excludes a window of time. Use to model holidays, blackout periods, or extra coverage hours on top of a base cmn_schedule.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "scheduling",

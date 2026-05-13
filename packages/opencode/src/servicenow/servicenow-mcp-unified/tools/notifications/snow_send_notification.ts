@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_send_notification",
-  description: "Send email/SMS notification",
+  description: "Send an ad-hoc email, SMS, or push notification to a list of user sys_ids with subject and message body. For scheduled/event-driven rules use snow_create_notification instead.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "notifications",

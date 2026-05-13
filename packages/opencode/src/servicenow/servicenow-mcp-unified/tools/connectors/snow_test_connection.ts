@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_test_connection",
-  description: "Test ServiceNow connection",
+  description: "Smoke-test the current ServiceNow connection: authenticates and fetches one sys_user row. Returns the resolved instance URL on success; use as a quick liveness/credentials check before running other tools.",
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "connectors",

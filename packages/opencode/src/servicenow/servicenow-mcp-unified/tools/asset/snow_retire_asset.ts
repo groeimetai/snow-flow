@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_retire_asset",
-  description: "Retire/dispose asset",
+  description: "Mark an asset as retired (install_status=7) on alm_asset, optionally recording a retirement date and disposal reason. End-of-lifecycle counterpart to procurement/transfer flows.",
   // Metadata for tool discovery (not sent to LLM)
   category: "asset-management",
   subcategory: "asset-lifecycle",

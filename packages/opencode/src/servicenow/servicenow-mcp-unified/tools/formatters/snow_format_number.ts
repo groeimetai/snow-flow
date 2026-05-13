@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_format_number",
-  description: "Format number with locale",
+  description: "Format a number as a decimal, currency (with code prefix), or percent, with a configurable decimal precision (default 2). Local operation — no ServiceNow call.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

@@ -8,7 +8,7 @@ import crypto from "crypto"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_random_string",
-  description: "Generate random string",
+  description: "Generate a cryptographically-secure random string of a given length (default 16) from an alphanumeric, alpha-only, numeric, or hex charset. Uses crypto.randomBytes with rejection sampling — safe for tokens.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_graphql_query",
-  description: "Execute GraphQL query",
+  description: "Run a GraphQL query against /api/now/graphql with optional variables. Use when you need to fetch nested data across tables in one round-trip; for simple list/get on a single table, prefer the table API.",
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "graphql",

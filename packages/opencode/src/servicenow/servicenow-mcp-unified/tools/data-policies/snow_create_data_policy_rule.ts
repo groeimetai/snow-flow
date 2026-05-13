@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_data_policy_rule",
-  description: "Create data policy rule",
+  description: "Add a field rule to an existing Data Policy: mark the field as mandatory and/or read-only when the parent policy's condition is true. Writes to sys_data_policy_rule.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "platform",

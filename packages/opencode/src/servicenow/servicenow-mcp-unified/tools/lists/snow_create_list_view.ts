@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_list_view",
-  description: "Create custom list view",
+  description: "Create a named list view (sys_ui_list) on a table with a comma-joined field list and an optional default filter. Lets users switch into a curated column set instead of the table default.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "ui",

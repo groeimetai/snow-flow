@@ -4,7 +4,7 @@ import { ServiceNowContext } from "../../shared/types.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_analyze_threat_intelligence",
-  description: "Analyzethreatintelligence",
+  description: "Correlate an indicator of compromise (IOC) — IP, domain, file hash, URL, or email — against threat intel feeds and the existing sn_si_threat_intel store. Returns risk level (LOW/MEDIUM/HIGH), per-feed match confidence, and recommended response posture.",
   category: "security",
   subcategory: "threat-intelligence",
   use_cases: ["analysis", "security", "compliance"],

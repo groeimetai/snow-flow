@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_approve_procurement",
-  description: "Approve procurement request",
+  description: "Mark a procurement request (proc_request) as approved, with optional comments. Use after the request has been reviewed — advances it toward purchase-order creation.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "procurement",

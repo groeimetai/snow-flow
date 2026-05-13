@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_field_mapper",
-  description: "Map fields between schemas",
+  description: "Project a source object into a new shape using a target-field → source-field mapping. Useful for shaping data between systems (e.g. inbound integration payload → ServiceNow record fields).",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "data-utilities",

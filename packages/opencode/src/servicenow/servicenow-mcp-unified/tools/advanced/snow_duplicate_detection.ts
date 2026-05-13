@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_duplicate_detection",
-  description: "Detect duplicate records",
+  description: "Check whether a candidate record would duplicate existing rows on a table by matching on the given fields. Returns up to 10 existing matches; useful for de-dup checks before insert.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "data-quality",

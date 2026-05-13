@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_format_date",
-  description: "Format date for ServiceNow",
+  description: "Format a date string in one of four shapes: ISO date (YYYY-MM-DD), ISO datetime, ISO time, or human-readable relative (e.g. '5 minutes ago'). Local operation — no ServiceNow call.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

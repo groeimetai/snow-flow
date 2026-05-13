@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_autocomplete",
-  description: "Get autocomplete suggestions",
+  description: "Suggest values for an autocomplete UX: fetches the top N values of a field from a table where the field LIKE the query string. Useful for typeahead inputs without building a full reference field.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

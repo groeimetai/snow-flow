@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_clone_instance",
-  description: "Clone ServiceNow instance",
+  description: "Request a sub-prod instance clone from source to target (e.g. prod → test). Optional data_preservers list keeps specified records intact across the clone; cloning runs asynchronously and typically takes hours.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "administration",

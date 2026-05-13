@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_validate_field",
-  description: "Validate field value",
+  description: "Look up a field's dictionary definition (sys_dictionary) for a given table.field and verify the value fits its internal_type. Returns the resolved field_type along with a valid flag.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "validation",

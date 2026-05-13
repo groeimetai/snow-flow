@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_bulk_update",
-  description: "Bulk update multiple records",
+  description: "Apply the same field updates to every record on a table matching an encoded query, up to a row limit (default 100). Issues one PATCH per matched record. Use carefully — this fires business rules and workflows for each row.",
   // Metadata for tool discovery (not sent to LLM)
   category: "core-operations",
   subcategory: "bulk-operations",

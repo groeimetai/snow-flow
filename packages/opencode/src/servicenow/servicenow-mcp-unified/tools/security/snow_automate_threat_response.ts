@@ -3,7 +3,7 @@ import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/t
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_automate_threat_response",
-  description: "Automatethreatresponse",
+  description: "Execute a tiered incident response playbook (contain / isolate / eradicate / recover) for a known threat ID. Either runs the action set automatically and notifies the listed groups, or queues each action for security-team approval.",
   category: "security",
   subcategory: "threat-response",
   use_cases: ["automation", "security", "compliance"],

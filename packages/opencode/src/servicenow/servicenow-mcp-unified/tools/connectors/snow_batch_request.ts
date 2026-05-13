@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_batch_request",
-  description: "Execute batch REST requests",
+  description: "Send multiple REST calls in a single round-trip via /api/now/v1/batch. Each entry has method, url, and body — replies come back in order under a generated batch ID. Cuts overhead when issuing many small operations.",
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "connectors",

@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_aggregate_metrics",
-  description: "Aggregate table metrics",
+  description: "Aggregate over a table via the /api/now/stats endpoint: COUNT, SUM, AVG, MIN, or MAX on a field, optionally grouped by another field. Returns the rolled-up result without fetching individual rows.",
   // Metadata for tool discovery (not sent to LLM)
   category: "reporting",
   subcategory: "analytics",

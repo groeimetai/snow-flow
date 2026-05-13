@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_request_approval",
-  description: "Request approval for record",
+  description: "Create a sysapproval_approver record asking a specific user to approve a record on a source table. Sets state to 'requested' and attaches optional comments. Used to kick off approval workflows outside of Flow Designer.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "approvals",

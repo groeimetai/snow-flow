@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_train_va_nlu",
-  description: "Train Virtual Agent NLU model",
+  description: "Trigger training of a Virtual Agent NLU model by model_id via /api/now/v1/va/models/{id}/train. Training runs asynchronously on the platform; this call only starts the job.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "virtual-agent",

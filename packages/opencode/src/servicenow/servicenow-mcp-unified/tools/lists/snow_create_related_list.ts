@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_related_list",
-  description: "Create related list on form",
+  description: "Surface a related table under a parent table's form view (sys_ui_related_list) — e.g. show related Tasks below an Incident. Use relationship_field for non-standard joins.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "ui",

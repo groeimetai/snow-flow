@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_field_filter",
-  description: "Create field-based filter",
+  description: "Build an encoded-query fragment matching one field against a list of values, OR-joined. Match type is exact (=), contains (LIKE), startsWith, or endsWith. Returns the query string for use in sysparm_query.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "data-utilities",

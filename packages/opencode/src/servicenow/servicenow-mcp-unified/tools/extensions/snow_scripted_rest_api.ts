@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_scripted_rest_api",
-  description: "Call scripted REST API",
+  description: "Invoke a Scripted REST API resource at /api/<namespace>/<path> with chosen method (GET/POST/PUT/PATCH/DELETE) and optional JSON body. Use for instance-defined REST endpoints; for stock table API use snow_custom_api.",
   // Metadata for tool discovery (not sent to LLM)
   category: "integration",
   subcategory: "rest-api",

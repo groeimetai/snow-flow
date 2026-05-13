@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_parse_json",
-  description: "Parse and validate JSON",
+  description: "Parse a JSON string and validate it: returns the parsed object plus the top-level key count, or an error message if the JSON is malformed. Runs locally — no ServiceNow call.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "data-utilities",

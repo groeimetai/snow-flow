@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_form_layout",
-  description: "Create custom form layout",
+  description: "Create a form layout (sys_ui_form) for a table and view, with layout type standard / related_list / split. Container for form sections — add sections with snow_create_form_section.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "forms",

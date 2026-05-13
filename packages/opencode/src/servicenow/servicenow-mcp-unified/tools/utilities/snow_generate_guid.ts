@@ -8,7 +8,7 @@ import crypto from "crypto"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_generate_guid",
-  description: "Generate GUID/UUID",
+  description: "Generate a unique identifier in one of three shapes: ServiceNow sys_id (32-char hex, no dashes), uppercase GUID, or lowercase UUID. Uses crypto.randomUUID — safe for IDs but not for secrets.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

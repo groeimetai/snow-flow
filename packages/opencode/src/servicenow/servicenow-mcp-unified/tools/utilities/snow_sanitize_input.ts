@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_sanitize_input",
-  description: "Sanitize input for security",
+  description: "Escape a user-supplied string against html, sql, or script-injection contexts. Note: prefer parameterized queries for SQL — sanitization is a fallback, not the primary defense.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "utilities",

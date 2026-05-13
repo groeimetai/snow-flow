@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_field",
-  description: "Create table field/column",
+  description: "Add a new column to a table by writing to sys_dictionary: column name, label, internal_type (string, integer, reference, etc.), and — for reference fields — the referenced table. Optional max_length and mandatory flag.",
   // Metadata for tool discovery (not sent to LLM)
   category: "development",
   subcategory: "platform",

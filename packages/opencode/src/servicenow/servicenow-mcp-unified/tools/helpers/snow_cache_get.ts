@@ -7,7 +7,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_cache_get",
-  description: "Get value from cache",
+  description: "Look up a value from the in-memory tool cache by key. Returns null with cached=false on miss. Pairs with snow_cache_set for de-duplicating expensive calls within a session.",
   // Metadata for tool discovery (not sent to LLM)
   category: "advanced",
   subcategory: "performance",

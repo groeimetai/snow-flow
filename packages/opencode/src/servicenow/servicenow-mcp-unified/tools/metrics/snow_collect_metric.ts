@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_collect_metric",
-  description: "Collect metric data",
+  description: "Sample a defined metric on-demand: runs the platform MetricBaseCollector against a metric_definition sys_id to write a fresh measurement point. Companion to snow_create_metric.",
   // Metadata for tool discovery (not sent to LLM)
   category: "automation",
   subcategory: "monitoring",

@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_project_task",
-  description: "Create project task",
+  description: "Add a task to an existing PPM project (pm_project_task) with short description, optional assignee, and planned_hours. Use snow_create_project to make the parent project first.",
   // Metadata for tool discovery (not sent to LLM)
   category: "itsm",
   subcategory: "project-management",

@@ -8,7 +8,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_sp_widget",
-  description: "Create Service Portal widget",
+  description: "Create a Service Portal widget (sp_widget) bundling AngularJS template, client_script, server_script, and CSS under a stable id. Widgets are placed on pages via the portal page editor.",
   // Metadata for tool discovery (not sent to LLM)
   category: "ui-frameworks",
   subcategory: "service-portal",

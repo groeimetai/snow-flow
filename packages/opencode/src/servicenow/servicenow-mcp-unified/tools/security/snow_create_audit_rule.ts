@@ -3,7 +3,7 @@ import { MCPToolDefinition, ToolResult, ServiceNowContext } from "../../shared/t
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_create_audit_rule",
-  description: "Createauditrule",
+  description: "Configure audit tracking on a table: which events (insert/update/delete) and which fields to log, retention period in days, and an optional filter. Writes to sys_audit.",
   category: "security",
   subcategory: "audit-rules",
   use_cases: ["configuration", "security", "compliance"],
