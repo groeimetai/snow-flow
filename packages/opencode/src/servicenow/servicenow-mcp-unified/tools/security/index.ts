@@ -87,3 +87,25 @@ export {
   toolDefinition as snow_compliance_manage_def,
   execute as snow_compliance_manage_exec,
 } from "./snow_compliance_manage.js"
+
+// GRC Tools (Tier A — issue #119)
+export {
+  toolDefinition as snow_grc_audit_manage_def,
+  execute as snow_grc_audit_manage_exec,
+} from "./snow_grc_audit_manage.js"
+export {
+  toolDefinition as snow_grc_policy_manage_def,
+  execute as snow_grc_policy_manage_exec,
+} from "./snow_grc_policy_manage.js"
+export {
+  toolDefinition as snow_grc_risk_manage_def,
+  execute as snow_grc_risk_manage_exec,
+} from "./snow_grc_risk_manage.js"
+export {
+  toolDefinition as snow_grc_issue_manage_def,
+  execute as snow_grc_issue_manage_exec,
+} from "./snow_grc_issue_manage.js"
+export {
+  toolDefinition as snow_grc_vendor_risk_manage_def,
+  execute as snow_grc_vendor_risk_manage_exec,
+} from "./snow_grc_vendor_risk_manage.js"
