@@ -85,10 +85,27 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       })
       results.update_set_id = updateSetResponse.data.result.sys_id
 
-      // Set as current Update Set
-      await client.put(`/api/now/table/sys_update_set/${results.update_set_id}`, {
-        is_current: true,
+      // Set as current Update Set for the service account.
+      // is_current is not a writable field on sys_update_set — the user's
+      // current Update Set is tracked via sys_user_preference name=sys_update_set.
+      const existingPref = await client.get("/api/now/table/sys_user_preference", {
+        params: {
+          sysparm_query: "name=sys_update_set^user=javascript:gs.getUserID()",
+          sysparm_limit: 1,
+        },
       })
+
+      if (existingPref.data.result && existingPref.data.result.length > 0) {
+        await client.patch(`/api/now/table/sys_user_preference/${existingPref.data.result[0].sys_id}`, {
+          value: results.update_set_id,
+        })
+      } else {
+        await client.post("/api/now/table/sys_user_preference", {
+          name: "sys_update_set",
+          value: results.update_set_id,
+          user: "javascript:gs.getUserID()",
+        })
+      }
     }
 
     // Step 2: Create each artifact using snow_artifact_manage (DRY principle)
