@@ -15,7 +15,7 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_update_set_manage",
-  description: `Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact)
+  description: `Unified tool for Update Set management (create, switch, complete, ignore, export, preview, add_artifact, current)
 
 ⚠️ CRITICAL: Update Set Tracking & OAuth Context
 

@@ -21,7 +21,7 @@ export const toolDefinition: MCPToolDefinition = {
 
 🔍 SEARCH OPTIONS:
 - Filter by name (partial match)
-- Filter by scope prefix (e.g., "x_myco")
+- Filter by scope (partial match, e.g., "x_myco")
 - Filter by vendor
 - Show only active or include inactive
 

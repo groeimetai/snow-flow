@@ -16,8 +16,8 @@ export const toolDefinition: MCPToolDefinition = {
 Actions:
 • list — Search and list plugins. Filter by name/ID, show only active.
 • check — Get detailed info on a specific plugin (status, version, dependencies).
-• activate — Activate a plugin (admin only). Uses CICD API with table fallback.
-• deactivate — Deactivate a plugin (admin only). Uses CICD API with table fallback.
+• activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Requires plugin-activation privileges in ServiceNow.
+• deactivate — Deactivate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Requires plugin-activation privileges in ServiceNow.
 
 Examples:
 • { action: "list", search: "incident" }

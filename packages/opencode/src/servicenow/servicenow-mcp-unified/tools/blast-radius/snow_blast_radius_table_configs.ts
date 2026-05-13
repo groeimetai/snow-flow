@@ -28,11 +28,13 @@ export const toolDefinition: MCPToolDefinition = {
 
 🔍 EXAMPLE: "What configs run on the incident table?"
 
-📊 COVERAGE (v2):
-Searches 25+ artifact types — not just business rules/client scripts/etc.
-Also returns data policies, email notifications, metric definitions,
-inbound email actions, UI policy actions, transform entries, plus
-global-but-table-mentioning script includes.`,
+📊 COVERAGE:
+By default searches a curated set of 13 main config types: business rules,
+client scripts, UI actions, UI policies, UI policy actions, data policies,
+data policy rules, ACLs, email notifications, metric definitions, inbound
+email actions, transform entries, plus global-but-table-mentioning script
+includes. Pass an explicit \`config_types\` array to query any of the 26
+supported types from ARTIFACT_SPECS.`,
   category: "blast-radius",
   subcategory: "table-analysis",
   use_cases: ["impact-analysis", "table-audit", "governance"],
@@ -53,7 +55,7 @@ global-but-table-mentioning script includes.`,
           type: "string",
           enum: ARTIFACT_TYPE_NAMES,
         },
-        description: "Filter to specific artifact types. Default: all non-global types.",
+        description: "Filter to specific artifact types. Default: a curated set of 13 main config types (TABLE_CONFIG_TYPES); pass an explicit list to access any of the 26 supported types.",
       },
       include_inactive: {
         type: "boolean",

@@ -42,7 +42,7 @@ RECOMMENDATIONS:
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_workflow_manage",
   description:
-    "⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable",
+    "⚠️ LEGACY: Manage legacy workflows (deprecated - ServiceNow recommends Flow Designer). Use for backwards compatibility only. For new automations, consider Flow Designer (not programmable via Snow-Flow, but specs can be generated). Actions: list, get, stop, retry, clone, enable/disable, delete, get_history",
   category: "automation",
   subcategory: "workflow",
   use_cases: ["workflow", "process-automation", "workflow-management"],
