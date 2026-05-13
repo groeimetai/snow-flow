@@ -29,3 +29,7 @@ export {
   toolDefinition as snow_search_catalog_def,
   execute as snow_search_catalog_exec,
 } from "./snow_search_catalog.js"
+export {
+  toolDefinition as snow_catalog_manage_def,
+  execute as snow_catalog_manage_exec,
+} from "./snow_catalog_manage.js"

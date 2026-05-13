@@ -10,3 +10,7 @@ export {
   toolDefinition as snow_get_pending_approvals_def,
   execute as snow_get_pending_approvals_exec,
 } from "./snow_get_pending_approvals.js"
+export {
+  toolDefinition as snow_approval_chain_manage_def,
+  execute as snow_approval_chain_manage_exec,
+} from "./snow_approval_chain_manage.js"
