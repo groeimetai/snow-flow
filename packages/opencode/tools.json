@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T08:53:25.418Z",
+  "generatedAt": "2026-05-14T09:22:48.097Z",
   "count": 427,
   "groups": [
     {
@@ -268,7 +268,7 @@
         },
         {
           "name": "snow_plugin_manage",
-          "description": "Manage ServiceNow plugins: list, check status, activate, or deactivate.\n\nActions:\n• list — Search and list plugins. Filter by name/ID, show only active.\n• check — Get detailed info on a specific plugin (status, version, dependencies).\n• activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Requires plugin-activation privileges in ServiceNow.\n• deactivate — Deactivate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Requires plugin-activation privileges in ServiceNow.\n\nExamples:\n• { action: \"list\", search: \"incident\" }\n• { action: \"check\", plugin_id: \"com.snc.incident\" }\n• { action: \"activate\", plugin_id: \"com.snc.incident\" }",
+          "description": "Manage ServiceNow plugins: list, check status, activate, deactivate, repair, or poll an async progress.\n\nActions:\n- list — Search and list plugins. Filter by name/ID, show only active.\n- check — Get detailed info on a specific plugin (status, version, dependencies).\n- activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Returns the progress_id so callers can poll completion. Pass wait=true to block until the plugin reaches a final state (or timeout_ms elapses, default 10 min).\n- deactivate — Deactivate a plugin via the same dual mechanism.\n- repair — Rollback the plugin then re-activate it (clean reinstall). Returns both progress_ids; pass wait=true to block until the activate phase completes. Requires plugin-activation privileges in ServiceNow.\n- progress — Poll a CICD progress record (/api/sn_cicd/progress/{id}) by progress_id. Use to check status of an earlier activate/repair without blocking.\n\nExamples:\n- { action: \"list\", search: \"incident\" }\n- { action: \"check\", plugin_id: \"com.snc.incident\" }\n- { action: \"activate\", plugin_id: \"com.snc.incident\", wait: true }\n- { action: \"repair\", plugin_id: \"com.snc.incident\" }\n- { action: \"progress\", progress_id: \"1227ba16937083101bf5f99bdd03d60c\" }",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -293,12 +293,14 @@
                   "list",
                   "check",
                   "activate",
-                  "deactivate"
+                  "deactivate",
+                  "repair",
+                  "progress"
                 ]
               },
               "plugin_id": {
                 "type": "string",
-                "description": "[check/activate/deactivate] Plugin identifier (e.g. \"com.snc.incident\") or sys_id"
+                "description": "[check/activate/deactivate/repair] Plugin identifier (e.g. \"com.snc.incident\") or sys_id"
               },
               "search": {
                 "type": "string",
@@ -313,6 +315,20 @@
                 "type": "number",
                 "description": "[list] Max results to return (default 50)",
                 "default": 50
+              },
+              "progress_id": {
+                "type": "string",
+                "description": "[progress] CICD progress record sys_id, returned by a prior activate/repair call"
+              },
+              "wait": {
+                "type": "boolean",
+                "description": "[activate/repair] Block until the install reaches a final state (Successful/Failed/Cancelled) or timeout_ms elapses. Default false — return progress_id immediately for async polling via the progress action.",
+                "default": false
+              },
+              "timeout_ms": {
+                "type": "number",
+                "description": "[activate/repair when wait=true] Max time to wait in milliseconds. Default 600000 (10 min).",
+                "default": 600000
               }
             },
             "required": [
