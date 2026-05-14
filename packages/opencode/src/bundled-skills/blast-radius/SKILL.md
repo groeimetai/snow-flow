@@ -165,3 +165,25 @@ The script analyzer detects these patterns in ServiceNow scripts:
 **Table queries**: `new GlideRecord('table')`, `new GlideAggregate('table')`
 
 **Script include calls**: `new ClassName()` (excludes Glide built-in classes)
+
+## What blast-radius does NOT cover — and how to communicate it
+
+Every `snow_blast_radius_dependents` result includes two fields the user must understand before acting on the data:
+
+- `scope_caveat` — a single sentence stating that the scan covers script-bearing fields, not the entire instance.
+- `out_of_scope_surfaces` — a list of areas that were NOT searched. Common items: row data inside records, saved filters (`sys_filter`) and reports (`sys_report`), pending update sets (`sys_update_xml`), external consumers (MID server, Integration Hub, REST callers), plain-string properties (`sys_property`), inactive records, and inactive plugins.
+
+**You MUST relay these to the user whenever:**
+
+1. The result has zero dependents AND the user is considering deletion — the absence of dependents in script-bearing fields is NOT the same as "safe to delete". Cite `out_of_scope_surfaces` and recommend manual verification of those surfaces.
+2. The user explicitly asks "is it safe to delete X" or "can I remove X" — always include the caveat. Even with 50 dependents, the picture may be incomplete.
+3. The user is preparing a refactor that renames or removes an artifact. Mention which out-of-scope surfaces are most likely to break and how to check them (e.g. for a field rename, also run an encoded-query check against `sys_filter`).
+
+**Do not bury the caveat.** A one-liner ("Note: this scan does not cover ...") is enough — but it must be visible to the user, not just to you.
+
+## Companion tools for the blind spots
+
+- `snow_blast_radius_update_sets` — searches `sys_update_xml` payloads for the artifact's name/sys_id. Run this before promoting a delete to another instance.
+- `snow_blast_radius_field_references` (with `include_filters: true`) — extends the field-reference scan to `sys_filter` and `sys_report`.
+
+When the user's question is delete-related, prefer running the companion tool(s) in addition to the primary scan; don't ask the user to do it themselves.

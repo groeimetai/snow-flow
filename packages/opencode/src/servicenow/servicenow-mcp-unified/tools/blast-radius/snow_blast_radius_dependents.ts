@@ -21,6 +21,28 @@ import { createSuccessResult, createErrorResult } from "../../shared/error-handl
 import { ARTIFACT_TABLE_MAP } from "./shared/metadata-tables.js"
 import { searchDependents, type SearchPattern } from "./shared/deep-search.js"
 
+/**
+ * Surfaces a blast-radius scan does NOT cover. Returned alongside every
+ * result so downstream consumers (chat UI, agents) can warn the user
+ * against treating a low-dependent count as a green light for delete.
+ *
+ * Format: "<short label> — <one-sentence explanation>" so a UI can split
+ * on " — " for a compact tag/tooltip view.
+ */
+const OUT_OF_SCOPE_SURFACES: string[] = [
+  "Row data — values inside incident.work_notes, journal fields, comments, and other record-level content are not scanned.",
+  "Saved filters and reports — sys_filter encoded queries and sys_report definitions reference fields and tables but are not script-typed.",
+  "Update sets — pending sys_update_xml payloads are out of scope here; use snow_blast_radius_update_sets for those.",
+  "External consumers — MID server scripts, Integration Hub spokes, and REST callers from other systems can use this artifact without showing up.",
+  "Plain-string properties — sys_property values and other non-script string fields are not searched; only fields with internal_type in {script, script_plain, script_server, xml, condition_string} are.",
+  "Inactive records — unless include_inactive is set, only active=true records are searched.",
+  "Inactive plugins — when a plugin is not activated, the artifact class backed by it (e.g. Service Portal widgets without sp_widget) is silently absent from results.",
+]
+
+const SCOPE_CAVEAT =
+  "Scan covers all script-bearing fields ServiceNow's sys_dictionary marks as script/condition. " +
+  "Surfaces listed in out_of_scope_surfaces are NOT searched — verify those manually before any delete or rename decision."
+
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_blast_radius_dependents",
   description: `Find every artifact across the instance that uses, calls, or depends on a given artifact. Answers "what breaks if I change or delete this?"
@@ -220,11 +242,13 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     }
 
     const impactWarning =
-      dependents.length > 20
-        ? `This artifact has ${dependents.length}${stats.truncated ? "+" : ""} dependents. Modifying it requires careful testing${crossScopeCount > 0 ? ` across ${crossScopeCount} cross-scope references and ` : ", "}all dependent artifacts.`
-        : crossScopeCount > 0
-          ? `This artifact has ${crossScopeCount} cross-scope dependent${crossScopeCount === 1 ? "" : "s"}. Changes may affect other application scopes.`
-          : null
+      dependents.length === 0
+        ? `Zero dependents found within the scriptable surface area. This is NOT the same as "safe to delete" — manually verify the out_of_scope_surfaces (records, saved filters/reports, update sets, external consumers, sys_property values) before removing this artifact.`
+        : dependents.length > 20
+          ? `This artifact has ${dependents.length}${stats.truncated ? "+" : ""} dependents. Modifying it requires careful testing${crossScopeCount > 0 ? ` across ${crossScopeCount} cross-scope references and ` : ", "}all dependent artifacts.`
+          : crossScopeCount > 0
+            ? `This artifact has ${crossScopeCount} cross-scope dependent${crossScopeCount === 1 ? "" : "s"}. Changes may affect other application scopes.`
+            : null
 
     const totalTablesScanned =
       stats.phase_1.tables + stats.phase_3.tables
@@ -247,6 +271,8 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
       },
       search_stats: stats,
       impact_warning: impactWarning,
+      scope_caveat: SCOPE_CAVEAT,
+      out_of_scope_surfaces: OUT_OF_SCOPE_SURFACES,
     }
 
     const humanSummary = [
