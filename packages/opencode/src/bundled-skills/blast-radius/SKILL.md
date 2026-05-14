@@ -181,9 +181,45 @@ Every `snow_blast_radius_dependents` result includes two fields the user must un
 
 **Do not bury the caveat.** A one-liner ("Note: this scan does not cover ...") is enough — but it must be visible to the user, not just to you.
 
-## Companion tools for the blind spots
+## Companion tools — RUN ALL OF THESE for delete / rename decisions
 
-- `snow_blast_radius_update_sets` — searches `sys_update_xml` payloads for the artifact's name/sys_id. Run this before promoting a delete to another instance.
-- `snow_blast_radius_field_references` (with `include_filters: true`) — extends the field-reference scan to `sys_filter` and `sys_report`.
+When the user asks any of:
+- "is it safe to delete X" / "kan ik X verwijderen"
+- "what breaks if I rename X" / "wat breekt als ik X hernoem"
+- "can I refactor / remove / drop X"
+- "blast radius of changing X"
 
-When the user's question is delete-related, prefer running the companion tool(s) in addition to the primary scan; don't ask the user to do it themselves.
+…do NOT stop at `snow_blast_radius_dependents`. The dependents scan only covers script-bearing fields; three other surfaces silently hold references that gs.getProperty(), saved filters, and pending update sets pull in at runtime. Missing one of them is the difference between a clean refactor and a Monday-morning production incident.
+
+**You MUST run the full set in parallel** (single response, multiple tool calls). Do not serialize. Do not skip a tool because "the user didn't ask for it" — "is this safe" already implies all of them.
+
+### Script include / business rule / widget / scheduled job / processor
+
+```
+snow_blast_radius_dependents(artifact_type, artifact_identifier)
+snow_blast_radius_update_sets(artifact_identifier)
+snow_blast_radius_sys_properties(artifact_identifier)
+```
+
+### Field deletion or rename
+
+```
+snow_blast_radius_field_references(table_name, field_name, include_filters: true)
+snow_blast_radius_update_sets(field_name)
+snow_blast_radius_sys_properties(field_name)
+```
+
+### Table deletion
+
+```
+snow_blast_radius_dependents(artifact_type: "table", artifact_identifier: <table>)
+snow_blast_radius_update_sets(<table>)
+snow_blast_radius_sys_properties(<table>)
+```
+…and if the user is also dropping or renaming columns, add one `snow_blast_radius_field_references` per column.
+
+### Synthesizing the answer
+
+After the tools return, present ONE unified picture to the user. Lead with the totals across surfaces ("33 references across scripts, 2 in update sets, 4 in system properties"), call out cross-scope hits, and end with the out-of-scope surfaces that even the full sweep does NOT cover (row data, external consumers — see `out_of_scope_surfaces` on the dependents result). The user shouldn't have to mentally aggregate four tool outputs themselves.
+
+If any of the companion tools returns hits in `in_progress` update sets, in plugin-category sys_properties, or with cross-scope dependents — treat that as a hard "do not delete without addressing these first" and say so in plain language, not buried in a bullet list.

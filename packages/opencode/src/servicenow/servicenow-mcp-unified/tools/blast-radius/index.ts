@@ -22,3 +22,7 @@ export {
   toolDefinition as snow_blast_radius_update_sets_def,
   execute as snow_blast_radius_update_sets_exec,
 } from "./snow_blast_radius_update_sets.js"
+export {
+  toolDefinition as snow_blast_radius_sys_properties_def,
+  execute as snow_blast_radius_sys_properties_exec,
+} from "./snow_blast_radius_sys_properties.js"
