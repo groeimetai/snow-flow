@@ -15,7 +15,7 @@ export const toolDefinition: MCPToolDefinition = {
 
 Actions:
 - list — Search and list plugins. Filter by name/ID, show only active.
-- check — Get detailed info on a specific plugin (status, version, dependencies).
+- check — Get detailed info on a specific plugin (status, version, dependencies). Pass verify_table to also query sys_db_object for a table the plugin should have created — covers the case where v_plugin reports inactive but the plugin's tables actually exist (known v_plugin staleness after CICD activation).
 - activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Returns the progress_id so callers can poll completion. Pass wait=true to block until the plugin reaches a final state (or timeout_ms elapses, default 10 min).
 - deactivate — Deactivate a plugin via the same dual mechanism.
 - repair — Rollback the plugin then re-activate it (clean reinstall). Returns both progress_ids; pass wait=true to block until the activate phase completes. Requires plugin-activation privileges in ServiceNow.
@@ -45,6 +45,10 @@ Examples:
       plugin_id: {
         type: "string",
         description: '[check/activate/deactivate/repair] Plugin identifier (e.g. "com.snc.incident") or sys_id',
+      },
+      verify_table: {
+        type: "string",
+        description: '[check] Optional table name the plugin should have created (e.g. "wm_order" for FSM). When provided, the tool also queries sys_db_object — handles the known case where v_plugin reports inactive but the plugin\'s tables exist (post-activation v_plugin lag).',
       },
       search: {
         type: "string",
@@ -151,7 +155,7 @@ async function executeList(args: any, context: ServiceNowContext): Promise<ToolR
 
 // ==================== CHECK ====================
 async function executeCheck(args: any, context: ServiceNowContext): Promise<ToolResult> {
-  const { plugin_id } = args
+  const { plugin_id, verify_table } = args
   if (!plugin_id) return createErrorResult("plugin_id is required for check action")
 
   const client = await getAuthenticatedClient(context)
@@ -171,19 +175,71 @@ async function executeCheck(args: any, context: ServiceNowContext): Promise<Tool
   }
 
   const plugin = results[0]
-  const active = plugin.active === "true" || plugin.active === true
-  const summary =
-    'Plugin "' +
-    plugin.name +
-    '" (' +
-    plugin.id +
-    ") is " +
-    (active ? "ACTIVE" : "INACTIVE") +
-    ". Version: " +
-    (plugin.version || "unknown") +
-    "."
+  const v_plugin_active = plugin.active === "true" || plugin.active === true
 
-  return createSuccessResult({ action: "check", plugin }, { status: active ? "active" : "inactive" }, summary)
+  // Optional second signal — does the plugin's expected table exist?
+  // Covers the known case where v_plugin reports inactive after a CICD
+  // activation that did finish (the view is stale until the next refresh).
+  let table_check: { table: string; exists: boolean } | null = null
+  if (verify_table) {
+    try {
+      const tableResp = await client.get("/api/now/table/sys_db_object", {
+        params: {
+          sysparm_query: "name=" + verify_table,
+          sysparm_fields: "name,label",
+          sysparm_limit: 1,
+        },
+      })
+      const tableRows = tableResp.data.result || []
+      table_check = { table: verify_table, exists: tableRows.length > 0 }
+    } catch {
+      table_check = { table: verify_table, exists: false }
+    }
+  }
+
+  // Reconcile both signals.
+  let status: "active" | "inactive" | "installed_v_plugin_stale" | "anomalous_table_missing"
+  let summary: string
+  if (v_plugin_active && (table_check === null || table_check.exists)) {
+    status = "active"
+    summary =
+      'Plugin "' + plugin.name + '" (' + plugin.id + ") is ACTIVE. Version: " + (plugin.version || "unknown") + "."
+  } else if (!v_plugin_active && table_check && table_check.exists) {
+    status = "installed_v_plugin_stale"
+    summary =
+      'Plugin "' +
+      plugin.name +
+      '" (' +
+      plugin.id +
+      ") is INSTALLED — table " +
+      verify_table +
+      " exists despite v_plugin reporting inactive (known v_plugin staleness after CICD activation). Treat as active."
+  } else if (v_plugin_active && table_check && !table_check.exists) {
+    status = "anomalous_table_missing"
+    summary =
+      'Plugin "' +
+      plugin.name +
+      '" (' +
+      plugin.id +
+      ") shows ACTIVE in v_plugin but expected table " +
+      verify_table +
+      " does not exist. Possible partial install or wrong verify_table value."
+  } else {
+    status = "inactive"
+    summary =
+      'Plugin "' +
+      plugin.name +
+      '" (' +
+      plugin.id +
+      ") is INACTIVE." +
+      (table_check ? " Expected table " + verify_table + " also not present." : "")
+  }
+
+  return createSuccessResult(
+    { action: "check", plugin, v_plugin_active, table_check, status },
+    { status },
+    summary,
+  )
 }
 
 // ==================== ACTIVATE ====================
@@ -498,5 +554,5 @@ async function executeProgress(args: any, context: ServiceNowContext): Promise<T
   )
 }
 
-export const version = "1.1.0"
+export const version = "1.1.1"
 export const author = "Snow-Flow"
