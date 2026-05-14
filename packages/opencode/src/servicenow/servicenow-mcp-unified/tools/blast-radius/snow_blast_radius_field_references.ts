@@ -89,9 +89,19 @@ Limitations:
         description: "Maximum results per artifact type (default: 25)",
         default: 25,
       },
+      include_filters: {
+        type: "boolean",
+        description:
+          "Also scan sys_filter (saved list filters) and sys_report records for references to this field. These are not script-bearing and would otherwise be missed by the script-field scan, which is the main reason a delete/rename can break dashboards and reports the dependents scan said nothing about. Default: true.",
+        default: true,
+      },
     },
     required: ["table_name", "field_name"],
   },
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
 interface SearchResult {
@@ -547,6 +557,151 @@ async function searchArtifactType(
   }
 }
 
+/**
+ * Search sys_filter (saved list filters) and sys_report records for
+ * references to a field. These tables are NOT script-bearing — their
+ * `encoded_query` / `filter` columns are plain strings with operator
+ * suffixes like `assignment_group=...^state!=6` — so the regular
+ * field-references scan misses them entirely.
+ *
+ * Strategy: query each table with a `table = <our table>` scope clause
+ * plus a LIKE on the content column, then post-filter with a word-
+ * boundary regex so "state" doesn't flag a filter that touches "active".
+ */
+async function searchFiltersAndReports(
+  client: any,
+  tables: string[],
+  fieldName: string,
+  activeFilter: string,
+  limitPerType: number,
+): Promise<{ filters: SearchResult; reports: SearchResult }> {
+  const escaped = escapeRegex(fieldName)
+  // A word-boundary check is enough for the common case (`<field>=value`,
+  // `<field>STARTSWITH...`, `<field>ISEMPTY`). The OR-of-operators below
+  // would be more precise but rejects legitimate uses inside subqueries
+  // (`<field>JAVASCRIPT:...`), so we deliberately keep the regex loose.
+  const fieldRe = new RegExp(`\\b${escaped}\\b`, "i")
+  const tableClause = tables.length === 1 ? `table=${tables[0]}` : tables.map((t) => `table=${t}`).join("^OR")
+  const activeClause = activeFilter ? activeFilter.replace(/^\^/, "") : ""
+
+  // sys_filter: the encoded query lives in the `filter` column (not
+  // `encoded_query` — sys_user_filter uses that name, sys_filter does
+  // not). Users build these in the list filter UI and they survive
+  // across sessions.
+  const filterQueryParts = [`(${tableClause})`, `filterLIKE${fieldName}`]
+  if (activeClause) filterQueryParts.push(activeClause)
+
+  // sys_report: filter (encoded query) + four structured columns the
+  // report builder writes when the user picks a field from a dropdown.
+  // Any of the four touching the target field is a hit.
+  const reportContent =
+    `filterLIKE${fieldName}` +
+    `^ORfield=${fieldName}` +
+    `^ORaggregate_field=${fieldName}` +
+    `^ORgroup_by=${fieldName}`
+  const reportQueryParts = [`(${tableClause})`, `(${reportContent})`]
+  if (activeClause) reportQueryParts.push(activeClause)
+
+  const [filterRes, reportRes] = await Promise.allSettled([
+    client.get("/api/now/table/sys_filter", {
+      params: {
+        sysparm_query: filterQueryParts.join("^"),
+        sysparm_fields: "sys_id,sys_name,title,table,filter,user,group,roles",
+        sysparm_limit: limitPerType,
+        sysparm_count: "true",
+      },
+    }),
+    client.get("/api/now/table/sys_report", {
+      params: {
+        sysparm_query: reportQueryParts.join("^"),
+        sysparm_fields: "sys_id,title,table,filter,field,aggregate_field,group_by,user",
+        sysparm_limit: limitPerType,
+        sysparm_count: "true",
+      },
+    }),
+  ])
+
+  const buildEmpty = (type: string, error?: string): SearchResult => ({
+    type,
+    records: [],
+    total_count: 0,
+    verified_count: 0,
+    truncated: false,
+    error,
+  })
+
+  const filters: SearchResult =
+    filterRes.status === "fulfilled"
+      ? (() => {
+          const rows: any[] = filterRes.value.data?.result || []
+          const totalCount = parseInt(
+            filterRes.value.headers?.["x-total-count"] ||
+              filterRes.value.headers?.["X-Total-Count"] ||
+              String(rows.length),
+            10,
+          )
+          const verified = rows
+            .filter((r) => fieldRe.test(r.filter || ""))
+            .map((r): ProcessedRecord => {
+              const ownerType =
+                r.user && r.user !== "" ? "user" : r.group && r.group !== "" ? "group" : "system"
+              return {
+                sys_id: r.sys_id,
+                name: r.title || r.sys_name || "(unnamed filter)",
+                reference_type: "condition",
+                source_table: "sys_filter",
+                filter_table: r.table,
+                visibility: ownerType,
+                encoded_query_preview: typeof r.filter === "string" ? r.filter.slice(0, 200) : null,
+              }
+            })
+          return {
+            type: "saved_filters",
+            records: verified,
+            total_count: totalCount,
+            verified_count: verified.length,
+            truncated: totalCount > rows.length,
+          }
+        })()
+      : buildEmpty("saved_filters", filterRes.reason?.message || String(filterRes.reason))
+
+  const reports: SearchResult =
+    reportRes.status === "fulfilled"
+      ? (() => {
+          const rows: any[] = reportRes.value.data?.result || []
+          const totalCount = parseInt(
+            reportRes.value.headers?.["x-total-count"] ||
+              reportRes.value.headers?.["X-Total-Count"] ||
+              String(rows.length),
+            10,
+          )
+          const verified = rows
+            .filter((r) => {
+              const candidates = [r.filter, r.field, r.aggregate_field, r.group_by]
+              return candidates.some((v) => typeof v === "string" && fieldRe.test(v))
+            })
+            .map((r): ProcessedRecord => ({
+              sys_id: r.sys_id,
+              name: r.title || "(untitled report)",
+              reference_type: "structured",
+              source_table: "sys_report",
+              report_table: r.table,
+              filter_preview: typeof r.filter === "string" ? r.filter.slice(0, 200) : null,
+              report_field: r.field || r.aggregate_field || r.group_by || null,
+            }))
+          return {
+            type: "reports",
+            records: verified,
+            total_count: totalCount,
+            verified_count: verified.length,
+            truncated: totalCount > rows.length,
+          }
+        })()
+      : buildEmpty("reports", reportRes.reason?.message || String(reportRes.reason))
+
+  return { filters, reports }
+}
+
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const {
     table_name,
@@ -555,6 +710,7 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
     include_inactive = false,
     include_parent_tables = true,
     limit_per_type = 25,
+    include_filters = true,
   } = args
 
   if (!table_name || !field_name) {
@@ -575,10 +731,22 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
         ? ARTIFACT_SPECS.filter((s) => artifact_types.includes(s.type))
         : ARTIFACT_SPECS
 
-    // Run all searches in parallel
-    const results = await Promise.allSettled(
-      specs.map((spec) => searchArtifactType(client, spec, tables, field_name, activeFilter, limit_per_type)),
-    )
+    // Run all searches in parallel — artifact types + (optionally) the
+    // off-script surfaces (sys_filter, sys_report). These two have their
+    // own search path because they're not script-bearing and the
+    // ARTIFACT_SPECS engine doesn't know how to query them.
+    const filterPromise = include_filters
+      ? searchFiltersAndReports(client, tables, field_name, activeFilter, limit_per_type)
+      : Promise.resolve(null)
+    const [artifactResults, filterResults] = await Promise.all([
+      Promise.allSettled(
+        specs.map((spec) =>
+          searchArtifactType(client, spec, tables, field_name, activeFilter, limit_per_type),
+        ),
+      ),
+      filterPromise,
+    ])
+    const results = artifactResults
 
     // Aggregate
     const references: Record<string, ProcessedRecord[]> = {}
@@ -604,6 +772,20 @@ export async function execute(args: any, context: ServiceNowContext): Promise<To
           if (record.reference_type === "read") reads++
           else if (record.reference_type === "write") writes++
           else if (record.reference_type === "structured") structured++
+          else conditions++
+        }
+      }
+    }
+
+    if (filterResults) {
+      for (const block of [filterResults.filters, filterResults.reports]) {
+        references[block.type] = block.records
+        byType[block.type] = block.verified_count
+        totalRefs += block.verified_count
+        if (block.truncated) truncatedTypes.push(block.type)
+        if (block.error) erroredTypes[block.type] = block.error
+        for (const record of block.records) {
+          if (record.reference_type === "structured") structured++
           else conditions++
         }
       }
