@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T09:32:22.463Z",
-  "count": 427,
+  "generatedAt": "2026-05-14T09:40:59.626Z",
+  "count": 428,
   "groups": [
     {
       "name": "access-control",
@@ -6941,6 +6941,54 @@
             },
             "required": [
               "artifact_type",
+              "artifact_identifier"
+            ]
+          }
+        },
+        {
+          "name": "snow_blast_radius_update_sets",
+          "description": "Search pending and committed update sets for references to a given artifact. Closes the \"did anyone include this in an unloaded update set?\" gap that snow_blast_radius_dependents leaves behind — update-set XML payloads are not script-bearing fields, so the regular scan never reads them.\n\nCall this when:\n- Preparing to delete or rename an artifact (combine with snow_blast_radius_dependents).\n- Investigating why a promotion broke or will break in another instance.\n- The user asks \"is this in any pending update sets?\" / \"wat zit er nog in update sets?\".\n\nReturns:\n- updates[] — each XML hit with set_name, set_state (in_progress / complete / ignore), update_xml_name, type, target_name, action, last_updated.\n- summary — by_state counts, by_set counts, total hits.\n- impact_warning — non-null when matches exist in any in_progress update set; those will break on commit if the artifact is gone.\n\nNote: LIKE-matches the artifact identifier across payload + name + target_name. False positives are possible (the name appearing in a comment); confirm by inspecting the update XML when the count is low.",
+          "permission": "read",
+          "allowedRoles": [
+            "developer",
+            "stakeholder",
+            "admin"
+          ],
+          "useCases": [
+            "impact-analysis",
+            "refactoring",
+            "safe-delete-check",
+            "promotion-readiness",
+            "update-set-audit"
+          ],
+          "complexity": "intermediate",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "artifact_identifier": {
+                "type": "string",
+                "description": "Name, api_name, or sys_id of the artifact to search for in update-set XML payloads."
+              },
+              "states": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "in_progress",
+                    "complete",
+                    "ignore"
+                  ]
+                },
+                "description": "Which update-set states to include (default: ['in_progress', 'complete']). 'ignore' is rarely useful."
+              },
+              "limit": {
+                "type": "number",
+                "description": "Maximum number of update_xml records to return (default: 200).",
+                "default": 200
+              }
+            },
+            "required": [
               "artifact_identifier"
             ]
           }
