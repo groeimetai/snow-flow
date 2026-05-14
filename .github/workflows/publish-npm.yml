@@ -377,13 +377,19 @@ jobs:
           # Push with retry — other workflows (e.g. generate-tools-json
           # regenerating tools.json) may have pushed to main during our
           # multi-minute build. Rebase against latest and retry up to 3x.
+          # --autostash is required because earlier build steps (cross-
+          # compile, "Restore bin launcher") leave files modified in the
+          # working tree; without it, git pull --rebase aborts with
+          # "cannot pull with rebase: You have unstaged changes" and the
+          # bump commit never lands — leaving npm one version ahead of
+          # source on the next push (already-published-version error).
           for attempt in 1 2 3; do
             if git push origin ${{ github.ref_name }}; then
               echo "auto-bump push succeeded on attempt $attempt"
               exit 0
             fi
             echo "auto-bump push rejected (attempt $attempt) — pulling latest and retrying"
-            git pull --rebase origin ${{ github.ref_name }}
+            git pull --rebase --autostash origin ${{ github.ref_name }}
           done
           echo "auto-bump push failed after 3 attempts" >&2
           exit 1
