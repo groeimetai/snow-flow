@@ -18,14 +18,14 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_report_manage",
-  description: `Unified tool for ServiceNow report lifecycle beyond creation: list, get, run, schedule, share, and export. Wraps sys_report, sys_report_schedule, and sys_report_users_view.
+  description: `Unified tool for ServiceNow report lifecycle beyond creation: list, get, run, schedule, share, and export. Wraps sys_report, sysauto_report, and sys_report_users_groups.
 
 Actions:
 - list — list sys_report definitions, optionally filtered by table or owner
 - get — retrieve a single report (sys_id or title)
 - run — execute the report ad-hoc and return rows from the configured table using the report filter
-- schedule — create or update a sys_report_schedule row (recurrence, time, recipients)
-- share — share a report with users or groups via sys_report_users_view
+- schedule — create or update a sysauto_report row (recurrence, time, recipients)
+- share — share a report with users or groups via sys_report_users_groups
 - export — export the report's underlying rows as JSON or CSV (server-side rendered PDF/XLSX is out of scope; use schedule for delivery)
 
 Use when: the agent needs to manage reports after they exist — running them on demand, scheduling delivery, or controlling who can view them. For authoring a new sys_report row, use snow_create_report instead.
@@ -100,7 +100,7 @@ Returns: report records with sys_id, title, table, type, filter; schedule rows w
       },
       schedule_sys_id: {
         type: "string",
-        description: "[schedule] Existing sys_report_schedule sys_id to update; omit to create a new row",
+        description: "[schedule] Existing sysauto_report sys_id to update; omit to create a new row",
       },
       schedule_active: {
         type: "boolean",
@@ -254,12 +254,12 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
   // Best-effort schedule lookup
   let scheduleCount = 0
   try {
-    const schedules = await client.get("/api/now/table/sys_report_schedule", {
+    const schedules = await client.get("/api/now/table/sysauto_report", {
       params: { sysparm_query: `report=${reportSysId}`, sysparm_fields: "sys_id", sysparm_limit: 50 },
     })
     scheduleCount = (schedules.data.result || []).length
   } catch {
-    // TODO: verify sys_report_schedule schema on a live instance
+    // TODO: verify sysauto_report schema on a live instance
   }
 
   return createSuccessResult({
@@ -348,16 +348,27 @@ async function executeSchedule(args: Record<string, unknown>, context: ServiceNo
   if (args.run_time) payload.run_time = args.run_time
   if (args.run_dayofmonth !== undefined) payload.run_dayofmonth = args.run_dayofmonth
   if (args.run_dayofweek !== undefined) payload.run_dayofweek = args.run_dayofweek
-  if (recipients.length > 0) payload.email_list = recipients.join(",")
+  // sysauto_report uses user_list (sys_user references), group_list (sys_user_group references),
+  // and address_list (free-form email addresses) — not email_list. Split the recipients by shape:
+  // 32-hex sys_ids go to user_list, plain addresses go to address_list.
+  if (recipients.length > 0) {
+    const userIds: string[] = []
+    const addresses: string[] = []
+    for (const r of recipients) {
+      if (/^[0-9a-f]{32}$/i.test(r)) userIds.push(r)
+      else addresses.push(r)
+    }
+    if (userIds.length > 0) payload.user_list = userIds.join(",")
+    if (addresses.length > 0) payload.address_list = addresses.join(",")
+  }
 
   let response
   let mode: "created" | "updated"
   if (schedule_sys_id) {
-    // TODO: verify sys_report_schedule field set on a live instance
-    response = await client.patch(`/api/now/table/sys_report_schedule/${schedule_sys_id}`, payload)
+    response = await client.patch(`/api/now/table/sysauto_report/${schedule_sys_id}`, payload)
     mode = "updated"
   } else {
-    response = await client.post("/api/now/table/sys_report_schedule", payload)
+    response = await client.post("/api/now/table/sysauto_report", payload)
     mode = "created"
   }
 
@@ -369,7 +380,7 @@ async function executeSchedule(args: Record<string, unknown>, context: ServiceNo
     sys_id: result.sys_id,
     report: { sys_id: report.sys_id, title: report.title },
     schedule: result,
-    url: `${context.instanceUrl}/nav_to.do?uri=sys_report_schedule.do?sys_id=${result.sys_id}`,
+    url: `${context.instanceUrl}/nav_to.do?uri=sysauto_report.do?sys_id=${result.sys_id}`,
   })
 }
 
@@ -394,17 +405,15 @@ async function executeShare(args: Record<string, unknown>, context: ServiceNowCo
     return createErrorResult(`Report not found: ${sys_id || title}`)
   }
 
-  // TODO: verify sys_report_users_view field set on a live instance.
-  // ServiceNow stores share entries with a `report` reference and a target
-  // (user or group). The exact field names vary by version; the patterns
-  // below cover the documented surface.
+  // sys_report_users_groups uses report_id (ref sys_report), user_id (ref sys_user),
+  // and group_id (ref sys_user_group).
   const payload: Record<string, unknown> = {
-    report: report.sys_id,
+    report_id: report.sys_id,
   }
-  if (user) payload.user = user
-  if (group) payload.group = group
+  if (user) payload.user_id = user
+  if (group) payload.group_id = group
 
-  const response = await client.post("/api/now/table/sys_report_users_view", payload)
+  const response = await client.post("/api/now/table/sys_report_users_groups", payload)
   const result = response.data.result as Record<string, unknown>
 
   return createSuccessResult({

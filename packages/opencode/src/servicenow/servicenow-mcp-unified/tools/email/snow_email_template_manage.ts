@@ -204,7 +204,9 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
 
   const queryParts: string[] = []
   if (table) queryParts.push(`collection=${table}`)
-  if (active_only) queryParts.push("active=true")
+  // sysevent_email_template has no `active` column on this platform — drop the filter.
+  // active_only is accepted in the schema for forward compatibility but ignored here.
+  void active_only
 
   const response = await client.get("/api/now/table/sysevent_email_template", {
     params: {
@@ -213,7 +215,7 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       sysparm_orderby: "name",
       ...(fields
         ? { sysparm_fields: fields }
-        : { sysparm_fields: "sys_id,name,subject,collection,content_type,active,sys_updated_on" }),
+        : { sysparm_fields: "sys_id,name,subject,collection,email_layout,sys_updated_on" }),
     },
   })
 
@@ -227,8 +229,7 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       name: r.name,
       subject: r.subject,
       table: r.collection,
-      content_type: r.content_type,
-      active: r.active,
+      email_layout: r.email_layout,
       updated_at: r.sys_updated_on,
       url: `${context.instanceUrl}/nav_to.do?uri=sysevent_email_template.do?sys_id=${r.sys_id}`,
     })),

@@ -157,22 +157,28 @@ function normalizeRecord(source: SourceKey, raw: Record<string, unknown>): Recor
         document: raw.document,
       }
     case "worker":
+      // sys_progress_worker exposes message, error_message, output_summary, state_code,
+      // total_execute_time, total_run_time, queued_time. It has no start_time/end_time/progress_percent.
       return {
         ...common,
-        progress: raw.progress,
-        progress_percent: raw.progress_percent,
-        started_at: raw.start_time,
-        completed_at: raw.end_time,
+        state_code: raw.state_code,
+        queued_time: raw.queued_time,
+        total_run_time: raw.total_run_time,
+        total_execute_time: raw.total_execute_time,
         message: raw.message,
+        error_message: raw.error_message,
+        output_summary: raw.output_summary,
       }
     case "tracker":
+      // sys_execution_tracker uses start_time, completion_time, percent_complete (not end_time/progress).
       return {
         ...common,
-        progress: raw.progress,
+        percent_complete: raw.percent_complete,
         started_at: raw.start_time,
-        completed_at: raw.end_time,
+        completed_at: raw.completion_time,
         result: raw.result,
         message: raw.message,
+        detail_message: raw.detail_message,
       }
   }
 }
@@ -341,8 +347,9 @@ async function executeGetErrors(args: Record<string, unknown>, context: ServiceN
       } else if (s === "tracker") {
         query = `stateIN5,6^${sinceClause}`
       } else {
-        // trigger: best-effort — look at next_action set in the past with last_action containing an error message
-        query = `last_action_messageLIKEerror^${sinceClause}`
+        // trigger: sys_trigger has `last_error` (text) and `error_count` (int) — surface rows
+        // whose error_count is non-zero or whose last_error is set.
+        query = `error_count>0^ORlast_errorISNOTEMPTY^${sinceClause}`
       }
 
       const response = await client.get(`/api/now/table/${table}`, {

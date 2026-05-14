@@ -17,20 +17,20 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_pa_indicator_manage",
-  description: `Unified tool for ServiceNow Performance Analytics indicator definitions and their dimensional breakdowns. Wraps the pa_indicators, pa_breakdowns, pa_widgets, and pa_scores tables on the platform.
+  description: `Unified tool for ServiceNow Performance Analytics indicator definitions and their dimensional breakdowns. Wraps the pa_indicators, pa_breakdowns, pa_indicator_breakdowns (join), pa_widgets, and pa_scores tables on the platform.
 
 Actions:
-- list — list indicators, optionally filtered by facts_table or active flag
+- list — list indicators, optionally filtered by cube
 - get — retrieve a single indicator by sys_id or name (includes related widget and breakdown counts)
-- create — create a new indicator (name, facts_table, aggregate, field required)
+- create — create a new indicator (name, aggregate, precision, forecast_base_periods, forecast_periods required; cube optional but typical)
 - update — patch indicator fields
-- delete — remove an indicator (and optionally its dependent breakdowns)
-- add_breakdown — attach a dimensional breakdown to an indicator (writes pa_breakdowns)
-- list_breakdowns — list breakdowns for a given indicator or globally
+- delete — remove an indicator (and optionally its dependent pa_indicator_breakdowns links)
+- add_breakdown — attach a dimensional breakdown to an indicator (writes pa_breakdowns + pa_indicator_breakdowns join)
+- list_breakdowns — list breakdowns for a given indicator (via pa_indicator_breakdowns) or globally
 
-Use when: the agent needs to manage KPI/indicator definitions, attach dimensional slicers (assignment_group, priority, location, etc.) to existing indicators, or audit which indicators a facts table feeds.
+Use when: the agent needs to manage KPI/indicator definitions, attach dimensional slicers (assignment_group, priority, location, etc.) to existing indicators, or audit which indicators a cube feeds.
 
-Returns: indicator records with sys_id, name, facts_table, aggregate, field, frequency, unit, and active flag. For breakdowns, returns sys_id, name, table, field, and matrix_source. Companion tools: snow_pa_create for full PA artifact creation (widgets, thresholds, scheduled reports) and snow_pa_operate for collecting and querying PA scores.`,
+Returns: indicator records with sys_id, name, label, cube, aggregate, field, frequency, unit, precision. For breakdowns, returns sys_id, name, facts_table, field, and matrix_source. Companion tools: snow_pa_create for full PA artifact creation (widgets, thresholds, scheduled reports) and snow_pa_operate for collecting and querying PA scores.`,
   category: "performance-analytics",
   subcategory: "performance-analytics",
   use_cases: ["performance-analytics", "kpi", "indicators", "breakdowns", "reporting"],
@@ -64,22 +64,26 @@ Returns: indicator records with sys_id, name, facts_table, aggregate, field, fre
         type: "string",
         description: "[create/update] Indicator description",
       },
-      facts_table: {
+      cube: {
         type: "string",
-        description: "[create/update] Source/facts table the indicator measures (e.g. incident, sc_task)",
+        description: "[create/update] pa_cubes sys_id that defines the indicator's facts table and conditions (the cube is the source/facts wrapper on pa_indicators; use snow_pa_create to author cubes)",
+      },
+      script: {
+        type: "string",
+        description: "[create/update] pa_scripts sys_id when the indicator is scripted",
       },
       aggregate: {
         type: "string",
-        description: "[create/update] Aggregation function",
+        description: "[create/update] Aggregation function (inherited from pa_indicators_definition)",
         enum: ["COUNT", "SUM", "AVG", "MIN", "MAX", "COUNT_DISTINCT"],
       },
       field: {
         type: "string",
-        description: "[create/update] Field on facts_table to aggregate (omit for COUNT)",
+        description: "[create/update] Field on the cube's facts table to aggregate (omit for COUNT)",
       },
       conditions: {
         type: "string",
-        description: "[create/update] Encoded query that filters the facts_table rows",
+        description: "[create/update] Encoded query that filters the facts table rows (inherited from pa_indicators_definition)",
       },
       unit: {
         type: "string",
@@ -95,14 +99,24 @@ Returns: indicator records with sys_id, name, facts_table, aggregate, field, fre
         description: "[create/update] Whether higher or lower is better",
         enum: ["maximize", "minimize"],
       },
+      formula: {
+        type: "string",
+        description: "[create/update] Formula expression for derived indicators",
+      },
       precision: {
         type: "number",
-        description: "[create/update] Decimal precision",
+        description: "[create] Decimal precision (mandatory on pa_indicators)",
+        default: 0,
       },
-      active: {
-        type: "boolean",
-        description: "[create/update] Whether the indicator is active",
-        default: true,
+      forecast_base_periods: {
+        type: "number",
+        description: "[create] Number of base periods used for forecasting (mandatory on pa_indicators)",
+        default: 12,
+      },
+      forecast_periods: {
+        type: "number",
+        description: "[create] Number of periods to forecast (mandatory on pa_indicators)",
+        default: 6,
       },
       // BREAKDOWN fields (for add_breakdown)
       breakdown_name: {
@@ -217,23 +231,21 @@ async function findIndicator(
 // ==================== LIST ====================
 
 async function executeList(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const facts_table = args.facts_table as string | undefined
-  const active_only = args.active_only === true
+  const cube = args.cube as string | undefined
   const limit = (args.limit as number) || 50
   const fields = args.fields as string | undefined
 
   const client = await getAuthenticatedClient(context)
 
   const queryParts: string[] = []
-  if (facts_table) queryParts.push(`facts_table=${facts_table}`)
-  if (active_only) queryParts.push("active=true")
+  if (cube) queryParts.push(`cube=${cube}`)
 
   const response = await client.get("/api/now/table/pa_indicators", {
     params: {
       sysparm_query: queryParts.join("^"),
       sysparm_limit: limit,
       sysparm_orderby: "name",
-      ...(fields ? { sysparm_fields: fields } : { sysparm_fields: "sys_id,name,label,facts_table,aggregate,field,frequency,unit,active,sys_updated_on" }),
+      ...(fields ? { sysparm_fields: fields } : { sysparm_fields: "sys_id,name,label,cube,aggregate,field,frequency,unit,precision,sys_updated_on" }),
     },
   })
 
@@ -246,12 +258,12 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       sys_id: r.sys_id,
       name: r.name,
       label: r.label,
-      facts_table: r.facts_table,
+      cube: r.cube,
       aggregate: r.aggregate,
       field: r.field,
       frequency: r.frequency,
       unit: r.unit,
-      active: r.active,
+      precision: r.precision,
       updated_at: r.sys_updated_on,
       url: `${context.instanceUrl}/nav_to.do?uri=pa_indicators.do?sys_id=${r.sys_id}`,
     })),
@@ -280,12 +292,12 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
   let breakdownCount = 0
   let widgetCount = 0
   try {
-    const breakdowns = await client.get("/api/now/table/pa_breakdowns_indicator", {
+    const breakdowns = await client.get("/api/now/table/pa_indicator_breakdowns", {
       params: { sysparm_query: `indicator=${indicatorSysId}`, sysparm_fields: "sys_id", sysparm_limit: 200 },
     })
     breakdownCount = (breakdowns.data.result || []).length
   } catch {
-    // TODO: verify pa_breakdowns_indicator join table name on a live instance
+    // pa_indicator_breakdowns may not be reachable on every instance variant
   }
   try {
     const widgets = await client.get("/api/now/table/pa_widgets", {
@@ -313,12 +325,10 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
 
 async function executeCreate(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   const name = args.name as string | undefined
-  const facts_table = args.facts_table as string | undefined
   const aggregate = args.aggregate as string | undefined
   const field = args.field as string | undefined
 
   if (!name) return createErrorResult("name is required for create action")
-  if (!facts_table) return createErrorResult("facts_table is required for create action")
   if (!aggregate) return createErrorResult("aggregate is required for create action")
   if (aggregate !== "COUNT" && !field) {
     return createErrorResult("field is required when aggregate is not COUNT")
@@ -334,20 +344,25 @@ async function executeCreate(args: Record<string, unknown>, context: ServiceNowC
     return createErrorResult(`Indicator '${name}' already exists. Use action='update' to modify it.`)
   }
 
+  // pa_indicators has three mandatory integer fields: precision, forecast_base_periods,
+  // forecast_periods. Default them when the caller omits values so simple create calls succeed.
   const payload: Record<string, unknown> = {
     name,
     label: (args.label as string) || name,
     description: (args.description as string) || "",
-    facts_table,
     aggregate: aggregate.toUpperCase(),
-    active: args.active === undefined ? true : args.active,
+    precision: args.precision !== undefined ? args.precision : 0,
+    forecast_base_periods: args.forecast_base_periods !== undefined ? args.forecast_base_periods : 12,
+    forecast_periods: args.forecast_periods !== undefined ? args.forecast_periods : 6,
   }
   if (field) payload.field = field
+  if (args.cube) payload.cube = args.cube
+  if (args.script) payload.script = args.script
+  if (args.formula) payload.formula = args.formula
   if (args.conditions) payload.conditions = args.conditions
   if (args.unit) payload.unit = args.unit
   if (args.frequency) payload.frequency = args.frequency
   if (args.direction) payload.direction = args.direction
-  if (args.precision !== undefined) payload.precision = args.precision
 
   const response = await client.post("/api/now/table/pa_indicators", payload)
   const created = response.data.result as Record<string, unknown>
@@ -381,15 +396,18 @@ async function executeUpdate(args: Record<string, unknown>, context: ServiceNowC
   const updatableFields = [
     "label",
     "description",
-    "facts_table",
+    "cube",
+    "script",
     "aggregate",
     "field",
+    "formula",
     "conditions",
     "unit",
     "frequency",
     "direction",
     "precision",
-    "active",
+    "forecast_base_periods",
+    "forecast_periods",
   ]
   const patch: Record<string, unknown> = {}
   for (const key of updatableFields) {
@@ -438,12 +456,11 @@ async function executeDelete(args: Record<string, unknown>, context: ServiceNowC
   const removedBreakdowns: string[] = []
 
   if (cascade) {
-    // TODO: verify pa_breakdowns_indicator join table name on a live instance
-    const breakdownLinks = await client.get("/api/now/table/pa_breakdowns_indicator", {
+    const breakdownLinks = await client.get("/api/now/table/pa_indicator_breakdowns", {
       params: { sysparm_query: `indicator=${targetSysId}`, sysparm_fields: "sys_id", sysparm_limit: 500 },
     })
     for (const row of (breakdownLinks.data.result || []) as Array<Record<string, unknown>>) {
-      await client.delete(`/api/now/table/pa_breakdowns_indicator/${row.sys_id}`)
+      await client.delete(`/api/now/table/pa_indicator_breakdowns/${row.sys_id}`)
       removedBreakdowns.push(row.sys_id as string)
     }
   }
@@ -483,10 +500,11 @@ async function executeAddBreakdown(args: Record<string, unknown>, context: Servi
     return createErrorResult(`Indicator not found: ${sys_id || indicatorName}`)
   }
 
-  // Create the breakdown definition
+  // Create the breakdown definition. pa_breakdowns uses `facts_table` (not `table`)
+  // for the source the breakdown evaluates against.
   const breakdownPayload: Record<string, unknown> = {
     name: breakdown_name,
-    table: breakdown_table,
+    facts_table: breakdown_table,
     field: breakdown_field,
     matrix_source,
   }
@@ -495,11 +513,10 @@ async function executeAddBreakdown(args: Record<string, unknown>, context: Servi
   const breakdownResponse = await client.post("/api/now/table/pa_breakdowns", breakdownPayload)
   const breakdown = breakdownResponse.data.result as Record<string, unknown>
 
-  // Attach the breakdown to the indicator via the join table.
-  // TODO: verify pa_breakdowns_indicator is the correct join table on a live instance.
+  // Attach the breakdown to the indicator via the join table pa_indicator_breakdowns.
   let linkSysId: string | null = null
   try {
-    const linkResponse = await client.post("/api/now/table/pa_breakdowns_indicator", {
+    const linkResponse = await client.post("/api/now/table/pa_indicator_breakdowns", {
       indicator: indicator.sys_id,
       breakdown: breakdown.sys_id,
     })
@@ -546,8 +563,7 @@ async function executeListBreakdowns(args: Record<string, unknown>, context: Ser
       return createErrorResult(`Indicator not found: ${sys_id || indicatorName}`)
     }
 
-    // TODO: verify pa_breakdowns_indicator join table name on a live instance
-    const linkResponse = await client.get("/api/now/table/pa_breakdowns_indicator", {
+    const linkResponse = await client.get("/api/now/table/pa_indicator_breakdowns", {
       params: {
         sysparm_query: `indicator=${indicator.sys_id}`,
         sysparm_limit: limit,

@@ -178,12 +178,16 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
 
   const client = await getAuthenticatedClient(context)
 
+  // The base interaction table has no `account` or `contact` columns. CSM-specific
+  // attributes typically extend interaction via a child table (sn_customerservice_interaction)
+  // when the plugin is installed. Filter only on the columns guaranteed to exist on
+  // the base interaction table; surface account/contact as-is for callers extending the schema.
   const queryParts: string[] = []
-  if (account) queryParts.push(`account=${account}`)
-  if (contact) queryParts.push(`contact=${contact}`)
   if (channel) queryParts.push(`channel=${channel}`)
   if (state) queryParts.push(`state=${state}`)
   if (from_date) queryParts.push(`opened_at>=${from_date}`)
+  if (account) queryParts.push(`opened_for=${account}`)
+  if (contact) queryParts.push(`opened_for=${contact}`)
 
   const response = await client.get(`/api/now/table/${INTERACTION_TABLE}`, {
     params: {
@@ -192,7 +196,7 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       sysparm_orderby: "opened_at",
       ...(fields
         ? { sysparm_fields: fields }
-        : { sysparm_fields: "sys_id,number,short_description,channel,state,direction,account,contact,opened_for,opened_at" }),
+        : { sysparm_fields: "sys_id,number,short_description,channel,state,direction,opened_for,assignment_group,assigned_to,opened_at" }),
     },
   })
 
@@ -207,9 +211,9 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       channel: r.channel,
       state: r.state,
       direction: r.direction,
-      account: r.account,
-      contact: r.contact,
       opened_for: r.opened_for,
+      assignment_group: r.assignment_group,
+      assigned_to: r.assigned_to,
       opened_at: r.opened_at,
       url: `${context.instanceUrl}/nav_to.do?uri=${INTERACTION_TABLE}.do?sys_id=${r.sys_id}`,
     })),
@@ -229,19 +233,20 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
 
   const interactionSysId = interaction.sys_id as string
 
-  // Pull linked records (best-effort)
+  // Pull linked records (best-effort). interaction_related_record uses
+  // document_table + document_id to point at the parent record.
   let linkedRecords: Array<Record<string, unknown>> = []
   try {
     const linksResponse = await client.get(`/api/now/table/${INTERACTION_RELATED_TABLE}`, {
       params: {
         sysparm_query: `interaction=${interactionSysId}`,
-        sysparm_fields: "sys_id,related_record_table,related_record",
+        sysparm_fields: "sys_id,document_table,document_id,type",
         sysparm_limit: 50,
       },
     })
     linkedRecords = (linksResponse.data.result || []) as Array<Record<string, unknown>>
   } catch {
-    // TODO: verify interaction_related_record column names on a live instance.
+    // Best-effort — older releases may not expose interaction_related_record.
   }
 
   return createSuccessResult({
@@ -264,18 +269,31 @@ async function executeLogInteraction(args: Record<string, unknown>, context: Ser
 
   const client = await getAuthenticatedClient(context)
 
-  // Canonical interaction columns; `body` is captured as work_notes since
-  // the interaction table doesn't expose a top-level body in most releases.
-  // TODO: verify if customer has a custom body field on interaction.
+  // Canonical interaction columns. The base interaction table has no `account` or `contact`
+  // columns — those exist only on plugin-extended children. `opened_for` is the closest
+  // base-table analogue. `body` is captured as work_notes (the journal column).
+  // interaction.type is mandatory and uses a constrained choice list (phone/chat/messaging/video);
+  // map our broader `channel` value onto it where possible.
+  const channelToType: Record<string, string> = {
+    phone: "phone",
+    chat: "chat",
+    sms: "messaging",
+    email: "messaging",
+    social: "messaging",
+    web: "messaging",
+    "walk-in": "phone",
+  }
   const payload: Record<string, unknown> = {
     channel,
-    short_description,
+    type: channelToType[channel] || "phone",
     state: "new",
+    short_description,
   }
   if (args.direction) payload.direction = args.direction
-  if (args.account) payload.account = args.account
-  if (args.contact) payload.contact = args.contact
+  // Map account/contact onto opened_for as a best-effort base-table fallback.
   if (args.opened_for) payload.opened_for = args.opened_for
+  else if (args.account) payload.opened_for = args.account
+  else if (args.contact) payload.opened_for = args.contact
   if (args.assigned_to) payload.assigned_to = args.assigned_to
   if (args.body) payload.work_notes = args.body
 
@@ -289,8 +307,8 @@ async function executeLogInteraction(args: Record<string, unknown>, context: Ser
     try {
       const linkResponse = await client.post(`/api/now/table/${INTERACTION_RELATED_TABLE}`, {
         interaction: created.sys_id,
-        related_record_table: "sn_customerservice_case",
-        related_record: case_sys_id,
+        document_table: "sn_customerservice_case",
+        document_id: case_sys_id,
       })
       linkSysId = linkResponse.data.result.sys_id
     } catch {
@@ -320,11 +338,11 @@ async function executeLinkToCase(args: Record<string, unknown>, context: Service
 
   const client = await getAuthenticatedClient(context)
 
-  // TODO: verify interaction_related_record column names on a live instance.
+  // interaction_related_record uses document_table + document_id (not related_record_*)
   const response = await client.post(`/api/now/table/${INTERACTION_RELATED_TABLE}`, {
     interaction: sys_id,
-    related_record_table: "sn_customerservice_case",
-    related_record: case_sys_id,
+    document_table: "sn_customerservice_case",
+    document_id: case_sys_id,
   })
   const created = response.data.result as Record<string, unknown>
 
@@ -349,10 +367,10 @@ async function executeListForCase(args: Record<string, unknown>, context: Servic
 
   const client = await getAuthenticatedClient(context)
 
-  // TODO: verify interaction_related_record links use related_record_table = sn_customerservice_case.
+  // interaction_related_record links use document_table + document_id (not related_record_*)
   const linksResponse = await client.get(`/api/now/table/${INTERACTION_RELATED_TABLE}`, {
     params: {
-      sysparm_query: `related_record=${case_sys_id}^related_record_table=sn_customerservice_case`,
+      sysparm_query: `document_id=${case_sys_id}^document_table=sn_customerservice_case`,
       sysparm_fields: "sys_id,interaction",
       sysparm_limit: limit,
     },
