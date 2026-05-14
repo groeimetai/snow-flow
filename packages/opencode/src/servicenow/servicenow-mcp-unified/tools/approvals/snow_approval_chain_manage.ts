@@ -30,7 +30,7 @@ export const toolDefinition: MCPToolDefinition = {
   description: `Unified tool for ServiceNow approval chains across the sysapproval_approver, sysapproval_group, and sysapproval_action tables. Use this when a record needs an ordered, multi-step approval flow rather than a single ad-hoc approver.
 
 Actions:
-- define_chain — write an ordered chain of approval steps for a source record. Each step may target a user (sysapproval_approver) or a group (sysapproval_group). Steps after the first start in 'not_yet_requested' state and are activated as earlier steps complete.
+- define_chain — write an ordered chain of approval steps for a source record. Each step may target a user (sysapproval_approver) or a group (sysapproval_group). Steps after the first start in 'not requested' state and are activated as earlier steps complete.
 - preview_chain — resolve who would be asked at each step (expanding group memberships) without inserting any rows. Useful for showing the caller the chain before firing it.
 - get_approvals — list all pending and historical approval rows for a given source record across both sysapproval_approver and sysapproval_group, plus the recent sysapproval_action verbs applied.
 - cancel — end an active chain. Marks every still-open approver/group row as 'cancelled' and records a sysapproval_action 'cancelled' verb on each.
@@ -78,7 +78,7 @@ Returns: define_chain returns the inserted approval rows in order. preview_chain
       },
       activate_first: {
         type: "boolean",
-        description: "[define_chain] Whether the first step is created in state 'requested' (active) or 'not_yet_requested' (queued). Defaults to true.",
+        description: "[define_chain] Whether the first step is created in state 'requested' (active) or 'not requested' (queued). Defaults to true.",
         default: true,
       },
       // CANCEL
@@ -183,7 +183,7 @@ async function executeDefineChain(args: Record<string, unknown>, context: Servic
     const step = steps[i]
     const order = typeof step.order === "number" ? step.order : (i + 1) * 100
     const isFirst = i === 0
-    const stepState = isFirst && activateFirst ? "requested" : "not_yet_requested"
+    const stepState = isFirst && activateFirst ? "requested" : "not requested"
 
     if (step.approver) {
       const payload: Record<string, unknown> = {
@@ -347,7 +347,7 @@ async function executeGetApprovals(args: Record<string, unknown>, context: Servi
 
   const client = await getAuthenticatedClient(context)
 
-  const stateFilter = include_complete ? "" : "^stateIN requested,not_yet_requested"
+  const stateFilter = include_complete ? "" : "^stateIN requested,not requested"
 
   // Per-user approver rows
   const approverQueryParts = [`sysapproval=${source_sys_id}`]
@@ -436,7 +436,7 @@ async function executeCancel(args: Record<string, unknown>, context: ServiceNowC
   const cancelledGroups: Array<Record<string, unknown>> = []
 
   // Cancel per-user rows that are still open
-  const approverQueryParts = [`sysapproval=${source_sys_id}`, "stateIN requested,not_yet_requested"]
+  const approverQueryParts = [`sysapproval=${source_sys_id}`, "stateIN requested,not requested"]
   if (source_table) approverQueryParts.push(`source_table=${source_table}`)
   const approverResp = await client.get("/api/now/table/sysapproval_approver", {
     params: {
@@ -454,7 +454,7 @@ async function executeCancel(args: Record<string, unknown>, context: ServiceNowC
 
   // Cancel group rows that are still open
   try {
-    const groupQueryParts = [`document_id=${source_sys_id}`, "stateIN requested,not_yet_requested"]
+    const groupQueryParts = [`document_id=${source_sys_id}`, "stateIN requested,not requested"]
     if (source_table) groupQueryParts.push(`source_table=${source_table}`)
     const groupResp = await client.get("/api/now/table/sysapproval_group", {
       params: {

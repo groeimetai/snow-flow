@@ -72,19 +72,19 @@ Returns: action-specific structures. list_rotations returns rotation records wit
       // SWAP_SHIFT parameters
       roster_sys_id: {
         type: "string",
-        description: "[swap_shift] sys_id of the cmn_rota_roster row to reassign",
+        description: "[swap_shift] sys_id of the cmn_rota_member row whose member assignment is being swapped (the per-window assignment record)",
       },
       from_member_sys_id: {
         type: "string",
-        description: "[swap_shift] sys_id of the cmn_rota_member currently assigned (used as a guard)",
+        description: "[swap_shift] sys_user sys_id currently assigned in the member row (used as a guard)",
       },
       to_member_sys_id: {
         type: "string",
-        description: "[swap_shift] sys_id of the cmn_rota_member taking the shift",
+        description: "[swap_shift] sys_user sys_id taking the shift",
       },
       reason: {
         type: "string",
-        description: "[swap_shift] Optional reason recorded on the roster row",
+        description: "[swap_shift] Optional reason; not persisted on cmn_rota_member (the table has no override/reason columns) but echoed in the response",
       },
       // Common
       limit: {
@@ -186,7 +186,7 @@ async function executeListRotations(args: Record<string, unknown>, context: Serv
       sysparm_query: queryParts.join("^"),
       sysparm_limit: limit,
       sysparm_orderby: "name",
-      sysparm_fields: "sys_id,name,group,schedule,active,time_zone,start_date,end_date,sys_updated_on",
+      sysparm_fields: "sys_id,name,group,schedule,active,coverage_interval,coverage_lead_type,sys_updated_on",
     },
   })
 
@@ -195,10 +195,9 @@ async function executeListRotations(args: Record<string, unknown>, context: Serv
     name: r.name,
     group: r.group,
     schedule: r.schedule,
-    time_zone: r.time_zone,
+    coverage_interval: r.coverage_interval,
+    coverage_lead_type: r.coverage_lead_type,
     active: r.active,
-    start_date: r.start_date,
-    end_date: r.end_date,
     updated_at: r.sys_updated_on,
     url: `${context.instanceUrl}/nav_to.do?uri=cmn_rota.do?sys_id=${r.sys_id}`,
   }))
@@ -228,16 +227,16 @@ async function executeGetCurrentOncall(args: Record<string, unknown>, context: S
 
   const rotationSysId = rotation.sys_id as string
 
-  // Find the roster row whose window covers "now" and that points at an active member.
-  // Use an encoded query that combines start_date_time <= now and end_date_time >= now.
-  // The platform's exact column names on cmn_rota_roster vary slightly across releases;
-  // we use the documented start_date_time / end_date_time pair.
-  // TODO: verify column names against a live instance.
+  // The cmn_rota_roster table holds the rotation pattern (rotation_interval_count,
+  // rotation_start_date, dow_for_rotate, ...) — it does not store per-shift datetime
+  // ranges. Individual member windows live on cmn_rota_member.from / .to (glide_date).
+  // We look up the active member of the rotation's roster whose window covers today.
+  // Resolve every roster on the rotation, then find the member row currently in window.
   const rosterResponse = await client.get("/api/now/table/cmn_rota_roster", {
     params: {
-      sysparm_query: `rota=${rotationSysId}^start_date_time<=javascript:gs.nowDateTime()^end_date_time>=javascript:gs.nowDateTime()`,
-      sysparm_limit: 5,
-      sysparm_orderby: "start_date_time",
+      sysparm_query: `rota=${rotationSysId}^active=true`,
+      sysparm_limit: 50,
+      sysparm_fields: "sys_id,name,active,rotation_interval_type,rotation_start_date",
     },
   })
 
@@ -247,13 +246,33 @@ async function executeGetCurrentOncall(args: Record<string, unknown>, context: S
       action: "get_current_oncall",
       rotation: { sys_id: rotationSysId, name: rotation.name },
       on_call: null,
-      message: "No active roster entry covers the current time for this rotation.",
+      message: "No active rosters defined on this rotation.",
     })
   }
 
-  // The roster row references a cmn_rota_member; the member references a sys_user.
-  // Resolve them in turn for a useful payload.
-  const primary = rosterRows[0]
+  const rosterIds = rosterRows.map((r) => r.sys_id as string)
+  // Find any cmn_rota_member whose [from..to] window covers today and which belongs
+  // to one of the rotation's rosters. cmn_rota_member.from / .to are glide_date.
+  const memberResponse = await client.get("/api/now/table/cmn_rota_member", {
+    params: {
+      sysparm_query: `rosterIN${rosterIds.join(",")}^from<=javascript:gs.beginningOfToday()^to>=javascript:gs.beginningOfToday()`,
+      sysparm_orderby: "order",
+      sysparm_limit: 5,
+    },
+  })
+
+  const memberRows = (memberResponse.data.result || []) as Array<Record<string, unknown>>
+  if (memberRows.length === 0) {
+    return createSuccessResult({
+      action: "get_current_oncall",
+      rotation: { sys_id: rotationSysId, name: rotation.name },
+      on_call: null,
+      message:
+        "No cmn_rota_member row covers the current date for this rotation. Note: full on-call resolution requires the OnCallRotation script include on the platform.",
+    })
+  }
+
+  const primary = memberRows[0]
   const memberRef = primary.member
   const memberSysId =
     typeof memberRef === "string"
@@ -262,45 +281,32 @@ async function executeGetCurrentOncall(args: Record<string, unknown>, context: S
         ? (memberRef as { value: string }).value
         : null
 
-  let member: Record<string, unknown> | null = null
+  // cmn_rota_member.member is the sys_user reference. Resolve the user record.
   let user: Record<string, unknown> | null = null
   if (memberSysId) {
-    const memberResponse = await client.get(`/api/now/table/cmn_rota_member/${memberSysId}`)
-    member = (memberResponse.data.result as Record<string, unknown>) ?? null
-
-    const userRef = member?.user
-    const userSysId =
-      typeof userRef === "string"
-        ? userRef
-        : userRef && typeof userRef === "object" && "value" in userRef
-          ? (userRef as { value: string }).value
-          : null
-    if (userSysId) {
-      const userResponse = await client.get(`/api/now/table/sys_user/${userSysId}`, {
-        params: { sysparm_fields: "sys_id,user_name,name,email,phone,active" },
-      })
-      user = (userResponse.data.result as Record<string, unknown>) ?? null
-    }
+    const userResponse = await client.get(`/api/now/table/sys_user/${memberSysId}`, {
+      params: { sysparm_fields: "sys_id,user_name,name,email,phone,active" },
+    })
+    user = (userResponse.data.result as Record<string, unknown>) ?? null
   }
 
   return createSuccessResult({
     action: "get_current_oncall",
     rotation: { sys_id: rotationSysId, name: rotation.name },
     on_call: {
-      roster_sys_id: primary.sys_id,
-      member: member
-        ? { sys_id: member.sys_id, order: member.order, escalation_step: member.escalation_step }
-        : null,
+      member_sys_id: primary.sys_id,
+      roster: primary.roster,
       user,
       window: {
-        start: primary.start_date_time,
-        end: primary.end_date_time,
+        from: primary.from,
+        to: primary.to,
       },
+      order: primary.order,
     },
-    additional_rosters: rosterRows.slice(1).map((r) => ({
-      roster_sys_id: r.sys_id,
-      start: r.start_date_time,
-      end: r.end_date_time,
+    additional_members: memberRows.slice(1).map((r) => ({
+      member_sys_id: r.sys_id,
+      from: r.from,
+      to: r.to,
     })),
   })
 }
@@ -322,29 +328,46 @@ async function executeListShifts(args: Record<string, unknown>, context: Service
 
   const rotationSysId = rotation.sys_id as string
 
-  // Default window: from now to now+7d, expressed as javascript: clauses so the
-  // server evaluates them in the instance's timezone.
-  const startClause = start_time ? `start_date_time>=${start_time}` : `start_date_time>=javascript:gs.nowDateTime()`
-  const endClause = end_time
-    ? `end_date_time<=${end_time}`
-    : `end_date_time<=javascript:gs.daysAgoEnd(-7)`
-
-  const response = await client.get("/api/now/table/cmn_rota_roster", {
+  // Per-shift coverage on cmn_rota lives on cmn_rota_member.from/.to (glide_date).
+  // First find the rotation's rosters, then list members whose window overlaps the requested range.
+  const rosterResp = await client.get("/api/now/table/cmn_rota_roster", {
     params: {
-      sysparm_query: `rota=${rotationSysId}^${startClause}^${endClause}`,
+      sysparm_query: `rota=${rotationSysId}^active=true`,
+      sysparm_limit: 50,
+      sysparm_fields: "sys_id",
+    },
+  })
+  const rosterIds = ((rosterResp.data.result || []) as Array<Record<string, unknown>>).map((r) => r.sys_id as string)
+  if (rosterIds.length === 0) {
+    return createSuccessResult({
+      action: "list_shifts",
+      rotation: { sys_id: rotationSysId, name: rotation.name },
+      window: { start: start_time || "now", end: end_time || "now + 7 days" },
+      count: 0,
+      shifts: [],
+    })
+  }
+
+  // Default window: from now to now+7d. Use beginningOfToday / daysAgoEnd(-7) for date semantics.
+  const fromClause = start_time ? `to>=${start_time}` : `to>=javascript:gs.beginningOfToday()`
+  const toClause = end_time ? `from<=${end_time}` : `from<=javascript:gs.daysAgoEnd(-7)`
+
+  const response = await client.get("/api/now/table/cmn_rota_member", {
+    params: {
+      sysparm_query: `rosterIN${rosterIds.join(",")}^${fromClause}^${toClause}`,
       sysparm_limit: limit,
-      sysparm_orderby: "start_date_time",
-      sysparm_fields: "sys_id,member,start_date_time,end_date_time,override,override_reason",
+      sysparm_orderby: "from",
+      sysparm_fields: "sys_id,member,roster,from,to,order",
     },
   })
 
   const shifts = ((response.data.result || []) as Array<Record<string, unknown>>).map((r) => ({
     sys_id: r.sys_id,
     member: r.member,
-    start_date_time: r.start_date_time,
-    end_date_time: r.end_date_time,
-    override: r.override,
-    override_reason: r.override_reason,
+    roster: r.roster,
+    from: r.from,
+    to: r.to,
+    order: r.order,
   }))
 
   return createSuccessResult({
@@ -372,11 +395,12 @@ async function executeSwapShift(args: Record<string, unknown>, context: ServiceN
 
   const client = await getAuthenticatedClient(context)
 
-  // Optional safety check: confirm the current member matches from_member_sys_id when provided.
-  const currentResponse = await client.get(`/api/now/table/cmn_rota_roster/${roster_sys_id}`)
+  // The swap target is a cmn_rota_member row (per-member window record), not cmn_rota_roster
+  // (which only holds rotation pattern data on this platform).
+  const currentResponse = await client.get(`/api/now/table/cmn_rota_member/${roster_sys_id}`)
   const current = currentResponse.data.result as Record<string, unknown> | undefined
   if (!current || !current.sys_id) {
-    return createErrorResult(`Roster row ${roster_sys_id} not found`)
+    return createErrorResult(`cmn_rota_member row ${roster_sys_id} not found`)
   }
 
   if (from_member_sys_id) {
@@ -389,30 +413,27 @@ async function executeSwapShift(args: Record<string, unknown>, context: ServiceN
           : null
     if (currentMemberId !== from_member_sys_id) {
       return createErrorResult(
-        `Current roster member (${currentMemberId}) does not match expected from_member_sys_id (${from_member_sys_id})`,
+        `Current member (${currentMemberId}) does not match expected from_member_sys_id (${from_member_sys_id})`,
       )
     }
   }
 
-  // Apply the swap. We mark the roster row as an override and record the reason.
-  // TODO: verify override/override_reason field names against a live instance.
-  const patchPayload: Record<string, unknown> = {
-    member: to_member_sys_id,
-    override: true,
-  }
-  if (reason) patchPayload.override_reason = reason
+  // cmn_rota_member only holds member, roster, from, to, order — there is no
+  // override or override_reason column. Just reassign the member.
+  const patchPayload: Record<string, unknown> = { member: to_member_sys_id }
 
-  const updateResponse = await client.patch(`/api/now/table/cmn_rota_roster/${roster_sys_id}`, patchPayload)
+  const updateResponse = await client.patch(`/api/now/table/cmn_rota_member/${roster_sys_id}`, patchPayload)
   const updated = updateResponse.data.result as Record<string, unknown>
 
   return createSuccessResult({
     action: "swap_shift",
     swapped: true,
-    roster_sys_id,
+    member_row_sys_id: roster_sys_id,
     previous_member: from_member_sys_id || current.member,
     new_member: to_member_sys_id,
-    roster: updated,
-    url: `${context.instanceUrl}/nav_to.do?uri=cmn_rota_roster.do?sys_id=${roster_sys_id}`,
+    reason: reason || null,
+    member_row: updated,
+    url: `${context.instanceUrl}/nav_to.do?uri=cmn_rota_member.do?sys_id=${roster_sys_id}`,
   })
 }
 

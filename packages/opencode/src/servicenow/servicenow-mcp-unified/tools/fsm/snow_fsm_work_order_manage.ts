@@ -347,7 +347,7 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
   let historyCount = 0
   try {
     const tasks = await client.get(`/api/now/table/${WORK_TASK_TABLE}`, {
-      params: { sysparm_query: `parent=${workOrderSysId}`, sysparm_fields: "sys_id", sysparm_limit: 500 },
+      params: { sysparm_query: `work_order=${workOrderSysId}`, sysparm_fields: "sys_id", sysparm_limit: 500 },
     })
     taskCount = ((tasks.data.result || []) as Array<unknown>).length
   } catch {
@@ -355,12 +355,11 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
   }
   try {
     const history = await client.get(`/api/now/table/${WORK_ORDER_HISTORY_TABLE}`, {
-      params: { sysparm_query: `order=${workOrderSysId}`, sysparm_fields: "sys_id", sysparm_limit: 500 },
+      params: { sysparm_query: `work_order=${workOrderSysId}`, sysparm_fields: "sys_id", sysparm_limit: 500 },
     })
     historyCount = ((history.data.result || []) as Array<unknown>).length
   } catch {
-    // TODO: verify wm_order_history join column on a live instance — some
-    // variants use `work_order` rather than `order`.
+    // wm_order_history is optional — not present on every FSM install.
   }
 
   return createSuccessResult({
@@ -545,7 +544,7 @@ async function executeListTasks(args: Record<string, unknown>, context: ServiceN
   const sys_id = args.sys_id as string | undefined
   const number = args.number as string | undefined
   const limit = (args.limit as number) || 50
-  const fields = (args.fields as string) || "sys_id,number,short_description,state,assigned_to,parent,sys_updated_on"
+  const fields = (args.fields as string) || "sys_id,number,short_description,state,assigned_to,work_order,sys_updated_on"
 
   if (!sys_id && !number) {
     return createErrorResult("sys_id or number is required for list_tasks action")
@@ -558,9 +557,10 @@ async function executeListTasks(args: Record<string, unknown>, context: ServiceN
   }
 
   const workOrderSysId = workOrder.sys_id as string
+  // wm_task has a direct `work_order` reference column to wm_order — preferred over inherited task.parent.
   const response = await client.get(`/api/now/table/${WORK_TASK_TABLE}`, {
     params: {
-      sysparm_query: `parent=${workOrderSysId}`,
+      sysparm_query: `work_order=${workOrderSysId}`,
       sysparm_limit: limit,
       sysparm_orderby: "sys_created_on",
       sysparm_fields: fields,

@@ -2,7 +2,7 @@
  * snow_sp_page_manage - Unified Service Portal page lifecycle management
  *
  * Manages sp_page records beyond initial creation: listing, updating, deleting,
- * cloning, and placing widget instances onto a page via sp_widget_instance.
+ * cloning, and placing widget instances onto a page via sp_instance.
  *
  * Companion to snow_create_sp_page (authoring) and snow_create_sp_widget
  * (widget authoring). This tool covers everything around an existing page.
@@ -14,14 +14,14 @@ import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_sp_page_manage",
-  description: `Unified tool for ServiceNow Service Portal page lifecycle beyond creation: list, update, delete, clone, add_widget_instance. Wraps sp_page and sp_widget_instance.
+  description: `Unified tool for ServiceNow Service Portal page lifecycle beyond creation: list, update, delete, clone, add_widget_instance. Wraps sp_page and sp_instance.
 
 Actions:
 - list — list sp_page rows, optionally filtered by portal id, public flag, or title fragment
 - update — patch sp_page fields (title, public, draft, css, internal)
 - delete — delete an sp_page row (does not cascade widget instances)
 - clone — duplicate an sp_page with a new id and title (optionally copying widget instances)
-- add_widget_instance — place an sp_widget on the page by creating an sp_widget_instance row
+- add_widget_instance — place an sp_widget on the page by creating an sp_instance row
 
 Use when: the agent needs to maintain Service Portal pages — renaming, retiring, duplicating layouts, or wiring widgets onto a page. For authoring a new sp_page, use snow_create_sp_page; for authoring a new sp_widget, use snow_create_sp_widget.
 
@@ -102,7 +102,7 @@ Returns: sp_page rows with sys_id, id, title, public, draft; widget instance row
       },
       copy_widget_instances: {
         type: "boolean",
-        description: "[clone] Also copy sp_widget_instance rows attached to the source page",
+        description: "[clone] Also copy sp_instance rows attached to the source page",
         default: true,
       },
       // ADD_WIDGET_INSTANCE
@@ -359,24 +359,56 @@ async function executeClone(args: Record<string, unknown>, context: ServiceNowCo
 
   const copiedInstances: string[] = []
   if (copy_widget_instances) {
-    // TODO: verify sp_widget_instance.sp_page column name on a live instance.
-    // Older Glide releases sometimes route widget instances through sp_column;
-    // we attempt the direct sp_page query first and fall through quietly on error.
+    // sp_instance has no sp_page reference — instances belong to sp_column rows
+    // which in turn belong to sp_row → sp_page. Walk the layout tree and clone
+    // rows + columns + instances under the new page.
     try {
-      const instances = await client.get("/api/now/table/sp_widget_instance", {
+      const sourceRows = await client.get("/api/now/table/sp_row", {
         params: { sysparm_query: `sp_page=${sourceSysId}`, sysparm_limit: 200 },
       })
-      for (const inst of (instances.data.result || []) as Array<Record<string, unknown>>) {
-        const copy: Record<string, unknown> = { ...inst }
-        delete copy.sys_id
-        delete copy.sys_created_on
-        delete copy.sys_created_by
-        delete copy.sys_updated_on
-        delete copy.sys_updated_by
-        delete copy.sys_mod_count
-        copy.sp_page = clonedSysId
-        const created = await client.post("/api/now/table/sp_widget_instance", copy)
-        copiedInstances.push(created.data.result.sys_id)
+      for (const row of (sourceRows.data.result || []) as Array<Record<string, unknown>>) {
+        const rowCopy: Record<string, unknown> = { ...row }
+        delete rowCopy.sys_id
+        delete rowCopy.sys_created_on
+        delete rowCopy.sys_created_by
+        delete rowCopy.sys_updated_on
+        delete rowCopy.sys_updated_by
+        delete rowCopy.sys_mod_count
+        rowCopy.sp_page = clonedSysId
+        const newRow = await client.post("/api/now/table/sp_row", rowCopy)
+        const newRowSysId = newRow.data.result.sys_id as string
+
+        const cols = await client.get("/api/now/table/sp_column", {
+          params: { sysparm_query: `sp_row=${row.sys_id}`, sysparm_limit: 50 },
+        })
+        for (const col of (cols.data.result || []) as Array<Record<string, unknown>>) {
+          const colCopy: Record<string, unknown> = { ...col }
+          delete colCopy.sys_id
+          delete colCopy.sys_created_on
+          delete colCopy.sys_created_by
+          delete colCopy.sys_updated_on
+          delete colCopy.sys_updated_by
+          delete colCopy.sys_mod_count
+          colCopy.sp_row = newRowSysId
+          const newCol = await client.post("/api/now/table/sp_column", colCopy)
+          const newColSysId = newCol.data.result.sys_id as string
+
+          const instances = await client.get("/api/now/table/sp_instance", {
+            params: { sysparm_query: `sp_column=${col.sys_id}`, sysparm_limit: 50 },
+          })
+          for (const inst of (instances.data.result || []) as Array<Record<string, unknown>>) {
+            const instCopy: Record<string, unknown> = { ...inst }
+            delete instCopy.sys_id
+            delete instCopy.sys_created_on
+            delete instCopy.sys_created_by
+            delete instCopy.sys_updated_on
+            delete instCopy.sys_updated_by
+            delete instCopy.sys_mod_count
+            instCopy.sp_column = newColSysId
+            const created = await client.post("/api/now/table/sp_instance", instCopy)
+            copiedInstances.push(created.data.result.sys_id)
+          }
+        }
       }
     } catch {
       // Best-effort — fall through. Caller still gets the cloned page.
@@ -426,20 +458,22 @@ async function executeAddWidgetInstance(
     return createErrorResult(`sp_widget not found: ${widget_id}`)
   }
 
-  // TODO: verify sp_widget_instance field set on a live instance. The
-  // canonical fields are sp_widget (reference) and sp_column (reference).
-  // If column_sys_id is omitted the instance is attached directly to the
-  // page via sp_page; whether that column-less placement is supported on
-  // older Glide releases varies.
+  // sp_instance has no sp_page column — widget instances are placed on a
+  // sp_column (which belongs to a sp_row, which belongs to the sp_page).
+  // column_sys_id is therefore required to attach the instance correctly.
+  if (!column_sys_id) {
+    return createErrorResult(
+      "column_sys_id is required for add_widget_instance — widget instances live on sp_column rows, not directly on sp_page",
+    )
+  }
   const payload: Record<string, unknown> = {
     sp_widget: widget.sys_id,
-    sp_page: page.sys_id,
+    sp_column: column_sys_id,
   }
-  if (column_sys_id) payload.sp_column = column_sys_id
   if (instance_title) payload.title = instance_title
   if (order !== undefined) payload.order = order
 
-  const response = await client.post("/api/now/table/sp_widget_instance", payload)
+  const response = await client.post("/api/now/table/sp_instance", payload)
   const result = response.data.result as Record<string, unknown>
 
   return createSuccessResult({

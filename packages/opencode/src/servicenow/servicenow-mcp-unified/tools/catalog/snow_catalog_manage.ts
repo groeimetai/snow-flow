@@ -107,6 +107,10 @@ Returns: created or queried records with sys_id, name, and the relevant referenc
         type: "string",
         description: "[create_category] Category display title (defaults to name)",
       },
+      homepage_renderer: {
+        type: "string",
+        description: "[create_category] sys_id of the sc_homepage_renderer used to render the category. Mandatory on sc_category — defaults to the OOB Default Renderer if omitted.",
+      },
       // LINK_ITEM_TO_CATEGORY
       cat_item: {
         type: "string",
@@ -432,6 +436,10 @@ async function executeCreateCategory(args: Record<string, unknown>, context: Ser
   }
   if (args.sc_catalogs) payload.sc_catalog = args.sc_catalogs
   if (args.parent) payload.parent = args.parent
+  // sc_category.homepage_renderer is mandatory — pass through when supplied so creates don't
+  // fail on a "Mandatory field" validation. The caller can pre-resolve the OOB default renderer
+  // sys_id (e.g. sc_homepage_renderer where name = 'Default').
+  if (args.homepage_renderer) payload.homepage_renderer = args.homepage_renderer
 
   const response = await client.post("/api/now/table/sc_category", payload)
   const created = response.data.result as Record<string, unknown>

@@ -161,9 +161,10 @@ async function findDashboard(
     }
   }
   if (title) {
+    // sys_dashboard exposes the display label as `name` (no `title` column).
     const search = await client.get("/api/now/table/sys_dashboard", {
       params: {
-        sysparm_query: `name=${title}^ORtitle=${title}`,
+        sysparm_query: `name=${title}`,
         sysparm_limit: 1,
       },
     })
@@ -183,9 +184,30 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
 
   const client = await getAuthenticatedClient(context)
 
+  // sys_dashboard has no owner or description columns — only name, columns, rows,
+  // cell_height, cell_width, roles, active. Drop the owner filter (left in args for
+  // forward-compat) and project just the real fields.
   const queryParts: string[] = []
-  if (owner) queryParts.push(`owner=${owner}`)
   if (active_only) queryParts.push("active=true")
+  if (owner) {
+    // Best-effort: sys_dashboard_admin holds dashboard ownership/sharing on most releases.
+    try {
+      const adminResp = await client.get("/api/now/table/sys_dashboard_admin", {
+        params: { sysparm_query: `user=${owner}`, sysparm_fields: "dashboard", sysparm_limit: 200 },
+      })
+      const dashIds = ((adminResp.data.result || []) as Array<Record<string, unknown>>)
+        .map((r) => {
+          const ref = r.dashboard
+          if (typeof ref === "string") return ref
+          if (ref && typeof ref === "object" && "value" in ref) return (ref as { value: string }).value
+          return null
+        })
+        .filter((v): v is string => typeof v === "string" && v.length > 0)
+      if (dashIds.length > 0) queryParts.push(`sys_idIN${dashIds.join(",")}`)
+    } catch {
+      // sys_dashboard_admin may not be queryable on every release — drop the owner filter.
+    }
+  }
 
   const response = await client.get("/api/now/table/sys_dashboard", {
     params: {
@@ -194,7 +216,7 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       sysparm_orderby: "name",
       ...(fields
         ? { sysparm_fields: fields }
-        : { sysparm_fields: "sys_id,name,title,description,active,owner,sys_updated_on" }),
+        : { sysparm_fields: "sys_id,name,roles,active,columns,rows,sys_updated_on" }),
     },
   })
 
@@ -205,10 +227,11 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
     count: results.length,
     dashboards: results.map((r) => ({
       sys_id: r.sys_id,
-      title: r.title || r.name,
-      description: r.description,
+      name: r.name,
+      roles: r.roles,
       active: r.active,
-      owner: r.owner,
+      columns: r.columns,
+      rows: r.rows,
       updated_at: r.sys_updated_on,
       url: `${context.instanceUrl}/$pa_dashboard.do?sysparm_dashboard=${r.sys_id}`,
     })),

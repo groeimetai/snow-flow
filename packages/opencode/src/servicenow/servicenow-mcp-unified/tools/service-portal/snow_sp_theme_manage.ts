@@ -216,17 +216,18 @@ async function executeListThemes(args: Record<string, unknown>, context: Service
 
   const themes = (response.data.result || []) as Array<Record<string, unknown>>
 
-  // Annotate each theme with its sp_css child count (best-effort)
+  // Annotate each theme with its sp_css child count (best-effort).
+  // sp_css has no direct theme reference; the link goes via the m2m_sp_theme_css_include table.
   const enriched: Array<Record<string, unknown>> = []
   for (const theme of themes) {
     let cssCount = 0
     try {
-      const cssResp = await client.get("/api/now/table/sp_css", {
-        params: { sysparm_query: `theme=${theme.sys_id}`, sysparm_fields: "sys_id", sysparm_limit: 100 },
+      const cssResp = await client.get("/api/now/table/m2m_sp_theme_css_include", {
+        params: { sysparm_query: `sp_theme=${theme.sys_id}`, sysparm_fields: "sys_id", sysparm_limit: 100 },
       })
       cssCount = (cssResp.data.result || []).length
     } catch {
-      // best-effort
+      // best-effort — older releases may name the m2m table or columns differently
     }
     enriched.push({
       sys_id: theme.sys_id,
@@ -234,7 +235,7 @@ async function executeListThemes(args: Record<string, unknown>, context: Service
       header: theme.header,
       footer: theme.footer,
       css_variables: theme.css_variables,
-      sp_css_count: cssCount,
+      css_include_count: cssCount,
       updated_at: theme.sys_updated_on,
       url: `${context.instanceUrl}/nav_to.do?uri=sp_theme.do?sys_id=${theme.sys_id}`,
     })
@@ -293,43 +294,38 @@ async function executeUpdateBranding(args: Record<string, unknown>, context: Ser
 
   const portalSysId = portal.sys_id as string
 
-  // TODO: verify against live instance — sp_brand carries portal-specific
-  // branding overrides. The link column is commonly `portal`; on some
-  // releases it is `sp_portal`. We attempt to read the existing row and
-  // patch it; otherwise we insert.
-  const brandPayload: Record<string, unknown> = { portal: portalSysId }
-  if (args.logo !== undefined) brandPayload.logo = args.logo
-  if (args.favicon !== undefined) brandPayload.favicon = args.favicon
-  if (args.primary_color !== undefined) brandPayload.primary_color = args.primary_color
-  if (args.secondary_color !== undefined) brandPayload.secondary_color = args.secondary_color
-  if (args.brand_name !== undefined) brandPayload.name = args.brand_name
-
-  const existingBrand = await client.get("/api/now/table/sp_brand", {
-    params: { sysparm_query: `portal=${portalSysId}`, sysparm_limit: 1, sysparm_fields: "sys_id" },
-  })
-  const existingRows = (existingBrand.data.result || []) as Array<Record<string, unknown>>
-
-  let brand: Record<string, unknown>
-  let mode: "inserted" | "patched"
-
-  if (existingRows.length > 0) {
-    mode = "patched"
-    const brandSysId = existingRows[0].sys_id as string
-    const updResp = await client.patch(`/api/now/table/sp_brand/${brandSysId}`, brandPayload)
-    brand = updResp.data.result
-  } else {
-    mode = "inserted"
-    const insResp = await client.post("/api/now/table/sp_brand", brandPayload)
-    brand = insResp.data.result
+  // sp_brand is not present on most ServiceNow releases — branding fields live
+  // directly on sp_portal (logo, css_variables, title, ...). Patch the portal row
+  // with the supplied branding overrides.
+  const portalPatch: Record<string, unknown> = {}
+  if (args.logo !== undefined) portalPatch.logo = args.logo
+  if (args.brand_name !== undefined) portalPatch.title = args.brand_name
+  // Roll primary/secondary color hints into css_variables when supplied alongside
+  // any existing tokens, so theme stylesheets can pick them up.
+  const colorTokens: string[] = []
+  if (args.primary_color !== undefined) colorTokens.push(`--brand-primary: ${args.primary_color};`)
+  if (args.secondary_color !== undefined) colorTokens.push(`--brand-secondary: ${args.secondary_color};`)
+  if (args.favicon !== undefined) colorTokens.push(`/* favicon: ${args.favicon} */`)
+  if (colorTokens.length > 0) {
+    const existing = (portal.css_variables as string) || ""
+    portalPatch.css_variables = existing ? `${existing}\n${colorTokens.join("\n")}` : colorTokens.join("\n")
   }
+
+  if (Object.keys(portalPatch).length === 0) {
+    return createErrorResult("No branding fields supplied (logo, favicon, primary_color, secondary_color, brand_name)")
+  }
+
+  const updResp = await client.patch(`/api/now/table/sp_portal/${portalSysId}`, portalPatch)
+  const updatedPortal = updResp.data.result as Record<string, unknown>
 
   return createSuccessResult({
     action: "update_branding",
-    mode,
-    portal: { sys_id: portalSysId, title: portal.title, url_suffix: portal.url_suffix },
-    sys_id: brand.sys_id,
-    brand,
-    url: `${context.instanceUrl}/nav_to.do?uri=sp_brand.do?sys_id=${brand.sys_id}`,
+    mode: "patched",
+    portal: { sys_id: portalSysId, title: updatedPortal.title, url_suffix: updatedPortal.url_suffix },
+    sys_id: portalSysId,
+    portal_record: updatedPortal,
+    note: "Branding written to sp_portal (sp_brand is not a standard ServiceNow table). favicon is recorded as a comment in css_variables only.",
+    url: `${context.instanceUrl}/nav_to.do?uri=sp_portal.do?sys_id=${portalSysId}`,
   })
 }
 
@@ -371,14 +367,16 @@ async function executeCloneTheme(args: Record<string, unknown>, context: Service
   const newThemeResp = await client.post("/api/now/table/sp_theme", themePayload)
   const newTheme = newThemeResp.data.result as Record<string, unknown>
 
-  // Copy sp_css children if requested
+  // Copy sp_css includes if requested. The link from sp_theme to sp_css is the
+  // m2m_sp_theme_css_include join table — copy the join rows (pointing at the same
+  // sp_css rows) instead of duplicating the CSS rows themselves.
   const copiedCss: Array<Record<string, unknown>> = []
   if (copyCss) {
     try {
-      const cssResp = await client.get("/api/now/table/sp_css", {
-        params: { sysparm_query: `theme=${source.sys_id}`, sysparm_limit: 200 },
+      const linkResp = await client.get("/api/now/table/m2m_sp_theme_css_include", {
+        params: { sysparm_query: `sp_theme=${source.sys_id}`, sysparm_limit: 200 },
       })
-      const rows = (cssResp.data.result || []) as Array<Record<string, unknown>>
+      const rows = (linkResp.data.result || []) as Array<Record<string, unknown>>
       for (const row of rows) {
         const payload: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(row)) {
@@ -386,12 +384,12 @@ async function executeCloneTheme(args: Record<string, unknown>, context: Service
           if (value === null || value === undefined) continue
           payload[key] = value
         }
-        payload.theme = newTheme.sys_id
-        const inserted = await client.post("/api/now/table/sp_css", payload)
-        copiedCss.push({ sys_id: inserted.data.result.sys_id, name: inserted.data.result.name })
+        payload.sp_theme = newTheme.sys_id
+        const inserted = await client.post("/api/now/table/m2m_sp_theme_css_include", payload)
+        copiedCss.push({ sys_id: inserted.data.result.sys_id })
       }
     } catch {
-      // sp_css copy is best-effort; the new theme still exists even if children fail
+      // m2m copy is best-effort; the new theme still exists even if includes fail
     }
   }
 
