@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T09:40:59.626Z",
+  "generatedAt": "2026-05-14T09:45:13.234Z",
   "count": 428,
   "groups": [
     {
@@ -9567,6 +9567,11 @@
                 "type": "number",
                 "description": "Maximum results per artifact type (default: 25)",
                 "default": 25
+              },
+              "include_filters": {
+                "type": "boolean",
+                "description": "Also scan sys_filter (saved list filters) and sys_report records for references to this field. These are not script-bearing and would otherwise be missed by the script-field scan, which is the main reason a delete/rename can break dashboards and reports the dependents scan said nothing about. Default: true.",
+                "default": true
               }
             },
             "required": [
