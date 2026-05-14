@@ -1,6 +1,6 @@
 ---
 name: document-management
-description: This skill should be used when the user asks to "attachment", "document", "file upload", "document template", "PDF generation", "document workflow", or any ServiceNow Document Management development.
+description: Handle ServiceNow attachments via GlideSysAttachment, copy files between records, generate documents from sys_report_template, produce PDFs, version dms_document records, and enforce attachment access checks.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

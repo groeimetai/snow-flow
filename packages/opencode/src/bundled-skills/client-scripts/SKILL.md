@@ -1,6 +1,6 @@
 ---
 name: client-scripts
-description: This skill should be used when the user asks to "create client script", "client-side script", "onLoad", "onChange", "onSubmit", "onCellEdit", "g_form", "GlideAjax", "form validation", or any ServiceNow client-side scripting.
+description: Write ServiceNow client scripts (onLoad/onChange/onSubmit/onCellEdit) using g_form, g_user, GlideAjax, field visibility/mandatory toggles, and validation with debounced server calls.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

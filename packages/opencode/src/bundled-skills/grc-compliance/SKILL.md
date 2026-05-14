@@ -1,6 +1,6 @@
 ---
 name: grc-compliance
-description: This skill should be used when the user asks to "GRC", "governance", "risk", "compliance", "audit", "policy", "control", "risk assessment", "SOX", "GDPR", or any ServiceNow GRC development.
+description: Build ServiceNow GRC — sn_compliance_policy lifecycle, sn_compliance_control tests, sn_risk_risk assessment with inherent/residual scoring, audit engagements, and findings remediation.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

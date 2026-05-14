@@ -1,6 +1,6 @@
 ---
 name: mid-server
-description: This skill should be used when the user asks to "MID Server", "MID script", "ECC queue", "probe", "sensor", "mid server script", "orchestration", "remote execution", or any ServiceNow MID Server development.
+description: Communicate with ServiceNow MID Servers via the ECC queue — send Command/JSProbe/PowerShell/SSHCommand payloads to ecc_agent, build custom probes/sensors, and monitor MID health on ecc_agent.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

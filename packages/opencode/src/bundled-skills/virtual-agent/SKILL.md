@@ -1,6 +1,6 @@
 ---
 name: virtual-agent
-description: This skill should be used when the user asks to "create chatbot", "virtual agent", "VA topic", "NLU", "conversation", "chat flow", "topic block", or any ServiceNow Virtual Agent development.
+description: Build ServiceNow Virtual Agent — sys_cs_topic conversations, topic blocks (text/prompt/script/decision/handoff), NLU utterances and custom entities, quick replies, and KB/incident integration scripts.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

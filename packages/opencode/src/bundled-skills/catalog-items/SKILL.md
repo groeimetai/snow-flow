@@ -1,6 +1,6 @@
 ---
 name: catalog-items
-description: This skill should be used when the user asks to "create catalog item", "service catalog", "request item", "catalog variables", "variable set", "catalog client script", "order guide", "record producer", or any ServiceNow Service Catalog development.
+description: Build ServiceNow Service Catalog items, variables, variable sets, catalog client scripts, record producers, and order guides with reference qualifiers and dynamic pricing.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

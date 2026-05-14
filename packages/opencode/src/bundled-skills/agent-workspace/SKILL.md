@@ -1,6 +1,6 @@
 ---
 name: agent-workspace
-description: This skill should be used when the user asks to "agent workspace", "workspace configuration", "workspace form", "workspace list", "agent assist", "contextual side panel", "workspace customization", or any ServiceNow Agent Workspace development.
+description: Build ServiceNow Agent Workspace configurations — workspaces, lists, forms, contextual side panels, Agent Assist similar-record finders, and workspace-specific UI actions on sys_aw_* tables.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

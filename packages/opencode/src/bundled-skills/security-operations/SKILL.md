@@ -1,6 +1,6 @@
 ---
 name: security-operations
-description: This skill should be used when the user asks to "security incident", "SecOps", "vulnerability", "security response", "threat", "SIEM", "security case", or any ServiceNow Security Operations development.
+description: Build ServiceNow Security Operations — sn_si_incident with NIST-aligned state transitions, sn_vul_vulnerable_item with CVSS/risk scoring, sn_ti_indicator IOC matching, and containment playbooks.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

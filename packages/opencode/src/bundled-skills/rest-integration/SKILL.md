@@ -1,6 +1,6 @@
 ---
 name: rest-integration
-description: This skill should be used when the user asks to "REST API", "call external API", "integration", "webhook", "outbound REST", "RESTMessageV2", "HTTP request", or any external API integration.
+description: Make outbound REST calls from ServiceNow with sn_ws.RESTMessageV2 — basic/bearer/OAuth/API-key auth, error handling by status code, response parsing, sys_rest_message records, and retry with exponential backoff.
 version: 1.0.0
 tools:
   - snow_create_rest_message

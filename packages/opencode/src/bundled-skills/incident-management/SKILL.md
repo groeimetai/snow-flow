@@ -1,6 +1,6 @@
 ---
 name: incident-management
-description: This skill should be used when the user asks to "create incident", "incident workflow", "incident assignment", "major incident", "incident escalation", "incident priority", or any ServiceNow Incident Management development.
+description: Manage ServiceNow incidents — creation with impact/urgency priority calc, auto-assignment by category, reassignment tracking, major incident declaration with bridge calls, time-based escalation, MTTR metrics.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

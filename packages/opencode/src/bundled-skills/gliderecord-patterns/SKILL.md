@@ -1,6 +1,6 @@
 ---
 name: gliderecord-patterns
-description: This skill should be used when the user asks to "query records", "GlideRecord", "database query", "get records", "update records", "insert record", "delete record", or any ServiceNow database operations.
+description: Write efficient ServiceNow GlideRecord queries — addQuery vs addEncodedQuery, setLimit, GlideAggregate for counts, avoiding N+1 in loops, query operators, and safe CRUD with workflow control.
 version: 1.0.0
 tools:
   - snow_query_table

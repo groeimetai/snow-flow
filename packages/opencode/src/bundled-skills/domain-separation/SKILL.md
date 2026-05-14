@@ -1,6 +1,6 @@
 ---
 name: domain-separation
-description: This skill should be used when the user asks to "domain separation", "multi-tenant", "domain path", "domain visibility", "domain picker", "MSP", "managed services", or any ServiceNow Domain Separation development.
+description: Configure ServiceNow multi-tenant domain separation — domain hierarchy, sys_user_has_domain membership, domain-aware vs cross-domain queries, MSP tenant onboarding, and domain picker logic.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

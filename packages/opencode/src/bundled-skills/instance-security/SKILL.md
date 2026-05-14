@@ -1,6 +1,6 @@
 ---
 name: instance-security
-description: This skill should be used when the user asks to "instance security", "hardening", "security best practices", "authentication", "SSO", "MFA", "session", "XSS", "injection", or any ServiceNow Instance Security development.
+description: Harden a ServiceNow instance — password complexity, session timeout, MFA enforcement, input sanitization for XSS/injection, security properties, syslog events, and security health checks.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

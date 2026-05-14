@@ -1,6 +1,6 @@
 ---
 name: ui-builder-patterns
-description: This skill should be used when the user asks to "create workspace", "UI Builder", "UIB", "workspace page", "macroponent", "data broker", "UX page", "configurable workspace", or any ServiceNow UI Builder and Next Experience development.
+description: Build ServiceNow UI Builder / Next Experience pages — macroponents, GraphQL/script data brokers, client state parameters, event handlers (NOW_RECORD_LIST etc.), and now-record-list/form component configuration.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

@@ -1,6 +1,6 @@
 ---
 name: cmdb-patterns
-description: This skill should be used when the user asks to "create CI", "CMDB", "configuration item", "CI relationship", "impact analysis", "dependency map", "cmdb_ci", "asset", or any ServiceNow CMDB and configuration management development.
+description: Create ServiceNow CIs and cmdb_rel_ci relationships, walk upstream/downstream impact, detect orphan/stale CIs, and align discovered CIs with the proper sys_class_name hierarchy.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

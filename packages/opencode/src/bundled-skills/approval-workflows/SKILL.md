@@ -1,6 +1,6 @@
 ---
 name: approval-workflows
-description: This skill should be used when the user asks to "approval", "approval rule", "approval workflow", "approver", "approval group", "multi-level approval", "delegate approval", or any ServiceNow Approval development.
+description: Configure ServiceNow approval rules and sysapproval_approver records — manager/group/script approvers, multi-level routing, delegation via sys_user_delegate, and parent-record state rollup.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

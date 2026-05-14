@@ -1,6 +1,6 @@
 ---
 name: widget-coherence
-description: This skill should be used when the user asks to "create a widget", "build a widget", "service portal widget", "sp_widget", "fix widget", "widget not working", "ng-click not working", or any Service Portal widget development.
+description: Build Service Portal widgets (sp_widget) with synchronized server/client/HTML — data.* initialization, ng-click + controller method matching, c.server.get action handlers, and Angular directive usage.
 version: 1.0.0
 tools:
   - snow_deploy

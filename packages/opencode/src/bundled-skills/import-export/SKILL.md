@@ -1,6 +1,6 @@
 ---
 name: import-export
-description: This skill should be used when the user asks to "import", "export", "data migration", "XML", "Excel", "CSV", "bulk load", "data transfer", or any ServiceNow Import/Export development.
+description: Move data in and out of ServiceNow — CSV parsing into import sets, GlideImportSetTransformer runs, CSV/JSON/XML exports, scheduled data sources, bulk update and deleteMultiple safety patterns.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

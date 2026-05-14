@@ -1,6 +1,6 @@
 ---
 name: es5-compliance
-description: This skill should be used when the user asks to "write a business rule", "create a script include", "write server-side code", "fix SyntaxError", "background script", "scheduled job", "workflow script", or any ServiceNow server-side JavaScript development.
+description: Enforce ES5-only syntax for ServiceNow server-side scripts (Rhino engine) — convert const/let, arrow functions, template literals, destructuring, for-of, and async/await to ES5 equivalents.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

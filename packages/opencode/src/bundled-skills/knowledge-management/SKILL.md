@@ -1,6 +1,6 @@
 ---
 name: knowledge-management
-description: This skill should be used when the user asks to "create knowledge article", "KB article", "knowledge base", "knowledge workflow", "article template", "publish article", or any ServiceNow Knowledge Management development.
+description: Build ServiceNow Knowledge Management — kb_knowledge articles, draft/review/published workflow, kb_category placement, full-text search with snippets, article templates, and kb_feedback rating rollup.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

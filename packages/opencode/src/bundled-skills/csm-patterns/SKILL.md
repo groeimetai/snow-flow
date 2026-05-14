@@ -1,6 +1,6 @@
 ---
 name: csm-patterns
-description: This skill should be used when the user asks to "customer service", "CSM", "case", "account", "contact", "customer portal", "entitlement", "service contract", or any ServiceNow Customer Service Management development.
+description: Build ServiceNow Customer Service Management — customer_account, customer_contact, sn_customerservice_case routing, service entitlements with usage decrement, and Customer Portal case submission widgets.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

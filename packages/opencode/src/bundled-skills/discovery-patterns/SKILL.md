@@ -1,6 +1,6 @@
 ---
 name: discovery-patterns
-description: This skill should be used when the user asks to "discovery", "discover", "probe", "sensor", "identification", "discovery schedule", "MID server", "network scan", or any ServiceNow Discovery development.
+description: Configure ServiceNow Discovery — schedules, IP ranges, credential affinities, MID Server assignment, custom probes/sensors, identification rules, and run-status monitoring on discovery_* tables.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

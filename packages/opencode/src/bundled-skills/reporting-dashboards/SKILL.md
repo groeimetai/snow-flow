@@ -1,6 +1,6 @@
 ---
 name: reporting-dashboards
-description: This skill should be used when the user asks to "create report", "dashboard", "chart", "visualization", "analytics", "scheduled report", "export data", or any ServiceNow reporting and dashboard development.
+description: Build ServiceNow reports (list/bar/pie/line/pivot/single-score) on sys_report, sys_dashboard layouts with widget placement, scheduled report delivery, and drill-down configuration.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

@@ -1,6 +1,6 @@
 ---
 name: email-notifications
-description: This skill should be used when the user asks to "create notification", "email notification", "send email", "notification script", "email template", "sysevent_email_action", "notify user", "alert", or any ServiceNow email and notification development.
+description: Create ServiceNow sysevent_email_action notifications — templates with substitution variables, mail scripts for dynamic content/recipients/attachments, custom events, weights, and digest configuration.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

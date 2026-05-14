@@ -1,6 +1,6 @@
 ---
 name: performance-analytics
-description: This skill should be used when the user asks to "create indicator", "performance analytics", "PA", "KPI", "dashboard widget", "breakdown", "threshold", "scorecard", or any ServiceNow Performance Analytics development.
+description: Build ServiceNow Performance Analytics — pa_indicators (count/sum/avg/percentage), pa_breakdowns, pa_thresholds with severity colors, pa_widgets, and pa_dashboards for KPI tracking.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

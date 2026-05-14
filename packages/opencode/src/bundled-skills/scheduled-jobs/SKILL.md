@@ -1,6 +1,6 @@
 ---
 name: scheduled-jobs
-description: This skill should be used when the user asks to "create scheduled job", "scheduled script", "cron job", "automation schedule", "recurring task", "batch processing", "nightly job", or any ServiceNow Scheduled Job development.
+description: Create ServiceNow scheduled jobs on sysauto_script — daily/weekly cron patterns, batch processing with time/runtime limits, conditional execution, error notifications, and metrics recording.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

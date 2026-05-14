@@ -1,6 +1,6 @@
 ---
 name: event-management
-description: This skill should be used when the user asks to "create event", "event rule", "alert", "event correlation", "metric", "monitoring integration", "SNMP trap", or any ServiceNow Event Management development.
+description: Build ServiceNow Event Management — push events to em_event, write event rules with severity transforms, configure alert correlation, dependent-CI rollups, and metric-threshold event generation.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

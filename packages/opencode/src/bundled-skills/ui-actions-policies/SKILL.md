@@ -1,6 +1,6 @@
 ---
 name: ui-actions-policies
-description: This skill should be used when the user asks to "create UI action", "form button", "UI policy", "form behavior", "hide field", "make field mandatory", "context menu", "list action", or any ServiceNow UI Actions and UI Policies development.
+description: Build ServiceNow UI Actions (form/list buttons, context menus) and UI Policies (conditional mandatory/visible/read-only) with server/client scripts and GlideAjax. Use snow_analyze_form before modifying forms.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

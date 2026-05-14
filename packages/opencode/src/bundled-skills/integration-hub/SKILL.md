@@ -1,6 +1,6 @@
 ---
 name: integration-hub
-description: This skill should be used when the user asks to "IntegrationHub", "spoke", "flow action", "integration", "subflow", "connection alias", "credential alias", "REST step", or any ServiceNow IntegrationHub development.
+description: Build ServiceNow IntegrationHub spokes — sn_ih_spoke definitions, sn_ih_action with inputs/outputs, REST/script steps, connection and credential aliases (sys_alias), and retry logic for transient failures.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

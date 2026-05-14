@@ -1,6 +1,6 @@
 ---
 name: snow-flow-commands
-description: This skill should be used when the user asks about "snow-flow commands", "CLI commands", "how to start", "swarm", "sparc", "orchestrator", "agent spawn", "memory", "task", or needs guidance on Snow-Flow CLI operations.
+description: Snow-Flow CLI reference — interactive TUI startup, SPARC modes (orchestrator/coder/researcher/TDD), swarm coordination strategies, agent spawning, memory operations, and ServiceNow auth configuration.
 license: Apache-2.0
 compatibility: Designed for Snow-Code CLI
 metadata:

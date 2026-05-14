@@ -1,6 +1,6 @@
 ---
 name: asset-management
-description: This skill should be used when the user asks to "asset", "hardware asset", "software asset", "asset lifecycle", "inventory", "license management", "asset allocation", "HAM", "SAM", or any ServiceNow Asset Management development.
+description: Manage ServiceNow hardware assets, software licenses, and lifecycle states on alm_hardware/alm_license — license allocation, CMDB-to-asset linking, warranty tracking, inventory aggregation (HAM/SAM).
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

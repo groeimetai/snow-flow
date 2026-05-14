@@ -1,6 +1,6 @@
 ---
 name: request-management
-description: This skill should be used when the user asks to "service request", "RITM", "request item", "catalog request", "fulfillment", "request workflow", "approval", or any ServiceNow Request Management development.
+description: Handle ServiceNow service requests — sc_request/sc_req_item creation from catalog items, sc_task fulfillment with auto-close on completion, RITM variable access via sc_item_option_mtom, and approval status rollup.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

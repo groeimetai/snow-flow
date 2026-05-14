@@ -1,6 +1,6 @@
 ---
 name: flow-designer
-description: This skill should be used when the user asks to "create flow", "Flow Designer", "workflow automation", "subflow", "action", "flow trigger", "scheduled flow", or any ServiceNow Flow Designer development.
+description: Build ServiceNow Flow Designer flows via the dedicated tool — triggers, IF/ELSE/TRY/CATCH placement rules, subflows, script actions with inputs/outputs, and REST step configuration. Never use background scripts on sys_hub_* tables.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

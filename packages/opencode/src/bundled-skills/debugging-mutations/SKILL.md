@@ -1,6 +1,6 @@
 ---
 name: debugging-mutations
-description: This skill should be used when the user asks to "debug a tool", "what changed in ServiceNow", "verify the mutation", "check what happened", "the tool didn't work", "inspect mutations", "audit trail", "syslog", "flow execution log", or any post-tool-execution verification of changes on a ServiceNow instance.
+description: Verify what changed on a ServiceNow instance after a tool call — sys_audit inspection, syslog/transaction logs, session context, Flow Designer execution logs, outbound HTTP traces.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

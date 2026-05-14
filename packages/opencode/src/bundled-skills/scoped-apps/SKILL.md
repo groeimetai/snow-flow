@@ -1,6 +1,6 @@
 ---
 name: scoped-apps
-description: This skill should be used when the user asks to "create application", "scoped application", "custom app", "application scope", "x_" prefix, "app scope", "application properties", "cross-scope", or any ServiceNow scoped application development.
+description: Build ServiceNow scoped applications (x_vendor_app) — scope naming, x_-prefixed tables, cross-scope script include access via GlideScopedEvaluator, application properties, scoped REST APIs, and store-publishing checklist.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

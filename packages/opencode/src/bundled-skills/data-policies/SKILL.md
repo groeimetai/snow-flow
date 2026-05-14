@@ -1,6 +1,6 @@
 ---
 name: data-policies
-description: This skill should be used when the user asks to "data policy", "dictionary", "field validation", "mandatory field", "read only", "data model", "table schema", "column attributes", or any ServiceNow Data Policy and Dictionary development.
+description: Manage ServiceNow dictionary (sys_dictionary), table/field creation, choice lists, dictionary overrides, and sys_data_policy2 rules that enforce mandatory/read-only/visible field behavior on the data layer.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

@@ -1,6 +1,6 @@
 ---
 name: script-include-patterns
-description: This skill should be used when the user asks to "create script include", "utility class", "reusable code", "server-side library", "AbstractAjaxProcessor", "GlideAjax", "client callable", or any ServiceNow Script Include development.
+description: Write ServiceNow Script Includes — Class.create utility classes, AbstractAjaxProcessor client-callable APIs for GlideAjax, inheritance via Object.extendsObject, and scoped-app patterns.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

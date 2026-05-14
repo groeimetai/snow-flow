@@ -1,6 +1,6 @@
 ---
 name: update-set-workflow
-description: This skill should be used when the user asks to "update set", "create update set", "change tracking", "create something", "deploy", "make changes", "develop", "build a feature", or any ServiceNow development that requires change tracking.
+description: Manage ServiceNow update sets — create named sets before any development, ensure auto_switch tracks API changes under the OAuth service account, complete on done, and export for promotion. Mandatory for all change-producing work.
 version: 1.0.0
 tools:
   - snow_update_set_create

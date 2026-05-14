@@ -1,6 +1,6 @@
 ---
 name: field-service
-description: This skill should be used when the user asks to "field service", "work order", "dispatch", "technician", "FSM", "mobile field", "scheduling", "route optimization", or any ServiceNow Field Service Management development.
+description: Build ServiceNow Field Service Management — wm_order work orders, wm_task tasks, wm_resource technicians with skills/territories, dispatch/auto-assignment, mobile status updates, and time entries.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

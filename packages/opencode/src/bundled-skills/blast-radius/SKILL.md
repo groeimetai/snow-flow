@@ -1,6 +1,6 @@
 ---
 name: blast-radius
-description: This skill should be used when the user asks about "impact analysis", "blast radius", "configuration dependencies", "what touches this field", "field references", "which business rules affect", "what calls this script include", "reverse dependencies", "table configurations", "change impact", or any ServiceNow configuration dependency analysis.
+description: Trace ServiceNow configuration dependencies — what artifacts touch a given field, what calls a script include, table/app-level config inventory. Use before deletes, renames, or refactors.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

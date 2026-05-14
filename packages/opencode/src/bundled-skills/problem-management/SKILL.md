@@ -1,6 +1,6 @@
 ---
 name: problem-management
-description: This skill should be used when the user asks to "create problem", "problem record", "root cause analysis", "RCA", "known error", "KEDB", "problem investigation", or any ServiceNow Problem Management development.
+description: Manage ServiceNow problems — create from linked incidents, proactive pattern detection, RCA with 5-Whys, known_error workarounds (KEDB), KEDB search by CI/category/keywords, and permanent-fix linkage to changes.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

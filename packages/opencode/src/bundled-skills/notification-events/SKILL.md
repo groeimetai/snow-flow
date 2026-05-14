@@ -1,6 +1,6 @@
 ---
 name: notification-events
-description: This skill should be used when the user asks to "event", "sysevent", "event queue", "trigger notification", "gs.eventQueue", "event-based", "system event", or any ServiceNow Event and Notification triggering development.
+description: Use ServiceNow events (sysevent) — gs.eventQueue dispatch, sysevent_register definitions, sysevent_script_action handlers, delayed events with process_on, and reminder/state-change patterns.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

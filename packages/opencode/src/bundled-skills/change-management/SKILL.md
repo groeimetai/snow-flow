@@ -1,6 +1,6 @@
 ---
 name: change-management
-description: This skill should be used when the user asks to "create change", "change request", "CAB", "change approval", "change task", "RFC", "normal change", "emergency change", or any ServiceNow Change Management development.
+description: Create and transition ServiceNow change requests (normal/standard/emergency), change tasks, affected CIs, approval routing, CAB scheduling, and conflict detection across maintenance windows.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

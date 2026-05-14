@@ -1,6 +1,6 @@
 ---
 name: workspace-builder
-description: This skill should be used when the user asks to "App Engine Studio", "workspace builder", "custom workspace", "AES", "low code", "app development", "studio", or any ServiceNow App Engine Studio development.
+description: Build ServiceNow App Engine Studio applications — sys_scope creation, scoped tables, sys_aw_workspace with lists/forms, UI Builder pages and macroponents, data brokers, and application export readiness checks.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

@@ -1,6 +1,6 @@
 ---
 name: acl-security
-description: This skill should be used when the user asks to "create ACL", "access control", "security rule", "restrict access", "role based access", "row level security", "field level security", or any ServiceNow ACL and security configuration.
+description: Create and debug ServiceNow ACLs (record, field, REST, script-include). Covers role/condition/script patterns, evaluation order, field-level visibility, and impersonation testing for row- and field-level security.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

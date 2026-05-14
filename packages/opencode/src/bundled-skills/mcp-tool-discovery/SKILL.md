@@ -1,6 +1,6 @@
 ---
 name: mcp-tool-discovery
-description: This skill should be used when the user asks about "available tools", "what tools", "how to find tools", "tool search", "MCP servers", "list tools", "discover tools", "which tools", or needs guidance on discovering and using Snow-Flow MCP tools.
+description: Use tool_search to discover and enable lazy-loaded Snow-Flow MCP tools (snow_*, jira_*, github_*, etc). Explains naming conventions, search strategies, and always-available activity tools.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

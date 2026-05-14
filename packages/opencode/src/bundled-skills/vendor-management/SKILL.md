@@ -1,6 +1,6 @@
 ---
 name: vendor-management
-description: This skill should be used when the user asks to "vendor", "supplier", "contract", "procurement", "SLA", "vendor risk", "vendor performance", or any ServiceNow Vendor Management development.
+description: Manage ServiceNow vendors and contracts — core_company vendor records, ast_contract with renewal alerts, ast_contract_sla performance tracking, vendor_risk_assessment scoring, and vendor scorecards.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

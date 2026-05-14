@@ -1,6 +1,6 @@
 ---
 name: predictive-intelligence
-description: This skill should be used when the user asks to "predictive intelligence", "machine learning", "ML", "classification", "similarity", "clustering", "prediction", "AI", or any ServiceNow Predictive Intelligence development.
+description: Use ServiceNow Predictive Intelligence — sn_ml.ClassificationPredictor for auto-categorization, SimilarityPredictor for related records, ClusteringPredictor, model training/retraining, and prediction-feedback accuracy tracking.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

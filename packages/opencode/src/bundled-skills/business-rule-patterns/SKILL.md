@@ -1,6 +1,6 @@
 ---
 name: business-rule-patterns
-description: This skill should be used when the user asks to "create a business rule", "before insert", "after update", "async business rule", "business rule not working", "current vs previous", or any Business Rule development.
+description: Write ServiceNow business rules (before/after/async/display) — current vs previous, changesTo/changesFrom, recursion avoidance, setAbortAction, and async dispatch for heavy work.
 version: 1.0.0
 tools:
   - snow_create_business_rule

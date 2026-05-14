@@ -1,6 +1,6 @@
 ---
 name: mobile-development
-description: This skill should be used when the user asks to "mobile app", "mobile studio", "push notification", "offline", "mobile card", "native mobile", "mobile UI", or any ServiceNow Mobile development.
+description: Configure ServiceNow Mobile (Now Mobile/Agent) — sys_sg_mobile_app screens, card builders, push notifications, offline sync rules, mobile actions for barcode/GPS, and offline-queue change processing.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

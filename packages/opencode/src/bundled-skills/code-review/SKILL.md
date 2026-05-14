@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: This skill should be used when the user asks to "review code", "code review", "check my code", "audit code", "find bugs", "security review", "performance review", or any ServiceNow code quality assessment.
+description: Review ServiceNow server-side scripts for ES5 violations, ACL/injection/XSS issues, N+1 queries, missing setLimit/error handling, hard-coded sys_ids, and business-rule recursion risks.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:

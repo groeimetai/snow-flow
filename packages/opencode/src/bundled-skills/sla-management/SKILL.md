@@ -1,6 +1,6 @@
 ---
 name: sla-management
-description: This skill should be used when the user asks to "create SLA", "service level agreement", "SLA definition", "SLA workflow", "task SLA", "breach", "response time", "resolution time", or any ServiceNow SLA Management development.
+description: Configure ServiceNow SLAs — contract_sla definitions with start/stop/pause/cancel conditions, task_sla status checks, breach escalation, business-hours schedules, and compliance-rate aggregation.
 license: Apache-2.0
 compatibility: Designed for Snow-Code and ServiceNow development
 metadata:
