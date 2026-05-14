@@ -18,3 +18,7 @@ export {
   toolDefinition as snow_blast_radius_dependents_def,
   execute as snow_blast_radius_dependents_exec,
 } from "./snow_blast_radius_dependents.js"
+export {
+  toolDefinition as snow_blast_radius_update_sets_def,
+  execute as snow_blast_radius_update_sets_exec,
+} from "./snow_blast_radius_update_sets.js"
