@@ -1,54 +1,87 @@
 /**
  * snow_fsm_dispatch_manage - Unified Field Service Management dispatch
- * workflow tool.
+ * lookup tool.
  *
- * Wraps the wm_agent (field technician), wm_dispatch_group, wm_skill
- * and wm_qualification tables installed by the Field Service Management
- * plugin (com.snc.work_management). Used by the dispatch workflow to
- * find the right technician for a work order based on skill, group and
- * availability.
+ * Important: modern ServiceNow Field Service Management does NOT
+ * surface a single "agent" or "dispatch" table. There is no wm_agent
+ * row per technician — agents are simply sys_user records that hold
+ * one or more wm_* roles (wm_agent, wm_dispatcher, wm_manager, ...).
+ * Dispatch routing is composed from several different tables instead:
  *
- * Notes:
- * - `suggest_agent` is a read-only smart query: it filters wm_agent by
- *   a required skill (via wm_qualification) and an availability window.
- *   It deliberately does NOT call FSM's AI dispatch / scheduling
- *   engines — those are separate plugins. The caller should treat the
- *   result as a candidate list, not a binding assignment.
+ *   - sys_user filtered by an FSM role -> the pool of technicians
+ *   - sys_user_group                    -> assignment groups
+ *   - wm_agent_schedule_attribute_plan  -> per-user travel / overtime /
+ *                                          home-base / search-radius
+ *                                          policy that the dispatcher
+ *                                          uses when scheduling
+ *   - wm_work_order_task_potential_assignment_groups
+ *                                       -> which assignment groups are
+ *                                          eligible for a specific
+ *                                          wm_task
+ *   - wm_order.assigned_to / assignment_group (inherited from task)
+ *                                       -> the actual assignment
  *
- * Greenfield: this is the first FSM coverage in the repo. Column names
- * are best-effort against the documented FSM data model — verify
- * against a live instance with com.snc.work_management activated
- * before relying on the smart-query output.
+ * This tool surfaces those pieces with safe read actions and a single
+ * write action (assign_to_work_order) that patches the wm_order's
+ * assigned_to / assignment_group. AI dispatch / scheduling engines
+ * are NOT called — the caller treats the read results as candidates,
+ * not binding decisions.
+ *
+ * Field list for every table verified against sys_dictionary on a
+ * live instance with com.snc.work_management active.
  */
 
 import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
 
-const AGENT_TABLE = "wm_agent"
-const DISPATCH_GROUP_TABLE = "wm_dispatch_group"
-const SKILL_TABLE = "wm_skill"
-const QUALIFICATION_TABLE = "wm_qualification"
+const USER_TABLE = "sys_user"
+const USER_GROUP_TABLE = "sys_user_group"
+const USER_HAS_ROLE_TABLE = "sys_user_has_role"
+const ROLE_TABLE = "sys_user_role"
+const SCHEDULE_PLAN_TABLE = "wm_agent_schedule_attribute_plan"
+const POTENTIAL_GROUPS_TABLE = "wm_work_order_task_potential_assignment_groups"
 const WORK_ORDER_TABLE = "wm_order"
+const WORK_TASK_TABLE = "wm_task"
 const FSM_PLUGIN = "com.snc.work_management"
+
+// Roles installed by com.snc.work_management. Used as the default
+// pool for list_agents. Verified against sys_user_role on a live
+// instance.
+const FSM_AGENT_ROLES = [
+  "wm_agent",
+  "wm_dispatcher",
+  "wm_manager",
+  "wm_admin",
+  "wm_qualifier",
+  "wm_initiator",
+  "wm_initiator_qualifier",
+  "wm_initiator_qualifier_dispatcher",
+  "wm_basic",
+  "wm_read",
+  "wm_approver_user",
+  "wm_task_initiator",
+] as const
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_fsm_dispatch_manage",
-  description: `Unified tool for ServiceNow Field Service Management dispatch operations. Wraps the wm_agent, wm_dispatch_group, wm_skill and wm_qualification tables installed by the Field Service Management plugin (com.snc.work_management).
+  description: `Unified tool for ServiceNow Field Service Management dispatch lookups. Modern ServiceNow FSM does not store dispatch in a single table — there is no wm_agent / wm_dispatch_group table. This tool composes the answer from several real tables: sys_user (filtered by wm_* role) for technicians, sys_user_group for assignment groups, wm_agent_schedule_attribute_plan for per-user schedule policy, and wm_work_order_task_potential_assignment_groups for which groups are eligible for a specific work task.
+
+Companion tool: snow_fsm_work_order_manage handles wm_order CRUD and snow_fsm_parts_manage handles sm_part_requirement CRUD.
 
 Actions:
-- list_agents — list wm_agent rows (field technicians), optionally filtered by dispatch_group, skill, location or active flag
-- list_groups — list wm_dispatch_group rows
-- assign_agent — set a work order's assigned_to (and optionally assignment_group). Convenience wrapper for the same operation in snow_fsm_work_order_manage, scoped to dispatch workflows
-- suggest_agent — read-only smart query that returns candidate agents filtered by required skill, dispatch group, and an availability window. Does NOT call FSM's AI dispatch engine
-- check_availability — list agents whose schedule has no overlapping work orders during the given window
+- list_agents - list sys_user rows that hold any FSM role (wm_agent, wm_dispatcher, wm_manager, ...). Optional filters: role, group, location, active flag, and free-text name search
+- list_groups - list sys_user_group rows. Optional filter: name LIKE search and active flag. Use for picking an assignment_group on a wm_order
+- list_schedules - list wm_agent_schedule_attribute_plan rows for a given sys_user (or the full set with no filter). Returns home base, travel radius, overtime / penalty rates and the schedule window
+- list_potential_groups_for_task - list wm_work_order_task_potential_assignment_groups rows for a given wm_task sys_id. Tells you which assignment groups are eligible to take that task
+- assign_to_work_order - patch a wm_order with assigned_to (sys_user) and/or assignment_group (sys_user_group). Inherited from task — both fields exist on wm_order even though they aren't declared directly on wm_order in sys_dictionary
 
-Use when: the agent needs to discover technicians for a work order, audit dispatch group membership, or pre-filter candidates before opening the Dispatcher Workspace. Requires the Field Service Management plugin (com.snc.work_management) — every action surfaces a clear PLUGIN_MISSING error if wm_agent is absent.
+Use when: the agent needs to pick a technician or assignment group, audit FSM role membership, look up a technician's schedule policy, or do the actual assignment on a work order. Read actions hit live tables only — no AI dispatch / scheduling engine is invoked.
 
-Returns: agent records with sys_id, name, user (sys_user reference), dispatch_group, location, active. Group records include sys_id, name, location and parent group. Suggestions include the matching skill, group membership flag, and a "reasons" array describing why the candidate matched.`,
+Returns: agents include sys_id, user_name, name, email, active, location, fsm_roles. Groups include sys_id, name, active, manager. Schedule plans include sys_id, user, default flag, from/to window, start/end location, travel radius, overtime caps and penalty rates. Potential-group rows include sys_id, work_order_task, assignment_group, active. assign_to_work_order returns the patched wm_order.`,
   category: "itsm",
   subcategory: "field-service",
-  use_cases: ["field-service", "dispatch", "scheduling", "technician", "fsm"],
+  use_cases: ["field-service", "dispatch", "scheduling", "technician", "assignment", "fsm"],
   complexity: "intermediate",
   frequency: "medium",
   permission: "write",
@@ -59,60 +92,72 @@ Returns: agent records with sys_id, name, user (sys_user reference), dispatch_gr
       action: {
         type: "string",
         description: "Management action to perform",
-        enum: ["list_agents", "list_groups", "assign_agent", "suggest_agent", "check_availability"],
+        enum: [
+          "list_agents",
+          "list_groups",
+          "list_schedules",
+          "list_potential_groups_for_task",
+          "assign_to_work_order",
+        ],
       },
-      // Filters / identifiers
-      dispatch_group: {
+      // Filters for list_agents
+      role: {
         type: "string",
-        description: "[list_agents/suggest_agent/check_availability] Filter agents by wm_dispatch_group (sys_id or name)",
+        description: "[list_agents] Filter to a single FSM role name (e.g. wm_agent, wm_dispatcher). Default is any wm_* role",
       },
-      skill: {
+      group: {
         type: "string",
-        description: "[list_agents/suggest_agent] Filter agents by required skill (wm_skill sys_id or name) — joined through wm_qualification",
+        description: "[list_agents] sys_user_group sys_id to filter agents by group membership",
       },
       location: {
         type: "string",
-        description: "[list_agents/suggest_agent] Filter agents by location (cmn_location sys_id or name)",
+        description: "[list_agents] cmn_location sys_id to filter agents by location",
+      },
+      name_like: {
+        type: "string",
+        description: "[list_agents/list_groups] Free-text LIKE match against the name column",
       },
       active_only: {
         type: "boolean",
-        description: "[list_agents/list_groups/suggest_agent/check_availability] Only return active rows",
+        description: "[list_agents/list_groups/list_schedules/list_potential_groups_for_task] Only return active rows",
         default: true,
       },
-      // ASSIGN_AGENT fields
+      // Filters for list_schedules
+      user: {
+        type: "string",
+        description: "[list_schedules] sys_user sys_id to filter schedule attribute plans by",
+      },
+      // Filters for list_potential_groups_for_task
+      work_order_task: {
+        type: "string",
+        description: "[list_potential_groups_for_task] wm_task sys_id to look up potential assignment groups for",
+      },
+      // ASSIGN_TO_WORK_ORDER fields
       work_order_sys_id: {
         type: "string",
-        description: "[assign_agent] sys_id of the wm_order to assign",
+        description: "[assign_to_work_order] sys_id of the wm_order to assign",
       },
       work_order_number: {
         type: "string",
-        description: "[assign_agent] number of the wm_order (used when work_order_sys_id is absent)",
+        description: "[assign_to_work_order] number of the wm_order (used when work_order_sys_id is absent)",
       },
-      agent: {
+      assigned_to: {
         type: "string",
-        description: "[assign_agent] wm_agent sys_id or referenced sys_user sys_id/user_name to assign as assigned_to on the work order",
+        description: "[assign_to_work_order] sys_user sys_id of the technician to assign",
       },
       assignment_group: {
         type: "string",
-        description: "[assign_agent] Optional sys_user_group sys_id or name to set on the work order",
+        description: "[assign_to_work_order] sys_user_group sys_id of the assignment group to set",
       },
-      // AVAILABILITY / SUGGEST window
-      window_start: {
-        type: "string",
-        description: "[suggest_agent/check_availability] Window start datetime (YYYY-MM-DD HH:MM:SS in instance TZ)",
-      },
-      window_end: {
-        type: "string",
-        description: "[suggest_agent/check_availability] Window end datetime (YYYY-MM-DD HH:MM:SS in instance TZ)",
-      },
+      // List shaping
       limit: {
         type: "number",
-        description: "[list_agents/list_groups/suggest_agent/check_availability] Maximum records to return",
+        description: "[list_*] Maximum records to return",
         default: 50,
       },
       fields: {
         type: "string",
-        description: "[list_agents/list_groups] Comma-separated list of fields to return (defaults to a curated set)",
+        description: "[list_*] Comma-separated list of fields to return (defaults to a curated set per action)",
       },
     },
     required: ["action"],
@@ -128,15 +173,15 @@ export async function execute(args: Record<string, unknown>, context: ServiceNow
         return await executeListAgents(args, context)
       case "list_groups":
         return await executeListGroups(args, context)
-      case "assign_agent":
-        return await executeAssignAgent(args, context)
-      case "suggest_agent":
-        return await executeSuggestAgent(args, context)
-      case "check_availability":
-        return await executeCheckAvailability(args, context)
+      case "list_schedules":
+        return await executeListSchedules(args, context)
+      case "list_potential_groups_for_task":
+        return await executeListPotentialGroupsForTask(args, context)
+      case "assign_to_work_order":
+        return await executeAssignToWorkOrder(args, context)
       default:
         return createErrorResult(
-          `Unknown action: ${action}. Valid actions: list_agents, list_groups, assign_agent, suggest_agent, check_availability`,
+          `Unknown action: ${action}. Valid actions: list_agents, list_groups, list_schedules, list_potential_groups_for_task, assign_to_work_order`,
         )
     }
   } catch (error: unknown) {
@@ -153,7 +198,7 @@ function wrapFsmError(err: Error, action: string): SnowFlowError {
   if (msg.indexOf("Invalid table") !== -1 || msg.indexOf("404") !== -1) {
     return new SnowFlowError(
       ErrorType.PLUGIN_MISSING,
-      `Field Service Management tables are not available on this instance. Activate the Field Service Management plugin (${FSM_PLUGIN}) and retry.`,
+      `Field Service Management dispatch tables are not available on this instance. Activate the Field Service Management plugin (${FSM_PLUGIN}) and retry.`,
       { details: { plugin: FSM_PLUGIN, originalMessage: msg } },
     )
   }
@@ -163,86 +208,163 @@ function wrapFsmError(err: Error, action: string): SnowFlowError {
   })
 }
 
-async function resolveDispatchGroupSysId(
+async function resolveRoleSysId(
   client: Awaited<ReturnType<typeof getAuthenticatedClient>>,
-  ref: string,
+  roleName: string,
 ): Promise<string | null> {
-  // Accept either a sys_id (32-char hex) or a name lookup.
-  if (/^[0-9a-f]{32}$/i.test(ref)) return ref
-  const response = await client.get(`/api/now/table/${DISPATCH_GROUP_TABLE}`, {
-    params: { sysparm_query: `name=${ref}`, sysparm_fields: "sys_id", sysparm_limit: 1 },
+  const response = await client.get(`/api/now/table/${ROLE_TABLE}`, {
+    params: { sysparm_query: `name=${roleName}`, sysparm_fields: "sys_id", sysparm_limit: 1 },
   })
   const rows = (response.data.result || []) as Array<Record<string, unknown>>
-  if (rows.length > 0 && typeof rows[0].sys_id === "string") return rows[0].sys_id as string
-  return null
+  if (rows.length === 0) return null
+  return (rows[0].sys_id as string) || null
 }
 
-async function resolveSkillSysId(
+async function fetchAgentSysIdsByRoles(
   client: Awaited<ReturnType<typeof getAuthenticatedClient>>,
-  ref: string,
-): Promise<string | null> {
-  if (/^[0-9a-f]{32}$/i.test(ref)) return ref
-  const response = await client.get(`/api/now/table/${SKILL_TABLE}`, {
-    params: { sysparm_query: `name=${ref}`, sysparm_fields: "sys_id", sysparm_limit: 1 },
+  roleNames: readonly string[],
+): Promise<{ userSysIds: Set<string>; rolesByUser: Map<string, Set<string>> }> {
+  // Resolve role names to sys_ids first so we can do a single
+  // sys_user_has_role query with role IN (...).
+  const roleSysIds: string[] = []
+  const roleNameById = new Map<string, string>()
+  for (const name of roleNames) {
+    const sysId = await resolveRoleSysId(client, name)
+    if (sysId) {
+      roleSysIds.push(sysId)
+      roleNameById.set(sysId, name)
+    }
+  }
+
+  const userSysIds = new Set<string>()
+  const rolesByUser = new Map<string, Set<string>>()
+
+  if (roleSysIds.length === 0) {
+    return { userSysIds, rolesByUser }
+  }
+
+  const response = await client.get(`/api/now/table/${USER_HAS_ROLE_TABLE}`, {
+    params: {
+      sysparm_query: `roleIN${roleSysIds.join(",")}`,
+      sysparm_fields: "user,role",
+      sysparm_limit: 1000,
+    },
   })
   const rows = (response.data.result || []) as Array<Record<string, unknown>>
-  if (rows.length > 0 && typeof rows[0].sys_id === "string") return rows[0].sys_id as string
-  return null
+  for (const row of rows) {
+    const userRef = row.user
+    const roleRef = row.role
+    const userSysId =
+      typeof userRef === "string"
+        ? userRef
+        : userRef && typeof userRef === "object" && "value" in userRef
+          ? (userRef as { value: string }).value
+          : ""
+    const roleSysId =
+      typeof roleRef === "string"
+        ? roleRef
+        : roleRef && typeof roleRef === "object" && "value" in roleRef
+          ? (roleRef as { value: string }).value
+          : ""
+    if (!userSysId) continue
+    userSysIds.add(userSysId)
+    const set = rolesByUser.get(userSysId) ?? new Set<string>()
+    const roleName = roleNameById.get(roleSysId)
+    if (roleName) set.add(roleName)
+    rolesByUser.set(userSysId, set)
+  }
+
+  return { userSysIds, rolesByUser }
+}
+
+async function resolveWorkOrderSysId(
+  client: Awaited<ReturnType<typeof getAuthenticatedClient>>,
+  sysId: string | undefined,
+  number: string | undefined,
+): Promise<string | null> {
+  if (sysId) return sysId
+  if (!number) return null
+  const response = await client.get(`/api/now/table/${WORK_ORDER_TABLE}`, {
+    params: { sysparm_query: `number=${number}`, sysparm_fields: "sys_id", sysparm_limit: 1 },
+  })
+  const rows = (response.data.result || []) as Array<Record<string, unknown>>
+  if (rows.length === 0) return null
+  return (rows[0].sys_id as string) || null
 }
 
 // ==================== LIST_AGENTS ====================
 
 async function executeListAgents(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const dispatch_group = args.dispatch_group as string | undefined
-  const skill = args.skill as string | undefined
+  const role = args.role as string | undefined
+  const group = args.group as string | undefined
   const location = args.location as string | undefined
+  const name_like = args.name_like as string | undefined
   const active_only = args.active_only !== false
   const limit = (args.limit as number) || 50
-  // TODO: verify wm_agent column names on a live instance — some
-  // variants expose `user` as the sys_user reference, others use
-  // `agent` or rely on extending sys_user directly.
-  const fields =
-    (args.fields as string) || "sys_id,name,user,dispatch_group,location,active,sys_updated_on"
+  const fields = (args.fields as string) || "sys_id,user_name,name,email,active,location,department"
 
   const client = await getAuthenticatedClient(context)
 
-  const queryParts: string[] = []
-  if (active_only) queryParts.push("active=true")
-  if (dispatch_group) {
-    const groupSysId = await resolveDispatchGroupSysId(client, dispatch_group)
-    if (groupSysId) queryParts.push(`dispatch_group=${groupSysId}`)
-  }
-  if (location) queryParts.push(`location=${location}`)
+  // Resolve which roles to filter on. Either the caller supplied one
+  // specific role, or we use the full set of FSM roles.
+  const roleNames = role ? [role] : FSM_AGENT_ROLES
+  const { userSysIds, rolesByUser } = await fetchAgentSysIdsByRoles(client, roleNames)
 
-  // If a skill was requested, resolve agents that hold the matching
-  // qualification first, then scope the wm_agent query to those sys_ids.
-  if (skill) {
-    const skillSysId = await resolveSkillSysId(client, skill)
-    if (!skillSysId) {
-      return createSuccessResult({ action: "list_agents", count: 0, agents: [], note: `Skill not found: ${skill}` })
-    }
-    const qualifications = await client.get(`/api/now/table/${QUALIFICATION_TABLE}`, {
+  if (userSysIds.size === 0) {
+    return createSuccessResult({
+      action: "list_agents",
+      count: 0,
+      agents: [],
+      note: role
+        ? `No users hold role ${role}. (Verify the role exists with sys_user_role table.)`
+        : "No users hold any FSM role on this instance.",
+    })
+  }
+
+  // Group membership filter is satisfied via sys_user_grmember.
+  let groupMemberSysIds: Set<string> | null = null
+  if (group) {
+    const memberResponse = await client.get(`/api/now/table/sys_user_grmember`, {
       params: {
-        sysparm_query: `skill=${skillSysId}`,
-        sysparm_fields: "agent",
-        sysparm_limit: 500,
+        sysparm_query: `group=${group}`,
+        sysparm_fields: "user",
+        sysparm_limit: 1000,
       },
     })
-    const agentRefs = ((qualifications.data.result || []) as Array<Record<string, unknown>>)
-      .map((row) => {
-        const ref = row.agent
-        if (typeof ref === "string") return ref
-        if (ref && typeof ref === "object" && "value" in ref) return (ref as { value: string }).value
-        return null
-      })
-      .filter((v): v is string => typeof v === "string" && v.length > 0)
-    if (agentRefs.length === 0) {
-      return createSuccessResult({ action: "list_agents", count: 0, agents: [], note: "No agents hold this skill" })
+    const memberRows = (memberResponse.data.result || []) as Array<Record<string, unknown>>
+    groupMemberSysIds = new Set<string>()
+    for (const row of memberRows) {
+      const ref = row.user
+      const userSysId =
+        typeof ref === "string"
+          ? ref
+          : ref && typeof ref === "object" && "value" in ref
+            ? (ref as { value: string }).value
+            : ""
+      if (userSysId) groupMemberSysIds.add(userSysId)
     }
-    queryParts.push(`sys_idIN${agentRefs.join(",")}`)
   }
 
-  const response = await client.get(`/api/now/table/${AGENT_TABLE}`, {
+  const finalSysIds: string[] = []
+  for (const id of userSysIds) {
+    if (groupMemberSysIds && !groupMemberSysIds.has(id)) continue
+    finalSysIds.push(id)
+  }
+  if (finalSysIds.length === 0) {
+    return createSuccessResult({
+      action: "list_agents",
+      count: 0,
+      agents: [],
+      note: "No FSM-roled users matched the supplied group filter.",
+    })
+  }
+
+  const queryParts: string[] = [`sys_idIN${finalSysIds.join(",")}`]
+  if (active_only) queryParts.push("active=true")
+  if (location) queryParts.push(`location=${location}`)
+  if (name_like) queryParts.push(`nameLIKE${name_like}`)
+
+  const response = await client.get(`/api/now/table/${USER_TABLE}`, {
     params: {
       sysparm_query: queryParts.join("^"),
       sysparm_limit: limit,
@@ -251,20 +373,22 @@ async function executeListAgents(args: Record<string, unknown>, context: Service
     },
   })
 
-  const agents = (response.data.result || []) as Array<Record<string, unknown>>
+  const users = (response.data.result || []) as Array<Record<string, unknown>>
 
   return createSuccessResult({
     action: "list_agents",
-    count: agents.length,
-    agents: agents.map((a) => ({
-      sys_id: a.sys_id,
-      name: a.name,
-      user: a.user,
-      dispatch_group: a.dispatch_group,
-      location: a.location,
-      active: a.active,
-      updated_at: a.sys_updated_on,
-      url: `${context.instanceUrl}/nav_to.do?uri=${AGENT_TABLE}.do?sys_id=${a.sys_id}`,
+    count: users.length,
+    role_filter: role || "any wm_* role",
+    agents: users.map((u) => ({
+      sys_id: u.sys_id,
+      user_name: u.user_name,
+      name: u.name,
+      email: u.email,
+      active: u.active,
+      location: u.location,
+      department: u.department,
+      fsm_roles: Array.from(rolesByUser.get(u.sys_id as string) ?? []),
+      url: `${context.instanceUrl}/nav_to.do?uri=${USER_TABLE}.do?sys_id=${u.sys_id}`,
     })),
   })
 }
@@ -272,18 +396,18 @@ async function executeListAgents(args: Record<string, unknown>, context: Service
 // ==================== LIST_GROUPS ====================
 
 async function executeListGroups(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+  const name_like = args.name_like as string | undefined
   const active_only = args.active_only !== false
   const limit = (args.limit as number) || 50
-  // TODO: verify wm_dispatch_group columns — some variants expose
-  // `parent` and `location`, others only carry a name + active flag.
-  const fields = (args.fields as string) || "sys_id,name,parent,location,active,sys_updated_on"
+  const fields = (args.fields as string) || "sys_id,name,description,active,manager,parent,email"
 
   const client = await getAuthenticatedClient(context)
 
   const queryParts: string[] = []
   if (active_only) queryParts.push("active=true")
+  if (name_like) queryParts.push(`nameLIKE${name_like}`)
 
-  const response = await client.get(`/api/now/table/${DISPATCH_GROUP_TABLE}`, {
+  const response = await client.get(`/api/now/table/${USER_GROUP_TABLE}`, {
     params: {
       sysparm_query: queryParts.join("^"),
       sysparm_limit: limit,
@@ -300,77 +424,151 @@ async function executeListGroups(args: Record<string, unknown>, context: Service
     groups: groups.map((g) => ({
       sys_id: g.sys_id,
       name: g.name,
+      description: g.description,
+      manager: g.manager,
       parent: g.parent,
-      location: g.location,
+      email: g.email,
       active: g.active,
-      updated_at: g.sys_updated_on,
-      url: `${context.instanceUrl}/nav_to.do?uri=${DISPATCH_GROUP_TABLE}.do?sys_id=${g.sys_id}`,
+      url: `${context.instanceUrl}/nav_to.do?uri=${USER_GROUP_TABLE}.do?sys_id=${g.sys_id}`,
     })),
   })
 }
 
-// ==================== ASSIGN_AGENT ====================
+// ==================== LIST_SCHEDULES ====================
 
-async function executeAssignAgent(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const work_order_sys_id = args.work_order_sys_id as string | undefined
-  const work_order_number = args.work_order_number as string | undefined
-  const agent = args.agent as string | undefined
-  const assignment_group = args.assignment_group as string | undefined
+async function executeListSchedules(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+  const user = args.user as string | undefined
+  const limit = (args.limit as number) || 50
+  const fields =
+    (args.fields as string) ||
+    "sys_id,user,default,rank,from,to,start_location,end_location,maximum_travel_radius,maximum_part_search_radius,distance_unit,travel_outside_of_work_hours,post_shift_max_overtime,work_penalty_per_hour,travel_penalty_per_hour,overtime_penalty_per_hour,sys_updated_on"
 
-  if (!work_order_sys_id && !work_order_number) {
-    return createErrorResult("work_order_sys_id or work_order_number is required for assign_agent action")
-  }
-  if (!agent) {
-    return createErrorResult("agent is required for assign_agent action")
+  const client = await getAuthenticatedClient(context)
+
+  const queryParts: string[] = []
+  if (user) queryParts.push(`user=${user}`)
+
+  const response = await client.get(`/api/now/table/${SCHEDULE_PLAN_TABLE}`, {
+    params: {
+      sysparm_query: queryParts.join("^"),
+      sysparm_limit: limit,
+      sysparm_orderby: "rank",
+      sysparm_fields: fields,
+    },
+  })
+
+  const plans = (response.data.result || []) as Array<Record<string, unknown>>
+
+  return createSuccessResult({
+    action: "list_schedules",
+    count: plans.length,
+    schedules: plans.map((p) => ({
+      sys_id: p.sys_id,
+      user: p.user,
+      default: p.default,
+      rank: p.rank,
+      window: { from: p.from, to: p.to },
+      start_location: p.start_location,
+      end_location: p.end_location,
+      maximum_travel_radius: p.maximum_travel_radius,
+      maximum_part_search_radius: p.maximum_part_search_radius,
+      distance_unit: p.distance_unit,
+      travel_outside_of_work_hours: p.travel_outside_of_work_hours,
+      post_shift_max_overtime: p.post_shift_max_overtime,
+      penalties: {
+        work_per_hour: p.work_penalty_per_hour,
+        travel_per_hour: p.travel_penalty_per_hour,
+        overtime_per_hour: p.overtime_penalty_per_hour,
+      },
+      updated_at: p.sys_updated_on,
+      url: `${context.instanceUrl}/nav_to.do?uri=${SCHEDULE_PLAN_TABLE}.do?sys_id=${p.sys_id}`,
+    })),
+  })
+}
+
+// ==================== LIST_POTENTIAL_GROUPS_FOR_TASK ====================
+
+async function executeListPotentialGroupsForTask(
+  args: Record<string, unknown>,
+  context: ServiceNowContext,
+): Promise<ToolResult> {
+  const work_order_task = args.work_order_task as string | undefined
+  const active_only = args.active_only !== false
+  const limit = (args.limit as number) || 50
+  const fields =
+    (args.fields as string) || "sys_id,work_order_task,assignment_group,active,sys_updated_on"
+
+  if (!work_order_task) {
+    return createErrorResult("work_order_task (wm_task sys_id) is required for list_potential_groups_for_task action")
   }
 
   const client = await getAuthenticatedClient(context)
 
-  // Resolve work order
-  let targetSysId = work_order_sys_id
-  if (!targetSysId && work_order_number) {
-    const response = await client.get(`/api/now/table/${WORK_ORDER_TABLE}`, {
-      params: { sysparm_query: `number=${work_order_number}`, sysparm_fields: "sys_id", sysparm_limit: 1 },
-    })
-    const rows = (response.data.result || []) as Array<Record<string, unknown>>
-    if (rows.length === 0) {
-      return createErrorResult(`Work order not found: ${work_order_number}`)
-    }
-    targetSysId = rows[0].sys_id as string
+  const queryParts: string[] = [`work_order_task=${work_order_task}`]
+  if (active_only) queryParts.push("active=true")
+
+  const response = await client.get(`/api/now/table/${POTENTIAL_GROUPS_TABLE}`, {
+    params: {
+      sysparm_query: queryParts.join("^"),
+      sysparm_limit: limit,
+      sysparm_orderby: "sys_created_on",
+      sysparm_fields: fields,
+    },
+  })
+
+  const rows = (response.data.result || []) as Array<Record<string, unknown>>
+
+  return createSuccessResult({
+    action: "list_potential_groups_for_task",
+    work_order_task,
+    count: rows.length,
+    potential_groups: rows.map((r) => ({
+      sys_id: r.sys_id,
+      work_order_task: r.work_order_task,
+      assignment_group: r.assignment_group,
+      active: r.active,
+      updated_at: r.sys_updated_on,
+      url: `${context.instanceUrl}/nav_to.do?uri=${POTENTIAL_GROUPS_TABLE}.do?sys_id=${r.sys_id}`,
+    })),
+  })
+}
+
+// ==================== ASSIGN_TO_WORK_ORDER ====================
+
+async function executeAssignToWorkOrder(
+  args: Record<string, unknown>,
+  context: ServiceNowContext,
+): Promise<ToolResult> {
+  const work_order_sys_id = args.work_order_sys_id as string | undefined
+  const work_order_number = args.work_order_number as string | undefined
+  const assigned_to = args.assigned_to as string | undefined
+  const assignment_group = args.assignment_group as string | undefined
+
+  if (!work_order_sys_id && !work_order_number) {
+    return createErrorResult("work_order_sys_id or work_order_number is required for assign_to_work_order action")
+  }
+  if (!assigned_to && !assignment_group) {
+    return createErrorResult(
+      "Provide at least one of assigned_to (sys_user) or assignment_group (sys_user_group) for assign_to_work_order action",
+    )
   }
 
-  // The `agent` parameter can be a wm_agent sys_id, a sys_user sys_id,
-  // or a sys_user username. The wm_order.assigned_to column refers to
-  // sys_user, so when a wm_agent sys_id is supplied we dereference it
-  // first.
-  let assignedToUserSysId = agent
-  // Heuristic: if it looks like a sys_id, see if a wm_agent row exists
-  // and use its `user` reference; otherwise treat the value as-is and
-  // let the ServiceNow reference qualifier resolve it.
-  if (/^[0-9a-f]{32}$/i.test(agent)) {
-    try {
-      const agentResponse = await client.get(`/api/now/table/${AGENT_TABLE}/${agent}`)
-      const row = agentResponse.data.result as Record<string, unknown> | undefined
-      if (row && row.user) {
-        const userRef = row.user
-        if (typeof userRef === "string") assignedToUserSysId = userRef
-        else if (userRef && typeof userRef === "object" && "value" in userRef) {
-          assignedToUserSysId = (userRef as { value: string }).value
-        }
-      }
-    } catch {
-      // The sys_id may belong to sys_user directly. Fall through.
-    }
+  const client = await getAuthenticatedClient(context)
+
+  const targetSysId = await resolveWorkOrderSysId(client, work_order_sys_id, work_order_number)
+  if (!targetSysId) {
+    return createErrorResult(`Work order not found: ${work_order_sys_id || work_order_number}`)
   }
 
-  const patch: Record<string, unknown> = { assigned_to: assignedToUserSysId }
+  const patch: Record<string, unknown> = {}
+  if (assigned_to) patch.assigned_to = assigned_to
   if (assignment_group) patch.assignment_group = assignment_group
 
   const response = await client.patch(`/api/now/table/${WORK_ORDER_TABLE}/${targetSysId}`, patch)
   const updated = response.data.result as Record<string, unknown>
 
   return createSuccessResult({
-    action: "assign_agent",
+    action: "assign_to_work_order",
     assigned: true,
     sys_id: targetSysId,
     number: updated.number,
@@ -381,213 +579,5 @@ async function executeAssignAgent(args: Record<string, unknown>, context: Servic
   })
 }
 
-// ==================== SUGGEST_AGENT ====================
-
-async function executeSuggestAgent(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const skill = args.skill as string | undefined
-  const dispatch_group = args.dispatch_group as string | undefined
-  const location = args.location as string | undefined
-  const window_start = args.window_start as string | undefined
-  const window_end = args.window_end as string | undefined
-  const active_only = args.active_only !== false
-  const limit = (args.limit as number) || 50
-
-  const client = await getAuthenticatedClient(context)
-
-  // Resolve required skill (when supplied) into the set of qualified agents.
-  let qualifiedAgentSysIds: string[] | null = null
-  let resolvedSkillSysId: string | null = null
-  if (skill) {
-    resolvedSkillSysId = await resolveSkillSysId(client, skill)
-    if (!resolvedSkillSysId) {
-      return createSuccessResult({
-        action: "suggest_agent",
-        count: 0,
-        candidates: [],
-        note: `Skill not found: ${skill}`,
-      })
-    }
-    const qualifications = await client.get(`/api/now/table/${QUALIFICATION_TABLE}`, {
-      params: { sysparm_query: `skill=${resolvedSkillSysId}`, sysparm_fields: "agent", sysparm_limit: 500 },
-    })
-    qualifiedAgentSysIds = ((qualifications.data.result || []) as Array<Record<string, unknown>>)
-      .map((row) => {
-        const ref = row.agent
-        if (typeof ref === "string") return ref
-        if (ref && typeof ref === "object" && "value" in ref) return (ref as { value: string }).value
-        return null
-      })
-      .filter((v): v is string => typeof v === "string" && v.length > 0)
-    if (qualifiedAgentSysIds.length === 0) {
-      return createSuccessResult({
-        action: "suggest_agent",
-        count: 0,
-        candidates: [],
-        note: "No agents hold the requested skill",
-      })
-    }
-  }
-
-  const queryParts: string[] = []
-  if (active_only) queryParts.push("active=true")
-  if (qualifiedAgentSysIds && qualifiedAgentSysIds.length > 0) {
-    queryParts.push(`sys_idIN${qualifiedAgentSysIds.join(",")}`)
-  }
-  if (dispatch_group) {
-    const groupSysId = await resolveDispatchGroupSysId(client, dispatch_group)
-    if (groupSysId) queryParts.push(`dispatch_group=${groupSysId}`)
-  }
-  if (location) queryParts.push(`location=${location}`)
-
-  const agentResponse = await client.get(`/api/now/table/${AGENT_TABLE}`, {
-    params: {
-      sysparm_query: queryParts.join("^"),
-      sysparm_limit: limit,
-      sysparm_orderby: "name",
-      sysparm_fields: "sys_id,name,user,dispatch_group,location,active",
-    },
-  })
-  const candidates = (agentResponse.data.result || []) as Array<Record<string, unknown>>
-
-  // For each candidate, check whether they have any overlapping wm_order
-  // rows in the supplied window. We treat absence of overlap as a positive
-  // signal but do NOT filter out candidates that have overlap — the caller
-  // decides whether to honor it.
-  const enriched: Array<Record<string, unknown>> = []
-  for (const candidate of candidates) {
-    const userRef = candidate.user
-    const userSysId =
-      typeof userRef === "string"
-        ? userRef
-        : userRef && typeof userRef === "object" && "value" in userRef
-          ? (userRef as { value: string }).value
-          : null
-
-    const reasons: string[] = []
-    if (resolvedSkillSysId) reasons.push("matches required skill")
-    if (dispatch_group) reasons.push("belongs to requested dispatch group")
-    if (location) reasons.push("located in requested area")
-
-    let overlappingWorkOrders = 0
-    if (userSysId && window_start && window_end) {
-      try {
-        const overlap = await client.get(`/api/now/table/${WORK_ORDER_TABLE}`, {
-          params: {
-            sysparm_query: `assigned_to=${userSysId}^work_start<${window_end}^work_end>${window_start}`,
-            sysparm_fields: "sys_id",
-            sysparm_limit: 5,
-          },
-        })
-        overlappingWorkOrders = ((overlap.data.result || []) as Array<unknown>).length
-        if (overlappingWorkOrders === 0) reasons.push("no scheduling conflict in window")
-      } catch {
-        // Window check is best-effort. A failure here should not block the suggestion.
-      }
-    }
-
-    enriched.push({
-      sys_id: candidate.sys_id,
-      name: candidate.name,
-      user: candidate.user,
-      dispatch_group: candidate.dispatch_group,
-      location: candidate.location,
-      overlapping_work_orders: overlappingWorkOrders,
-      reasons,
-    })
-  }
-
-  return createSuccessResult({
-    action: "suggest_agent",
-    count: enriched.length,
-    window: window_start && window_end ? { start: window_start, end: window_end } : null,
-    skill: resolvedSkillSysId ? { sys_id: resolvedSkillSysId, label: skill } : null,
-    candidates: enriched,
-    note: "Read-only candidate list — does not call FSM AI dispatch/scheduling engines.",
-  })
-}
-
-// ==================== CHECK_AVAILABILITY ====================
-
-async function executeCheckAvailability(
-  args: Record<string, unknown>,
-  context: ServiceNowContext,
-): Promise<ToolResult> {
-  const dispatch_group = args.dispatch_group as string | undefined
-  const window_start = args.window_start as string | undefined
-  const window_end = args.window_end as string | undefined
-  const active_only = args.active_only !== false
-  const limit = (args.limit as number) || 50
-
-  if (!window_start || !window_end) {
-    return createErrorResult("window_start and window_end are required for check_availability action")
-  }
-
-  const client = await getAuthenticatedClient(context)
-
-  const queryParts: string[] = []
-  if (active_only) queryParts.push("active=true")
-  if (dispatch_group) {
-    const groupSysId = await resolveDispatchGroupSysId(client, dispatch_group)
-    if (groupSysId) queryParts.push(`dispatch_group=${groupSysId}`)
-  }
-
-  const agentResponse = await client.get(`/api/now/table/${AGENT_TABLE}`, {
-    params: {
-      sysparm_query: queryParts.join("^"),
-      sysparm_limit: limit,
-      sysparm_orderby: "name",
-      sysparm_fields: "sys_id,name,user,dispatch_group,location,active",
-    },
-  })
-  const agents = (agentResponse.data.result || []) as Array<Record<string, unknown>>
-
-  const availability: Array<Record<string, unknown>> = []
-  for (const agent of agents) {
-    const userRef = agent.user
-    const userSysId =
-      typeof userRef === "string"
-        ? userRef
-        : userRef && typeof userRef === "object" && "value" in userRef
-          ? (userRef as { value: string }).value
-          : null
-
-    let overlappingCount = 0
-    let overlappingOrders: Array<Record<string, unknown>> = []
-    if (userSysId) {
-      try {
-        const overlap = await client.get(`/api/now/table/${WORK_ORDER_TABLE}`, {
-          params: {
-            sysparm_query: `assigned_to=${userSysId}^work_start<${window_end}^work_end>${window_start}`,
-            sysparm_fields: "sys_id,number,short_description,work_start,work_end",
-            sysparm_limit: 5,
-          },
-        })
-        overlappingOrders = (overlap.data.result || []) as Array<Record<string, unknown>>
-        overlappingCount = overlappingOrders.length
-      } catch {
-        // Swallow — agent stays in the list with "unknown" overlap.
-      }
-    }
-
-    availability.push({
-      sys_id: agent.sys_id,
-      name: agent.name,
-      user: agent.user,
-      dispatch_group: agent.dispatch_group,
-      location: agent.location,
-      available: overlappingCount === 0,
-      overlapping_work_orders: overlappingOrders,
-    })
-  }
-
-  return createSuccessResult({
-    action: "check_availability",
-    count: availability.length,
-    available_count: availability.filter((a) => a.available === true).length,
-    window: { start: window_start, end: window_end },
-    agents: availability,
-  })
-}
-
-export const version = "1.0.0"
+export const version = "1.1.0"
 export const author = "groeimetai"
