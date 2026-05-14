@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T10:23:08.719Z",
+  "generatedAt": "2026-05-14T10:28:00.176Z",
   "count": 429,
   "groups": [
     {
@@ -268,7 +268,7 @@
         },
         {
           "name": "snow_plugin_manage",
-          "description": "Manage ServiceNow plugins: list, check status, activate, deactivate, repair, or poll an async progress.\n\nActions:\n- list — Search and list plugins. Filter by name/ID, show only active.\n- check — Get detailed info on a specific plugin (status, version, dependencies).\n- activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Returns the progress_id so callers can poll completion. Pass wait=true to block until the plugin reaches a final state (or timeout_ms elapses, default 10 min).\n- deactivate — Deactivate a plugin via the same dual mechanism.\n- repair — Rollback the plugin then re-activate it (clean reinstall). Returns both progress_ids; pass wait=true to block until the activate phase completes. Requires plugin-activation privileges in ServiceNow.\n- progress — Poll a CICD progress record (/api/sn_cicd/progress/{id}) by progress_id. Use to check status of an earlier activate/repair without blocking.\n\nExamples:\n- { action: \"list\", search: \"incident\" }\n- { action: \"check\", plugin_id: \"com.snc.incident\" }\n- { action: \"activate\", plugin_id: \"com.snc.incident\", wait: true }\n- { action: \"repair\", plugin_id: \"com.snc.incident\" }\n- { action: \"progress\", progress_id: \"1227ba16937083101bf5f99bdd03d60c\" }",
+          "description": "Manage ServiceNow plugins: list, check status, activate, deactivate, repair, or poll an async progress.\n\nActions:\n- list — Search and list plugins. Filter by name/ID, show only active.\n- check — Get detailed info on a specific plugin (status, version, dependencies). Pass verify_table to also query sys_db_object for a table the plugin should have created — covers the case where v_plugin reports inactive but the plugin's tables actually exist (known v_plugin staleness after CICD activation).\n- activate — Activate a plugin via CICD API (/api/sn_cicd/plugin) with sys_plugins table-PATCH fallback. Returns the progress_id so callers can poll completion. Pass wait=true to block until the plugin reaches a final state (or timeout_ms elapses, default 10 min).\n- deactivate — Deactivate a plugin via the same dual mechanism.\n- repair — Rollback the plugin then re-activate it (clean reinstall). Returns both progress_ids; pass wait=true to block until the activate phase completes. Requires plugin-activation privileges in ServiceNow.\n- progress — Poll a CICD progress record (/api/sn_cicd/progress/{id}) by progress_id. Use to check status of an earlier activate/repair without blocking.\n\nExamples:\n- { action: \"list\", search: \"incident\" }\n- { action: \"check\", plugin_id: \"com.snc.incident\" }\n- { action: \"activate\", plugin_id: \"com.snc.incident\", wait: true }\n- { action: \"repair\", plugin_id: \"com.snc.incident\" }\n- { action: \"progress\", progress_id: \"1227ba16937083101bf5f99bdd03d60c\" }",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -301,6 +301,10 @@
               "plugin_id": {
                 "type": "string",
                 "description": "[check/activate/deactivate/repair] Plugin identifier (e.g. \"com.snc.incident\") or sys_id"
+              },
+              "verify_table": {
+                "type": "string",
+                "description": "[check] Optional table name the plugin should have created (e.g. \"wm_order\" for FSM). When provided, the tool also queries sys_db_object — handles the known case where v_plugin reports inactive but the plugin's tables exist (post-activation v_plugin lag)."
               },
               "search": {
                 "type": "string",
@@ -1809,7 +1813,7 @@
       "tools": [
         {
           "name": "snow_approval_chain_manage",
-          "description": "Unified tool for ServiceNow approval chains across the sysapproval_approver, sysapproval_group, and sysapproval_action tables. Use this when a record needs an ordered, multi-step approval flow rather than a single ad-hoc approver.\n\nActions:\n- define_chain — write an ordered chain of approval steps for a source record. Each step may target a user (sysapproval_approver) or a group (sysapproval_group). Steps after the first start in 'not_yet_requested' state and are activated as earlier steps complete.\n- preview_chain — resolve who would be asked at each step (expanding group memberships) without inserting any rows. Useful for showing the caller the chain before firing it.\n- get_approvals — list all pending and historical approval rows for a given source record across both sysapproval_approver and sysapproval_group, plus the recent sysapproval_action verbs applied.\n- cancel — end an active chain. Marks every still-open approver/group row as 'cancelled' and records a sysapproval_action 'cancelled' verb on each.\n\nUse when: an agent needs to wire up a multi-step approval (e.g. peer → manager → director), preview the chain before committing, audit pending approvals on a record, or stop an in-flight chain. For a single ad-hoc approval use snow_request_approval; to act on an individual approval use snow_approve_reject.\n\nReturns: define_chain returns the inserted approval rows in order. preview_chain returns the resolved approver list per step without writing. get_approvals returns pending and complete rows plus the recent action verbs. cancel returns the rows it closed.",
+          "description": "Unified tool for ServiceNow approval chains across the sysapproval_approver, sysapproval_group, and sysapproval_action tables. Use this when a record needs an ordered, multi-step approval flow rather than a single ad-hoc approver.\n\nActions:\n- define_chain — write an ordered chain of approval steps for a source record. Each step may target a user (sysapproval_approver) or a group (sysapproval_group). Steps after the first start in 'not requested' state and are activated as earlier steps complete.\n- preview_chain — resolve who would be asked at each step (expanding group memberships) without inserting any rows. Useful for showing the caller the chain before firing it.\n- get_approvals — list all pending and historical approval rows for a given source record across both sysapproval_approver and sysapproval_group, plus the recent sysapproval_action verbs applied.\n- cancel — end an active chain. Marks every still-open approver/group row as 'cancelled' and records a sysapproval_action 'cancelled' verb on each.\n\nUse when: an agent needs to wire up a multi-step approval (e.g. peer → manager → director), preview the chain before committing, audit pending approvals on a record, or stop an in-flight chain. For a single ad-hoc approval use snow_request_approval; to act on an individual approval use snow_approve_reject.\n\nReturns: define_chain returns the inserted approval rows in order. preview_chain returns the resolved approver list per step without writing. get_approvals returns pending and complete rows plus the recent action verbs. cancel returns the rows it closed.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -1871,7 +1875,7 @@
               },
               "activate_first": {
                 "type": "boolean",
-                "description": "[define_chain] Whether the first step is created in state 'requested' (active) or 'not_yet_requested' (queued). Defaults to true.",
+                "description": "[define_chain] Whether the first step is created in state 'requested' (active) or 'not requested' (queued). Defaults to true.",
                 "default": true
               },
               "cancel_comment": {
@@ -15444,7 +15448,7 @@
       "tools": [
         {
           "name": "snow_pa_indicator_manage",
-          "description": "Unified tool for ServiceNow Performance Analytics indicator definitions and their dimensional breakdowns. Wraps the pa_indicators, pa_breakdowns, pa_widgets, and pa_scores tables on the platform.\n\nActions:\n- list — list indicators, optionally filtered by facts_table or active flag\n- get — retrieve a single indicator by sys_id or name (includes related widget and breakdown counts)\n- create — create a new indicator (name, facts_table, aggregate, field required)\n- update — patch indicator fields\n- delete — remove an indicator (and optionally its dependent breakdowns)\n- add_breakdown — attach a dimensional breakdown to an indicator (writes pa_breakdowns)\n- list_breakdowns — list breakdowns for a given indicator or globally\n\nUse when: the agent needs to manage KPI/indicator definitions, attach dimensional slicers (assignment_group, priority, location, etc.) to existing indicators, or audit which indicators a facts table feeds.\n\nReturns: indicator records with sys_id, name, facts_table, aggregate, field, frequency, unit, and active flag. For breakdowns, returns sys_id, name, table, field, and matrix_source. Companion tools: snow_pa_create for full PA artifact creation (widgets, thresholds, scheduled reports) and snow_pa_operate for collecting and querying PA scores.",
+          "description": "Unified tool for ServiceNow Performance Analytics indicator definitions and their dimensional breakdowns. Wraps the pa_indicators, pa_breakdowns, pa_indicator_breakdowns (join), pa_widgets, and pa_scores tables on the platform.\n\nActions:\n- list — list indicators, optionally filtered by cube\n- get — retrieve a single indicator by sys_id or name (includes related widget and breakdown counts)\n- create — create a new indicator (name, aggregate, precision, forecast_base_periods, forecast_periods required; cube optional but typical)\n- update — patch indicator fields\n- delete — remove an indicator (and optionally its dependent pa_indicator_breakdowns links)\n- add_breakdown — attach a dimensional breakdown to an indicator (writes pa_breakdowns + pa_indicator_breakdowns join)\n- list_breakdowns — list breakdowns for a given indicator (via pa_indicator_breakdowns) or globally\n\nUse when: the agent needs to manage KPI/indicator definitions, attach dimensional slicers (assignment_group, priority, location, etc.) to existing indicators, or audit which indicators a cube feeds.\n\nReturns: indicator records with sys_id, name, label, cube, aggregate, field, frequency, unit, precision. For breakdowns, returns sys_id, name, facts_table, field, and matrix_source. Companion tools: snow_pa_create for full PA artifact creation (widgets, thresholds, scheduled reports) and snow_pa_operate for collecting and querying PA scores.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -15491,13 +15495,17 @@
                 "type": "string",
                 "description": "[create/update] Indicator description"
               },
-              "facts_table": {
+              "cube": {
                 "type": "string",
-                "description": "[create/update] Source/facts table the indicator measures (e.g. incident, sc_task)"
+                "description": "[create/update] pa_cubes sys_id that defines the indicator's facts table and conditions (the cube is the source/facts wrapper on pa_indicators; use snow_pa_create to author cubes)"
+              },
+              "script": {
+                "type": "string",
+                "description": "[create/update] pa_scripts sys_id when the indicator is scripted"
               },
               "aggregate": {
                 "type": "string",
-                "description": "[create/update] Aggregation function",
+                "description": "[create/update] Aggregation function (inherited from pa_indicators_definition)",
                 "enum": [
                   "COUNT",
                   "SUM",
@@ -15509,11 +15517,11 @@
               },
               "field": {
                 "type": "string",
-                "description": "[create/update] Field on facts_table to aggregate (omit for COUNT)"
+                "description": "[create/update] Field on the cube's facts table to aggregate (omit for COUNT)"
               },
               "conditions": {
                 "type": "string",
-                "description": "[create/update] Encoded query that filters the facts_table rows"
+                "description": "[create/update] Encoded query that filters the facts table rows (inherited from pa_indicators_definition)"
               },
               "unit": {
                 "type": "string",
@@ -15539,14 +15547,24 @@
                   "minimize"
                 ]
               },
+              "formula": {
+                "type": "string",
+                "description": "[create/update] Formula expression for derived indicators"
+              },
               "precision": {
                 "type": "number",
-                "description": "[create/update] Decimal precision"
+                "description": "[create] Decimal precision (mandatory on pa_indicators)",
+                "default": 0
               },
-              "active": {
-                "type": "boolean",
-                "description": "[create/update] Whether the indicator is active",
-                "default": true
+              "forecast_base_periods": {
+                "type": "number",
+                "description": "[create] Number of base periods used for forecasting (mandatory on pa_indicators)",
+                "default": 12
+              },
+              "forecast_periods": {
+                "type": "number",
+                "description": "[create] Number of periods to forecast (mandatory on pa_indicators)",
+                "default": 6
               },
               "breakdown_name": {
                 "type": "string",
@@ -17959,7 +17977,7 @@
         },
         {
           "name": "snow_report_manage",
-          "description": "Unified tool for ServiceNow report lifecycle beyond creation: list, get, run, schedule, share, and export. Wraps sys_report, sys_report_schedule, and sys_report_users_view.\n\nActions:\n- list — list sys_report definitions, optionally filtered by table or owner\n- get — retrieve a single report (sys_id or title)\n- run — execute the report ad-hoc and return rows from the configured table using the report filter\n- schedule — create or update a sys_report_schedule row (recurrence, time, recipients)\n- share — share a report with users or groups via sys_report_users_view\n- export — export the report's underlying rows as JSON or CSV (server-side rendered PDF/XLSX is out of scope; use schedule for delivery)\n\nUse when: the agent needs to manage reports after they exist — running them on demand, scheduling delivery, or controlling who can view them. For authoring a new sys_report row, use snow_create_report instead.\n\nReturns: report records with sys_id, title, table, type, filter; schedule rows with run_time and recipients; share rows with user_or_group references.",
+          "description": "Unified tool for ServiceNow report lifecycle beyond creation: list, get, run, schedule, share, and export. Wraps sys_report, sysauto_report, and sys_report_users_groups.\n\nActions:\n- list — list sys_report definitions, optionally filtered by table or owner\n- get — retrieve a single report (sys_id or title)\n- run — execute the report ad-hoc and return rows from the configured table using the report filter\n- schedule — create or update a sysauto_report row (recurrence, time, recipients)\n- share — share a report with users or groups via sys_report_users_groups\n- export — export the report's underlying rows as JSON or CSV (server-side rendered PDF/XLSX is out of scope; use schedule for delivery)\n\nUse when: the agent needs to manage reports after they exist — running them on demand, scheduling delivery, or controlling who can view them. For authoring a new sys_report row, use snow_create_report instead.\n\nReturns: report records with sys_id, title, table, type, filter; schedule rows with run_time and recipients; share rows with user_or_group references.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -18047,7 +18065,7 @@
               },
               "schedule_sys_id": {
                 "type": "string",
-                "description": "[schedule] Existing sys_report_schedule sys_id to update; omit to create a new row"
+                "description": "[schedule] Existing sysauto_report sys_id to update; omit to create a new row"
               },
               "schedule_active": {
                 "type": "boolean",
@@ -19130,19 +19148,19 @@
               },
               "roster_sys_id": {
                 "type": "string",
-                "description": "[swap_shift] sys_id of the cmn_rota_roster row to reassign"
+                "description": "[swap_shift] sys_id of the cmn_rota_member row whose member assignment is being swapped (the per-window assignment record)"
               },
               "from_member_sys_id": {
                 "type": "string",
-                "description": "[swap_shift] sys_id of the cmn_rota_member currently assigned (used as a guard)"
+                "description": "[swap_shift] sys_user sys_id currently assigned in the member row (used as a guard)"
               },
               "to_member_sys_id": {
                 "type": "string",
-                "description": "[swap_shift] sys_id of the cmn_rota_member taking the shift"
+                "description": "[swap_shift] sys_user sys_id taking the shift"
               },
               "reason": {
                 "type": "string",
-                "description": "[swap_shift] Optional reason recorded on the roster row"
+                "description": "[swap_shift] Optional reason; not persisted on cmn_rota_member (the table has no override/reason columns) but echoed in the response"
               },
               "limit": {
                 "type": "number",
@@ -20197,6 +20215,10 @@
                 "type": "string",
                 "description": "[create_category] Category display title (defaults to name)"
               },
+              "homepage_renderer": {
+                "type": "string",
+                "description": "[create_category] sys_id of the sc_homepage_renderer used to render the category. Mandatory on sc_category — defaults to the OOB Default Renderer if omitted."
+              },
               "cat_item": {
                 "type": "string",
                 "description": "[link_item_to_category] Catalog item sys_id (sc_cat_item) to link"
@@ -20760,7 +20782,7 @@
         },
         {
           "name": "snow_sp_page_manage",
-          "description": "Unified tool for ServiceNow Service Portal page lifecycle beyond creation: list, update, delete, clone, add_widget_instance. Wraps sp_page and sp_widget_instance.\n\nActions:\n- list — list sp_page rows, optionally filtered by portal id, public flag, or title fragment\n- update — patch sp_page fields (title, public, draft, css, internal)\n- delete — delete an sp_page row (does not cascade widget instances)\n- clone — duplicate an sp_page with a new id and title (optionally copying widget instances)\n- add_widget_instance — place an sp_widget on the page by creating an sp_widget_instance row\n\nUse when: the agent needs to maintain Service Portal pages — renaming, retiring, duplicating layouts, or wiring widgets onto a page. For authoring a new sp_page, use snow_create_sp_page; for authoring a new sp_widget, use snow_create_sp_widget.\n\nReturns: sp_page rows with sys_id, id, title, public, draft; widget instance rows with sys_id, sp_widget reference, and column placement.",
+          "description": "Unified tool for ServiceNow Service Portal page lifecycle beyond creation: list, update, delete, clone, add_widget_instance. Wraps sp_page and sp_instance.\n\nActions:\n- list — list sp_page rows, optionally filtered by portal id, public flag, or title fragment\n- update — patch sp_page fields (title, public, draft, css, internal)\n- delete — delete an sp_page row (does not cascade widget instances)\n- clone — duplicate an sp_page with a new id and title (optionally copying widget instances)\n- add_widget_instance — place an sp_widget on the page by creating an sp_instance row\n\nUse when: the agent needs to maintain Service Portal pages — renaming, retiring, duplicating layouts, or wiring widgets onto a page. For authoring a new sp_page, use snow_create_sp_page; for authoring a new sp_widget, use snow_create_sp_widget.\n\nReturns: sp_page rows with sys_id, id, title, public, draft; widget instance rows with sys_id, sp_widget reference, and column placement.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -20845,7 +20867,7 @@
               },
               "copy_widget_instances": {
                 "type": "boolean",
-                "description": "[clone] Also copy sp_widget_instance rows attached to the source page",
+                "description": "[clone] Also copy sp_instance rows attached to the source page",
                 "default": true
               },
               "widget_id": {
