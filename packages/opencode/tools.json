@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T09:45:13.234Z",
-  "count": 428,
+  "generatedAt": "2026-05-14T10:23:08.719Z",
+  "count": 429,
   "groups": [
     {
       "name": "access-control",
@@ -6941,6 +6941,42 @@
             },
             "required": [
               "artifact_type",
+              "artifact_identifier"
+            ]
+          }
+        },
+        {
+          "name": "snow_blast_radius_sys_properties",
+          "description": "Search sys_property records for plain-string references to an artifact name. Closes a recurring blind spot of snow_blast_radius_dependents: property values are NOT script-typed columns, so they're invisible to the script-bearing scan even though gs.getProperty() reads them at runtime.\n\nCall this together with snow_blast_radius_dependents when:\n- Deleting or renaming a script include / business rule / widget / scheduled job / table\n- Renaming a field name that may be referenced in property-driven dynamic queries\n- Checking whether a role or user name is hardcoded in a config flag\n\nReturns:\n- properties[] — each match with name, value preview, description, last_updated, scope, category\n- summary — total hits + counts by detected category (platform, scoped_app, plugin, custom)\n- impact_warning — non-null when matches exist, with a reminder to update them alongside the rename/delete\n\nCaveat: LIKE-matched then word-boundary regex confirmed. False positives are possible if the name occurs as a literal substring in unrelated property text. For low hit counts: inspect the value previews.",
+          "permission": "read",
+          "allowedRoles": [
+            "developer",
+            "stakeholder",
+            "admin"
+          ],
+          "useCases": [
+            "impact-analysis",
+            "refactoring",
+            "safe-delete-check",
+            "property-audit",
+            "config-flag-discovery"
+          ],
+          "complexity": "beginner",
+          "frequency": "medium",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "artifact_identifier": {
+                "type": "string",
+                "description": "Name to search for in sys_property values (e.g. 'IncidentUtils', 'x_acme_workflow', 'assignment_group')."
+              },
+              "limit": {
+                "type": "number",
+                "description": "Maximum properties to return (default: 100).",
+                "default": 100
+              }
+            },
+            "required": [
               "artifact_identifier"
             ]
           }
