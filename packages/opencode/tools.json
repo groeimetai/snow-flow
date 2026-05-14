@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T22:06:41.148Z",
-  "count": 426,
+  "generatedAt": "2026-05-14T08:53:25.418Z",
+  "count": 427,
   "groups": [
     {
       "name": "access-control",
@@ -21839,6 +21839,88 @@
             "required": [
               "name",
               "tests"
+            ]
+          }
+        },
+        {
+          "name": "snow_dev_test_connection",
+          "description": "Developer-only tool for testing ServiceNow connections, OAuth credentials, and table/column accessibility against a live instance. Use during tool development to validate assumptions (table existence, field names, query shape) before shipping production tools.\n\nActions:\n- oauth — test arbitrary OAuth credentials (instance + grant_type + client_id + secret, optional username/password for password grant). Returns redacted token info on success.\n- connection — verify the current authenticated context is healthy via a sys_user lookup.\n- table — verify a table exists and is accessible (sys_db_object lookup). Returns table label, parent class, and scope.\n- columns — list a table's column definitions from sys_dictionary. Critical for validating field-name TODOs in newly-built tools. Optional fields filter to limit response size.\n- query — dry-run an encoded query against a table with limit=1 to confirm result shape.\n\nUse when: building new tools that target unfamiliar tables, validating TODO-marked column names from recent PRs, sanity-checking OAuth setup on a new instance, or troubleshooting \"tool returns 404\" errors. Companion to snow_test_connection (production smoke test) and snow_validate_live_connection — this is the developer-time variant with finer-grained verification actions.",
+          "permission": "read",
+          "allowedRoles": [
+            "developer",
+            "admin"
+          ],
+          "useCases": [
+            "development",
+            "testing",
+            "oauth-debugging",
+            "schema-verification",
+            "tool-validation",
+            "column-name-verification"
+          ],
+          "complexity": "intermediate",
+          "frequency": "low",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "description": "Test action to perform",
+                "enum": [
+                  "oauth",
+                  "connection",
+                  "table",
+                  "columns",
+                  "query"
+                ]
+              },
+              "instance_url": {
+                "type": "string",
+                "description": "[oauth] Instance hostname or URL (e.g. dev380262.service-now.com or https://dev380262.service-now.com)"
+              },
+              "grant_type": {
+                "type": "string",
+                "enum": [
+                  "client_credentials",
+                  "password"
+                ],
+                "default": "client_credentials",
+                "description": "[oauth] OAuth grant type. password requires username + password."
+              },
+              "client_id": {
+                "type": "string",
+                "description": "[oauth] OAuth client_id from System OAuth > Application Registry"
+              },
+              "client_secret": {
+                "type": "string",
+                "description": "[oauth] OAuth client_secret"
+              },
+              "username": {
+                "type": "string",
+                "description": "[oauth/password grant] Username of the service account"
+              },
+              "password": {
+                "type": "string",
+                "description": "[oauth/password grant] Password of the service account"
+              },
+              "table": {
+                "type": "string",
+                "description": "[table/columns/query] Target table name (e.g. pa_indicators, sn_si_incident, wm_order)"
+              },
+              "sysparm_query": {
+                "type": "string",
+                "description": "[query] Encoded query string (e.g. active=true^state=1)"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "[query/columns] Optional field name list to limit response size or scope the columns query"
+              }
+            },
+            "required": [
+              "action"
             ]
           }
         },
