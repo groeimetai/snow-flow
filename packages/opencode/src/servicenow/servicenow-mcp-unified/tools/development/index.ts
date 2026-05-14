@@ -33,3 +33,10 @@ export {
   toolDefinition as snow_validate_live_connection_def,
   execute as snow_validate_live_connection_exec,
 } from "./snow_validate_live_connection.js"
+
+// Developer-only test tool (issue #127). Should be excluded from
+// production end-user surfaces via portal CATEGORY_FEATURES.
+export {
+  toolDefinition as snow_dev_test_connection_def,
+  execute as snow_dev_test_connection_exec,
+} from "./snow_dev_test_connection.js"
