@@ -100,6 +100,20 @@ The main `tools/index.ts` already does `export * from "./<domain>/index.js"` for
 - Smoke: `bun dev serve` and make sure the server boots without complaining about your new tool.
 - If you added unit tests: `cd packages/opencode && bun test path/to/test`
 
+### Live validation against a ServiceNow instance
+
+There is no integration-test infrastructure in this repo (no live instance in CI). When you ship a tool that targets unfamiliar tables — or when you leave `// TODO: verify against live instance` markers in the code — use the developer-only `snow_dev_test_connection` tool (in `tools/development/`) to confirm your assumptions against any ServiceNow instance you have access to. Five actions, all read-only:
+
+- `oauth` — verify caller-supplied OAuth credentials work against an instance (no context needed; bypasses the normal authenticated client to test arbitrary creds)
+- `connection` — confirm the current authenticated context is healthy
+- `table` — `sys_db_object` lookup to verify a table exists and is accessible (catches missing-plugin issues)
+- `columns` — `sys_dictionary` lookup to list a table's column names + types — the fastest way to resolve "verify column X" TODOs
+- `query` — dry-run an encoded query with `limit=1` to confirm result shape
+
+The tool name prefix `snow_dev_*` and `category: "development"` mark it as developer-only; the portal in `serac-platform` excludes `category=development` from `CATEGORY_FEATURES` BASE so it does not appear in production instance-chat. Don't add other `snow_dev_*` tools without keeping that exclusion in mind.
+
+If a tool you're building activates a non-default plugin (FSM, GRC, SIR, etc.), `snow_plugin_manage` (in `tools/plugins/`) handles the install: `activate` (with optional `wait: true` to block until done), `progress` (poll an async install), `repair` (rollback + reinstall for stuck plugins).
+
 ### PR conventions
 
 - Title: `feat(opencode): add snow_your_tool for <one-liner>`  *(or `fix(...)` if replacing a broken tool)*
