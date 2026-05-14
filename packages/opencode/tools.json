@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T11:50:26.038Z",
+  "generatedAt": "2026-05-14T12:08:21.411Z",
   "count": 429,
   "groups": [
     {
@@ -5375,7 +5375,7 @@
         },
         {
           "name": "snow_csm_contract_manage",
-          "description": "Unified tool for ServiceNow CSM service contracts and the entitlements that hang off them. Wraps service_contract, entitlement, service_offering, and contract_sla.\n\nActions:\n- list — list service contracts filtered by account, state, or active flag\n- get — fetch a service contract with linked entitlements and SLAs\n- create_contract — create a new service_contract for an account\n- link_entitlement — attach an entitlement to a service contract (joins entitlement.service_contract)\n- list_entitlements — list entitlements for a contract, account, or globally\n- extend_contract — extend a service contract's end_date and optionally activate\n\nUse when: the agent needs to define what an account is entitled to across CSM cases. Companion tools: snow_create_customer_case (opens a CSM case that consumes the entitlements), snow_create_entitlement (creates a single entitlement record), snow_create_customer_account (creates the account that owns the contract).\n\nRequires com.sn_customerservice. When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.",
+          "description": "Wraps ast_contract (asset contract) + service_entitlement + service_offering. CSM (com.sn_customerservice) does not have native contract tables; ast_contract is the closest functional equivalent and service_entitlement.contract is a native reference to it.\n\nActions:\n- list_contracts — query ast_contract, optional filters: account, vendor, customer, state, active_only\n- get_contract — fetch one ast_contract row by sys_id or number, with related entitlement and offering counts\n- create_contract — create an ast_contract; vendor + vendor_contract + contract_model are required by the schema\n- list_entitlements — query service_entitlement, optional filters: contract, account, asset, active_only\n- link_entitlement_to_contract — set service_entitlement.contract on an existing entitlement (the schema's native join)\n- list_offerings — query service_offering, optional filters: company, vendor, contract, name\n\nCompanion tools: snow_csm_communication_manage (logs the customer interactions governed by the contract), snow_create_customer_account (creates the account), snow_create_entitlement (single-entitlement create).\n\nPlugin requirement: ast_contract is platform-stock so it always exists, but service_entitlement and service_offering ship with com.sn_customerservice / Service Portfolio Management. When the underlying tables do not exist the tool returns a clear plugin-missing error.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -5385,6 +5385,7 @@
             "customer-service",
             "contracts",
             "entitlements",
+            "offerings",
             "csm"
           ],
           "complexity": "intermediate",
@@ -5396,72 +5397,103 @@
                 "type": "string",
                 "description": "Management action to perform",
                 "enum": [
-                  "list",
-                  "get",
+                  "list_contracts",
+                  "get_contract",
                   "create_contract",
-                  "link_entitlement",
                   "list_entitlements",
-                  "extend_contract"
+                  "link_entitlement_to_contract",
+                  "list_offerings"
                 ]
               },
               "sys_id": {
                 "type": "string",
-                "description": "[get/link_entitlement/extend_contract/list_entitlements] service_contract sys_id"
+                "description": "[get_contract] ast_contract sys_id. [link_entitlement_to_contract] target ast_contract sys_id (the contract the entitlement should be linked to)."
               },
               "number": {
                 "type": "string",
-                "description": "[get] Contract number (alternative to sys_id)"
+                "description": "[get_contract] ast_contract.number (alternative to sys_id)"
               },
               "account": {
                 "type": "string",
-                "description": "[list/list_entitlements/create_contract] Customer account sys_id"
+                "description": "[list_contracts/list_entitlements] customer_account sys_id filter"
               },
-              "state": {
+              "vendor": {
                 "type": "string",
-                "description": "[list] State filter (e.g. draft, active, expired, cancelled)"
+                "description": "[list_contracts/list_offerings/create_contract] core_company sys_id of the vendor"
               },
-              "active_only": {
-                "type": "boolean",
-                "description": "[list/list_entitlements] Only return active records",
-                "default": false
+              "customer": {
+                "type": "string",
+                "description": "[list_contracts/create_contract] core_company sys_id of the customer (ast_contract.customer)"
+              },
+              "contract": {
+                "type": "string",
+                "description": "[list_entitlements/list_offerings] ast_contract sys_id filter"
+              },
+              "asset": {
+                "type": "string",
+                "description": "[list_entitlements] alm_asset sys_id filter on service_entitlement.asset"
+              },
+              "company": {
+                "type": "string",
+                "description": "[list_offerings] core_company sys_id filter on service_offering.company"
               },
               "name": {
                 "type": "string",
-                "description": "[create_contract] Contract name/short_description"
+                "description": "[list_offerings/create_contract] for list_offerings: LIKE filter on service_offering.name. For create_contract: short_description (Name)."
               },
-              "start_date": {
+              "state": {
                 "type": "string",
-                "description": "[create_contract] Start date (YYYY-MM-DD)"
+                "description": "[list_contracts/create_contract] ast_contract.state — choices: draft, active, expired, cancelled"
               },
-              "end_date": {
-                "type": "string",
-                "description": "[create_contract/extend_contract] End date (YYYY-MM-DD)"
+              "active_only": {
+                "type": "boolean",
+                "description": "[list_contracts/list_entitlements] only return rows where active=true",
+                "default": false
               },
-              "service_offering": {
+              "vendor_contract": {
                 "type": "string",
-                "description": "[create_contract] service_offering sys_id this contract sells"
+                "description": "[create_contract] ast_contract.vendor_contract — vendor's contract number / external identifier. Mandatory on the dictionary."
               },
-              "contract_type": {
+              "contract_model": {
                 "type": "string",
-                "description": "[create_contract] Contract type (e.g. service, support, maintenance)"
+                "description": "[create_contract] ast_contract.contract_model — cmdb_model sys_id of the contract model. Mandatory on the dictionary."
+              },
+              "starts": {
+                "type": "string",
+                "description": "[create_contract] ast_contract.starts (YYYY-MM-DD)"
+              },
+              "ends": {
+                "type": "string",
+                "description": "[create_contract] ast_contract.ends (YYYY-MM-DD)"
+              },
+              "short_description": {
+                "type": "string",
+                "description": "[create_contract] ast_contract.short_description (Name on the form)"
+              },
+              "description": {
+                "type": "string",
+                "description": "[create_contract] ast_contract.description (free-text)"
+              },
+              "cost_center": {
+                "type": "string",
+                "description": "[create_contract] cmn_cost_center sys_id"
+              },
+              "po_number": {
+                "type": "string",
+                "description": "[create_contract] ast_contract.po_number"
               },
               "entitlement": {
                 "type": "string",
-                "description": "[link_entitlement] Entitlement sys_id to attach to the contract"
-              },
-              "activate": {
-                "type": "boolean",
-                "description": "[extend_contract] Mark the contract active after extending",
-                "default": false
+                "description": "[link_entitlement_to_contract] service_entitlement sys_id to update. Its .contract field will be set to the value of `sys_id`."
               },
               "limit": {
                 "type": "number",
-                "description": "[list/list_entitlements] Maximum records to return",
+                "description": "[list_*] Maximum records to return",
                 "default": 50
               },
               "fields": {
                 "type": "string",
-                "description": "[list/get/list_entitlements] Comma-separated list of fields to return"
+                "description": "[list_*/get_contract] Comma-separated sysparm_fields override"
               }
             },
             "required": [
