@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T10:47:02.899Z",
+  "generatedAt": "2026-05-14T11:50:26.038Z",
   "count": 429,
   "groups": [
     {
@@ -10845,7 +10845,7 @@
         },
         {
           "name": "snow_hr_profile_manage",
-          "description": "Unified tool for ServiceNow HR employee profiles (sn_hr_core_profile) and the user relations that connect them (sn_hr_core_user_relation).\n\nActions:\n- get_profile — fetch a profile by sys_id, user sys_id, or employee_number\n- update_profile — patch profile fields (department, location, manager, employee_number, job_title)\n- list_relations — list relationships for a profile (manager, direct reports, dotted-line, etc.)\n- add_relation — create a relationship between two profiles (e.g. manager -> report)\n- search_employees — search profiles by name, email, department, or employee_number\n\nUse when: the agent needs to read or maintain the canonical employee record used across all HR cases. Companion tools: snow_create_hr_case (opens HR tickets against a profile), snow_create_hr_task (creates task work on a case), snow_hr_lifecycle_event (drives onboarding/offboarding flows).\n\nRequires the HR Core plugin (com.sn_hr_core). When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.",
+          "description": "Unified tool for ServiceNow HR employee profiles (sn_hr_core_profile). Searches join through profile.user reference for sys_user fields (department, email, active).\n\nActions:\n- get_profile — fetch a profile by sys_id, user sys_id, or employee_number\n- update_profile — patch profile fields (employment_type, position, primary_job, location, personal_email, work_mobile, mobile_phone, im_name)\n- search_employees — search profiles by name, email, department, or employee_number\n\nUse when: the agent needs to read or maintain the canonical employee record used across all HR cases. Companion tools: snow_create_hr_case (opens HR tickets against a profile), snow_create_hr_task (creates task work on a case), snow_hr_lifecycle_event (drives onboarding/offboarding flows).\n\nRequires the HR Core plugin (com.sn_hr_core). When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -10854,7 +10854,6 @@
           "useCases": [
             "hr-service-delivery",
             "employee-profile",
-            "hr-relations",
             "hr-core"
           ],
           "complexity": "intermediate",
@@ -10868,14 +10867,12 @@
                 "enum": [
                   "get_profile",
                   "update_profile",
-                  "list_relations",
-                  "add_relation",
                   "search_employees"
                 ]
               },
               "sys_id": {
                 "type": "string",
-                "description": "[get_profile/update_profile/list_relations/add_relation] Profile sys_id"
+                "description": "[get_profile/update_profile] Profile sys_id"
               },
               "user": {
                 "type": "string",
@@ -10885,55 +10882,63 @@
                 "type": "string",
                 "description": "[get_profile/search_employees/update_profile] Employee number (alternative to sys_id)"
               },
-              "department": {
+              "employment_type": {
                 "type": "string",
-                "description": "[update_profile] cmn_department sys_id"
+                "description": "[update_profile] Employment type (e.g. full_time, part_time, contractor)"
+              },
+              "position": {
+                "type": "string",
+                "description": "[update_profile] sn_hr_core_position sys_id"
+              },
+              "primary_job": {
+                "type": "string",
+                "description": "[update_profile] sn_hr_core_job sys_id"
               },
               "location": {
                 "type": "string",
                 "description": "[update_profile] cmn_location sys_id"
               },
-              "manager": {
+              "personal_email": {
                 "type": "string",
-                "description": "[update_profile] Manager profile sys_id"
+                "description": "[update_profile] Personal email address"
               },
-              "job_title": {
+              "work_mobile": {
                 "type": "string",
-                "description": "[update_profile] Job title (free-text)"
+                "description": "[update_profile] Work mobile phone number"
               },
-              "employment_status": {
+              "mobile_phone": {
                 "type": "string",
-                "description": "[update_profile] Employment status (e.g. active, leave_of_absence, terminated)"
+                "description": "[update_profile] Mobile phone number"
               },
-              "related_profile": {
+              "im_name": {
                 "type": "string",
-                "description": "[add_relation] sys_id of the related sn_hr_core_profile"
-              },
-              "relation_type": {
-                "type": "string",
-                "description": "[add_relation/list_relations] Relation type label (manager, direct_report, dotted_line, etc.)"
+                "description": "[update_profile] Instant-message / display name"
               },
               "name": {
                 "type": "string",
-                "description": "[search_employees] Substring match against the profile's name/full_name"
+                "description": "[search_employees] Substring match against legal_first_name and im_name (OR'd)"
               },
               "email": {
                 "type": "string",
-                "description": "[search_employees] Email substring match (joins through sys_user)"
+                "description": "[search_employees] Email substring match (dot-walks through user.email on sys_user)"
+              },
+              "department": {
+                "type": "string",
+                "description": "[search_employees] Department substring match (dot-walks through user.department on sys_user)"
               },
               "active_only": {
                 "type": "boolean",
-                "description": "[search_employees/list_relations] Only return active records",
+                "description": "[search_employees] Only return profiles whose linked sys_user is active",
                 "default": true
               },
               "limit": {
                 "type": "number",
-                "description": "[search_employees/list_relations] Maximum records to return",
+                "description": "[search_employees] Maximum records to return",
                 "default": 50
               },
               "fields": {
                 "type": "string",
-                "description": "[get_profile/search_employees/list_relations] Comma-separated list of fields to return"
+                "description": "[get_profile/search_employees] Comma-separated list of fields to return"
               }
             },
             "required": [
