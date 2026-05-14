@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-14T10:28:00.176Z",
+  "generatedAt": "2026-05-14T10:47:02.899Z",
   "count": 429,
   "groups": [
     {
@@ -9628,7 +9628,7 @@
       "tools": [
         {
           "name": "snow_fsm_dispatch_manage",
-          "description": "Unified tool for ServiceNow Field Service Management dispatch operations. Wraps the wm_agent, wm_dispatch_group, wm_skill and wm_qualification tables installed by the Field Service Management plugin (com.snc.work_management).\n\nActions:\n- list_agents — list wm_agent rows (field technicians), optionally filtered by dispatch_group, skill, location or active flag\n- list_groups — list wm_dispatch_group rows\n- assign_agent — set a work order's assigned_to (and optionally assignment_group). Convenience wrapper for the same operation in snow_fsm_work_order_manage, scoped to dispatch workflows\n- suggest_agent — read-only smart query that returns candidate agents filtered by required skill, dispatch group, and an availability window. Does NOT call FSM's AI dispatch engine\n- check_availability — list agents whose schedule has no overlapping work orders during the given window\n\nUse when: the agent needs to discover technicians for a work order, audit dispatch group membership, or pre-filter candidates before opening the Dispatcher Workspace. Requires the Field Service Management plugin (com.snc.work_management) — every action surfaces a clear PLUGIN_MISSING error if wm_agent is absent.\n\nReturns: agent records with sys_id, name, user (sys_user reference), dispatch_group, location, active. Group records include sys_id, name, location and parent group. Suggestions include the matching skill, group membership flag, and a \"reasons\" array describing why the candidate matched.",
+          "description": "Unified tool for ServiceNow Field Service Management dispatch lookups. Modern ServiceNow FSM does not store dispatch in a single table — there is no wm_agent / wm_dispatch_group table. This tool composes the answer from several real tables: sys_user (filtered by wm_* role) for technicians, sys_user_group for assignment groups, wm_agent_schedule_attribute_plan for per-user schedule policy, and wm_work_order_task_potential_assignment_groups for which groups are eligible for a specific work task.\n\nCompanion tool: snow_fsm_work_order_manage handles wm_order CRUD and snow_fsm_parts_manage handles sm_part_requirement CRUD.\n\nActions:\n- list_agents - list sys_user rows that hold any FSM role (wm_agent, wm_dispatcher, wm_manager, ...). Optional filters: role, group, location, active flag, and free-text name search\n- list_groups - list sys_user_group rows. Optional filter: name LIKE search and active flag. Use for picking an assignment_group on a wm_order\n- list_schedules - list wm_agent_schedule_attribute_plan rows for a given sys_user (or the full set with no filter). Returns home base, travel radius, overtime / penalty rates and the schedule window\n- list_potential_groups_for_task - list wm_work_order_task_potential_assignment_groups rows for a given wm_task sys_id. Tells you which assignment groups are eligible to take that task\n- assign_to_work_order - patch a wm_order with assigned_to (sys_user) and/or assignment_group (sys_user_group). Inherited from task — both fields exist on wm_order even though they aren't declared directly on wm_order in sys_dictionary\n\nUse when: the agent needs to pick a technician or assignment group, audit FSM role membership, look up a technician's schedule policy, or do the actual assignment on a work order. Read actions hit live tables only — no AI dispatch / scheduling engine is invoked.\n\nReturns: agents include sys_id, user_name, name, email, active, location, fsm_roles. Groups include sys_id, name, active, manager. Schedule plans include sys_id, user, default flag, from/to window, start/end location, travel radius, overtime caps and penalty rates. Potential-group rows include sys_id, work_order_task, assignment_group, active. assign_to_work_order returns the patched wm_order.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -9639,6 +9639,7 @@
             "dispatch",
             "scheduling",
             "technician",
+            "assignment",
             "fsm"
           ],
           "complexity": "intermediate",
@@ -9652,60 +9653,64 @@
                 "enum": [
                   "list_agents",
                   "list_groups",
-                  "assign_agent",
-                  "suggest_agent",
-                  "check_availability"
+                  "list_schedules",
+                  "list_potential_groups_for_task",
+                  "assign_to_work_order"
                 ]
               },
-              "dispatch_group": {
+              "role": {
                 "type": "string",
-                "description": "[list_agents/suggest_agent/check_availability] Filter agents by wm_dispatch_group (sys_id or name)"
+                "description": "[list_agents] Filter to a single FSM role name (e.g. wm_agent, wm_dispatcher). Default is any wm_* role"
               },
-              "skill": {
+              "group": {
                 "type": "string",
-                "description": "[list_agents/suggest_agent] Filter agents by required skill (wm_skill sys_id or name) — joined through wm_qualification"
+                "description": "[list_agents] sys_user_group sys_id to filter agents by group membership"
               },
               "location": {
                 "type": "string",
-                "description": "[list_agents/suggest_agent] Filter agents by location (cmn_location sys_id or name)"
+                "description": "[list_agents] cmn_location sys_id to filter agents by location"
+              },
+              "name_like": {
+                "type": "string",
+                "description": "[list_agents/list_groups] Free-text LIKE match against the name column"
               },
               "active_only": {
                 "type": "boolean",
-                "description": "[list_agents/list_groups/suggest_agent/check_availability] Only return active rows",
+                "description": "[list_agents/list_groups/list_schedules/list_potential_groups_for_task] Only return active rows",
                 "default": true
+              },
+              "user": {
+                "type": "string",
+                "description": "[list_schedules] sys_user sys_id to filter schedule attribute plans by"
+              },
+              "work_order_task": {
+                "type": "string",
+                "description": "[list_potential_groups_for_task] wm_task sys_id to look up potential assignment groups for"
               },
               "work_order_sys_id": {
                 "type": "string",
-                "description": "[assign_agent] sys_id of the wm_order to assign"
+                "description": "[assign_to_work_order] sys_id of the wm_order to assign"
               },
               "work_order_number": {
                 "type": "string",
-                "description": "[assign_agent] number of the wm_order (used when work_order_sys_id is absent)"
+                "description": "[assign_to_work_order] number of the wm_order (used when work_order_sys_id is absent)"
               },
-              "agent": {
+              "assigned_to": {
                 "type": "string",
-                "description": "[assign_agent] wm_agent sys_id or referenced sys_user sys_id/user_name to assign as assigned_to on the work order"
+                "description": "[assign_to_work_order] sys_user sys_id of the technician to assign"
               },
               "assignment_group": {
                 "type": "string",
-                "description": "[assign_agent] Optional sys_user_group sys_id or name to set on the work order"
-              },
-              "window_start": {
-                "type": "string",
-                "description": "[suggest_agent/check_availability] Window start datetime (YYYY-MM-DD HH:MM:SS in instance TZ)"
-              },
-              "window_end": {
-                "type": "string",
-                "description": "[suggest_agent/check_availability] Window end datetime (YYYY-MM-DD HH:MM:SS in instance TZ)"
+                "description": "[assign_to_work_order] sys_user_group sys_id of the assignment group to set"
               },
               "limit": {
                 "type": "number",
-                "description": "[list_agents/list_groups/suggest_agent/check_availability] Maximum records to return",
+                "description": "[list_*] Maximum records to return",
                 "default": 50
               },
               "fields": {
                 "type": "string",
-                "description": "[list_agents/list_groups] Comma-separated list of fields to return (defaults to a curated set)"
+                "description": "[list_*] Comma-separated list of fields to return (defaults to a curated set per action)"
               }
             },
             "required": [
@@ -9715,7 +9720,7 @@
         },
         {
           "name": "snow_fsm_parts_manage",
-          "description": "Unified tool for ServiceNow Field Service Management parts operations. Wraps the pc_part (Parts Catalog), wm_part_requirement (parts required for a work order), pc_part_request (parts ordering) and pc_stock_level tables.\n\nActions:\n- list_parts — list pc_part rows from the catalog, optionally filtered by model, category or name\n- request_part — create a wm_part_requirement row that attaches a required part to a work order\n- list_requirements — list wm_part_requirement rows for a work order\n- fulfill_request — create a pc_part_request (purchase / transfer request) to source the part for a wm_part_requirement\n- check_stock — list pc_stock_level rows for a part, optionally filtered by stockroom, to see what is available\n\nUse when: the agent needs to plan parts for a work order, attach required parts, raise a purchase / stock-transfer request, or look up what stockroom has a part in stock. Requires the Field Service Management plugin (com.snc.work_management) — every action surfaces a clear PLUGIN_MISSING error if the primary tables are absent.\n\nReturns: catalog rows with sys_id, name, model, manufacturer. Requirements include sys_id, work_order, part, quantity, state. Requests include sys_id, part, quantity, stockroom, state. Stock levels include sys_id, part, stockroom, quantity.",
+          "description": "Unified tool for ServiceNow Field Service Management part requirements. Wraps the sm_part_requirement table installed by the Field Service Management plugin (com.snc.work_management). A part requirement records \"this work order needs N of this cmdb_model\" and tracks reserved, sourced and delivered quantities.\n\nCompanion tool: snow_fsm_work_order_manage handles the wm_order lifecycle.\n\nActions:\n- list_requirements - list sm_part_requirement rows, filtered by work order, requested_for, model, or status flags (requested/sourced/delivered/reserved-only)\n- get - retrieve a single requirement by sys_id (or by number)\n- create - create a new requirement (model + required_quantity + requested_for required; optional required_by_date, mandatory, include_substitute, requested_quantity)\n- update_quantity - update requested_quantity, reserved_quantity, or required_quantity on an existing requirement\n- update_status - flip the requested / sourced / delivered booleans on an existing requirement\n- delete - delete a requirement by sys_id\n\nUse when: the agent needs to plan parts for a work order, attach a required model to a work order, mark parts as reserved/sourced/delivered, or audit outstanding part requirements. Stockroom-level availability (alm_stockroom / alm_asset) is intentionally out of scope and is not modelled by sm_part_requirement.\n\nReturns: requirement records with sys_id, number, model (cmdb_model reference), required_quantity, requested_quantity, reserved_quantity, requested_for, affected_product (wm_m2m_product_to_work_order reference), service_order_task, required_by_date, status booleans (requested, sourced, delivered, mandatory, include_substitute), and a navigation URL.",
           "permission": "write",
           "allowedRoles": [
             "developer",
@@ -9725,7 +9730,7 @@
             "field-service",
             "parts",
             "inventory",
-            "stockroom",
+            "work-order",
             "fsm"
           ],
           "complexity": "intermediate",
@@ -9737,70 +9742,114 @@
                 "type": "string",
                 "description": "Management action to perform",
                 "enum": [
-                  "list_parts",
-                  "request_part",
                   "list_requirements",
-                  "fulfill_request",
-                  "check_stock"
+                  "get",
+                  "create",
+                  "update_quantity",
+                  "update_status",
+                  "delete"
                 ]
               },
-              "name": {
+              "sys_id": {
                 "type": "string",
-                "description": "[list_parts] Filter parts by name (LIKE match)"
+                "description": "[get/update_quantity/update_status/delete] sm_part_requirement sys_id"
               },
-              "model": {
+              "number": {
                 "type": "string",
-                "description": "[list_parts] Filter parts by model (cmdb_model sys_id or name)"
-              },
-              "manufacturer": {
-                "type": "string",
-                "description": "[list_parts] Filter parts by manufacturer (core_company sys_id or name)"
-              },
-              "category": {
-                "type": "string",
-                "description": "[list_parts] Filter parts by category"
-              },
-              "part": {
-                "type": "string",
-                "description": "[request_part/fulfill_request/check_stock] pc_part sys_id of the part"
+                "description": "[get] sm_part_requirement number (used when sys_id is absent)"
               },
               "work_order_sys_id": {
                 "type": "string",
-                "description": "[request_part/list_requirements] sys_id of the wm_order this requirement is attached to"
+                "description": "[list_requirements] sys_id of a wm_order to filter requirements by (resolved through the wm_m2m_product_to_work_order link)"
               },
               "work_order_number": {
                 "type": "string",
-                "description": "[request_part/list_requirements] number of the wm_order (used when work_order_sys_id is absent)"
-              },
-              "requirement_sys_id": {
-                "type": "string",
-                "description": "[fulfill_request] sys_id of the wm_part_requirement to fulfill"
-              },
-              "quantity": {
-                "type": "number",
-                "description": "[request_part/fulfill_request] Quantity of the part required / requested"
-              },
-              "stockroom": {
-                "type": "string",
-                "description": "[fulfill_request/check_stock] sys_id or name of the source stockroom (alm_stockroom)"
+                "description": "[list_requirements] number of a wm_order to filter by (used when work_order_sys_id is absent)"
               },
               "requested_for": {
                 "type": "string",
-                "description": "[fulfill_request] sys_user sys_id of the requester (defaults to the assigned technician)"
+                "description": "[list_requirements/create] sys_user sys_id of the technician the parts are requested for"
               },
-              "active_only": {
+              "model_filter": {
+                "type": "string",
+                "description": "[list_requirements] cmdb_model sys_id to filter by"
+              },
+              "service_order_task": {
+                "type": "string",
+                "description": "[list_requirements/create] sm_task sys_id this requirement belongs to"
+              },
+              "reserved_only": {
                 "type": "boolean",
-                "description": "[list_parts/list_requirements/check_stock] Only return active rows",
-                "default": true
+                "description": "[list_requirements] Only return requirements that have a reserved_quantity > 0",
+                "default": false
+              },
+              "requested_only": {
+                "type": "boolean",
+                "description": "[list_requirements] Only return requirements where requested=true",
+                "default": false
+              },
+              "sourced_only": {
+                "type": "boolean",
+                "description": "[list_requirements] Only return requirements where sourced=true",
+                "default": false
+              },
+              "delivered_only": {
+                "type": "boolean",
+                "description": "[list_requirements] Only return requirements where delivered=true",
+                "default": false
+              },
+              "model": {
+                "type": "string",
+                "description": "[create] cmdb_model sys_id of the part model required (mandatory)"
+              },
+              "required_quantity": {
+                "type": "number",
+                "description": "[create/update_quantity] How many of the model are required for the work (mandatory on create)"
+              },
+              "requested_quantity": {
+                "type": "number",
+                "description": "[create/update_quantity] How many have been requested from stock (defaults to required_quantity on create when omitted)"
+              },
+              "reserved_quantity": {
+                "type": "number",
+                "description": "[update_quantity] How many have been reserved in a stockroom for this requirement"
+              },
+              "required_by_date": {
+                "type": "string",
+                "description": "[create] Date by which the part is required (YYYY-MM-DD HH:MM:SS in instance TZ)"
+              },
+              "mandatory": {
+                "type": "boolean",
+                "description": "[create] Mark requirement as mandatory (cannot be substituted)"
+              },
+              "include_substitute": {
+                "type": "boolean",
+                "description": "[create] Allow substitute models to satisfy the requirement"
+              },
+              "affected_product": {
+                "type": "string",
+                "description": "[create] wm_m2m_product_to_work_order sys_id linking this requirement to a product on a work order"
+              },
+              "requested": {
+                "type": "boolean",
+                "description": "[update_status] Mark requirement as requested (or clear by passing false)"
+              },
+              "sourced": {
+                "type": "boolean",
+                "description": "[update_status] Mark requirement as sourced"
+              },
+              "delivered": {
+                "type": "boolean",
+                "description": "[update_status] Mark requirement as delivered"
               },
               "limit": {
                 "type": "number",
-                "description": "[list_parts/list_requirements/check_stock] Maximum records to return",
+                "description": "[list_requirements] Maximum records to return",
                 "default": 50
               },
               "fields": {
                 "type": "string",
-                "description": "[list_parts/list_requirements/check_stock] Comma-separated list of fields to return"
+                "description": "[list_requirements/get] Comma-separated list of fields to return (defaults to a curated set)"
               }
             },
             "required": [
