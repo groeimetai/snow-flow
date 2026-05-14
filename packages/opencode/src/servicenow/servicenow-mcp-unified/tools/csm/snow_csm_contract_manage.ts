@@ -1,39 +1,44 @@
 /**
- * snow_csm_contract_manage - Unified CSM contract and entitlement management
+ * snow_csm_contract_manage - Unified contract / entitlement / offering management
  *
- * Wraps the Customer Service Management contract surface: service_contract
- * (master contract), entitlement (what an account is entitled to), the linked
- * service_offering catalog, and contract_sla (SLA linkage).
+ * Wraps ast_contract (asset contract) + service_entitlement + service_offering.
+ * CSM (com.sn_customerservice) does not ship native contract tables; ast_contract
+ * is the closest functional equivalent that production CSM customers actually
+ * use to model what an account is entitled to. service_entitlement.contract is
+ * a real reference field pointing at ast_contract, so the join is native.
  *
- * Companion to snow_create_customer_case and snow_create_entitlement — the
- * existing tools open cases and create individual entitlements, while this
- * tool manages the contract lifecycle that those entitlements hang off of.
- *
- * Requires the Customer Service Management plugin (com.sn_customerservice).
+ * Companion to snow_csm_communication_manage — that tool logs the customer
+ * interactions; this tool manages the contract surface those interactions
+ * are governed by. Also pairs with snow_create_customer_account (creates the
+ * account that owns the contract) and snow_create_entitlement (creates one
+ * entitlement record at a time).
  */
-
 import type { MCPToolDefinition, ServiceNowContext, ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult, SnowFlowError, ErrorType } from "../../shared/error-handler.js"
 
+const CONTRACT_TABLE = "ast_contract"
+const ENTITLEMENT_TABLE = "service_entitlement"
+const OFFERING_TABLE = "service_offering"
+
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_csm_contract_manage",
-  description: `Unified tool for ServiceNow CSM service contracts and the entitlements that hang off them. Wraps service_contract, entitlement, service_offering, and contract_sla.
+  description: `Wraps ast_contract (asset contract) + service_entitlement + service_offering. CSM (com.sn_customerservice) does not have native contract tables; ast_contract is the closest functional equivalent and service_entitlement.contract is a native reference to it.
 
 Actions:
-- list — list service contracts filtered by account, state, or active flag
-- get — fetch a service contract with linked entitlements and SLAs
-- create_contract — create a new service_contract for an account
-- link_entitlement — attach an entitlement to a service contract (joins entitlement.service_contract)
-- list_entitlements — list entitlements for a contract, account, or globally
-- extend_contract — extend a service contract's end_date and optionally activate
+- list_contracts — query ast_contract, optional filters: account, vendor, customer, state, active_only
+- get_contract — fetch one ast_contract row by sys_id or number, with related entitlement and offering counts
+- create_contract — create an ast_contract; vendor + vendor_contract + contract_model are required by the schema
+- list_entitlements — query service_entitlement, optional filters: contract, account, asset, active_only
+- link_entitlement_to_contract — set service_entitlement.contract on an existing entitlement (the schema's native join)
+- list_offerings — query service_offering, optional filters: company, vendor, contract, name
 
-Use when: the agent needs to define what an account is entitled to across CSM cases. Companion tools: snow_create_customer_case (opens a CSM case that consumes the entitlements), snow_create_entitlement (creates a single entitlement record), snow_create_customer_account (creates the account that owns the contract).
+Companion tools: snow_csm_communication_manage (logs the customer interactions governed by the contract), snow_create_customer_account (creates the account), snow_create_entitlement (single-entitlement create).
 
-Requires com.sn_customerservice. When the plugin is missing the underlying tables don't exist and the tool returns a clear plugin-missing error.`,
+Plugin requirement: ast_contract is platform-stock so it always exists, but service_entitlement and service_offering ship with com.sn_customerservice / Service Portfolio Management. When the underlying tables do not exist the tool returns a clear plugin-missing error.`,
   category: "itsm",
   subcategory: "csm",
-  use_cases: ["customer-service", "contracts", "entitlements", "csm"],
+  use_cases: ["customer-service", "contracts", "entitlements", "offerings", "csm"],
   complexity: "intermediate",
   frequency: "medium",
   permission: "write",
@@ -44,112 +49,150 @@ Requires com.sn_customerservice. When the plugin is missing the underlying table
       action: {
         type: "string",
         description: "Management action to perform",
-        enum: ["list", "get", "create_contract", "link_entitlement", "list_entitlements", "extend_contract"],
+        enum: [
+          "list_contracts",
+          "get_contract",
+          "create_contract",
+          "list_entitlements",
+          "link_entitlement_to_contract",
+          "list_offerings",
+        ],
       },
       // Identification
       sys_id: {
         type: "string",
-        description: "[get/link_entitlement/extend_contract/list_entitlements] service_contract sys_id",
+        description:
+          "[get_contract] ast_contract sys_id. [link_entitlement_to_contract] target ast_contract sys_id (the contract the entitlement should be linked to).",
       },
       number: {
         type: "string",
-        description: "[get] Contract number (alternative to sys_id)",
+        description: "[get_contract] ast_contract.number (alternative to sys_id)",
       },
-      // Filtering
+      // Common filters
       account: {
         type: "string",
-        description: "[list/list_entitlements/create_contract] Customer account sys_id",
+        description: "[list_contracts/list_entitlements] customer_account sys_id filter",
+      },
+      vendor: {
+        type: "string",
+        description: "[list_contracts/list_offerings/create_contract] core_company sys_id of the vendor",
+      },
+      customer: {
+        type: "string",
+        description: "[list_contracts/create_contract] core_company sys_id of the customer (ast_contract.customer)",
+      },
+      contract: {
+        type: "string",
+        description: "[list_entitlements/list_offerings] ast_contract sys_id filter",
+      },
+      asset: {
+        type: "string",
+        description: "[list_entitlements] alm_asset sys_id filter on service_entitlement.asset",
+      },
+      company: {
+        type: "string",
+        description: "[list_offerings] core_company sys_id filter on service_offering.company",
+      },
+      name: {
+        type: "string",
+        description:
+          "[list_offerings/create_contract] for list_offerings: LIKE filter on service_offering.name. For create_contract: short_description (Name).",
       },
       state: {
         type: "string",
-        description: "[list] State filter (e.g. draft, active, expired, cancelled)",
+        description: "[list_contracts/create_contract] ast_contract.state — choices: draft, active, expired, cancelled",
       },
       active_only: {
         type: "boolean",
-        description: "[list/list_entitlements] Only return active records",
+        description: "[list_contracts/list_entitlements] only return rows where active=true",
         default: false,
       },
       // CREATE_CONTRACT fields
-      name: {
+      vendor_contract: {
         type: "string",
-        description: "[create_contract] Contract name/short_description",
+        description:
+          "[create_contract] ast_contract.vendor_contract — vendor's contract number / external identifier. Mandatory on the dictionary.",
       },
-      start_date: {
+      contract_model: {
         type: "string",
-        description: "[create_contract] Start date (YYYY-MM-DD)",
+        description:
+          "[create_contract] ast_contract.contract_model — cmdb_model sys_id of the contract model. Mandatory on the dictionary.",
       },
-      end_date: {
+      starts: {
         type: "string",
-        description: "[create_contract/extend_contract] End date (YYYY-MM-DD)",
+        description: "[create_contract] ast_contract.starts (YYYY-MM-DD)",
       },
-      service_offering: {
+      ends: {
         type: "string",
-        description: "[create_contract] service_offering sys_id this contract sells",
+        description: "[create_contract] ast_contract.ends (YYYY-MM-DD)",
       },
-      contract_type: {
+      short_description: {
         type: "string",
-        description: "[create_contract] Contract type (e.g. service, support, maintenance)",
+        description: "[create_contract] ast_contract.short_description (Name on the form)",
       },
-      // LINK_ENTITLEMENT fields
+      description: {
+        type: "string",
+        description: "[create_contract] ast_contract.description (free-text)",
+      },
+      cost_center: {
+        type: "string",
+        description: "[create_contract] cmn_cost_center sys_id",
+      },
+      po_number: {
+        type: "string",
+        description: "[create_contract] ast_contract.po_number",
+      },
+      // LINK_ENTITLEMENT_TO_CONTRACT
       entitlement: {
         type: "string",
-        description: "[link_entitlement] Entitlement sys_id to attach to the contract",
-      },
-      // EXTEND_CONTRACT fields
-      activate: {
-        type: "boolean",
-        description: "[extend_contract] Mark the contract active after extending",
-        default: false,
+        description:
+          "[link_entitlement_to_contract] service_entitlement sys_id to update. Its .contract field will be set to the value of `sys_id`.",
       },
       // Listing
       limit: {
         type: "number",
-        description: "[list/list_entitlements] Maximum records to return",
+        description: "[list_*] Maximum records to return",
         default: 50,
       },
       fields: {
         type: "string",
-        description: "[list/get/list_entitlements] Comma-separated list of fields to return",
+        description: "[list_*/get_contract] Comma-separated sysparm_fields override",
       },
     },
     required: ["action"],
   },
 }
 
-const CONTRACT_TABLE = "service_contract"
-const ENTITLEMENT_TABLE = "entitlement"
-const SERVICE_OFFERING_TABLE = "service_offering"
-const CONTRACT_SLA_TABLE = "contract_sla"
-
 export async function execute(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   const action = args.action as string
 
   try {
     switch (action) {
-      case "list":
-        return await executeList(args, context)
-      case "get":
-        return await executeGet(args, context)
+      case "list_contracts":
+        return await executeListContracts(args, context)
+      case "get_contract":
+        return await executeGetContract(args, context)
       case "create_contract":
         return await executeCreateContract(args, context)
-      case "link_entitlement":
-        return await executeLinkEntitlement(args, context)
       case "list_entitlements":
         return await executeListEntitlements(args, context)
-      case "extend_contract":
-        return await executeExtendContract(args, context)
+      case "link_entitlement_to_contract":
+        return await executeLinkEntitlementToContract(args, context)
+      case "list_offerings":
+        return await executeListOfferings(args, context)
       default:
         return createErrorResult(
-          `Unknown action: ${action}. Valid actions: list, get, create_contract, link_entitlement, list_entitlements, extend_contract`,
+          `Unknown action: ${action}. Valid actions: list_contracts, get_contract, create_contract, list_entitlements, link_entitlement_to_contract, list_offerings`,
         )
     }
   } catch (error: unknown) {
-    const err = error as Error & { response?: { status?: number } }
-    if (err.response?.status === 404 || /Invalid table/i.test(err.message || "")) {
+    const err = error as Error & { response?: { status?: number; data?: { error?: { message?: string } } } }
+    const apiMsg = err.response?.data?.error?.message || ""
+    if (err.response?.status === 404 || /Invalid table|No such table/i.test(err.message || apiMsg)) {
       return createErrorResult(
         new SnowFlowError(
           ErrorType.PLUGIN_MISSING,
-          `CSM contract tables not found. Install the com.sn_customerservice plugin and verify ${CONTRACT_TABLE} exists.`,
+          `Required table not found. Verify ast_contract, service_entitlement and service_offering exist. service_entitlement / service_offering ship with com.sn_customerservice or Service Portfolio Management.`,
           { originalError: err },
         ),
       )
@@ -164,10 +207,12 @@ export async function execute(args: Record<string, unknown>, context: ServiceNow
   }
 }
 
-// ==================== LIST ====================
+// ==================== list_contracts ====================
 
-async function executeList(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+async function executeListContracts(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   const account = args.account as string | undefined
+  const vendor = args.vendor as string | undefined
+  const customer = args.customer as string | undefined
   const state = args.state as string | undefined
   const active_only = args.active_only === true
   const limit = (args.limit as number) || 50
@@ -177,6 +222,8 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
 
   const queryParts: string[] = []
   if (account) queryParts.push(`account=${account}`)
+  if (vendor) queryParts.push(`vendor=${vendor}`)
+  if (customer) queryParts.push(`customer=${customer}`)
   if (state) queryParts.push(`state=${state}`)
   if (active_only) queryParts.push("active=true")
 
@@ -185,21 +232,29 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
       sysparm_query: queryParts.join("^"),
       sysparm_limit: limit,
       sysparm_orderby: "sys_updated_on",
+      sysparm_display_value: "false",
       ...(fields
         ? { sysparm_fields: fields }
-        : { sysparm_fields: "sys_id,number,short_description,account,state,starts,ends,active,sys_updated_on" }),
+        : {
+            sysparm_fields:
+              "sys_id,number,short_description,account,customer,vendor,vendor_contract,state,starts,ends,active,sys_updated_on",
+          }),
     },
   })
 
   const results = (response.data.result || []) as Array<Record<string, unknown>>
   return createSuccessResult({
-    action: "list",
+    action: "list_contracts",
+    table: CONTRACT_TABLE,
     count: results.length,
     contracts: results.map((r) => ({
       sys_id: r.sys_id,
       number: r.number,
       short_description: r.short_description,
       account: r.account,
+      customer: r.customer,
+      vendor: r.vendor,
+      vendor_contract: r.vendor_contract,
       state: r.state,
       starts: r.starts,
       ends: r.ends,
@@ -210,13 +265,13 @@ async function executeList(args: Record<string, unknown>, context: ServiceNowCon
   })
 }
 
-// ==================== GET ====================
+// ==================== get_contract ====================
 
-async function executeGet(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+async function executeGetContract(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
   const sys_id = args.sys_id as string | undefined
   const number = args.number as string | undefined
   if (!sys_id && !number) {
-    return createErrorResult("sys_id or number is required for get")
+    return createErrorResult("sys_id or number is required for get_contract")
   }
 
   const client = await getAuthenticatedClient(context)
@@ -225,126 +280,96 @@ async function executeGet(args: Record<string, unknown>, context: ServiceNowCont
 
   const contractSysId = contract.sys_id as string
 
-  // Best-effort fetch of dependent entitlements and SLAs — swallow errors so
-  // missing optional tables don't fail the primary lookup.
-  let entitlementCount = 0
-  let slaCount = 0
-  try {
-    const entResp = await client.get(`/api/now/table/${ENTITLEMENT_TABLE}`, {
-      params: { sysparm_query: `service_contract=${contractSysId}`, sysparm_fields: "sys_id", sysparm_limit: 200 },
-    })
-    entitlementCount = (entResp.data.result || []).length
-  } catch {
-    // TODO: verify entitlement.service_contract column name on a live instance.
-  }
-  try {
-    const slaResp = await client.get(`/api/now/table/${CONTRACT_SLA_TABLE}`, {
-      params: { sysparm_query: `contract=${contractSysId}`, sysparm_fields: "sys_id", sysparm_limit: 200 },
-    })
-    slaCount = (slaResp.data.result || []).length
-  } catch {
-    // contract_sla.contract column name varies between releases.
-  }
+  // Count linked entitlements (service_entitlement.contract → ast_contract).
+  const entResp = await client.get(`/api/now/table/${ENTITLEMENT_TABLE}`, {
+    params: { sysparm_query: `contract=${contractSysId}`, sysparm_fields: "sys_id", sysparm_limit: 200 },
+  })
+  const entitlementCount = ((entResp.data.result || []) as unknown[]).length
+
+  // Count linked offerings (service_offering.contract → ast_contract).
+  const offResp = await client.get(`/api/now/table/${OFFERING_TABLE}`, {
+    params: { sysparm_query: `contract=${contractSysId}`, sysparm_fields: "sys_id", sysparm_limit: 200 },
+  })
+  const offeringCount = ((offResp.data.result || []) as unknown[]).length
 
   return createSuccessResult({
-    action: "get",
+    action: "get_contract",
+    table: CONTRACT_TABLE,
     sys_id: contractSysId,
     contract,
     related: {
       entitlement_count: entitlementCount,
-      sla_count: slaCount,
+      offering_count: offeringCount,
     },
     url: `${context.instanceUrl}/nav_to.do?uri=${CONTRACT_TABLE}.do?sys_id=${contractSysId}`,
   })
 }
 
-// ==================== CREATE_CONTRACT ====================
+// ==================== create_contract ====================
 
 async function executeCreateContract(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const account = args.account as string | undefined
-  const name = args.name as string | undefined
-  const start_date = args.start_date as string | undefined
-  const end_date = args.end_date as string | undefined
+  // ast_contract dictionary makes vendor_contract and contract_model mandatory.
+  // vendor itself is not strictly mandatory but every realistic create needs it.
+  const vendor = args.vendor as string | undefined
+  const vendor_contract = args.vendor_contract as string | undefined
+  const contract_model = args.contract_model as string | undefined
+  const starts = args.starts as string | undefined
+  const ends = args.ends as string | undefined
 
-  if (!account) return createErrorResult("account is required for create_contract")
-  if (!name) return createErrorResult("name is required for create_contract")
-  if (!start_date) return createErrorResult("start_date is required for create_contract")
-  if (!end_date) return createErrorResult("end_date is required for create_contract")
+  if (!vendor) return createErrorResult("vendor (core_company sys_id) is required for create_contract")
+  if (!vendor_contract) return createErrorResult("vendor_contract (string) is required for create_contract")
+  if (!contract_model) return createErrorResult("contract_model (cmdb_model sys_id) is required for create_contract")
+  if (!starts) return createErrorResult("starts (YYYY-MM-DD) is required for create_contract")
+  if (!ends) return createErrorResult("ends (YYYY-MM-DD) is required for create_contract")
 
   const client = await getAuthenticatedClient(context)
 
-  // Optional: validate the service_offering exists when provided.
-  const service_offering = args.service_offering as string | undefined
-  if (service_offering) {
-    try {
-      await client.get(`/api/now/table/${SERVICE_OFFERING_TABLE}/${service_offering}`)
-    } catch {
-      return createErrorResult(`service_offering not found: ${service_offering}`)
-    }
-  }
-
-  // Canonical service_contract fields. Some instances use `starts`/`ends`,
-  // others use `start_date`/`end_date` — write both shapes.
-  // TODO: verify if customer has custom field overrides for service_contract.
   const payload: Record<string, unknown> = {
-    short_description: name,
-    account,
-    starts: start_date,
-    ends: end_date,
-    start_date,
-    end_date,
+    vendor,
+    vendor_contract,
+    contract_model,
+    starts,
+    ends,
     active: true,
   }
-  if (service_offering) payload.service_offering = service_offering
-  if (args.contract_type) payload.contract_type = args.contract_type
+  const account = args.account as string | undefined
+  const customer = args.customer as string | undefined
+  const short_description = args.short_description as string | undefined
+  const description = args.description as string | undefined
+  const cost_center = args.cost_center as string | undefined
+  const po_number = args.po_number as string | undefined
+  const state = args.state as string | undefined
+  if (account) payload.account = account
+  if (customer) payload.customer = customer
+  if (short_description) payload.short_description = short_description
+  if (description) payload.description = description
+  if (cost_center) payload.cost_center = cost_center
+  if (po_number) payload.po_number = po_number
+  if (state) payload.state = state
 
   const response = await client.post(`/api/now/table/${CONTRACT_TABLE}`, payload)
   const created = response.data.result as Record<string, unknown>
 
   return createSuccessResult({
     action: "create_contract",
+    table: CONTRACT_TABLE,
     created: true,
     sys_id: created.sys_id,
-    name: created.short_description || name,
+    number: created.number,
     contract: created,
     url: `${context.instanceUrl}/nav_to.do?uri=${CONTRACT_TABLE}.do?sys_id=${created.sys_id}`,
   })
 }
 
-// ==================== LINK_ENTITLEMENT ====================
+// ==================== list_entitlements ====================
 
-async function executeLinkEntitlement(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const sys_id = args.sys_id as string | undefined
-  const entitlement = args.entitlement as string | undefined
-
-  if (!sys_id) return createErrorResult("sys_id (contract) is required for link_entitlement")
-  if (!entitlement) return createErrorResult("entitlement is required for link_entitlement")
-
-  const client = await getAuthenticatedClient(context)
-
-  // Ensure both records exist
-  const contract = await findContract(client, sys_id, undefined)
-  if (!contract) return createErrorResult(`Contract not found: ${sys_id}`)
-
-  // TODO: verify entitlement.service_contract column on a live instance.
-  const response = await client.patch(`/api/now/table/${ENTITLEMENT_TABLE}/${entitlement}`, {
-    service_contract: sys_id,
-  })
-
-  return createSuccessResult({
-    action: "link_entitlement",
-    linked: true,
-    contract_sys_id: sys_id,
-    entitlement_sys_id: entitlement,
-    entitlement: response.data.result,
-  })
-}
-
-// ==================== LIST_ENTITLEMENTS ====================
-
-async function executeListEntitlements(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
-  const sys_id = args.sys_id as string | undefined
+async function executeListEntitlements(
+  args: Record<string, unknown>,
+  context: ServiceNowContext,
+): Promise<ToolResult> {
+  const contract = args.contract as string | undefined
   const account = args.account as string | undefined
+  const asset = args.asset as string | undefined
   const active_only = args.active_only === true
   const limit = (args.limit as number) || 50
   const fields = args.fields as string | undefined
@@ -352,71 +377,139 @@ async function executeListEntitlements(args: Record<string, unknown>, context: S
   const client = await getAuthenticatedClient(context)
 
   const queryParts: string[] = []
-  if (sys_id) queryParts.push(`service_contract=${sys_id}`)
+  if (contract) queryParts.push(`contract=${contract}`)
   if (account) queryParts.push(`account=${account}`)
+  if (asset) queryParts.push(`asset=${asset}`)
   if (active_only) queryParts.push("active=true")
 
   const response = await client.get(`/api/now/table/${ENTITLEMENT_TABLE}`, {
     params: {
       sysparm_query: queryParts.join("^"),
       sysparm_limit: limit,
+      sysparm_display_value: "false",
       ...(fields
         ? { sysparm_fields: fields }
-        : { sysparm_fields: "sys_id,name,account,service_contract,service,start_date,end_date,active" }),
+        : {
+            sysparm_fields:
+              "sys_id,entitlement_name,account,contract,asset,product,start_date,end_date,total_units,remaining_units,unit,per_unit,active",
+          }),
     },
   })
 
   const results = (response.data.result || []) as Array<Record<string, unknown>>
   return createSuccessResult({
     action: "list_entitlements",
+    table: ENTITLEMENT_TABLE,
     count: results.length,
     entitlements: results.map((r) => ({
       sys_id: r.sys_id,
-      name: r.name,
+      entitlement_name: r.entitlement_name,
       account: r.account,
-      service_contract: r.service_contract,
-      service: r.service,
+      contract: r.contract,
+      asset: r.asset,
+      product: r.product,
       start_date: r.start_date,
       end_date: r.end_date,
+      total_units: r.total_units,
+      remaining_units: r.remaining_units,
+      unit: r.unit,
+      per_unit: r.per_unit,
       active: r.active,
       url: `${context.instanceUrl}/nav_to.do?uri=${ENTITLEMENT_TABLE}.do?sys_id=${r.sys_id}`,
     })),
   })
 }
 
-// ==================== EXTEND_CONTRACT ====================
+// ==================== link_entitlement_to_contract ====================
 
-async function executeExtendContract(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+async function executeLinkEntitlementToContract(
+  args: Record<string, unknown>,
+  context: ServiceNowContext,
+): Promise<ToolResult> {
   const sys_id = args.sys_id as string | undefined
-  const end_date = args.end_date as string | undefined
-  const activate = args.activate === true
+  const entitlement = args.entitlement as string | undefined
 
-  if (!sys_id) return createErrorResult("sys_id is required for extend_contract")
-  if (!end_date) return createErrorResult("end_date is required for extend_contract")
+  if (!sys_id) return createErrorResult("sys_id (target ast_contract) is required for link_entitlement_to_contract")
+  if (!entitlement)
+    return createErrorResult("entitlement (service_entitlement sys_id) is required for link_entitlement_to_contract")
 
   const client = await getAuthenticatedClient(context)
 
-  const patch: Record<string, unknown> = {
-    ends: end_date,
-    end_date,
-  }
-  if (activate) patch.active = true
+  // Verify the contract exists before mutating the entitlement.
+  const contract = await findContract(client, sys_id, undefined)
+  if (!contract) return createErrorResult(`Contract not found: ${sys_id}`)
 
-  const response = await client.patch(`/api/now/table/${CONTRACT_TABLE}/${sys_id}`, patch)
-  const updated = response.data.result as Record<string, unknown>
+  // service_entitlement.contract is the dictionary-confirmed reference field.
+  const response = await client.patch(`/api/now/table/${ENTITLEMENT_TABLE}/${entitlement}`, {
+    contract: sys_id,
+  })
 
   return createSuccessResult({
-    action: "extend_contract",
-    extended: true,
-    sys_id,
-    new_end_date: end_date,
-    activated: activate,
-    contract: updated,
-    url: `${context.instanceUrl}/nav_to.do?uri=${CONTRACT_TABLE}.do?sys_id=${sys_id}`,
+    action: "link_entitlement_to_contract",
+    linked: true,
+    contract_sys_id: sys_id,
+    entitlement_sys_id: entitlement,
+    entitlement: response.data.result,
+    url: `${context.instanceUrl}/nav_to.do?uri=${ENTITLEMENT_TABLE}.do?sys_id=${entitlement}`,
   })
 }
 
-// ==================== HELPERS ====================
+// ==================== list_offerings ====================
+
+async function executeListOfferings(args: Record<string, unknown>, context: ServiceNowContext): Promise<ToolResult> {
+  const company = args.company as string | undefined
+  const vendor = args.vendor as string | undefined
+  const contract = args.contract as string | undefined
+  const name = args.name as string | undefined
+  const limit = (args.limit as number) || 50
+  const fields = args.fields as string | undefined
+
+  const client = await getAuthenticatedClient(context)
+
+  const queryParts: string[] = []
+  if (company) queryParts.push(`company=${company}`)
+  if (vendor) queryParts.push(`vendor=${vendor}`)
+  if (contract) queryParts.push(`contract=${contract}`)
+  if (name) queryParts.push(`nameLIKE${name}`)
+
+  const response = await client.get(`/api/now/table/${OFFERING_TABLE}`, {
+    params: {
+      sysparm_query: queryParts.join("^"),
+      sysparm_limit: limit,
+      sysparm_display_value: "false",
+      ...(fields
+        ? { sysparm_fields: fields }
+        : {
+            sysparm_fields:
+              "sys_id,number,name,short_description,company,vendor,contract,state,price,price_unit,billing,sys_updated_on",
+          }),
+    },
+  })
+
+  const results = (response.data.result || []) as Array<Record<string, unknown>>
+  return createSuccessResult({
+    action: "list_offerings",
+    table: OFFERING_TABLE,
+    count: results.length,
+    offerings: results.map((r) => ({
+      sys_id: r.sys_id,
+      number: r.number,
+      name: r.name,
+      short_description: r.short_description,
+      company: r.company,
+      vendor: r.vendor,
+      contract: r.contract,
+      state: r.state,
+      price: r.price,
+      price_unit: r.price_unit,
+      billing: r.billing,
+      updated_at: r.sys_updated_on,
+      url: `${context.instanceUrl}/nav_to.do?uri=${OFFERING_TABLE}.do?sys_id=${r.sys_id}`,
+    })),
+  })
+}
+
+// ==================== helpers ====================
 
 async function findContract(
   client: Awaited<ReturnType<typeof getAuthenticatedClient>>,
@@ -437,5 +530,5 @@ async function findContract(
   return null
 }
 
-export const version = "1.0.0"
+export const version = "1.1.0"
 export const author = "groeimetai"
