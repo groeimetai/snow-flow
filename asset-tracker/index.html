@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f8fa" />
+    <title>Assetly - Asset operations</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <span>assetly</span>
+        </div>
+        <div class="workspace-switcher">
+          <span class="workspace-avatar">N</span>
+          <span class="workspace-name">Northstar IT</span>
+          <span class="chevron">v</span>
+        </div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <p class="nav-label">Workspace</p>
+          <a class="nav-item active" href="#overview"><span class="nav-icon">[]</span>Overview</a>
+          <a class="nav-item" href="#assets"><span class="nav-icon">#</span>Assets <span class="nav-count">248</span></a>
+          <a class="nav-item" href="#people"><span class="nav-icon">@</span>People</a>
+          <a class="nav-item" href="#vendors"><span class="nav-icon">+</span>Vendors</a>
+          <p class="nav-label nav-label-spaced">Manage</p>
+          <a class="nav-item" href="#maintenance"><span class="nav-icon">~</span>Maintenance <span class="nav-dot"></span></a>
+          <a class="nav-item" href="#reports"><span class="nav-icon">%</span>Reports</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <a class="nav-item" href="#settings"><span class="nav-icon">*</span>Settings</a>
+          <div class="upgrade-card">
+            <div class="upgrade-icon">+</div>
+            <strong>Make asset work flow</strong>
+            <span>Automate check-ins, audits, and more.</span>
+            <button type="button" class="text-button">Explore Pro <span>-&gt;</span></button>
+          </div>
+          <div class="profile">
+            <div class="profile-avatar">JS</div>
+            <div><strong>Jamie Smith</strong><span>Administrator</span></div>
+            <span class="more">...</span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Workspace</span><span class="slash">/</span><strong>Overview</strong></div>
+          <div class="topbar-actions">
+            <button class="icon-button" type="button" aria-label="Help">?</button>
+            <button class="icon-button notification-button" type="button" aria-label="Notifications">!</button>
+            <button class="button button-primary" type="button" id="addAssetButton"><span>+</span> Add asset</button>
+          </div>
+        </header>
+
+        <div class="content-wrap">
+          <section class="page-heading" id="overview">
+            <div>
+              <p class="eyebrow">Wednesday, September 9, 2026</p>
+              <h1>Good morning, Jamie <span class="wave">~</span></h1>
+              <p class="muted">Here is what is happening with your assets today.</p>
+            </div>
+            <button class="date-button" type="button">Last 30 days <span class="chevron">v</span></button>
+          </section>
+
+          <section class="metric-grid" aria-label="Asset summary">
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon metric-icon-purple">#</span><span class="metric-trend positive">+8.4%</span></div>
+              <p class="metric-label">Total assets</p>
+              <p class="metric-value" id="totalAssets">248</p>
+              <p class="metric-foot">vs. 229 last month</p>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon metric-icon-blue">@</span><span class="metric-trend positive">+3.1%</span></div>
+              <p class="metric-label">Assigned assets</p>
+              <p class="metric-value" id="assignedAssets">186</p>
+              <p class="metric-foot">75% of total inventory</p>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon metric-icon-green">$</span><span class="metric-trend positive">+12.6%</span></div>
+              <p class="metric-label">Portfolio value</p>
+              <p class="metric-value" id="portfolioValue">$684,240</p>
+              <p class="metric-foot">Across all asset categories</p>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-icon metric-icon-orange">!</span><span class="metric-trend negative">+2.0%</span></div>
+              <p class="metric-label">Needs attention</p>
+              <p class="metric-value" id="attentionAssets">12</p>
+              <p class="metric-foot">3 warranties expire soon</p>
+            </article>
+          </section>
+
+          <section class="dashboard-grid">
+            <article class="panel chart-panel">
+              <div class="panel-heading">
+                <div><h2>Asset value</h2><p class="muted">Portfolio value over time</p></div>
+                <div class="legend"><span class="legend-dot"></span>Value</div>
+              </div>
+              <div class="chart-summary"><strong>$684k</strong><span class="positive">+12.6%</span></div>
+              <div class="chart" aria-label="Asset value chart">
+                <div class="y-labels"><span>$700k</span><span>$500k</span><span>$300k</span><span>$100k</span><span>$0</span></div>
+                <div class="chart-area">
+                  <div class="grid-line line-1"></div><div class="grid-line line-2"></div><div class="grid-line line-3"></div><div class="grid-line line-4"></div>
+                  <svg viewBox="0 0 720 190" preserveAspectRatio="none" role="img" aria-label="Portfolio value rising from 410 thousand to 684 thousand dollars">
+                    <defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7c5cff" stop-opacity=".26"/><stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/></linearGradient></defs>
+                    <path d="M0 148 C65 145 74 125 130 130 S180 110 220 116 S270 90 315 98 S360 77 408 86 S455 60 500 66 S550 45 585 52 S640 30 720 17 L720 190 L0 190 Z" fill="url(#areaFill)"/>
+                    <path d="M0 148 C65 145 74 125 130 130 S180 110 220 116 S270 90 315 98 S360 77 408 86 S455 60 500 66 S550 45 585 52 S640 30 720 17" fill="none" stroke="#7357f5" stroke-linecap="round" stroke-width="3"/>
+                    <circle cx="720" cy="17" r="5" fill="#fff" stroke="#7357f5" stroke-width="3"/>
+                  </svg>
+                  <div class="x-labels"><span>Jun 01</span><span>Jun 08</span><span>Jun 15</span><span>Jun 22</span><span>Jun 29</span></div>
+                </div>
+              </div>
+            </article>
+            <article class="panel status-panel">
+              <div class="panel-heading"><div><h2>Asset status</h2><p class="muted">Current inventory breakdown</p></div><button class="more-button" type="button">...</button></div>
+              <div class="donut-wrap">
+                <div class="donut"><div class="donut-center"><strong>248</strong><span>Total</span></div></div>
+                <div class="status-list">
+                  <div><span class="status-key key-in-use"></span><span>In use</span><strong id="inUseCount">186</strong></div>
+                  <div><span class="status-key key-stock"></span><span>In stock</span><strong id="inStockCount">38</strong></div>
+                  <div><span class="status-key key-repair"></span><span>In repair</span><strong id="inRepairCount">12</strong></div>
+                  <div><span class="status-key key-retired"></span><span>Retired</span><strong id="retiredCount">12</strong></div>
+                </div>
+              </div>
+              <div class="status-footer"><span class="pulse"></span>Inventory health is <strong>good</strong><span class="status-arrow">-&gt;</span></div>
+            </article>
+          </section>
+
+          <section class="panel assets-panel" id="assets">
+            <div class="panel-heading assets-heading">
+              <div><h2>All assets</h2><p class="muted"><span id="assetResultCount">248</span> assets in your workspace</p></div>
+              <div class="asset-actions"><button class="button button-secondary" id="exportButton" type="button"><span>-&gt;</span> Export</button><button class="button button-secondary" type="button" id="filterButton">Filter <span class="filter-count" id="filterCount"></span></button></div>
+            </div>
+            <div class="table-toolbar">
+              <label class="search-box"><span>/</span><input id="searchInput" type="search" placeholder="Search assets, people, or tags..." /></label>
+              <div class="view-toggle"><button class="view-button active" type="button">=</button><button class="view-button" type="button">::</button></div>
+            </div>
+            <div class="filter-bar hidden" id="filterBar">
+              <label>Status <select id="statusFilter"><option value="all">All statuses</option><option value="In use">In use</option><option value="In stock">In stock</option><option value="In repair">In repair</option><option value="Retired">Retired</option></select></label>
+              <label>Category <select id="categoryFilter"><option value="all">All categories</option><option value="Hardware">Hardware</option><option value="Software">Software</option><option value="Furniture">Furniture</option></select></label>
+              <button class="clear-filter" id="clearFilters" type="button">Clear filters</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th><input type="checkbox" id="selectAll" aria-label="Select all assets" /></th><th>Asset</th><th>Category</th><th>Assigned to</th><th>Location</th><th>Status</th><th>Value</th><th></th></tr></thead>
+                <tbody id="assetTableBody"></tbody>
+              </table>
+              <div class="empty-state hidden" id="emptyState"><strong>No assets found</strong><span>Try changing your search or filters.</span></div>
+            </div>
+            <div class="table-footer"><span id="tableSummary">Showing 1-6 of 248</span><div class="pagination"><button type="button" disabled id="prevPage">&lt;</button><button type="button" class="page-active">1</button><button type="button">2</button><button type="button">3</button><span>...</span><button type="button">42</button><button type="button" id="nextPage">&gt;</button></div></div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop hidden" id="assetModal">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-header"><div><p class="eyebrow">Asset inventory</p><h2 id="modalTitle">Add an asset</h2></div><button class="close-button" type="button" id="closeModal" aria-label="Close">x</button></div>
+        <form id="assetForm">
+          <div class="form-grid">
+            <label class="full-width">Asset name<input required name="name" placeholder="e.g. MacBook Pro 14-inch" /></label>
+            <label>Asset tag<input required name="tag" placeholder="AST-000" /></label>
+            <label>Category<select name="category"><option>Hardware</option><option>Software</option><option>Furniture</option></select></label>
+            <label>Assigned to<input name="assigned" placeholder="Unassigned" /></label>
+            <label>Location<input name="location" placeholder="Office or site" /></label>
+            <label>Status<select name="status"><option>In use</option><option>In stock</option><option>In repair</option><option>Retired</option></select></label>
+            <label>Value<input type="number" min="0" name="value" placeholder="0" /></label>
+            <label>Purchase date<input type="date" name="purchaseDate" /></label>
+          </div>
+          <div class="modal-footer"><button class="button button-secondary" type="button" id="cancelModal">Cancel</button><button class="button button-primary" type="submit">Add asset</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="toast hidden" id="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
