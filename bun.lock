@@ -16,7 +16,7 @@
     },
     "packages/servicenow-mcp": {
       "name": "@serac-labs/servicenow-mcp",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "bin": {
         "servicenow-mcp": "./src/servicenow-mcp-unified/index.ts",
         "servicenow-mcp-stdio": "./src/servicenow-mcp-unified/index.ts",
@@ -27,7 +27,7 @@
         "axios": "1.18.0",
         "dotenv": "17.2.3",
         "form-data": "4.0.6",
-        "hono": "4.12.34",
+        "hono": "4.13.5",
         "node-machine-id": "1.1.12",
         "zod": "4.1.8",
       },
@@ -50,7 +50,7 @@
   },
   "overrides": {
     "form-data": "4.0.6",
-    "hono": "4.12.34",
+    "hono": "4.13.5",
   },
   "packages": {
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
@@ -431,7 +431,7 @@
 
     "hasown": ["hasown@2.0.4", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A=="],
 
-    "hono": ["hono@4.12.34", "", {}, "sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA=="],
+    "hono": ["hono@4.13.5", "", {}, "sha512-O6+/eCYRkzzzy0rPWwKLiGBR1nFuUPZynnwjxN1MBA62NNqbT0wQEzQyK2gSO5yDIDB336sXQleAhOHrzlYyKw=="],
 
     "http-errors": ["http-errors@2.0.1", "", { "dependencies": { "depd": "~2.0.0", "inherits": "~2.0.4", "setprototypeof": "~1.2.0", "statuses": "~2.0.2", "toidentifier": "~1.0.1" } }, "sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ=="],
 
