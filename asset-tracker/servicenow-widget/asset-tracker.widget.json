@@ -1,0 +1,13 @@
+{
+  "id": "asset-tracker",
+  "name": "asset-tracker",
+  "table": "sp_widget",
+  "description": "Assetly asset tracking dashboard",
+  "application_scope": "x_189579_asset_t_0",
+  "sys_id": "427c5620c31b43102d8871edd4013173",
+  "source": {
+    "template": "../index.html",
+    "client_script": "../app.js",
+    "css": "../styles.css"
+  }
+}
