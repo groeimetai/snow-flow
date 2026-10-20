@@ -5,6 +5,7 @@
 import { type MCPToolDefinition, type ServiceNowContext, type ToolResult } from "../../shared/types.js"
 import { getAuthenticatedClient } from "../../shared/auth.js"
 import { createSuccessResult, createErrorResult } from "../../shared/error-handler.js"
+import { isInstancePath } from "../../shared/instance-path.js"
 
 export const toolDefinition: MCPToolDefinition = {
   name: "snow_custom_api",
@@ -24,7 +25,7 @@ export const toolDefinition: MCPToolDefinition = {
     type: "object",
     properties: {
       method: { type: "string", enum: ["GET", "POST", "PUT", "PATCH", "DELETE"], default: "GET" },
-      path: { type: "string", description: "API path (relative to instance URL)" },
+      path: { type: "string", description: "API path on the instance, starting with / (e.g. /api/now/table/incident). Full URLs are refused." },
       body: { type: "object", description: "Request body" },
       params: { type: "object", description: "Query parameters" },
     },
@@ -34,9 +35,16 @@ export const toolDefinition: MCPToolDefinition = {
 
 export async function execute(args: any, context: ServiceNowContext): Promise<ToolResult> {
   const { method = "GET", path, body, params } = args
+  if (!isInstancePath(path)) {
+    return createErrorResult(
+      'path must be a path on the instance starting with a single "/", such as /api/now/table/incident — not a full URL. The request carries the instance credentials, so it is never sent anywhere else.',
+    )
+  }
   try {
     const client = await getAuthenticatedClient(context)
-    const config: any = { params }
+    // Second lock behind isInstancePath: even an absolute URL is joined onto
+    // the instance's baseURL instead of replacing it.
+    const config: any = { params, allowAbsoluteUrls: false }
 
     let response
     if (method === "GET") {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T21:56:04.196Z",
+  "generatedAt": "2026-10-20T08:54:37.618Z",
   "count": 446,
   "groups": [
     {
@@ -1624,7 +1624,7 @@
               },
               "path": {
                 "type": "string",
-                "description": "API path (relative to instance URL)"
+                "description": "API path on the instance, starting with / (e.g. /api/now/table/incident). Full URLs are refused."
               },
               "body": {
                 "type": "object",
